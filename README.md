@@ -465,16 +465,4 @@ API key phải được lưu trong biến môi trường hoặc secret configura
 
 Kịch bản này thể hiện ba điểm mạnh của đề tài: **matching đúng người, AI hỗ trợ gia sư và tiến độ học tập có dữ liệu minh chứng**.
 
-## 13. Kết quả rà soát chức năng chính
 
-Bản kế hoạch đã bao gồm đầy đủ các nhóm chức năng cốt lõi của EduFit:
-
-- Quản lý tài khoản, xác thực và phân quyền.
-- Hồ sơ học sinh, phụ huynh, gia sư và xác minh gia sư.
-- Search, Matching có giải thích và yêu cầu kết nối.
-- Quản lý lớp, lịch học, learning plan và milestone.
-- Tài liệu, quiz, làm bài, chấm điểm và báo cáo buổi học.
-- AI hỗ trợ bio, tạo quiz và phân tích tiến độ có bước gia sư duyệt.
-- Dashboard, đánh giá, thông báo và quản trị hệ thống.
-
-Sau rà soát, kế hoạch đã được bổ sung ba phần trước đây chưa mô tả đủ rõ: liên kết và phân quyền phụ huynh – học sinh, vòng đời quiz/chấm câu trả lời ngắn, và nhật ký thao tác quản trị. Các chức năng thanh toán, chat/video call và ứng dụng di động vẫn được giữ ngoài phạm vi MVP để kiểm soát khối lượng đồ án.
