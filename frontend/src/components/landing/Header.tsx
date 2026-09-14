@@ -6,7 +6,7 @@ export function Header() {
   const [open, setOpen] = useState(false)
 
   return (
-    <header className="site-header">
+    <header className="site-header site-header--sticky">
       <div className="container site-header__inner">
         <Logo />
         <button
@@ -41,6 +41,7 @@ export function Header() {
           </div>
         </nav>
       </div>
+      <span className="site-header__underlay" aria-hidden="true" />
     </header>
   )
 }

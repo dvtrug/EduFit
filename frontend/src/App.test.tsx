@@ -4,6 +4,13 @@ import { describe, expect, it } from 'vitest'
 import App from './App'
 
 describe('EduFit landing page', () => {
+  it('keeps the navigation bar at the top with a decorative underlay', () => {
+    const { container } = render(<App />)
+
+    expect(container.querySelector('header.site-header--sticky')).toBeInTheDocument()
+    expect(container.querySelector('.site-header__underlay[aria-hidden="true"]')).toBeInTheDocument()
+  })
+
   it('presents the core promise and primary matching action', () => {
     render(<App />)
 
