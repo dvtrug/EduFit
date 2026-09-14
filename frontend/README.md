@@ -238,13 +238,13 @@ Ví dụ biến môi trường local:
 VITE_API_BASE_URL=http://localhost:8080/api
 ```
 
-Chỉ biến bắt đầu bằng `VITE_` mới được đưa vào code frontend. Không đặt password SQL Server, JWT secret hay thông tin bí mật trong `.env` frontend vì người dùng có thể xem chúng trong bundle.
+Chỉ biến bắt đầu bằng `VITE_` mới được đưa vào code frontend. Không đặt mật khẩu PostgreSQL, JWT secret hay thông tin bí mật trong `.env` frontend vì người dùng có thể xem chúng trong bundle.
 
 Luồng dự kiến:
 
 ```text
 React form → POST /api/matching-requests → Spring Boot
-Spring Boot → SQL Server / matching service
+Spring Boot → PostgreSQL / matching service
 Spring Boot → JSON shortlist
 React → loading / success / empty / error UI
 ```

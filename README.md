@@ -382,7 +382,7 @@ AI diễn giải kết quả nhưng không tự thay đổi phần trăm tiến 
 ## 7. Công nghệ dự kiến
 
 - Backend: Java, Spring Boot, Spring Security, Spring Data JPA.
-- Database: Microsoft SQL Server.
+- Database: PostgreSQL.
 - Frontend: React hoặc công nghệ nhóm thống nhất.
 - API: RESTful API.
 - AI: gọi dịch vụ LLM qua một `AIService` riêng để có thể thay nhà cung cấp.
