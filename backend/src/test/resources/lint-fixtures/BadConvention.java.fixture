@@ -1,0 +1,2 @@
+package com.edufit.backend.lintfixture;
+public class bad_class_name{public void BadMethod( ){}}

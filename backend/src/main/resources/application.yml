@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: edufit-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/edufit}
+    username: ${DB_USERNAME:edufit}
+    password: ${DB_PASSWORD:edufit-local-only}
+    hikari:
+      connection-timeout: 5000
+      validation-timeout: 3000
+  flyway:
+    enabled: true
+    create-schemas: true
+    default-schema: edufit
+    schemas: edufit
+    locations: classpath:db/migration
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: edufit
+  modulith:
+    detection-strategy: explicitly-annotated
+    runtime:
+      verification-enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,modulith
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
+server:
+  error:
+    include-message: never
+    include-stacktrace: never
