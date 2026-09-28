@@ -215,7 +215,7 @@ trên máy.
 Secret của môi trường production phải được cấp bởi nền tảng triển khai và không
 được lưu trong repository.
 
-## Trạng thái triển khai
+## Trạng thái triển khai:
 
 Đã có:
 
