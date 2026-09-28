@@ -11,7 +11,7 @@ Cài đặt và khởi động Docker Desktop. Với quy trình chạy bằng Do
 ## Khởi động PostgreSQL và backend
 
 Tại thư mục gốc của repository, chạy một lệnh:
-
+.
 ```bash
 docker compose up --build -d
 ```
