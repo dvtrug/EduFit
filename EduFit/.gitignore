@@ -1,0 +1,20 @@
+# Local secrets and overrides
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Java and Maven outputs
+**/target/
+**/.flattened-pom.xml
+
+# IDE and OS files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Local document review artifacts
+.codex-doc-review/

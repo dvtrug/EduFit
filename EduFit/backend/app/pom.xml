@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>vn.edufit</groupId>
+    <artifactId>edufit-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>app</artifactId>
+  <packaging>jar</packaging>
+  <name>EduFit :: App Runner</name>
+  <description>Entry point runnable application for EduFit Monolith</description>
+
+  <dependencies>
+    <!-- 1. CÁC THƯ VIỆN NỀN TẢNG (PLATFORM)                     -->
+
+    <dependency>
+      <groupId>vn.edufit</groupId>
+      <artifactId>shared</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>vn.edufit</groupId>
+      <artifactId>ai</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>vn.edufit</groupId>
+      <artifactId>storage</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>vn.edufit</groupId>
+      <artifactId>audit</artifactId>
+    </dependency>
+
+    <!-- 2. CÁC MODULE NGHIỆP VỤ (BUSINESS MODULES)              -->
+
+    <dependency>
+      <groupId>vn.edufit</groupId>
+      <artifactId>iam</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>vn.edufit</groupId>
+      <artifactId>profile</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>vn.edufit</groupId>
+      <artifactId>verification</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>vn.edufit</groupId>
+      <artifactId>discovery</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>vn.edufit</groupId>
+      <artifactId>connection</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>vn.edufit</groupId>
+      <artifactId>scheduling</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>vn.edufit</groupId>
+      <artifactId>progress</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>vn.edufit</groupId>
+      <artifactId>review</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>vn.edufit</groupId>
+      <artifactId>notification</artifactId>
+    </dependency>
+
+    <!-- 3. RUNTIME & INFRASTRUCTURE STARTERS                   -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-flyway</artifactId>
+    </dependency>
+
+    <!-- Database & Migration -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+    </dependency>
+
+    <!-- OpenAPI / Swagger 3 UI -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    </dependency>
+
+    <!-- ArchUnit Test (Kiểm tra ranh giới package kiến trúc) -->
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Plugin duy nhất thực thi đóng gói Runnable Fat JAR -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <mainClass>vn.edufit.EduFitApplication</mainClass>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

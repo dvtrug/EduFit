@@ -1,0 +1,56 @@
+server:
+  port: 8080
+  shutdown: graceful
+
+spring:
+  application:
+    name: edufit-backend
+
+  # 1. Kích hoạt Virtual Threads trên Java 21 & Spring Boot 4.x
+  threads:
+    virtual:
+      enabled: true
+
+  # 2. Cấu hình Cơ sở dữ liệu PostgreSQL
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:edufit_db}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      pool-name: EduFitHikariPool
+
+  # 3. Cấu hình JPA / Hibernate 7
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate # Không cho hibernate tự ý tạo bảng, dùng Flyway
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 25
+
+  # 4. Quản lý Migration DB tập trung
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+# 5. Cấu hình Swagger / OpenAPI Documentation
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
+# 6. Logging
+logging:
+  level:
+    vn.edufit: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
