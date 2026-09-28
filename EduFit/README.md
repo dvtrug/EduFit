@@ -200,7 +200,7 @@ Truy cập <http://localhost:3000>.
 Không chạy `docker compose down -v` trừ khi chủ động muốn xóa volume PostgreSQL
 trên máy.
 
-## Cấu hình backend
+## Cấu hình backend:
 
 Ứng dụng backend đọc các biến môi trường sau:
 
