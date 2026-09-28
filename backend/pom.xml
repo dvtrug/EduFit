@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>vn.edufit</groupId>
+    <artifactId>edufit-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>EduFit :: Parent</name>
+
+
+  <modules>
+    <module>app</module>
+    <module>platform</module>
+    <module>modules</module>
+  </modules>
+
+
+
+  <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>21</java.version>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
+
+
+        <!-- Phiên bản Core Framework & Thư viện mới nhất -->
+        <spring-boot.version>4.1.1</spring-boot.version>
+        <springdoc-openapi.version>3.1.0</springdoc-openapi.version>
+        <archunit.version>1.5.0</archunit.version>
+        <testcontainers.version>1.20.1</testcontainers.version>
+        <argon2.version>2.11</argon2.version>
+        <tika.version>3.3.2</tika.version>
+
+        <!-- Compiler & Build Plugins -->
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.5.0</maven-surefire-plugin.version>
+      </properties>
+
+    <dependencyManagement>
+      <dependencies>
+        <!-- 1. Spring Boot BOM (quản lý Spring Core, Data JPA, Security, Hibernate 7, Jackson, Postgres Driver) -->
+        <dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-dependencies</artifactId>
+          <version>${spring-boot.version}</version>
+          <type>pom</type>
+          <scope>import</scope>
+        </dependency>
+
+        <!-- 2. Testcontainers BOM (Hỗ trợ Postgres IT cho scheduling) -->
+        <dependency>
+          <groupId>org.testcontainers</groupId>
+          <artifactId>testcontainers-bom</artifactId>
+          <version>${testcontainers.version}</version>
+          <type>pom</type>
+          <scope>import</scope>
+        </dependency>
+
+        <!-- 3. Swagger / OpenAPI 3 Documentation -->
+        <dependency>
+          <groupId>org.springdoc</groupId>
+          <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+          <version>${springdoc-openapi.version}</version>
+        </dependency>
+
+        <!-- 4. ArchUnit (Cưỡng chế ranh giới package trong CI) -->
+        <dependency>
+          <groupId>com.tngtech.archunit</groupId>
+          <artifactId>archunit-junit5</artifactId>
+          <version>${archunit.version}</version>
+          <scope>test</scope>
+        </dependency>
+
+        <!-- 5. Thuật toán băm an toàn Argon2 (NFR-01) -->
+        <dependency>
+          <groupId>de.mkammerer</groupId>
+          <artifactId>argon2-jvm</artifactId>
+          <version>${argon2.version}</version>
+        </dependency>
+
+        <!-- 6. Apache Tika (Quét Magic Bytes file bằng cấp NFR-08) -->
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-core</artifactId>
+          <version>${tika.version}</version>
+        </dependency>
+
+        <!-- 7. Khai báo Version đồng bộ cho các Sub-module nội bộ -->
+        <dependency>
+          <groupId>vn.edufit</groupId>
+          <artifactId>shared</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>vn.edufit</groupId>
+          <artifactId>ai</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>vn.edufit</groupId>
+          <artifactId>storage</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>vn.edufit</groupId>
+          <artifactId>audit</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>vn.edufit</groupId>
+          <artifactId>iam</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>vn.edufit</groupId>
+          <artifactId>profile</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>vn.edufit</groupId>
+          <artifactId>verification</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>vn.edufit</groupId>
+          <artifactId>discovery</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>vn.edufit</groupId>
+          <artifactId>connection</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>vn.edufit</groupId>
+          <artifactId>scheduling</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>vn.edufit</groupId>
+          <artifactId>progress</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>vn.edufit</groupId>
+          <artifactId>review</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>vn.edufit</groupId>
+          <artifactId>notification</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <!-- Quản lý thêm WebMvc Test Starter cho các module cần kiểm thử web slice -->
+        <dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-webmvc-test</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </dependencyManagement>
+
+  <!-- Dependencies dùng chung bắt buộc cho mọi module con -->
+    <dependencies>
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <optional>true</optional>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+
+  <!-- Quản lý cấu hình Plugin biên dịch -->
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${maven-compiler-plugin.version}</version>
+          <configuration>
+            <release>${java.version}</release>
+            <parameters>true</parameters>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven-surefire-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+          <version>${spring-boot.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+</project>
