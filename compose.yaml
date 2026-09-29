@@ -20,6 +20,13 @@ services:
       start_period: 5s
     restart: unless-stopped
 
+  mail:
+    image: axllent/mailpit:latest
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
@@ -27,11 +34,15 @@ services:
       DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-edufit}
       DB_USERNAME: ${POSTGRES_USER:-edufit}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-edufit-local-only}
+      MAIL_HOST: mail
+      MAIL_PORT: 1025
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
       db:
         condition: service_healthy
+      mail:
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
       interval: 5s

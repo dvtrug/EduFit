@@ -63,7 +63,7 @@ cd backend
 .\mvnw.cmd -B -ntp verify
 ```
 
-Xem `CONTRIBUTING.md` để biết quy tắc định dạng, đặt tên, branch, review và commit. Xem `docs/backend-architecture.md` để hiểu ranh giới giữa các module.
+Xem `CONTRIBUTING.md` để biết quy tắc định dạng, đặt tên, branch, review và commit. Xem tổng quan toàn diện tại `docs/PROJECT_OVERVIEW.md`, cũng như các quyết định kiến trúc trong `docs/ADR-001-tech-stack.md` và `docs/ADR-002-multi-module-architecture.md`.
 
 ## Thiết lập GitHub sau lần push đầu tiên
 
