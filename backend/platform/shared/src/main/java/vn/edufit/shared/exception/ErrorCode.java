@@ -43,15 +43,36 @@ public enum ErrorCode {
   // 2. CÁC MÃ LỖI NGHIỆP VỤ ĐẶC THÙ THEO MODULE (SRS EDUFIT)
   // =========================================================================
 
-  // --- Module IAM (Xác thực & Tài khoản - UC1.1, UC1.2) ---
+  // --- Module IAM (Xác thực & Tài khoản - UC1.1 đến UC1.4) ---
   /** Email này đã được đăng ký bởi tài khoản khác trong hệ thống. */
   USER_ALREADY_EXISTS,
 
   /** Thông tin đăng nhập không chính xác (sai email hoặc mật khẩu). */
   INVALID_CREDENTIALS,
 
-  /** Tài khoản đang ở trạng thái bị khóa hoặc chưa kích hoạt. */
+  /** Tài khoản chưa kích hoạt (PENDING_VERIFICATION) hoặc đã bị vô hiệu hóa (DEACTIVATED). */
   USER_NOT_ACTIVE,
+
+  /** Tài khoản tạm thời bị khóa do vượt quá số lần đăng nhập sai (khóa 15 phút sau 5 lần). */
+  ACCOUNT_LOCKED,
+
+  /** Token xác thực hoặc reset mật khẩu không hợp lệ, không tồn tại hoặc sai định dạng. */
+  INVALID_TOKEN,
+
+  /** Token xác thực hoặc reset mật khẩu đã quá hạn hiệu lực. */
+  TOKEN_EXPIRED,
+
+  /** Token xác thực hoặc reset mật khẩu đã được sử dụng trước đó. */
+  TOKEN_ALREADY_USED,
+
+  /** Vượt quá tần suất yêu cầu cho phép (Rate limit / Cooldown). */
+  RATE_LIMIT_EXCEEDED,
+
+  /** Mật khẩu hiện tại cung cấp không chính xác khi thực hiện đổi mật khẩu. */
+  INVALID_CURRENT_PASSWORD,
+
+  /** Mật khẩu mới không được trùng với mật khẩu hiện tại. */
+  PASSWORD_REUSE_FORBIDDEN,
 
   // --- Module Verification (Duyệt bằng cấp Gia sư - UC1.10, UC1.12) ---
   /** Gia sư chưa nộp đủ bằng cấp để yêu cầu duyệt hồ sơ. */
