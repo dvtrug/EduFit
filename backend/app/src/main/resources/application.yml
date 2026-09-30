@@ -59,6 +59,11 @@ springdoc:
     operations-sorter: method
     tags-sorter: alpha
 
+management:
+  health:
+    mail:
+      enabled: ${MANAGEMENT_HEALTH_MAIL_ENABLED:false}
+
 # 6. Logging
 logging:
   level:
