@@ -58,7 +58,7 @@ public class Argon2PasswordService {
   /**
    * So khớp mật khẩu thô với chuỗi hash đã lưu trong CSDL.
    *
-   * @param hash chuỗi hash trong CSDL
+   * @param hash     chuỗi hash trong CSDL
    * @param password mật khẩu người dùng nhập vào
    * @return true nếu mật khẩu trùng khớp
    */
