@@ -60,11 +60,13 @@ public class AccountToken {
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
+  private static final java.util.regex.Pattern SHA256_HEX_PATTERN =
+    java.util.regex.Pattern.compile("^[a-fA-F0-9]{64}$");
   /**
    * Tạo một Token mới gắn với tài khoản.
    *
    * @param account tài khoản sở hữu
-   * @param tokenType loại token (EMAIL_VERIFICATION hoặc PASSWORD_RESET)
+   * @param tokenType loại token đặt lại mật khẩu
    * @param tokenHash mã băm SHA-256 (64 ký tự)
    * @param expiresAt thời điểm hết hạn
    */
@@ -74,10 +76,19 @@ public class AccountToken {
       String tokenHash,
       Instant expiresAt
   ) {
+
     Objects.requireNonNull(account, "Tài khoản không được để trống");
     Objects.requireNonNull(tokenType, "Loại token không được để trống");
     Objects.requireNonNull(tokenHash, "Mã băm token không được để trống");
     Objects.requireNonNull(expiresAt, "Thời hạn hết hạn không được để trống");
+
+    //Check xem token đã đúng 64 kí tự hay chưa
+    if (!SHA256_HEX_PATTERN.matcher(tokenHash).matches()) {
+      throw new InvalidOperationException(
+        ErrorCode.INVALID_TOKEN,
+        "Mã băm phải đủ 64 kí tự"
+      );
+    }
 
     AccountToken token = new AccountToken();
     token.account = account;
@@ -91,7 +102,7 @@ public class AccountToken {
    * Kiểm tra xem token đã quá hạn sử dụng hay chưa.
    */
   public boolean isExpired(Instant now) {
-    return now.isAfter(expiresAt);
+    return !now.isBefore(expiresAt);
   }
 
   /**

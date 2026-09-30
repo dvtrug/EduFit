@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS accounts (
 
     CONSTRAINT uk_accounts_email UNIQUE (email),
     CONSTRAINT chk_accounts_role CHECK (role IN ('STUDENT', 'PARENT', 'TUTOR', 'ADMIN')),
-    CONSTRAINT chk_accounts_status CHECK (status IN ('PENDING_VERIFICATION', 'ACTIVE', 'DEACTIVATED'))
+    CONSTRAINT chk_accounts_status CHECK (status IN ('ACTIVE', 'DEACTIVATED'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_accounts_email ON accounts (email);
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS account_tokens (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT uk_account_tokens_hash UNIQUE (token_hash),
-    CONSTRAINT chk_account_tokens_type CHECK (token_type IN ('EMAIL_VERIFICATION', 'PASSWORD_RESET'))
+    CONSTRAINT chk_account_tokens_type CHECK (token_type = 'PASSWORD_RESET')
 );
 
 CREATE INDEX IF NOT EXISTS idx_account_tokens_lookup ON account_tokens (token_hash, token_type);

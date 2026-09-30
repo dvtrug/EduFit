@@ -50,7 +50,7 @@ public enum ErrorCode {
   /** Thông tin đăng nhập không chính xác (sai email hoặc mật khẩu). */
   INVALID_CREDENTIALS,
 
-  /** Tài khoản chưa kích hoạt (PENDING_VERIFICATION) hoặc đã bị vô hiệu hóa (DEACTIVATED). */
+  /** Tài khoản đã bị vô hiệu hóa (DEACTIVATED). */
   USER_NOT_ACTIVE,
 
   /** Tài khoản tạm thời bị khóa do vượt quá số lần đăng nhập sai (khóa 15 phút sau 5 lần). */

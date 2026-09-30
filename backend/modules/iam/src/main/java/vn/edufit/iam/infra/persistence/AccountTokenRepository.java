@@ -21,6 +21,11 @@ public interface AccountTokenRepository extends JpaRepository<AccountToken, UUID
   Optional<AccountToken> findByTokenHashAndTokenType(String tokenHash, TokenType tokenType);
 
   /**
+   * Lấy token mới nhất theo loại của tài khoản để kiểm tra thời gian giãn cách (cooldown 60s).
+   */
+  Optional<AccountToken> findTopByAccountAndTokenTypeOrderByCreatedAtDesc(Account account, TokenType tokenType);
+
+  /**
    * Vô hiệu hóa toàn bộ các token cùng loại chưa dùng trước đó của tài khoản (dùng khi gửi lại mã resend).
    */
   @Modifying(clearAutomatically = true, flushAutomatically = true)

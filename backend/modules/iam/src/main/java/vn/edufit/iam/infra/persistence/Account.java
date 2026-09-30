@@ -27,9 +27,8 @@ import vn.edufit.shared.exception.InvalidOperationException;
 /**
  * JPA Entity đại diện cho bảng {@code accounts} trong cơ sở dữ liệu.
  *
- * <p>Theo kiến trúc DDD, Entity tự bảo vệ tính toàn vẹn của trạng thái thông qua các phương thức hành vi:
+ * <p>Entity tự bảo vệ tính toàn vẹn của trạng thái thông qua các phương thức hành vi:
  * <ul>
- *   <li>{@link #activate()}: Kích hoạt tài khoản khi xác minh email thành công.</li>
  *   <li>{@link #recordLoginFailure(Instant)}: Đếm lỗi đăng nhập và tự động khóa 15 phút khi sai liên tiếp 5 lần (BR-06).</li>
  *   <li>{@link #recordSuccessfulLogin(Instant)}: Xóa bộ đếm lỗi và ghi nhận thời điểm đăng nhập thành công.</li>
  * </ul>
@@ -84,14 +83,14 @@ public class Account {
   private Long version;
 
   /**
-   * Khởi tạo tài khoản mới ở trạng thái chờ xác minh {@link AccountStatus#PENDING_VERIFICATION}.
+   * Khởi tạo tài khoản mới mặc định ở trạng thái hoạt động {@link AccountStatus#ACTIVE}.
    *
    * @param email email của tài khoản (sẽ được chuẩn hóa trim và lowercase)
    * @param passwordHash chuỗi băm mật khẩu Argon2
    * @param fullName họ và tên
    * @param role vai trò (STUDENT, PARENT, TUTOR)
    */
-  public static Account createPending(String email, String passwordHash, String fullName, AccountRole role) {
+  public static Account create(String email, String passwordHash, String fullName, AccountRole role) {
     Objects.requireNonNull(email, "Email không được để trống");
     Objects.requireNonNull(passwordHash, "Password hash không được để trống");
     Objects.requireNonNull(fullName, "Họ tên không được để trống");
@@ -109,9 +108,16 @@ public class Account {
     account.passwordHash = passwordHash;
     account.fullName = fullName.trim();
     account.role = role;
-    account.status = AccountStatus.PENDING_VERIFICATION;
+    account.status = AccountStatus.ACTIVE;
     account.failedLoginAttempts = 0;
     return account;
+  }
+
+  /**
+   * Khởi tạo tài khoản mới ở trạng thái ACTIVE (UC1.1).
+   */
+  public static Account createActive(String email, String passwordHash, String fullName, AccountRole role) {
+    return create(email, passwordHash, fullName, role);
   }
 
   /**
@@ -134,19 +140,6 @@ public class Account {
     account.status = status;
     account.failedLoginAttempts = 0;
     return account;
-  }
-
-  /**
-   * Kích hoạt tài khoản khi xác minh email thành công (BR-04, BR-05).
-   */
-  public void activate() {
-    if (!status.canTransitionTo(AccountStatus.ACTIVE)) {
-      throw new InvalidOperationException(
-          ErrorCode.INVALID_OPERATION,
-          "Không thể kích hoạt tài khoản đang ở trạng thái " + status
-      );
-    }
-    this.status = AccountStatus.ACTIVE;
   }
 
   /**
