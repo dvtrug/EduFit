@@ -1,0 +1,43 @@
+package vn.edufit.iam.application;
+
+import java.util.Optional;
+import java.util.UUID;
+import org.springframework.stereotype.Component;
+import vn.edufit.iam.api.IamFacade;
+import vn.edufit.iam.api.dto.UserSummaryView;
+import vn.edufit.iam.infra.persistence.AccountRepository;
+
+/**
+ * Triển khai interface {@link IamFacade} phục vụ các module nghiệp vụ khác gọi sang.
+ */
+@Component
+public class IamFacadeImpl implements IamFacade {
+
+  private final AccountRepository accountRepository;
+
+  public IamFacadeImpl(AccountRepository accountRepository) {
+    this.accountRepository = accountRepository;
+  }
+
+  @Override
+  public Optional<UserSummaryView> findUserSummaryById(UUID id) {
+    if (id == null) {
+      return Optional.empty();
+    }
+    return accountRepository.findById(id).map(account -> new UserSummaryView(
+        account.getId(),
+        account.getEmail(),
+        account.getFullName(),
+        account.getRole(),
+        account.getStatus()
+    ));
+  }
+
+  @Override
+  public boolean existsById(UUID id) {
+    if (id == null) {
+      return false;
+    }
+    return accountRepository.existsById(id);
+  }
+}
