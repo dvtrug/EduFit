@@ -20,9 +20,9 @@ import vn.edufit.shared.exception.InvalidOperationException;
 class AccountTest {
 
   @Test
-  @DisplayName("IAM-DOM-001: Khởi tạo tài khoản luôn ở trạng thái PENDING_VERIFICATION")
-  void shouldInitializeAccountInPendingStatus() {
-    Account account = Account.createPending(
+  @DisplayName("IAM-DOM-001: Khởi tạo tài khoản mặc định ở trạng thái ACTIVE (BR-04)")
+  void shouldInitializeAccountInActiveStatus() {
+    Account account = Account.create(
         "Student@EduFit.vn ",
         "$argon2id$v=19$m=65536,t=3,p=1$hashed...",
         " Nguyen Van A ",
@@ -32,7 +32,7 @@ class AccountTest {
     assertEquals("student@edufit.vn", account.getEmail(), "Email phải được cắt khoảng trắng và viết thường");
     assertEquals("Nguyen Van A", account.getFullName(), "Họ tên phải được cắt khoảng trắng");
     assertEquals(AccountRole.STUDENT, account.getRole());
-    assertEquals(AccountStatus.PENDING_VERIFICATION, account.getStatus());
+    assertEquals(AccountStatus.ACTIVE, account.getStatus());
     assertEquals(0, account.getFailedLoginAttempts());
     assertNull(account.getLockedUntil());
   }
@@ -41,7 +41,7 @@ class AccountTest {
   @DisplayName("IAM-DOM-002: Chặn tuyệt đối tự đăng ký với vai trò ADMIN (BR-03)")
   void shouldPreventAdminRoleRegistration() {
     assertThrows(InvalidOperationException.class, () ->
-        Account.createPending(
+        Account.create(
             "admin@edufit.vn",
             "hashed...",
             "Admin User",
@@ -51,45 +51,14 @@ class AccountTest {
   }
 
   @Test
-  @DisplayName("IAM-DOM-003: Kích hoạt tài khoản thành công chuyển sang ACTIVE (BR-04)")
-  void shouldActivatePendingAccountSuccessfully() {
-    Account account = Account.createPending(
-        "tutor@edufit.vn",
-        "hashed...",
-        "Tutor B",
-        AccountRole.TUTOR
-    );
-
-    account.activate();
-
-    assertEquals(AccountStatus.ACTIVE, account.getStatus());
-    assertTrue(account.canAuthenticate(Instant.now()));
-  }
-
-  @Test
-  @DisplayName("IAM-DOM-004: Từ chối kích hoạt tài khoản nếu đã ACTIVE")
-  void shouldRejectActivatingAlreadyActiveOrDeactivatedAccount() {
-    Account account = Account.createPending(
-        "tutor@edufit.vn",
-        "hashed...",
-        "Tutor B",
-        AccountRole.TUTOR
-    );
-    account.activate();
-
-    assertThrows(InvalidOperationException.class, account::activate);
-  }
-
-  @Test
   @DisplayName("IAM-DOM-005: Đăng nhập sai 5 lần liên tiếp kích hoạt khóa tài khoản 15 phút (BR-06)")
   void shouldIncrementFailedAttemptsAndLockAccountAtFifthFailure() {
-    Account account = Account.createPending(
+    Account account = Account.create(
         "student@edufit.vn",
         "hashed...",
         "Student C",
         AccountRole.STUDENT
     );
-    account.activate();
     Instant now = Instant.parse("2026-09-29T10:00:00Z");
 
     for (int i = 1; i <= 4; i++) {
@@ -108,13 +77,12 @@ class AccountTest {
   @Test
   @DisplayName("IAM-DOM-006: canAuthenticate() trả về false khi tài khoản đang trong thời gian bị khóa")
   void shouldDenyLoginWhenAccountIsCurrentlyLocked() {
-    Account account = Account.createPending(
+    Account account = Account.create(
         "student@edufit.vn",
         "hashed...",
         "Student D",
         AccountRole.STUDENT
     );
-    account.activate();
     Instant now = Instant.parse("2026-09-29T10:00:00Z");
 
     for (int i = 0; i < 5; i++) {
@@ -130,13 +98,12 @@ class AccountTest {
   @Test
   @DisplayName("IAM-DOM-007: Cho phép đăng nhập lại sau khi hết thời gian 15 phút khóa")
   void shouldAllowLoginAndResetCounterAfterLockExpires() {
-    Account account = Account.createPending(
+    Account account = Account.create(
         "student@edufit.vn",
         "hashed...",
         "Student E",
         AccountRole.STUDENT
     );
-    account.activate();
     Instant now = Instant.parse("2026-09-29T10:00:00Z");
 
     for (int i = 0; i < 5; i++) {
@@ -152,13 +119,12 @@ class AccountTest {
   @Test
   @DisplayName("IAM-DOM-008: Đăng nhập thành công xóa sạch bộ đếm lỗi và ghi nhận lastLoginAt (BR-06)")
   void shouldResetFailedAttemptsOnSuccessfulLogin() {
-    Account account = Account.createPending(
+    Account account = Account.create(
         "student@edufit.vn",
         "hashed...",
         "Student F",
         AccountRole.STUDENT
     );
-    account.activate();
     Instant now = Instant.parse("2026-09-29T10:00:00Z");
 
     // Nhập sai 3 lần
