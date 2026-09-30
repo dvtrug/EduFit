@@ -79,7 +79,7 @@ Mọi phản hồi API đều được bọc trong cấu trúc chuẩn của h�
 ---
 
 ### 2.2. `POST /api/v1/auth/register` (UC1.1)
-* **Mục đích:** Đăng ký tài khoản mới ở trạng thái `PENDING_VERIFICATION` và gửi email chứa token xác thực.
+* **Mục đích:** Đăng ký tài khoản mới ở trạng thái `ACTIVE` (kích hoạt trực tiếp, không bắt buộc xác thực email).
 * **Phân quyền:** Guest (Chưa đăng nhập).
 * **Request Body:**
 ```json
@@ -94,12 +94,12 @@ Mọi phản hồi API đều được bọc trong cấu trúc chuẩn của h�
 ```json
 {
   "success": true,
-  "message": "Đăng ký thành công. Vui lòng kiểm tra email để kích hoạt tài khoản.",
+  "message": "Đăng ký thành công. Bạn có thể đăng nhập ngay bây giờ.",
   "data": {
     "accountId": "a3b12345-...",
     "email": "user@example.com",
     "role": "STUDENT",
-    "status": "PENDING_VERIFICATION"
+    "status": "ACTIVE"
   },
   "timestamp": "2026-09-29T15:00:00.000Z"
 }
@@ -110,54 +110,7 @@ Mọi phản hồi API đều được bọc trong cấu trúc chuẩn của h�
 
 ---
 
-### 2.3. `POST /api/v1/auth/verify-email` (UC1.1)
-* **Mục đích:** Xác thực tài khoản bằng token nhận được từ liên kết email và chuyển trạng thái sang `ACTIVE`.
-* **Phân quyền:** Guest.
-* **Request Body:**
-```json
-{
-  "token": "raw-256-bit-token-string"
-}
-```
-* **Phản hồi 200 OK:**
-```json
-{
-  "success": true,
-  "message": "Kích hoạt tài khoản thành công. Bạn có thể đăng nhập ngay bây giờ.",
-  "data": {
-    "email": "user@example.com",
-    "status": "ACTIVE"
-  },
-  "timestamp": "2026-09-29T15:00:00.000Z"
-}
-```
-* **Mã lỗi:**
-  * `400 BAD_REQUEST` + `INVALID_TOKEN`: Token không tồn tại, sai định dạng.
-  * `400 BAD_REQUEST` + `TOKEN_EXPIRED`: Token đã quá hạn 24 giờ.
-  * `400 BAD_REQUEST` + `TOKEN_ALREADY_USED`: Token đã được sử dụng trước đó.
-
----
-
-### 2.4. `POST /api/v1/auth/resend-verification` (UC1.1)
-* **Mục đích:** Vô hiệu hóa token cũ, sinh token mới và gửi lại email kích hoạt. Cooldown tối thiểu 60 giây giữa các lần yêu cầu.
-* **Phân quyền:** Guest.
-* **Request Body:**
-```json
-{
-  "email": "user@example.com"
-}
-```
-* **Phản hồi 200 OK:**
-```json
-{
-  "success": true,
-  "message": "Nếu email tồn tại và chưa kích hoạt, email xác thực mới đã được gửi.",
-  "data": null,
-  "timestamp": "2026-09-29T15:00:00.000Z"
-}
-```
-* **Mã lỗi:**
-  * `429 TOO_MANY_REQUESTS` + `RATE_LIMIT_EXCEEDED`: Yêu cầu gửi lại quá nhanh (trong vòng 60 giây).
+> **Lưu ý:** Các endpoint `POST /api/v1/auth/verify-email` và `POST /api/v1/auth/resend-verification` đã được loại bỏ do hệ thống kích hoạt tài khoản trực tiếp ngay khi đăng ký.
 
 ---
 
@@ -188,7 +141,7 @@ Mọi phản hồi API đều được bọc trong cấu trúc chuẩn của h�
 ```
 * **Mã lỗi:**
   * `401 UNAUTHORIZED` + `INVALID_CREDENTIALS`: Sai email hoặc mật khẩu (không phân biệt rõ để chống enumeration).
-  * `403 FORBIDDEN` + `USER_NOT_ACTIVE`: Tài khoản đang ở trạng thái `PENDING_VERIFICATION` hoặc `DEACTIVATED`.
+  * `403 FORBIDDEN` + `USER_NOT_ACTIVE`: Tài khoản đang ở trạng thái `DEACTIVATED`.
   * `423 LOCKED` + `ACCOUNT_LOCKED`: Tài khoản bị khóa tạm thời 15 phút do nhập sai quá 5 lần.
 
 ---

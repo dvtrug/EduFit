@@ -1,0 +1,47 @@
+package vn.edufit.iam.infra.security;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.HexFormat;
+import org.springframework.stereotype.Component;
+
+/**
+ * Tiện ích mã hóa sinh và băm One-Time Token (NFR-03).
+ *
+ * <ul>
+ *   <li>Sinh mã ngẫu nhiên bảo mật 256-bit (32 bytes) trả về chuỗi Hex 64 ký tự.</li>
+ *   <li>Băm mã token bằng thuật toán SHA-256 (64 ký tự Hex) để lưu vào CSDL.</li>
+ * </ul>
+ */
+@Component
+public class TokenCryptoService {
+
+  private final SecureRandom secureRandom = new SecureRandom();
+
+  /**
+   * Sinh chuỗi raw token ngẫu nhiên 256-bit dạng Hex (64 ký tự).
+   */
+  public String generateRawToken() {
+    byte[] bytes = new byte[32];
+    secureRandom.nextBytes(bytes);
+    return HexFormat.of().formatHex(bytes);
+  }
+
+  /**
+   * Băm chuỗi raw token bằng thuật toán SHA-256 thành chuỗi Hex 64 ký tự.
+   */
+  public String hashToken(String rawToken) {
+    if (rawToken == null || rawToken.isBlank()) {
+      throw new IllegalArgumentException("Token không được để trống");
+    }
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] hash = digest.digest(rawToken.getBytes(StandardCharsets.UTF_8));
+      return HexFormat.of().formatHex(hash);
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("Không tìm thấy thuật toán SHA-256 trên JVM", e);
+    }
+  }
+}
