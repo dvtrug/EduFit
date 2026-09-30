@@ -1,47 +1,48 @@
-# Authentication Implementation Checklist
+# Checklist RBL Authentication — IAM
 
-## Phase 1: Foundation
+## Phase 0 — Hiệu chỉnh nền tảng
 
-- [x] T01 Repair Docker, database environment variables, Maven Wrapper, and local mail runtime.
-- [x] T02 Freeze the auth API contract, redirects, stable error codes, and threat model.
-- [x] Checkpoint: clean local runtime starts and existing builds remain green.
+- [ ] RBL-00 Chuẩn hóa mã BR/NFR trong code, test và báo cáo.
+- [ ] RBL-00 Đổi tuyên bố chưa có code sang `Not Implemented`/`Not Run`.
+- [ ] RBL-01 Sửa test lockout hết hạn và mô tả reset counter.
+- [ ] RBL-01 Thêm boundary test tại đúng `expiresAt`.
+- [ ] RBL-01 Validate/test SHA-256 token hash 64 ký tự hex.
+- [ ] Checkpoint A: chạy toàn bộ IAM tests.
 
-## Phase 2: Persistence and primitives
+## Phase 1 — Password và Registration
 
-- [ ] T03 Add PostgreSQL migrations for accounts, one-time tokens, and Spring Session JDBC.
-- [ ] T04 Implement IAM account persistence, normalized email, account states, roles, and `UserDetailsService`.
-- [ ] T05 Implement secure token generation/hash/expiry/consumption and account-email abstraction.
-- [ ] Correct ArchUnit package patterns and prove the rules catch an intentional violation.
-- [ ] Checkpoint: migration, repository, token, and architecture tests pass.
+- [x] RBL-02 Test và triển khai `PasswordPolicy`.
+- [x] RBL-03 Test register success, role, duplicate, normalize, weak password, safe result.
+- [x] RBL-03 Triển khai register bằng repository/password-hasher ports.
+- [x] Checkpoint B: BR-01 đến BR-04 và NFR-01 xanh.
 
-## Phase 3: Backend authentication
+## Phase 2 — Password reset token
 
-- [ ] T06 Implement registration, email verification, and resend-verification.
-- [ ] T07 Implement login, failed-attempt lockout, and JDBC-backed session persistence.
-- [ ] T08 Implement `/me`, logout, cookie policy, and CSRF bootstrap/enforcement.
-- [ ] T09 Implement forgot password, reset password, and authenticated password change.
-- [ ] Checkpoint: UC1.1-UC1.4 backend integration tests and OpenAPI contract pass.
+- [x] RBL-04 Test/triển khai secure random token và SHA-256 hash.
+- [x] RBL-04 Test TTL, single-use và không lưu raw token.
+- [x] Checkpoint C: password reset token có TTL 30 phút và dùng một lần.
 
-## Phase 4: Frontend authentication
+## Phase 3 — Login
 
-- [ ] T10 Add `features/auth`, generated API contract, same-origin proxy, and CSRF-aware client.
-- [ ] T11 Build registration, check-email, verify-email, and resend screens.
-- [ ] T12 Build login, session bootstrap, safe return URL, route guards, and logout.
-- [ ] T13 Build forgot-password, reset-password, and change-password screens.
-- [ ] Checkpoint: browser E2E covers register -> verify -> login -> protected page -> logout.
+- [x] RBL-06 Test login thành công và safe identity.
+- [x] RBL-06 Test enumeration resistance.
+- [x] RBL-06 Test trạng thái account và lockout đầy đủ.
+- [x] Checkpoint D: register -> authenticate không cần HTTP.
 
-## Phase 5: Hardening and release
+## Phase 4 — Password management
 
-- [ ] T14 Add rate limiting, security-event logs, security headers, and dependency-audit triage.
-- [ ] T15 Run the clean-environment release gate and update documentation/CI.
-- [ ] Verify password change invalidates other sessions while preserving the current session.
-- [ ] Verify password reset invalidates every active session.
-- [ ] Verify no raw passwords, one-time tokens, or session IDs appear in logs or persistence.
-- [ ] Final checkpoint: backend verify, frontend lint/test/build, and auth E2E all pass.
+- [x] RBL-07 Test/triển khai forgot password neutral response.
+- [x] RBL-07 Test/triển khai reset password và revoke toàn bộ session.
+- [x] RBL-08 Test/triển khai change password và revoke session khác.
 
-## Decisions to Confirm
+## Phase 5 — Persistence & Web Layer
 
-- [ ] Use Mailpit for local account emails.
-- [ ] Keep `409 USER_ALREADY_EXISTS` for registration conflicts.
-- [ ] Choose PostgreSQL-backed rate limiting if deployment may run multiple backend instances.
-- [ ] Confirm temporary role landing paths: `/student`, `/parent`, `/tutor`, `/admin`.
+- [x] RBL-09 Triển khai đầy đủ REST Controllers và Request/Response DTOs tại `vn.edufit.iam.web`.
+- [x] RBL-09 Kết nối Spring Security Session Context (`EDUFIT_SESSION` cookie).
+- [x] RBL-09 Hoàn thành `IamFacadeImpl` cho giao tiếp liên module.
+
+## Ngoài phạm vi hiện tại
+
+- [ ] SMTP/Mailpit adapter thật.
+- [ ] Frontend Authentication UI.
+- [ ] OAuth/JWT/social login.
