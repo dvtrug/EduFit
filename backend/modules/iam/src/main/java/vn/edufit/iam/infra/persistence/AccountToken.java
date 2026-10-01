@@ -31,24 +31,25 @@ import vn.edufit.shared.exception.InvalidOperationException;
  * </ul>
  */
 @Entity
-@Table(name = "account_tokens")
+@Table(name = "email_token")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AccountToken {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(name = "token_id")
   private UUID id;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "account_id", nullable = false)
+  @JoinColumn(name = "user_id", nullable = false)
   private Account account;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "token_type", nullable = false, length = 30)
+  @Column(name = "type", nullable = false, length = 30)
   private TokenType tokenType;
 
-  @Column(name = "token_hash", nullable = false, unique = true, length = 64)
+  @Column(name = "token_hash", nullable = false, unique = true, length = 128)
   private String tokenHash;
 
   @Column(name = "expires_at", nullable = false)

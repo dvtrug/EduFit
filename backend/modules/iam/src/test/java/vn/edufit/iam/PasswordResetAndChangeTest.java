@@ -114,12 +114,12 @@ class PasswordResetAndChangeTest {
 
     AccountToken token = AccountToken.create(
         account,
-        TokenType.PASSWORD_RESET,
+        TokenType.RESET_PASSWORD,
         tokenHash,
         Instant.parse("2026-09-30T10:30:00Z")
     );
 
-    when(accountTokenRepository.findByTokenHashAndTokenType(eq(tokenHash), eq(TokenType.PASSWORD_RESET)))
+    when(accountTokenRepository.findByTokenHashAndTokenType(eq(tokenHash), eq(TokenType.RESET_PASSWORD)))
         .thenReturn(Optional.of(token));
     when(passwordService.verify(eq(account.getPasswordHash()), eq("NewPassword123@"))).thenReturn(false);
 
