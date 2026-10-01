@@ -8,6 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import vn.edufit.iam.infra.security.EduFitUserDetails;
 import vn.edufit.shared.exception.ForbiddenOperationException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
