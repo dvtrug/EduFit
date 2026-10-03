@@ -65,16 +65,16 @@ public class RequestPasswordResetService {
     Instant now = clock.instant();
 
     // Vô hiệu hóa các token reset trước đó của tài khoản này
-    accountTokenRepository.invalidatePreviousTokens(account, TokenType.PASSWORD_RESET, now);
+    accountTokenRepository.invalidatePreviousTokens(account, TokenType.RESET_PASSWORD, now);
 
     // Sinh token mới 256-bit (hạn 30 phút)
     String rawToken = tokenCryptoService.generateRawToken();
     String tokenHash = tokenCryptoService.hashToken(rawToken);
-    Instant expiresAt = now.plus(TokenType.PASSWORD_RESET.getDefaultTtl());
+    Instant expiresAt = now.plus(TokenType.RESET_PASSWORD.getDefaultTtl());
 
     AccountToken token = AccountToken.create(
         account,
-        TokenType.PASSWORD_RESET,
+        TokenType.RESET_PASSWORD,
         tokenHash,
         expiresAt
     );

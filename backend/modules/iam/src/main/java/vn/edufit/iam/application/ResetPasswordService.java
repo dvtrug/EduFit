@@ -70,7 +70,7 @@ public class ResetPasswordService {
 
     // 2. Tìm kiếm và kiểm tra tính hợp lệ của token
     AccountToken token = accountTokenRepository
-        .findByTokenHashAndTokenType(tokenHash, TokenType.PASSWORD_RESET)
+        .findByTokenHashAndTokenType(tokenHash, TokenType.RESET_PASSWORD)
         .orElseThrow(() -> new InvalidOperationException(
             ErrorCode.INVALID_TOKEN,
             "Mã token đặt lại mật khẩu không hợp lệ hoặc không tồn tại"

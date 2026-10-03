@@ -122,6 +122,18 @@
       <artifactId>archunit-junit5</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <!-- Testcontainers PostgreSQL (Kiểm thử migration trên CSDL thật theo ADR-002) -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

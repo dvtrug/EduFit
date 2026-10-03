@@ -1,6 +1,13 @@
 server:
   port: 8080
   shutdown: graceful
+  servlet:
+    session:
+      timeout: 60m # NFR-04: Hết hạn sau 60 phút không hoạt động (sliding inactivity)
+      cookie:
+        name: EDUFIT_SESSION # Theo đặc tả authentication-contract.md
+        http-only: true
+        same-site: lax
 
 spring:
   application:

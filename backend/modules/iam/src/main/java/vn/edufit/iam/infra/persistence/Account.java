@@ -34,7 +34,7 @@ import vn.edufit.shared.exception.InvalidOperationException;
  * </ul>
  */
 @Entity
-@Table(name = "accounts")
+@Table(name = "account")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Account {
@@ -44,6 +44,7 @@ public class Account {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(name = "user_id")
   private UUID id;
 
   @Column(name = "email", nullable = false, unique = true, length = 255)
@@ -52,7 +53,7 @@ public class Account {
   @Column(name = "password_hash", nullable = false, length = 255)
   private String passwordHash;
 
-  @Column(name = "full_name", nullable = false, length = 100)
+  @Column(name = "full_name", nullable = false, length = 150)
   private String fullName;
 
   @Enumerated(EnumType.STRING)
@@ -63,7 +64,7 @@ public class Account {
   @Column(name = "status", nullable = false, length = 30)
   private AccountStatus status;
 
-  @Column(name = "failed_login_attempts", nullable = false)
+  @Column(name = "failed_attempts", nullable = false)
   private int failedLoginAttempts;
 
   @Column(name = "locked_until")
@@ -77,10 +78,6 @@ public class Account {
 
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
-
-  @Version
-  @Column(name = "version")
-  private Long version;
 
   /**
    * Khởi tạo tài khoản mới mặc định ở trạng thái hoạt động {@link AccountStatus#ACTIVE}.
