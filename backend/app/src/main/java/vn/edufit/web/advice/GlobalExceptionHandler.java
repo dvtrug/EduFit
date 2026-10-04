@@ -250,6 +250,8 @@ public class GlobalExceptionHandler {
       case FORBIDDEN -> HttpStatus.FORBIDDEN;
       case RESOURCE_NOT_FOUND -> HttpStatus.NOT_FOUND;
       case CONFLICT_DETECTED, USER_ALREADY_EXISTS, SCHEDULE_OVERLAP, REVIEW_ALREADY_EXISTS -> HttpStatus.CONFLICT;
+      case AI_SERVICE_UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;
+      case AI_REQUEST_TIMEOUT -> HttpStatus.GATEWAY_TIMEOUT;
       case INTERNAL_SERVER_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
       default -> HttpStatus.BAD_REQUEST;
     };

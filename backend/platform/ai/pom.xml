@@ -19,15 +19,30 @@
       <groupId>vn.edufit</groupId>
       <artifactId>shared</artifactId>
     </dependency>
-    <!-- WebClient để gọi LLM API bất đồng bộ với Virtual Threads -->
+    <!-- RestClient đồng bộ tối ưu cho Java 21 Virtual Threads -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-webflux</artifactId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <!-- Spring Data JPA để tương tác với bảng ai_request_log (FR-05) -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-configuration-processor</artifactId>
       <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

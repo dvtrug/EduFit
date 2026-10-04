@@ -93,5 +93,12 @@ public enum ErrorCode {
 
   // --- Module Review (Đánh giá gia sư - UC6.1 / NFR-24) ---
   /** Học sinh đã đánh giá gia sư này cho khóa học hiện tại rồi, không được đánh giá lại (NFR-24). */
-  REVIEW_ALREADY_EXISTS
+  REVIEW_ALREADY_EXISTS,
+
+  // --- Module AI Platform (Cổng gọi LLM - FR-05, NFR-10) ---
+  /** Dịch vụ AI bên ngoài không khả dụng hoặc trả về lỗi kết nối. */
+  AI_SERVICE_UNAVAILABLE,
+
+  /** Dịch vụ AI quá hạn thời gian phản hồi (vượt quá 15 giây theo NFR-10). */
+  AI_REQUEST_TIMEOUT
 }
