@@ -60,7 +60,7 @@ spring:
     locations: classpath:db/migration # Quét đệ quy toàn bộ thư mục con (iam, scheduling...)
     out-of-order: false # Ép thứ tự thời gian nghiêm ngặt, bắt lỗi version đặt sai ngay khi migrate
     validate-on-migrate: true # Kiểm tra checksum, migration đã áp dụng bị sửa -> build fail ngay
-    baseline-on-migrate: false # Khởi tạo từ CSDL trắng, không baseline giả lập
+    baseline-on-migrate: true # Khởi tạo từ CSDL trắng, không baseline giả lập
 
 # 5. Cấu hình Swagger / OpenAPI Documentation
 springdoc:
