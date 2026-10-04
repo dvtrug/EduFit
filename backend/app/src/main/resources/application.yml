@@ -1,6 +1,13 @@
 server:
   port: 8080
   shutdown: graceful
+  servlet:
+    session:
+      timeout: 60m # NFR-04: Hết hạn sau 60 phút không hoạt động (sliding inactivity)
+      cookie:
+        name: EDUFIT_SESSION # Theo đặc tả authentication-contract.md
+        http-only: true
+        same-site: lax
 
 spring:
   application:
@@ -47,11 +54,13 @@ spring:
         jdbc:
           batch_size: 25
 
-  # 4. Quản lý Migration DB tập trung
+  # 4. Quản lý Migration DB tập trung (ADR-002 Decision 3b)
   flyway:
     enabled: true
-    baseline-on-migrate: true
-    locations: classpath:db/migration
+    locations: classpath:db/migration # Quét đệ quy toàn bộ thư mục con (iam, scheduling...)
+    out-of-order: false # Ép thứ tự thời gian nghiêm ngặt, bắt lỗi version đặt sai ngay khi migrate
+    validate-on-migrate: true # Kiểm tra checksum, migration đã áp dụng bị sửa -> build fail ngay
+    baseline-on-migrate: false # Khởi tạo từ CSDL trắng, không baseline giả lập
 
 # 5. Cấu hình Swagger / OpenAPI Documentation
 springdoc:
