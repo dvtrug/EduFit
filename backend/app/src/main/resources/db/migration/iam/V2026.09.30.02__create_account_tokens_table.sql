@@ -27,9 +27,9 @@ CREATE TABLE IF NOT EXISTS account_tokens (
     --    - Ràng buộc UNIQUE bảo đảm không bao giờ có 2 token trùng nhau.
     token_hash VARCHAR(64) NOT NULL,
 
-    -- 4. Loại mục đích sử dụng của Token (Token Type):
+    -- 4. Loại mục đích sử dụng của Token (Token Type - BR-05):
     --    - 'VERIFY_EMAIL': Phục vụ kích hoạt tài khoản đăng ký mới (Hạn 24 giờ).
-    --    - 'RESET_PASSWORD': Phục vụ đặt lại mật khẩu khi quên (Hạn 30 phút).
+    --    - 'RESET_PASSWORD' / 'PASSWORD_RESET': Phục vụ đặt lại mật khẩu khi quên (Hạn 30 phút).
     token_type VARCHAR(30) NOT NULL,
 
     -- 5. Thời điểm hết hạn hiệu lực của Token (Expiration Time):
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS account_tokens (
     -- Ràng buộc khóa ngoại và toàn vẹn dữ liệu ở mức Database
     CONSTRAINT fk_account_tokens_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     CONSTRAINT uq_account_tokens_hash UNIQUE (token_hash),
-    CONSTRAINT chk_account_tokens_type CHECK (token_type IN ('VERIFY_EMAIL', 'RESET_PASSWORD'))
+    CONSTRAINT chk_account_tokens_type CHECK (token_type IN ('VERIFY_EMAIL', 'RESET_PASSWORD', 'PASSWORD_RESET'))
 );
 
 -- ==============================================================================
@@ -70,7 +70,7 @@ COMMENT ON TABLE account_tokens IS 'Bảng lưu trữ mã băm Token phục vụ
 COMMENT ON COLUMN account_tokens.id IS 'Mã định danh duy nhất của bản ghi token';
 COMMENT ON COLUMN account_tokens.user_id IS 'Mã người dùng sở hữu token (Tham chiếu bảng users)';
 COMMENT ON COLUMN account_tokens.token_hash IS 'Mã băm SHA-256 của token ngẫu nhiên gửi qua email (OWASP Standard)';
-COMMENT ON COLUMN account_tokens.token_type IS 'Loại token: VERIFY_EMAIL (hạn 24h) hoặc RESET_PASSWORD (hạn 30m)';
+COMMENT ON COLUMN account_tokens.token_type IS 'Loại token: VERIFY_EMAIL (hạn 24h) hoặc RESET_PASSWORD / PASSWORD_RESET (hạn 30m)';
 COMMENT ON COLUMN account_tokens.expires_at IS 'Thời điểm hết hạn hiệu lực của token (UTC)';
 COMMENT ON COLUMN account_tokens.used_at IS 'Thời điểm token đã được sử dụng (NULL = chưa dùng, có giá trị = đã dùng)';
 COMMENT ON COLUMN account_tokens.created_at IS 'Thời điểm tạo token (UTC)';

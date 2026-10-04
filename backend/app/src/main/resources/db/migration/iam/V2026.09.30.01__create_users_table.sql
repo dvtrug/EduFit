@@ -53,7 +53,12 @@ CREATE TABLE IF NOT EXISTS users (
     failed_login_attempts INT NOT NULL DEFAULT 0,
     locked_until TIMESTAMPTZ,
 
-    -- 8. Dấu thời gian đổi mật khẩu phục vụ hủy phiên (FR-04, NFR-04):
+    -- 8. Dấu thời gian đăng nhập thành công gần nhất (BR-06, NFR-18):
+    --    - Ghi nhận thời điểm đăng nhập thành công cuối cùng của người dùng.
+    --    - Phục vụ kiểm toán bảo mật và đồng bộ với thuộc tính lastLoginAt trong thực thể Account.
+    last_login_at TIMESTAMPTZ,
+
+    -- 9. Dấu thời gian đổi mật khẩu phục vụ hủy phiên (FR-04, NFR-04):
     --    - Ghi nhận thời điểm đổi mật khẩu lần cuối.
     --    - So sánh với thời điểm tạo phiên để vô hiệu hóa ngay lập tức toàn bộ phiên cũ.
     password_changed_at TIMESTAMPTZ,
@@ -100,6 +105,7 @@ COMMENT ON COLUMN users.role IS 'Vai trò tài khoản: STUDENT, PARENT, TUTOR, 
 COMMENT ON COLUMN users.status IS 'Trạng thái tài khoản: PENDING_VERIFICATION, ACTIVE, INACTIVE, LOCKED, DEACTIVATED';
 COMMENT ON COLUMN users.failed_login_attempts IS 'Số lần đăng nhập sai mật khẩu liên tiếp để khóa sau 5 lần';
 COMMENT ON COLUMN users.locked_until IS 'Thời điểm hết hạn khóa tài khoản tạm thời do nhập sai quá nhiều';
+COMMENT ON COLUMN users.last_login_at IS 'Thời điểm đăng nhập thành công lần cuối (BR-06)';
 COMMENT ON COLUMN users.password_changed_at IS 'Thời điểm đổi mật khẩu lần cuối để hủy các phiên đăng nhập cũ (FR-04)';
 COMMENT ON COLUMN users.version IS 'Số phiên bản phục vụ Khóa lạc quan JPA chống ghi đè đồng thời (NFR-15)';
 COMMENT ON COLUMN users.created_at IS 'Thời điểm tạo bản ghi (UTC)';
