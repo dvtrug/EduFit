@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import vn.edufit.iam.infra.security.EduFitUserDetails;
 import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.exception.ForbiddenOperationException;
 
@@ -80,6 +81,15 @@ public class SpringSecurityCurrentUser implements CurrentUser {
     Object principal = auth.getPrincipal();
     if (principal instanceof EduFitUserDetails userDetails) {
       return userDetails;
+    }
+
+    if (principal instanceof String principalStr) {
+      try {
+        UUID parsedUserId = UUID.fromString(principalStr);
+        return EduFitUserDetails.of(parsedUserId, auth.getName(), Collections.emptySet());
+      } catch (IllegalArgumentException ignored) {
+        // Not a UUID string
+      }
     }
 
     throw new ForbiddenOperationException("Thông tin danh tính người dùng trong phiên làm việc không hợp lệ.");

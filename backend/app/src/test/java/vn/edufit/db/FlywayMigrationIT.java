@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li><b>disabledWithoutDocker = true:</b> Tự động bỏ qua (skip) một cách an toàn nếu máy phát triển local
  *       chưa bật Docker Desktop, đồng thời tự động kích hoạt 100% khi chạy trên môi trường CI GitHub Actions.</li>
  *   <li><b>Kiểm tra thực tế:</b> Xác nhận các câu lệnh SQL trong {@code db/migration/**} có cú pháp hợp lệ
- *       với engine PostgreSQL 17 và tạo thành công các bảng {@code users}, {@code account_tokens}.</li>
+ *       với engine PostgreSQL 17 và tạo thành công 29 bảng theo {@code docs/edufit-schema.dbml}.</li>
  * </ul>
  */
 @Testcontainers(disabledWithoutDocker = true)
@@ -40,7 +40,7 @@ class FlywayMigrationIT {
       .withPassword("edufit-local-only");
 
   @Test
-  @DisplayName("Thực thi Flyway migrate trên CSDL sạch và xác minh bảng users, account_tokens được tạo thành công")
+  @DisplayName("Thực thi Flyway migrate trên CSDL sạch và xác minh bảng account, email_token và các bảng SRS")
   void shouldMigrateCleanDatabaseSuccessfully() throws Exception {
     assertTrue(postgres.isRunning(), "Container PostgreSQL phải đang chạy để thực hiện kiểm thử");
 
@@ -58,7 +58,7 @@ class FlywayMigrationIT {
 
     // 3. Kiểm chứng kết quả thực thi của Flyway
     assertTrue(result.success, "Quá trình migrate của Flyway phải thành công 100%");
-    assertTrue(result.migrationsExecuted >= 2, "Phải thực thi tối thiểu 2 file migration (users và account_tokens)");
+    assertEquals(8, result.migrationsExecuted, "Phải thực thi đúng 8 file migration V1.01 -> V1.08");
 
     // 4. Kiểm tra trực tiếp các bảng và ràng buộc đã được tạo trong PostgreSQL
     try (Connection connection = DriverManager.getConnection(
@@ -68,24 +68,34 @@ class FlywayMigrationIT {
     );
          Statement statement = connection.createStatement()) {
 
-      // Kiểm tra bảng users tồn tại và có thể truy vấn
-      try (ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM users")) {
-        assertTrue(rs.next(), "Bảng users phải tồn tại và cho phép truy vấn");
-        assertEquals(0, rs.getInt(1), "Bảng users mới khởi tạo phải có 0 bản ghi");
+      // Kiểm tra bảng account tồn tại và có thể truy vấn
+      try (ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM account")) {
+        assertTrue(rs.next(), "Bảng account phải tồn tại và cho phép truy vấn");
+        assertEquals(0, rs.getInt(1), "Bảng account mới khởi tạo phải có 0 bản ghi");
       }
 
-      // Kiểm tra bảng account_tokens tồn tại và có thể truy vấn
-      try (ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM account_tokens")) {
-        assertTrue(rs.next(), "Bảng account_tokens phải tồn tại và cho phép truy vấn");
-        assertEquals(0, rs.getInt(1), "Bảng account_tokens mới khởi tạo phải có 0 bản ghi");
+      // Kiểm tra bảng email_token tồn tại và có thể truy vấn
+      try (ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM email_token")) {
+        assertTrue(rs.next(), "Bảng email_token phải tồn tại và cho phép truy vấn");
+        assertEquals(0, rs.getInt(1), "Bảng email_token mới khởi tạo phải có 0 bản ghi");
       }
 
-      // Kiểm tra bảng flyway_schema_history ghi nhận các version ở trạng thái thành công
+      // Kiểm tra bảng class tồn tại
+      try (ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM class")) {
+        assertTrue(rs.next(), "Bảng class phải tồn tại và cho phép truy vấn");
+      }
+
+      // Kiểm tra bảng tutoring_session tồn tại
+      try (ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM tutoring_session")) {
+        assertTrue(rs.next(), "Bảng tutoring_session phải tồn tại và cho phép truy vấn");
+      }
+
+      // Kiểm tra bảng flyway_schema_history ghi nhận cả 8 version ở trạng thái thành công
       try (ResultSet rs = statement.executeQuery(
           "SELECT COUNT(*) FROM flyway_schema_history WHERE success = true"
       )) {
         assertTrue(rs.next());
-        assertTrue(rs.getInt(1) >= 2, "Lịch sử migration phải ghi nhận tối thiểu 2 bản ghi thành công");
+        assertEquals(8, rs.getInt(1), "Lịch sử migration phải ghi nhận đúng 8 bản ghi thành công");
       }
     }
   }

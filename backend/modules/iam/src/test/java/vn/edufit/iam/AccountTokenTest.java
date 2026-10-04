@@ -30,17 +30,17 @@ class AccountTokenTest {
         AccountRole.STUDENT
     );
     Instant now = Instant.parse("2026-09-29T10:00:00Z");
-    Instant expiresAt = now.plus(TokenType.PASSWORD_RESET.getDefaultTtl());
+    Instant expiresAt = now.plus(TokenType.RESET_PASSWORD.getDefaultTtl());
 
     AccountToken token = AccountToken.create(
         account,
-        TokenType.PASSWORD_RESET,
+        TokenType.RESET_PASSWORD,
         "a3b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1",
         expiresAt
     );
 
     assertEquals(account, token.getAccount());
-    assertEquals(TokenType.PASSWORD_RESET, token.getTokenType());
+    assertEquals(TokenType.RESET_PASSWORD, token.getTokenType());
     assertNull(token.getUsedAt());
     assertFalse(token.isUsed());
     assertFalse(token.isExpired(now));
@@ -59,7 +59,7 @@ class AccountTokenTest {
     Instant now = Instant.parse("2026-09-29T10:00:00Z");
     AccountToken token = AccountToken.create(
         account,
-        TokenType.PASSWORD_RESET,
+        TokenType.RESET_PASSWORD,
         "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
         now.plus(Duration.ofMinutes(30))
     );
@@ -85,7 +85,7 @@ class AccountTokenTest {
 
     AccountToken expiredToken = AccountToken.create(
         account,
-        TokenType.PASSWORD_RESET,
+        TokenType.RESET_PASSWORD,
         "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
         pastExpiry
     );
@@ -95,7 +95,7 @@ class AccountTokenTest {
     // Token đã dùng
     AccountToken usedToken = AccountToken.create(
         account,
-        TokenType.PASSWORD_RESET,
+        TokenType.RESET_PASSWORD,
         "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
         now.plus(Duration.ofMinutes(30))
     );
@@ -118,7 +118,7 @@ class AccountTokenTest {
     // Tạo token có thời điểm hết hạn ĐÚNG BẰNG thời điểm hiện tại 'now'
     AccountToken boundaryToken = AccountToken.create(
       account,
-      TokenType.PASSWORD_RESET,
+      TokenType.RESET_PASSWORD,
       "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
       now
     );
@@ -148,14 +148,14 @@ class AccountTokenTest {
 
     // 1. Quá ngắn (chỉ 10 ký tự)
     assertThrows(InvalidOperationException.class, () ->
-      AccountToken.create(account, TokenType.PASSWORD_RESET, "0123456789", expiresAt)
+      AccountToken.create(account, TokenType.RESET_PASSWORD, "0123456789", expiresAt)
     );
 
     // 2. Đủ 64 ký tự nhưng chứa ký tự lạ 'z' (không phải hex [0-9a-fA-F])
     String invalidHex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdez";
     InvalidOperationException ex = assertThrows(
       InvalidOperationException.class,
-      () -> AccountToken.create(account, TokenType.PASSWORD_RESET, invalidHex, expiresAt)
+      () -> AccountToken.create(account, TokenType.RESET_PASSWORD, invalidHex, expiresAt)
     );
     assertEquals(ErrorCode.INVALID_TOKEN, ex.getErrorCode());
   }

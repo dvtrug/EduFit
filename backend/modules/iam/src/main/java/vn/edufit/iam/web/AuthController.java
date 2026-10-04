@@ -24,6 +24,7 @@ import vn.edufit.iam.application.RequestPasswordResetService;
 import vn.edufit.iam.application.ResetPasswordService;
 import vn.edufit.iam.infra.persistence.Account;
 import vn.edufit.iam.infra.persistence.AccountRepository;
+import vn.edufit.iam.infra.security.EduFitUserDetails;
 import vn.edufit.iam.web.dto.AuthUserResponse;
 import vn.edufit.iam.web.dto.ChangePasswordRequest;
 import vn.edufit.iam.web.dto.ForgotPasswordRequest;
@@ -108,10 +109,11 @@ public class AuthController {
     Account account = authenticateAccountService.authenticate(request.email(), request.password());
 
     // Thiết lập phiên bảo mật Spring Security Session Context
+    EduFitUserDetails userDetails = EduFitUserDetails.from(account);
     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-        account.getId().toString(),
+        userDetails,
         null,
-        List.of(new SimpleGrantedAuthority("ROLE_" + account.getRole().name()))
+        userDetails.getAuthorities()
     );
 
     SecurityContext securityContext = SecurityContextHolder.createEmptyContext();

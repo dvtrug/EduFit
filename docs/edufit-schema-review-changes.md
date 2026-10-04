@@ -12,7 +12,7 @@
 |---|---|---|
 | D1 | Đồng ý toàn bộ các mục "cần sửa" và "bảng còn thiếu" ở bản rà soát | Xem mục 3, 4 |
 | D2 | **Đổi tên `Engagement` → `class`** | Xem mục 2 (cảnh báo nhầm lẫn) |
-| D3 | **Giữ tên bảng `User`** (không đổi thành `account`) | Xem mục 2 |
+| D3 | **Dùng tên bảng `account`** (thay cho `User`) | Xem mục 2.2 |
 | D4 | Ưu tiên theo Use Case Model/Descriptions đã tạo | Những chỗ còn mơ hồ để mở rộng sau (mục 7) |
 | D5 | Bỏ thanh toán hoàn toàn (khớp quyết định đã chốt trên Jira) | Xóa bảng `Payment` |
 | D6 | Giữ tên `tutoring_session` thay cho `Session` | Tránh nhầm với HTTP session (`spring_session`) |
@@ -39,15 +39,14 @@ Các tài liệu đã viết (Use Case Model, Group 3–6, BR-38, BR-39, BR-49�
 3. Trong code Java: entity `ClassEntity` (tránh `Class` trùng `java.lang.Class`); tên bảng `class` không phải từ khóa dành riêng của PostgreSQL nhưng nên đặt `@Table(name = "class")` rõ ràng.
 4. Màn hình 12 "Tutoring Class Screen" và 22 "Tutoring Class Management Screen" trong SRS giờ khớp tên với DB, không cần đổi.
 
-### 2.2 Bảng `User` là từ khóa của PostgreSQL
+### 2.2 Bảng `User` đổi thành `account`
 
-Nhóm chốt dùng `User`. Điều này **chạy được nhưng bắt buộc phải quote** ở mọi nơi:
+Bảng lưu tài khoản đăng nhập của cả 4 vai trò được đặt tên **`account`** (khớp ADR-002: module `iam`, migration `create_account_table`). Lý do: `User` là từ khóa của PostgreSQL, giữ tên đó buộc phải quote ở mọi SQL/JPA/native query.
 
-- SQL/Flyway: `CREATE TABLE "User" (...)`, `REFERENCES "User"(user_id)`.
-- JPA: `@Table(name = "\"User\"")` (hoặc bật `spring.jpa.properties.hibernate.globally_quoted_identifiers=true`).
-- Cẩn thận ở mọi native query / `@Query`: quên dấu nháy sẽ lỗi cú pháp.
-
-ADR-002 đã dùng tên `account`; nếu giữ `User`, nên cập nhật ADR-002 (module `iam`, migration `create_account_table`) cho khớp.
+- Chỉ đổi **tên bảng**. Các cột vẫn giữ dạng `user_id` / `*_user_id` (ví dụ `parent_user_id`, `proposed_by`) vì nghĩa vẫn là "người dùng"; khóa chính là `account.user_id`.
+- Enum vai trò vẫn là `user_role` (STUDENT, PARENT, TUTOR, ADMIN).
+- Trong code Java: entity `Account`, `@Table(name = "account")`.
+- Trong tài liệu SRS bảng 01 "User" (mục 3.1.b) nên đổi thành "Account"; "User" ở mức actor (Use Case Model) giữ nguyên, đó là khái niệm khác.
 
 ### 2.3 Đã đổi `Session` → `tutoring_session`
 
@@ -71,7 +70,7 @@ Chỉ là đặt tên để khỏi nhầm với HTTP session. Khái niệm trong
 | 10 | `Session` → `tutoring_session` | Thiếu 6/8 trạng thái, hạn đề xuất, late, repeat note, UTC | Thêm cột (xem DBML); lưu thêm `tutor_id`, `student_id` (denormalize) để dùng exclusion constraint | BR-41→48, FR-22, NFR-17, NFR-18 |
 | 11 | `CredentialDocument` | Gộp request, credential, file vào một bảng | Tách thành `verification_request` → `credential` → `credential_file` | UC1.10–1.12, BR-13/14/15 |
 | 12 | `Review` | Thiếu rating/comment/ràng buộc | Thêm `rating`, `comment`, `reviewer_type`, `is_edited`, `completed_sessions_at_review`; `UNIQUE(tutor_id, student_id)` | BR-57/58/59, NFR-24 |
-| 13 | `User` | Thiếu cột bảo mật | Thêm `status`, `failed_attempts`, `locked_until`, `last_login_at` | BR-06, NFR-05 |
+| 13 | `User` → `account` | Thiếu cột bảo mật | Thêm `status`, `failed_attempts`, `locked_until`, `last_login_at` | BR-06, NFR-05 |
 
 > Không lưu **số buổi hoàn thành** và **progress %** thành cột: luôn tính từ dữ liệu gốc để mọi màn hình ra cùng một con số (NFR-23, BR-48, BR-51).
 
@@ -160,7 +159,7 @@ Lưu ý: `UNIQUE(tutor_id, student_id)` của `review`, `UNIQUE(session_id)` c�
 
 FK xuyên module phải có version **muộn hơn** bảng được tham chiếu:
 
-1. `"User"`, `email_token`
+1. `account`, `email_token`
 2. `education_level`, `subject`, `student_profile`, `tutor_profile`, `tutor_subject`, `*_availability_slot`, `learning_goal`
 3. `verification_request`, `credential`, `credential_file`
 4. `link_invitation`, `parent_student_link`, `connection_request`, `class`
@@ -199,4 +198,4 @@ FK xuyên module phải có version **muộn hơn** bảng được tham chiếu
 | 6 | Mục 3.1 SRS (ERD trong sprint plan) | `StudentRequest`, `Match`, `Progress`, `Payment` đã lỗi thời | Thay bằng danh sách 29 bảng |
 | 7 | UC2.1 PRE-1 vs Screen Authorization | Đăng nhập vs Guest | Cần chốt (cũng nêu ở ADR-002 mục #7) |
 | 8 | Section 3 Use Case Model | "Class concept is not used" | Sửa theo mục 2.1 |
-| 9 | ADR-002 | Dùng `account`, `engagement` | Đổi thành `"User"`, `class` nếu muốn đồng bộ |
+| 9 | ADR-002 | Dùng `engagement` | Đổi thành `class` (tên `account` đã khớp) |

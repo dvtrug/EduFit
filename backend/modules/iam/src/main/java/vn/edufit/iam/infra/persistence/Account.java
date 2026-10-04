@@ -25,19 +25,16 @@ import vn.edufit.shared.exception.ErrorCode;
 import vn.edufit.shared.exception.InvalidOperationException;
 
 /**
- * JPA Entity đại diện cho bảng {@code users} trong cơ sở dữ liệu EduFit (IAM Module).
+ * JPA Entity đại diện cho bảng {@code accounts} trong cơ sở dữ liệu.
  *
- * <p>Căn cứ kiến trúc và nghiệp vụ:
+ * <p>Entity tự bảo vệ tính toàn vẹn của trạng thái thông qua các phương thức hành vi:
  * <ul>
- *   <li>ADR-001: PostgreSQL là hệ thống ghi nhận duy nhất (Single Source of Truth).</li>
- *   <li>BR-06: Tự động khóa tài khoản 15 phút sau 5 lần nhập sai mật khẩu liên tiếp.</li>
- *   <li>FR-04 / NFR-04: Lưu {@code password_changed_at} để thu hồi ngay lập tức các phiên đăng nhập cũ.</li>
- *   <li>NFR-15: Khóa lạc quan (Optimistic Locking) thông qua cột {@code version}.</li>
- *   <li>NFR-18: Chuẩn hóa thời gian múi giờ UTC qua các trường {@link Instant} ánh xạ {@code TIMESTAMPTZ}.</li>
+ *   <li>{@link #recordLoginFailure(Instant)}: Đếm lỗi đăng nhập và tự động khóa 15 phút khi sai liên tiếp 5 lần (BR-06).</li>
+ *   <li>{@link #recordSuccessfulLogin(Instant)}: Xóa bộ đếm lỗi và ghi nhận thời điểm đăng nhập thành công.</li>
  * </ul>
  */
 @Entity
-@Table(name = "users")
+@Table(name = "account")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Account {
@@ -47,6 +44,7 @@ public class Account {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(name = "user_id")
   private UUID id;
 
   @Column(name = "email", nullable = false, unique = true, length = 255)
@@ -55,7 +53,7 @@ public class Account {
   @Column(name = "password_hash", nullable = false, length = 255)
   private String passwordHash;
 
-  @Column(name = "full_name", nullable = false, length = 100)
+  @Column(name = "full_name", nullable = false, length = 150)
   private String fullName;
 
   @Enumerated(EnumType.STRING)
@@ -63,10 +61,10 @@ public class Account {
   private AccountRole role;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "status", nullable = false, length = 20)
+  @Column(name = "status", nullable = false, length = 30)
   private AccountStatus status;
 
-  @Column(name = "failed_login_attempts", nullable = false)
+  @Column(name = "failed_attempts", nullable = false)
   private int failedLoginAttempts;
 
   @Column(name = "locked_until")
@@ -75,22 +73,11 @@ public class Account {
   @Column(name = "last_login_at")
   private Instant lastLoginAt;
 
-  /**
-   * Thời điểm đổi mật khẩu gần nhất (FR-04, NFR-04).
-   * Dùng để vô hiệu hóa toàn bộ các phiên làm việc (Session/Token) được cấp trước thời điểm này.
-   */
-  @Column(name = "password_changed_at")
-  private Instant passwordChangedAt;
-
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
-
-  @Version
-  @Column(name = "version")
-  private Long version;
 
   /**
    * Khởi tạo tài khoản mới mặc định ở trạng thái hoạt động {@link AccountStatus#ACTIVE}.
@@ -196,14 +183,11 @@ public class Account {
   }
 
   /**
-   * Cập nhật mật khẩu mới (chuỗi băm Argon2 - NFR-01) và ghi nhận thời điểm đổi (FR-04, NFR-04).
-   *
-   * @param newPasswordHash chuỗi băm mật khẩu Argon2 mới
+   * Cập nhật mật khẩu mới (chuỗi băm Argon2).
    */
   public void changePassword(String newPasswordHash) {
     Objects.requireNonNull(newPasswordHash, "Mật khẩu mới không được để trống");
     this.passwordHash = newPasswordHash;
-    this.passwordChangedAt = Instant.now();
   }
 
   /**
