@@ -13,6 +13,7 @@ import {
   XCircle,
   AlertCircle,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   Check,
 } from "lucide-react";
@@ -135,15 +136,15 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans selection:bg-orange-200">
-      <div className="w-full max-w-5xl bg-white rounded-3xl border border-stone-200/80 shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+      <div className="w-full max-w-5xl bg-white rounded-3xl border border-stone-200/80 shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 animate-fade-in-up">
         
         {/* =================================================================== */}
         {/* CỘT TRÁI: FORM ĐĂNG KÝ                                             */}
         {/* =================================================================== */}
         <div className="lg:col-span-7 p-8 sm:p-12 flex flex-col justify-between">
           <div>
-            {/* Header: Logo & Chào mừng */}
-            <div className="flex items-center gap-2.5 mb-8">
+            {/* Header: Logo & Quay lại */}
+            <div className="flex items-center justify-between mb-8">
               <Link href="/" className="flex items-center gap-2.5 group">
                 <div className="size-9 rounded-xl bg-gradient-to-tr from-sky-500 via-emerald-400 to-orange-400 flex items-center justify-center shadow-sm">
                   <span className="text-white font-bold text-lg font-heading">E</span>
@@ -151,6 +152,14 @@ export default function RegisterPage() {
                 <span className="font-heading text-2xl font-bold tracking-tight text-neutral-900 group-hover:text-sky-600 transition-colors">
                   EduFit
                 </span>
+              </Link>
+
+              <Link
+                href="/"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition-colors group px-3 py-1.5 rounded-full hover:bg-stone-100"
+              >
+                <ArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-1" />
+                <span>Quay lại trang chủ</span>
               </Link>
             </div>
 
@@ -190,7 +199,7 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setRole("STUDENT")}
-                    className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border text-center transition-all ${
+                    className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border text-center transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] ${
                       role === "STUDENT"
                         ? "border-sky-600 bg-sky-50/70 text-sky-800 shadow-xs ring-1 ring-sky-500/30"
                         : "border-stone-200 bg-stone-50/50 hover:bg-stone-100/70 text-neutral-700"
@@ -204,7 +213,7 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setRole("PARENT")}
-                    className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border text-center transition-all ${
+                    className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border text-center transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] ${
                       role === "PARENT"
                         ? "border-sky-600 bg-sky-50/70 text-sky-800 shadow-xs ring-1 ring-sky-500/30"
                         : "border-stone-200 bg-stone-50/50 hover:bg-stone-100/70 text-neutral-700"
@@ -218,7 +227,7 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setRole("TUTOR")}
-                    className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border text-center transition-all ${
+                    className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border text-center transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] ${
                       role === "TUTOR"
                         ? "border-sky-600 bg-sky-50/70 text-sky-800 shadow-xs ring-1 ring-sky-500/30"
                         : "border-stone-200 bg-stone-50/50 hover:bg-stone-100/70 text-neutral-700"
@@ -340,7 +349,7 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isSubmitting || !isPasswordValid}
-                className="w-full py-3.5 px-6 rounded-xl bg-orange-700 hover:bg-orange-800 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-sm font-semibold shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 active:scale-98"
+                className="w-full py-3.5 px-6 rounded-xl bg-orange-700 hover:bg-orange-800 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-sm font-semibold shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 btn-interactive"
               >
                 {isSubmitting ? (
                   <>

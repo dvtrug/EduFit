@@ -10,6 +10,7 @@ import {
   EyeOff,
   AlertCircle,
   ArrowRight,
+  ArrowLeft,
   ShieldAlert,
   Sparkles,
   CheckCircle2,
@@ -124,14 +125,14 @@ function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-4xl bg-white rounded-3xl border border-stone-200/80 shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+    <div className="w-full max-w-4xl bg-white rounded-3xl border border-stone-200/80 shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 animate-fade-in-up">
       {/* =================================================================== */}
       {/* CỘT TRÁI: FORM ĐĂNG NHẬP                                           */}
       {/* =================================================================== */}
       <div className="lg:col-span-7 p-8 sm:p-12 flex flex-col justify-between">
         <div>
-          {/* Header Logo */}
-          <div className="flex items-center gap-2.5 mb-8">
+          {/* Header Logo & Quay lại */}
+          <div className="flex items-center justify-between mb-8">
             <Link href="/" className="flex items-center gap-2.5 group">
               <div className="size-9 rounded-xl bg-gradient-to-tr from-sky-500 via-emerald-400 to-orange-400 flex items-center justify-center shadow-sm">
                 <span className="text-white font-bold text-lg font-heading">E</span>
@@ -139,6 +140,14 @@ function LoginForm() {
               <span className="font-heading text-2xl font-bold tracking-tight text-neutral-900 group-hover:text-sky-600 transition-colors">
                 EduFit
               </span>
+            </Link>
+
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition-colors group px-3 py-1.5 rounded-full hover:bg-stone-100"
+            >
+              <ArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-1" />
+              <span>Quay lại trang chủ</span>
             </Link>
           </div>
 
@@ -236,7 +245,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3.5 px-6 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-sm font-semibold shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 active:scale-98 mt-2"
+              className="w-full py-3.5 px-6 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-sm font-semibold shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 btn-interactive mt-2"
             >
               {isSubmitting ? (
                 <>

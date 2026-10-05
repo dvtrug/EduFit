@@ -246,7 +246,7 @@ export default function DashboardPage() {
         </header>
 
         {/* Nội dung Dashboard */}
-        <main className="p-6 sm:p-8 max-w-6xl w-full mx-auto space-y-8">
+        <main className="p-6 sm:p-8 max-w-6xl w-full mx-auto space-y-8 animate-fade-in-up">
           {/* Lời chào */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -266,7 +266,7 @@ export default function DashboardPage() {
           {/* Lưới tổng quan 2 cột */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Cột trái: Thẻ mục tiêu đang học (Figma Goal Card) */}
-            <div className="lg:col-span-7 bg-white p-6 sm:p-7 rounded-3xl border border-stone-200/80 shadow-xs flex flex-col justify-between gap-6">
+            <div className="lg:col-span-7 bg-white p-6 sm:p-7 rounded-3xl border border-stone-200/80 shadow-xs flex flex-col justify-between gap-6 card-interactive">
               <div>
                 <div className="flex justify-between items-center mb-4">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-stone-100 rounded-full text-xs font-semibold text-neutral-700">
@@ -306,7 +306,7 @@ export default function DashboardPage() {
 
               <div className="pt-2 flex items-center justify-between border-t border-stone-100 text-xs">
                 <span className="text-neutral-500">Buổi học kế tiếp: T5, 19:00</span>
-                <button className="text-sky-600 hover:text-sky-700 font-semibold flex items-center gap-1">
+                <button className="text-sky-600 hover:text-sky-700 font-semibold flex items-center gap-1 transition-transform hover:translate-x-1">
                   Xem chi tiết lộ trình <ArrowRight className="size-3.5" />
                 </button>
               </div>
@@ -314,7 +314,7 @@ export default function DashboardPage() {
 
             {/* Cột phải: 3 Số liệu vi mô (Micro metrics) */}
             <div className="lg:col-span-5 flex flex-col gap-4">
-              <div className="p-5 bg-white rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-4">
+              <div className="p-5 bg-white rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-4 card-interactive">
                 <div className="size-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
                   <Check className="size-6" />
                 </div>
@@ -324,7 +324,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="p-5 bg-white rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-4">
+              <div className="p-5 bg-white rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-4 card-interactive">
                 <div className="size-12 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
                   <TrendingUp className="size-6" />
                 </div>
@@ -334,7 +334,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="p-5 bg-white rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-4">
+              <div className="p-5 bg-white rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-4 card-interactive">
                 <div className="size-12 rounded-2xl bg-orange-100 text-orange-700 flex items-center justify-center shrink-0">
                   <Calendar className="size-6" />
                 </div>
@@ -347,7 +347,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Buổi học sắp tới */}
-          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-stone-200/80 shadow-xs">
+          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-stone-200/80 shadow-xs card-interactive">
             <div className="flex justify-between items-center mb-5">
               <h3 className="font-heading text-lg font-semibold text-neutral-900">
                 Lịch học sắp tới (tutoring_session)
@@ -383,7 +383,7 @@ export default function DashboardPage() {
                 <span className="px-3 py-1 bg-sky-50 text-sky-700 rounded-full text-xs font-semibold border border-sky-200/50">
                   SCHEDULED
                 </span>
-                <button className="px-4 py-2 bg-stone-200/80 hover:bg-stone-300 text-neutral-800 text-xs font-semibold rounded-xl transition">
+                <button className="px-4 py-2 bg-stone-200/80 hover:bg-stone-300 text-neutral-800 text-xs font-semibold rounded-xl btn-interactive">
                   Vào phòng học
                 </button>
               </div>
