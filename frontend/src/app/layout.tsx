@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Inter } from "next/font/google";
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -19,6 +20,13 @@ export const metadata: Metadata = {
   description: "EduFit giúp bạn tìm gia sư hợp mục tiêu, học theo kế hoạch riêng và nhìn thấy mình tốt lên sau mỗi buổi học.",
 };
 
+/**
+ * RootLayout: Khung xương giao diện chung của toàn bộ ứng dụng EduFit
+ * 
+ * Tích hợp:
+ * - Font typography: Bricolage Grotesque (Tiêu đề) và Inter (Nội dung) theo chuẩn thiết kế Figma.
+ * - <AuthProvider>: Cung cấp trạng thái phiên đăng nhập (Stateful Session) xuyên suốt mọi trang.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,7 +35,9 @@ export default function RootLayout({
   return (
     <html lang="vi" className={`${bricolage.variable} ${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans bg-stone-50 text-neutral-900">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

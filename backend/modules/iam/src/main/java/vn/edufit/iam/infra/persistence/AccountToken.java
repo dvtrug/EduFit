@@ -24,10 +24,12 @@ import vn.edufit.shared.exception.InvalidOperationException;
 /**
  * JPA Entity đại diện cho bảng {@code account_tokens} lưu trữ các Token dùng một lần (One-Time Token).
  *
- * <p>Quy tắc bảo mật (BR-05, NFR-03):
+ * <p>Quy tắc bảo mật và kiến trúc (BR-05, NFR-03, ADR-001, ADR-002):
  * <ul>
+ *   <li><b>Khóa ngoại {@code user_id}:</b> Tham chiếu trực tiếp đến bảng {@code users(id)}.</li>
  *   <li><b>Tuyệt đối không lưu raw token:</b> Cột {@code token_hash} chỉ lưu chuỗi băm hex SHA-256 (64 ký tự).</li>
- *   <li><b>Dùng một lần:</b> Phương thức {@link #consume(Instant)} đánh dấu {@code used_at} ngay lập tức.</li>
+ *   <li><b>Dùng một lần (Single-use):</b> Phương thức {@link #consume(Instant)} đánh dấu {@code used_at} ngay lập tức để chống tấn công phát lại (Replay attack).</li>
+ *   <li><b>Chuẩn hóa thời gian (NFR-18):</b> Lưu thời điểm hết hạn {@code expires_at} theo UTC qua kiểu dữ liệu {@link Instant}.</li>
  * </ul>
  */
 @Entity
