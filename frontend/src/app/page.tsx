@@ -13,6 +13,7 @@ import {
   Star,
   BookOpen,
 } from "lucide-react";
+import HeroIllustration from "@/components/HeroIllustration";
 
 export default function HomePage() {
   return (
@@ -134,18 +135,16 @@ export default function HomePage() {
           {/* Right Column: Hero Graphic & Floating Widget */}
           <div className="lg:col-span-5 relative flex justify-center">
             <div className="w-full max-w-[380px] flex flex-col gap-4">
-              {/* Graphic Illustration Box */}
-              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-stone-200/80 shadow-md group">
-                <img
-                  src="/images/hero-student.jpg"
-                  alt="Học sinh học tập theo lộ trình cá nhân hóa EduFit"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+              {/* Graphic Illustration Box (Minh họa học sinh chinh phục mục tiêu) */}
+              <div className="relative w-full rounded-2xl overflow-hidden border border-stone-200/80 shadow-md group bg-[#FEFAF2] flex items-center justify-center py-6 px-3">
+                <div className="transform transition-transform duration-500 group-hover:scale-105">
+                  <HeroIllustration />
+                </div>
                 {/* Floating badge */}
-                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full shadow-xs border border-white/60 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700">
+                <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full shadow-xs border border-stone-200/50 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700">
                   <CheckCircle2 className="size-3.5 text-emerald-600" /> Chuẩn THCS Lớp 6-9
                 </div>
-                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full shadow-xs border border-white/60 flex items-center gap-1.5 text-[11px] font-semibold text-sky-700">
+                <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full shadow-xs border border-stone-200/50 flex items-center gap-1.5 text-[11px] font-semibold text-sky-700">
                   <Target className="size-3.5 text-sky-600" /> Lộ trình 1-1
                 </div>
               </div>
