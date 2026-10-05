@@ -22,9 +22,11 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6 h-20 flex justify-between items-center">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="size-9 rounded-xl bg-gradient-to-tr from-sky-500 via-emerald-400 to-orange-400 flex items-center justify-center shadow-sm">
-              <span className="text-white font-bold text-lg font-heading">E</span>
-            </div>
+            <img
+              src="/logo.png"
+              alt="EduFit Logo"
+              className="h-10 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
+            />
             <span className="font-heading text-2xl font-bold tracking-tight text-neutral-900 group-hover:text-sky-600 transition-colors">
               EduFit
             </span>
@@ -564,8 +566,15 @@ export default function HomePage() {
       <footer className="border-t border-stone-200/80 py-10 bg-stone-50">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 text-xs text-neutral-500">
           <div>
-            <div className="font-heading text-xl font-bold text-neutral-900 mb-1">
-              EduFit
+            <div className="flex items-center gap-2 mb-1">
+              <img
+                src="/logo.png"
+                alt="EduFit Logo"
+                className="h-7 w-auto object-contain"
+              />
+              <span className="font-heading text-xl font-bold text-neutral-900">
+                EduFit
+              </span>
             </div>
             <p>Đúng gia sư - Đúng mục tiêu - Thấy rõ tiến bộ</p>
           </div>

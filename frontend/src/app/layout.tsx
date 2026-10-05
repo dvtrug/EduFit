@@ -18,6 +18,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "EduFit - Học đúng cách, Tiến bộ rõ ràng",
   description: "EduFit giúp bạn tìm gia sư hợp mục tiêu, học theo kế hoạch riêng và nhìn thấy mình tốt lên sau mỗi buổi học.",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 /**

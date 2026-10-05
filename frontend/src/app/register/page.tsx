@@ -146,9 +146,11 @@ export default function RegisterPage() {
             {/* Header: Logo & Quay lại */}
             <div className="flex items-center justify-between mb-8">
               <Link href="/" className="flex items-center gap-2.5 group">
-                <div className="size-9 rounded-xl bg-gradient-to-tr from-sky-500 via-emerald-400 to-orange-400 flex items-center justify-center shadow-sm">
-                  <span className="text-white font-bold text-lg font-heading">E</span>
-                </div>
+                <img
+                  src="/logo.png"
+                  alt="EduFit Logo"
+                  className="h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
+                />
                 <span className="font-heading text-2xl font-bold tracking-tight text-neutral-900 group-hover:text-sky-600 transition-colors">
                   EduFit
                 </span>

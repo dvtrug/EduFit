@@ -99,12 +99,14 @@ export default function DashboardPage() {
       >
         <div className="p-4 sm:p-5 flex flex-col gap-6">
           {/* Logo EduFit */}
-          <Link href="/" className="flex items-center gap-2.5 overflow-hidden px-1">
-            <div className="size-9 rounded-xl bg-gradient-to-tr from-sky-500 via-emerald-400 to-orange-400 flex items-center justify-center shadow-xs shrink-0">
-              <span className="text-white font-bold text-lg font-heading">E</span>
-            </div>
+          <Link href="/" className="flex items-center gap-2.5 overflow-hidden px-1 group">
+            <img
+              src="/logo.png"
+              alt="EduFit Logo"
+              className="size-9 object-contain shrink-0 transition-transform duration-200 group-hover:scale-105"
+            />
             {!sidebarCollapsed && (
-              <span className="font-heading text-xl font-bold tracking-tight text-neutral-900 truncate">
+              <span className="font-heading text-xl font-bold tracking-tight text-neutral-900 truncate group-hover:text-sky-600 transition-colors">
                 EduFit
               </span>
             )}
