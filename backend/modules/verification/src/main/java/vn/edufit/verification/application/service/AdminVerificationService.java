@@ -1,12 +1,12 @@
 package vn.edufit.verification.application.service;
 
-import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.exception.EntityNotFoundException;
 import vn.edufit.shared.exception.ErrorCode;
@@ -21,14 +21,14 @@ import vn.edufit.verification.web.response.VerificationRequestDetailResponse;
 public class AdminVerificationService {
 
   private final VerificationRequestRepository verificationRequestRepository;
-  private final EntityManager entityManager;
+  private final ProfileFacade profileFacade;
 
   public AdminVerificationService(
       VerificationRequestRepository verificationRequestRepository,
-      EntityManager entityManager
+      ProfileFacade profileFacade
   ) {
     this.verificationRequestRepository = verificationRequestRepository;
-    this.entityManager = entityManager;
+    this.profileFacade = profileFacade;
   }
 
   @Transactional(readOnly = true)
@@ -51,15 +51,31 @@ public class AdminVerificationService {
     VerificationRequest request = verificationRequestRepository.findWithCredentialsByRequestId(requestId)
         .orElseThrow(() -> EntityNotFoundException.of("VerificationRequest", requestId));
 
-    if (reviewRequest.action() == ReviewVerificationRequest.Action.APPROVE) {
-      request.approve(currentUser.getUserId(), Instant.now());
-      markTutorVerified(request.getTutorId());
-    } else {
-      request.reject(currentUser.getUserId(), reviewRequest.reason(), Instant.now());
-      markTutorRejected(request.getTutorId());
+    if (request.getStatus() != VerificationRequest.Status.PENDING) {
+      throw new InvalidOperationException(
+          ErrorCode.INVALID_OPERATION,
+          "Hồ sơ xác minh này đã được xử lý trước đó"
+      );
     }
 
-    return VerificationRequestDetailResponse.from(request);
+    if (reviewRequest.action() == ReviewVerificationRequest.Action.APPROVE) {
+      Instant now = Instant.now();
+      request.approve(currentUser.getUserId(), now);
+      profileFacade.markTutorVerified(request.getTutorId(), now);
+    } else {
+      if (reviewRequest.reason() == null || reviewRequest.reason().isBlank()) {
+        throw new InvalidOperationException(
+            ErrorCode.VALIDATION_FAILED,
+            "Cần cung cấp lý do từ chối hồ sơ xác minh"
+        );
+      }
+      Instant now = Instant.now();
+      request.reject(currentUser.getUserId(), reviewRequest.reason().trim(), now);
+      profileFacade.markTutorRejected(request.getTutorId());
+    }
+
+    VerificationRequest saved = verificationRequestRepository.save(request);
+    return VerificationRequestDetailResponse.from(saved);
   }
 
   private void ensureAdmin(CurrentUser currentUser) {
@@ -69,27 +85,5 @@ public class AdminVerificationService {
           "Chỉ quản trị viên mới được duyệt hồ sơ xác minh"
       );
     }
-  }
-
-  private void markTutorVerified(UUID tutorId) {
-    entityManager
-        .createNativeQuery("""
-            UPDATE tutor_profile
-            SET status = 'VERIFIED', verified_at = NOW(), updated_at = NOW()
-            WHERE tutor_id = :tutorId
-            """)
-        .setParameter("tutorId", tutorId)
-        .executeUpdate();
-  }
-
-  private void markTutorRejected(UUID tutorId) {
-    entityManager
-        .createNativeQuery("""
-            UPDATE tutor_profile
-            SET status = 'UNVERIFIED', verified_at = NULL, updated_at = NOW()
-            WHERE tutor_id = :tutorId
-            """)
-        .setParameter("tutorId", tutorId)
-        .executeUpdate();
   }
 }
