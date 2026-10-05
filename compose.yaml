@@ -4,6 +4,7 @@ services:
   db:
     image: postgres:17
     environment:
+      TZ: Asia/Ho_Chi_Minh
       POSTGRES_DB: ${POSTGRES_DB:-edufit}
       POSTGRES_USER: ${POSTGRES_USER:-edufit}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-edufit-local-only}
