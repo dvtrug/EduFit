@@ -28,15 +28,10 @@ public class FileValidationService {
   );
 
   private final CredentialStorageProperties properties;
-  private final Tika tika;
+  private final Tika tika = new Tika();
 
   public FileValidationService(CredentialStorageProperties properties) {
-    this(properties, new Tika());
-  }
-
-  FileValidationService(CredentialStorageProperties properties, Tika tika) {
     this.properties = properties;
-    this.tika = tika;
   }
 
   public ValidatedFile validate(MultipartFile file) {
