@@ -28,10 +28,7 @@ public class FileValidationService {
 
   public ValidatedFile validate(MultipartFile file) {
     if (file == null || file.isEmpty()) {
-      throw new InvalidOperationException(ErrorCode.VALIDATION_FA
-
-
-        ILED, "File bằng cấp không được để trống");
+      throw new InvalidOperationException(ErrorCode.VALIDATION_FAILED, "File bằng cấp không được để trống");
     }
     if (file.getSize() > properties.getMaxFileSizeBytes()) {
       throw new InvalidOperationException(ErrorCode.VALIDATION_FAILED, "File bằng cấp vượt quá dung lượng cho phép");

@@ -16,6 +16,10 @@ public class CredentialStorageProperties {
     this.root = Path.of(root);
   }
 
+  public void setRoot(Path root) {
+    this.root = root;
+  }
+
   @Value("${edufit.storage.credentials.max-file-size-bytes:10485760}")
   public void setMaxFileSizeBytes(long maxFileSizeBytes) {
     this.maxFileSizeBytes = maxFileSizeBytes;
