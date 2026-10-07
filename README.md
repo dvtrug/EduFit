@@ -63,7 +63,7 @@ cd backend
 .\mvnw.cmd -B -ntp verify
 ```
 
-Xem `CONTRIBUTING.md` để biết quy tắc định dạng, đặt tên, branch, review và commit. Xem tổng quan toàn diện tại `docs/PROJECT_OVERVIEW.md`, cũng như các quyết định kiến trúc trong `docs/ADR-001-tech-stack.md` và `docs/ADR-002-multi-module-architecture.md`.
+Xem `CONTRIBUTING.md` để biết quy tắc định dạng, đặt tên, branch, review và commit. Xem tài liệu kiến trúc và thiết kế tổng thể tại [`docs/software-architecture-design-specification.md`](docs/software-architecture-design-specification.md), tổng quan toàn diện tại `docs/PROJECT_OVERVIEW.md`, cũng như các quyết định kiến trúc trong `docs/ADR-001-tech-stack.md` và `docs/ADR-002-multi-module-architecture.md`. Lộ trình tổng thể & quy chuẩn Frontend được quy định tại [`docs/frontend-master-roadmap-and-architecture-plan.md`](docs/frontend-master-roadmap-and-architecture-plan.md), kèm kế hoạch hành động Giai đoạn 1 tại [`docs/frontend-phase1-demo-and-figma-refactor-plan.md`](docs/frontend-phase1-demo-and-figma-refactor-plan.md).
 
 ## Thiết lập GitHub sau lần push đầu tiên
 
