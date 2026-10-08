@@ -1,6 +1,7 @@
 package vn.edufit.profile.infra.persistence.repository;
 
 import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +12,8 @@ import vn.edufit.profile.infra.persistence.entity.TutorSubject;
 public interface TutorSubjectRepository extends JpaRepository<TutorSubject, UUID> {
 
   List<TutorSubject> findByTutorId(UUID tutorId);
+
+  List<TutorSubject> findByTutorIdIn(Collection<UUID> tutorIds);
 
   boolean existsByTutorIdAndSubjectIdAndEducationLevelId(UUID tutorId, Integer subjectId, Integer educationLevelId);
 

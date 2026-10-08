@@ -38,7 +38,7 @@
       <artifactId>scheduling</artifactId>
     </dependency>
 
-    <!-- Web & Validation (Không dùng data-jpa vì không có bảng riêng) -->
+    <!-- Web, validation và persistence cho matching_run_log -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webmvc</artifactId>
@@ -46,6 +46,10 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
   </dependencies>
 

@@ -1,9 +1,15 @@
 package vn.edufit.profile.api;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
+import vn.edufit.profile.api.dto.LearningGoalDiscoveryDto;
+import vn.edufit.profile.api.dto.TutorDiscoveryProfileDto;
+import vn.edufit.profile.api.dto.TutorSearchCriteria;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
 
 /**
@@ -14,6 +20,16 @@ public interface ProfileFacade {
   Optional<TutorSummaryDto> findTutorByUserId(UUID userId);
 
   Optional<TutorSummaryDto> findTutorById(UUID tutorId);
+
+  Page<TutorSummaryDto> searchTutors(TutorSearchCriteria criteria, Pageable pageable);
+
+  Optional<TutorDiscoveryProfileDto> findVerifiedTutorDetail(UUID tutorId);
+
+  List<TutorDiscoveryProfileDto> findVerifiedTutorDetails(List<UUID> tutorIds);
+
+  List<TutorDiscoveryProfileDto> findVerifiedTutorsForMatching();
+
+  Optional<LearningGoalDiscoveryDto> findLearningGoalForDiscovery(UUID goalId);
 
   UUID getTutorIdByUserId(UUID userId);
 

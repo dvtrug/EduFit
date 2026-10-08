@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +19,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
+import vn.edufit.profile.api.dto.TutorSearchCriteria;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
 import vn.edufit.profile.application.service.ProfileFacadeImpl;
 import vn.edufit.profile.infra.persistence.entity.StudentProfile;
@@ -26,6 +30,12 @@ import vn.edufit.profile.infra.persistence.entity.TeachingMode;
 import vn.edufit.profile.infra.persistence.entity.TutorProfile;
 import vn.edufit.profile.infra.persistence.entity.TutorStatus;
 import vn.edufit.profile.infra.persistence.repository.StudentProfileRepository;
+import vn.edufit.profile.infra.persistence.repository.TutorSubjectRepository;
+import vn.edufit.profile.infra.persistence.repository.TutorAvailabilitySlotRepository;
+import vn.edufit.profile.infra.persistence.repository.LearningGoalRepository;
+import vn.edufit.profile.infra.persistence.repository.GoalAvailabilitySlotRepository;
+import vn.edufit.profile.infra.persistence.repository.SubjectRepository;
+import vn.edufit.profile.infra.persistence.repository.EducationLevelRepository;
 import vn.edufit.profile.infra.persistence.repository.TutorProfileRepository;
 import vn.edufit.shared.exception.EntityNotFoundException;
 
@@ -38,11 +48,38 @@ class ProfileFacadeImplTest {
   @Mock
   private StudentProfileRepository studentProfileRepository;
 
+  @Mock
+  private TutorSubjectRepository tutorSubjectRepository;
+
+  @Mock
+  private TutorAvailabilitySlotRepository tutorAvailabilitySlotRepository;
+
+  @Mock
+  private LearningGoalRepository learningGoalRepository;
+
+  @Mock
+  private GoalAvailabilitySlotRepository goalAvailabilitySlotRepository;
+
+  @Mock
+  private SubjectRepository subjectRepository;
+
+  @Mock
+  private EducationLevelRepository educationLevelRepository;
+
   private ProfileFacadeImpl profileFacade;
 
   @BeforeEach
   void setUp() {
-    profileFacade = new ProfileFacadeImpl(tutorProfileRepository, studentProfileRepository);
+    profileFacade = new ProfileFacadeImpl(
+        tutorProfileRepository,
+        studentProfileRepository,
+        tutorSubjectRepository,
+        tutorAvailabilitySlotRepository,
+        learningGoalRepository,
+        goalAvailabilitySlotRepository,
+        subjectRepository,
+        educationLevelRepository
+    );
   }
 
   @Test
@@ -56,6 +93,38 @@ class ProfileFacadeImplTest {
     Optional<TutorSummaryDto> dtoOpt = profileFacade.findTutorByUserId(userId);
     assertTrue(dtoOpt.isPresent());
     assertEquals("Gia sư A", dtoOpt.get().displayName());
+  }
+
+  @Test
+  @DisplayName("Tìm kiếm discovery chỉ trả hồ sơ gia sư đã VERIFIED theo bộ lọc")
+  void shouldSearchVerifiedTutorsForDiscovery() {
+    TutorProfile profile = new TutorProfile(UUID.randomUUID(), "Gia sư Search", TeachingMode.BOTH, 220_000L);
+    profile.markVerified(Instant.now());
+    TutorSearchCriteria criteria = new TutorSearchCriteria(1, 2, "Hà Nội", "ONLINE", 100_000L, 300_000L, null);
+    PageRequest pageable = PageRequest.of(0, 20);
+
+    when(tutorProfileRepository.searchVerifiedTutors(
+        TutorStatus.VERIFIED,
+        criteria.subjectId(),
+        criteria.levelId(),
+        "Hà Nội",
+        TeachingMode.ONLINE,
+        true,
+        TeachingMode.BOTH,
+        criteria.minPrice(),
+        criteria.maxPrice(),
+        criteria.minRating(),
+        null,
+        null,
+        null,
+        null,
+        pageable
+    )).thenReturn(new PageImpl<>(List.of(profile)));
+
+    var result = profileFacade.searchTutors(criteria, pageable);
+
+    assertEquals(1, result.getTotalElements());
+    assertEquals("Gia sư Search", result.getContent().getFirst().displayName());
   }
 
   @Test
