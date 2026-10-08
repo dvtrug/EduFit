@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { DashboardShell } from "@/shared/ui/DashboardShell";
 import { verificationService, VerificationRequestDetail, VerificationStatus } from "@/services/verification";
 import { TutorVerificationBanner } from "@/features/verification/components/TutorVerificationBanner";
 import { UploadCredentialModal } from "@/features/verification/components/UploadCredentialModal";
-import { ShieldCheck, Calendar, FileText, Upload, Loader2 } from "lucide-react";
+import { ShieldCheck, FileText, Upload, Loader2 } from "lucide-react";
 
 /**
  * =========================================================================
@@ -26,15 +26,7 @@ export default function TutorVerificationPage() {
   const [loading, setLoading] = useState(true);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
-  const effectiveUser = user || {
-    id: "demo-tutor-id",
-    email: "tutor.demo@edufit.vn",
-    fullName: "Nguyễn Hoàng Nam (Gia sư Demo)",
-    role: "TUTOR",
-    status: "ACTIVE",
-  };
-
-  const loadMyRequest = async () => {
+  const loadMyRequest = useCallback(async () => {
     setLoading(true);
     try {
       const data = await verificationService.getMyRequest();
@@ -44,11 +36,20 @@ export default function TutorVerificationPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadMyRequest();
-  }, []);
+    if (!isLoading) {
+      if (!user) {
+        router.push("/login");
+      } else if (user.role !== "TUTOR") {
+        router.push("/dashboard");
+      } else {
+        const timeoutId = window.setTimeout(() => void loadMyRequest(), 0);
+        return () => window.clearTimeout(timeoutId);
+      }
+    }
+  }, [user, isLoading, router, loadMyRequest]);
 
   const handleLogout = async () => {
     if (user) {
@@ -56,6 +57,16 @@ export default function TutorVerificationPage() {
     }
     router.push("/login");
   };
+
+  if (isLoading || !user || user.role !== "TUTOR") {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center font-sans">
+        <div className="size-8 border-3 border-sky-500/30 border-t-sky-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const effectiveUser = user;
 
   const status: VerificationStatus = requestDetail?.status || "DRAFT";
 
@@ -71,7 +82,11 @@ export default function TutorVerificationPage() {
     <DashboardShell user={effectiveUser} role="TUTOR" onLogout={handleLogout}>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Banner trạng thái */}
-        <TutorVerificationBanner status={status} onOpenUploadModal={() => setIsUploadOpen(true)} />
+        <TutorVerificationBanner
+          status={status}
+          rejectionReason={requestDetail?.rejectionReason}
+          onOpenUploadModal={() => setIsUploadOpen(true)}
+        />
 
         {/* Khung chi tiết hồ sơ xác minh */}
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200/90 shadow-xs space-y-6">
@@ -89,14 +104,16 @@ export default function TutorVerificationPage() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setIsUploadOpen(true)}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors shrink-0"
-            >
-              <Upload className="size-3.5" />
-              <span>Nộp hồ sơ / Cập nhật</span>
-            </button>
+            {(status === "DRAFT" || status === "REJECTED") && (
+              <button
+                type="button"
+                onClick={() => setIsUploadOpen(true)}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors shrink-0"
+              >
+                <Upload className="size-3.5" />
+                <span>{status === "REJECTED" ? "Nộp lại hồ sơ" : "Nộp hồ sơ"}</span>
+              </button>
+            )}
           </div>
 
           {loading ? (

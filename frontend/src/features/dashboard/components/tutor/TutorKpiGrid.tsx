@@ -3,7 +3,27 @@
 import React from "react";
 import { Calendar, Users, DollarSign, Star } from "lucide-react";
 
-export function TutorKpiGrid() {
+interface TutorKpiGridProps {
+  completedSessions: number;
+  plannedSessions: number;
+  activeStudents: number;
+  estimatedIncome: number;
+  ratingAverage: number;
+  reviewCount: number;
+}
+
+export function TutorKpiGrid({
+  completedSessions,
+  plannedSessions,
+  activeStudents,
+  estimatedIncome,
+  ratingAverage,
+  reviewCount,
+}: TutorKpiGridProps) {
+  const monthlyProgress = plannedSessions > 0
+    ? Math.round((completedSessions / plannedSessions) * 100)
+    : 0;
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-xs flex flex-col justify-between">
@@ -12,8 +32,12 @@ export function TutorKpiGrid() {
           <Calendar className="size-4 text-sky-600" />
         </div>
         <div className="mt-3">
-          <div className="text-2xl font-extrabold font-heading text-neutral-900">28 / 32</div>
-          <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">87% kế hoạch tháng</div>
+          <div className="text-2xl font-extrabold font-heading text-neutral-900">
+            {completedSessions} / {plannedSessions}
+          </div>
+          <div className="text-[11px] text-neutral-500 font-semibold mt-0.5">
+            {monthlyProgress}% kế hoạch tháng
+          </div>
         </div>
       </div>
 
@@ -23,8 +47,10 @@ export function TutorKpiGrid() {
           <Users className="size-4 text-indigo-600" />
         </div>
         <div className="mt-3">
-          <div className="text-2xl font-extrabold font-heading text-neutral-900">6 học sinh</div>
-          <div className="text-[11px] text-neutral-500 font-medium mt-0.5">Tất cả lớp đang duy trì tốt</div>
+          <div className="text-2xl font-extrabold font-heading text-neutral-900">{activeStudents} học sinh</div>
+          <div className="text-[11px] text-neutral-500 font-medium mt-0.5">
+            {activeStudents > 0 ? "Đang theo học" : "Chưa có lớp đang hoạt động"}
+          </div>
         </div>
       </div>
 
@@ -34,8 +60,12 @@ export function TutorKpiGrid() {
           <DollarSign className="size-4 text-emerald-600" />
         </div>
         <div className="mt-3">
-          <div className="text-2xl font-extrabold font-heading text-neutral-900">8.400.000 đ</div>
-          <div className="text-[11px] text-neutral-400 font-medium mt-0.5">Kỳ quyết toán: 15 hàng tháng</div>
+          <div className="text-2xl font-extrabold font-heading text-neutral-900">
+            {estimatedIncome.toLocaleString("vi-VN")} đ
+          </div>
+          <div className="text-[11px] text-neutral-400 font-medium mt-0.5">
+            Thu nhập theo dữ liệu buổi học
+          </div>
         </div>
       </div>
 
@@ -45,8 +75,12 @@ export function TutorKpiGrid() {
           <Star className="size-4 text-amber-500 fill-amber-500" />
         </div>
         <div className="mt-3">
-          <div className="text-2xl font-extrabold font-heading text-neutral-900">4.9 / 5.0</div>
-          <div className="text-[11px] text-amber-700 font-semibold mt-0.5">Từ 18 đánh giá phụ huynh & học sinh</div>
+          <div className="text-2xl font-extrabold font-heading text-neutral-900">
+            {ratingAverage.toFixed(1)} / 5.0
+          </div>
+          <div className="text-[11px] text-neutral-500 font-semibold mt-0.5">
+            Từ {reviewCount} đánh giá phụ huynh & học sinh
+          </div>
         </div>
       </div>
     </div>

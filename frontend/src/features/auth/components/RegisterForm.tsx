@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { AuthCardHeader } from "./AuthCardHeader";
 import { RoleSelector, RoleType } from "./RoleSelector";
 import { SocialAuthButtons } from "./SocialAuthButtons";
-import { Lock, Mail, User, Phone, Loader2 } from "lucide-react";
+import { Lock, Mail, User, Loader2 } from "lucide-react";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -16,7 +16,6 @@ export function RegisterForm() {
   const [role, setRole] = useState<RoleType>("STUDENT");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -32,6 +31,11 @@ export function RegisterForm() {
       return;
     }
 
+    if (password.length < 8) {
+      setErrorMsg("Mật khẩu phải có độ dài tối thiểu 8 ký tự!");
+      return;
+    }
+
     setLoading(true);
     try {
       await register({
@@ -40,7 +44,15 @@ export function RegisterForm() {
         password,
         role,
       });
-      router.push("/dashboard");
+      if (role === "STUDENT") {
+        router.push("/onboarding/student");
+      } else if (role === "TUTOR") {
+        router.push("/onboarding/tutor");
+      } else if (role === "PARENT") {
+        router.push("/onboarding/parent");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setErrorMsg(err.message);
@@ -67,81 +79,84 @@ export function RegisterForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-3.5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-neutral-700 mb-1">Họ và tên</label>
+          <label htmlFor="fullName" className="block text-xs font-semibold text-neutral-700 mb-1">
+            Họ và tên
+          </label>
           <div className="relative">
             <User className="size-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
+              id="fullName"
+              name="fullName"
               type="text"
               required
+              autoComplete="name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Nguyễn Văn A"
-              className="w-full pl-10 pr-4 py-2 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+              className="w-full pl-10 pr-4 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-neutral-900"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="email" className="block text-xs font-semibold text-neutral-700 mb-1">
+            Email tài khoản (Dùng để đăng nhập & nhận thông báo)
+          </label>
+          <div className="relative">
+            <Mail className="size-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autoComplete="username"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
+              className="w-full pl-10 pr-4 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-neutral-900"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">Email</label>
-            <div className="relative">
-              <Mail className="size-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                className="w-full pl-10 pr-4 py-2 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">Số điện thoại</label>
-            <div className="relative">
-              <Phone className="size-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="tel"
-                required
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="0912345678"
-                className="w-full pl-10 pr-4 py-2 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">Mật khẩu</label>
+            <label htmlFor="password" className="block text-xs font-semibold text-neutral-700 mb-1">
+              Mật khẩu
+            </label>
             <div className="relative">
               <Lock className="size-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
+                id="password"
+                name="password"
                 type="password"
                 required
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Ít nhất 8 ký tự"
-                className="w-full pl-10 pr-4 py-2 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                className="w-full pl-10 pr-4 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-neutral-900"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">Xác nhận mật khẩu</label>
+            <label htmlFor="confirmPassword" className="block text-xs font-semibold text-neutral-700 mb-1">
+              Xác nhận mật khẩu
+            </label>
             <div className="relative">
               <Lock className="size-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
+                id="confirmPassword"
+                name="confirmPassword"
                 type="password"
                 required
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Nhập lại mật khẩu"
-                className="w-full pl-10 pr-4 py-2 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                className="w-full pl-10 pr-4 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-neutral-900"
               />
             </div>
           </div>
@@ -150,19 +165,19 @@ export function RegisterForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white font-bold text-xs rounded-2xl shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          className="w-full py-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white font-bold text-xs rounded-2xl shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
         >
           {loading && <Loader2 className="size-4 animate-spin" />}
-          <span>{loading ? "Đang tạo tài khoản..." : "Đăng ký thành viên"}</span>
+          <span>{loading ? "Đang tạo tài khoản..." : "Tạo tài khoản ngay"}</span>
         </button>
       </form>
 
-      <SocialAuthButtons label="Hoặc đăng ký nhanh bằng" />
+      <SocialAuthButtons />
 
       <p className="text-center text-xs text-neutral-500 pt-1">
         Đã có tài khoản EduFit?{" "}
         <Link href="/login" className="text-amber-600 font-bold hover:underline">
-          Đăng nhập ngay
+          Đăng nhập
         </Link>
       </p>
     </div>

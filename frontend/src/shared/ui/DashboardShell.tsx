@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Sidebar, UserRole } from "./Sidebar";
 import { TopHeader } from "./TopHeader";
 
@@ -17,6 +18,7 @@ interface DashboardShellProps {
 
 export function DashboardShell({ user, role, onLogout, children }: DashboardShellProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const currentPath = usePathname();
 
   const toggleCollapse = () => setCollapsed((prev) => !prev);
 
@@ -27,6 +29,7 @@ export function DashboardShell({ user, role, onLogout, children }: DashboardShel
         role={role}
         collapsed={collapsed}
         onToggleCollapse={toggleCollapse}
+        currentPath={currentPath}
         user={user}
       />
 
@@ -41,7 +44,7 @@ export function DashboardShell({ user, role, onLogout, children }: DashboardShel
         />
 
         {/* Scrollable Dashboard Workspace Content */}
-        <main className="flex-1 p-6 sm:p-8 max-w-7xl w-full mx-auto">
+        <main id="dashboard-top" className="flex-1 scroll-mt-20 p-6 sm:p-8 max-w-7xl w-full mx-auto">
           {children}
         </main>
       </div>

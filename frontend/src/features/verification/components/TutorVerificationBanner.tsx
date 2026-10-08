@@ -94,7 +94,7 @@ export function TutorVerificationBanner({
                 Tài khoản gia sư chưa được xác minh bằng cấp ⚠️
               </span>
               <span className="text-xs text-amber-800">
-                Nộp bằng đại học hoặc thẻ sinh viên để mở khóa nhận lớp và kết nối học sinh.
+                Nộp bằng đại học, chứng chỉ hoặc giấy tờ định danh để mở khóa nhận lớp và kết nối học sinh.
               </span>
             </div>
           </div>

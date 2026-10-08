@@ -1,4 +1,4 @@
-import { apiClient } from "@/lib/api";
+import { apiClient, ApiError } from "@/lib/api";
 
 export type VerificationStatus = "DRAFT" | "PENDING" | "APPROVED" | "VERIFIED" | "REJECTED";
 
@@ -64,8 +64,11 @@ export const verificationService = {
     try {
       const res = await apiClient.get<VerificationRequestDetail>("/api/v1/verifications/my-request");
       return (res.data || null) as VerificationRequestDetail | null;
-    } catch {
-      return null;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        return null;
+      }
+      throw error;
     }
   },
 

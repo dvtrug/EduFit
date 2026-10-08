@@ -27,6 +27,12 @@ export function QuickLoginPills({ onSelect }: QuickLoginPillsProps) {
       password: "Password123@",
       color: "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100",
     },
+    {
+      role: "Admin",
+      email: "admin.demo@edufit.vn",
+      password: "Password123@",
+      color: "bg-purple-50 text-purple-900 border-purple-200 hover:bg-purple-100",
+    },
   ];
 
   return (
@@ -35,13 +41,13 @@ export function QuickLoginPills({ onSelect }: QuickLoginPillsProps) {
         <Sparkles className="size-3.5 text-amber-500" />
         <span>Tài khoản Demo (1-Click điền nhanh):</span>
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {accounts.map((acc, idx) => (
           <button
             key={idx}
             type="button"
             onClick={() => onSelect(acc.email, acc.password)}
-            className={`py-1.5 px-2 rounded-xl text-[11px] font-bold border transition-colors ${acc.color}`}
+            className={`py-1.5 px-2 rounded-xl text-[11px] font-bold border transition-colors cursor-pointer text-center ${acc.color}`}
           >
             {acc.role}
           </button>

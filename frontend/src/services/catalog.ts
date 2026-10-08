@@ -1,18 +1,14 @@
 import { apiClient } from "@/lib/api";
 
 export interface EducationLevel {
-  id: number;
-  code: string;
+  levelId: number;
   name: string;
-  displayOrder: number;
+  sortOrder: number;
 }
 
 export interface SubjectItem {
-  id: number;
-  code: string;
+  subjectId: number;
   name: string;
-  educationLevelId: number;
-  educationLevelName: string;
 }
 
 export interface CatalogResponse {

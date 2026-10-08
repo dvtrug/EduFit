@@ -1,35 +1,67 @@
 "use client";
 
 import React from "react";
-import { ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, BookOpenCheck, Search, Sparkles } from "lucide-react";
+import { EmptyState } from "@/shared/ui/EmptyState";
 
-export function StudentActiveClasses() {
-  const classes = [
-    {
-      subject: "Môn Toán",
-      badgeColor: "bg-amber-100 text-amber-900",
-      borderColor: "hover:border-amber-300",
-      frequency: "2 buổi/tuần",
-      title: "Toán 9 Luyện Thi Vào 10",
-      tutor: "Nguyễn Hoàng Lan",
-      progress: "Hoàn thành 14/24 buổi",
-    },
-    {
-      subject: "Tiếng Anh",
-      badgeColor: "bg-sky-100 text-sky-900",
-      borderColor: "hover:border-sky-300",
-      frequency: "1 buổi/tuần",
-      title: "Tiếng Anh Giao Tiếp & Ngữ Pháp 9",
-      tutor: "Trần Hải Đăng",
-      progress: "Hoàn thành 6/12 buổi",
-    },
-  ];
+interface ActiveClassItem {
+  subject: string;
+  badgeColor: string;
+  borderColor: string;
+  frequency: string;
+  title: string;
+  tutor: string;
+  progress: string;
+}
+
+interface StudentActiveClassesProps {
+  classes?: ActiveClassItem[];
+}
+
+export function StudentActiveClasses({ classes = [] }: StudentActiveClassesProps) {
+  if (classes.length === 0) {
+    return (
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-stone-200/80 shadow-xs space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900">
+            Lớp học đang diễn ra
+          </h3>
+          <span className="text-xs text-neutral-400 font-medium">0 lớp</span>
+        </div>
+
+        <EmptyState
+          icon={BookOpenCheck}
+          theme="amber"
+          compact
+          title="Bạn chưa đăng ký lớp học nào"
+          description="Khám phá mạng lưới gia sư chuyên môn cao (Toán, Tiếng Anh, Vật Lý...) đã qua xác minh năng lực và bắt đầu lộ trình học tập hiệu quả."
+          action={{
+            label: "Khám phá danh sách gia sư",
+            href: "/dashboard/tutors",
+            icon: Search,
+          }}
+          secondaryAction={{
+            label: "Nhận gợi ý AI Match",
+            href: "/dashboard/tutors?tab=matches",
+            icon: Sparkles,
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-6 sm:p-7 rounded-3xl border border-stone-200/80 shadow-xs">
-      <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900 mb-4">
-        Lớp học đang diễn ra
-      </h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900">
+          Lớp học đang diễn ra
+        </h3>
+        <Link href="/dashboard/classes" className="text-xs text-amber-600 font-bold hover:underline">
+          Xem tất cả ({classes.length})
+        </Link>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {classes.map((cls, idx) => (
           <div

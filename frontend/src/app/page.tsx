@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   Check,
   CheckCircle2,
@@ -11,9 +12,9 @@ import {
   Award,
   Clock,
   Star,
-  BookOpen,
 } from "lucide-react";
 import HeroIllustration from "@/components/HeroIllustration";
+import { EduFitLogo } from "@/shared/ui/EduFitLogo";
 
 export default function HomePage() {
   return (
@@ -21,17 +22,8 @@ export default function HomePage() {
       {/* 1. Header / Navbar */}
       <header className="sticky top-0 z-50 bg-stone-50/90 backdrop-blur-md border-b border-stone-200/60">
         <div className="max-w-6xl mx-auto px-6 h-20 flex justify-between items-center">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <img
-              src="/logo.png"
-              alt="EduFit Logo"
-              className="h-10 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
-            />
-            <span className="font-heading text-2xl font-bold tracking-tight text-neutral-900 group-hover:text-sky-600 transition-colors">
-              EduFit
-            </span>
-          </Link>
+          {/* Logo EduFit */}
+          <EduFitLogo href="/" size="lg" />
 
           {/* Navigation links */}
           <nav className="hidden md:flex items-center gap-8">
@@ -59,13 +51,13 @@ export default function HomePage() {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="text-sm font-semibold text-neutral-700 hover:text-neutral-900 px-4 py-2"
+              className="text-sm font-semibold text-neutral-700 hover:text-neutral-900 px-4 py-2.5 rounded-full border border-stone-300 bg-white hover:bg-stone-100 transition-colors"
             >
               Đăng nhập
             </Link>
             <Link
               href="/register"
-              className="text-sm font-semibold bg-sky-600 hover:bg-sky-700 text-white px-5 py-2.5 rounded-full transition shadow-sm hover:shadow"
+              className="text-sm font-semibold bg-orange-700 hover:bg-orange-800 text-white px-5 py-2.5 rounded-full transition shadow-sm hover:shadow"
             >
               Đăng ký
             </Link>
@@ -109,7 +101,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/login"
-                className="px-6 py-3.5 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-full shadow-sm btn-interactive"
+                className="px-6 py-3.5 bg-white hover:bg-stone-100 text-neutral-800 border border-stone-300 text-sm font-semibold rounded-full shadow-sm btn-interactive"
               >
                 Tôi đã có tài khoản
               </Link>
@@ -355,9 +347,11 @@ export default function HomePage() {
                 {/* Card Content */}
                 <div className="bg-white p-6 sm:p-7 flex flex-col gap-5">
                   <div className="flex items-center gap-4">
-                    <img
+                    <Image
                       src="/images/tutor-lan.jpg"
                       alt="Cô Nguyễn Hoàng Lan"
+                      width={56}
+                      height={56}
                       className="size-14 rounded-2xl object-cover border-2 border-stone-200 shadow-xs"
                     />
                     <div className="flex-1">
@@ -565,15 +559,8 @@ export default function HomePage() {
       <footer className="border-t border-stone-200/80 py-10 bg-stone-50">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 text-xs text-neutral-500">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <img
-                src="/logo.png"
-                alt="EduFit Logo"
-                className="h-7 w-auto object-contain"
-              />
-              <span className="font-heading text-xl font-bold text-neutral-900">
-                EduFit
-              </span>
+            <div className="mb-2">
+              <EduFitLogo href="/" size="md" />
             </div>
             <p>Đúng gia sư - Đúng mục tiêu - Thấy rõ tiến bộ</p>
           </div>

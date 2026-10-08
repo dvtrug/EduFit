@@ -2,25 +2,52 @@
 
 import React from "react";
 import Link from "next/link";
-import { MessageSquare, Sparkles } from "lucide-react";
+import { MessageSquare, Sparkles, GraduationCap, Search } from "lucide-react";
+import { EmptyState } from "@/shared/ui/EmptyState";
 
-export function ParentActiveTutors() {
-  const tutors = [
-    {
-      name: "Nguyễn Hoàng Lan",
-      subject: "Toán 9 Luyện Thi Vào 10",
-      rating: "5.0 ★ (24 đánh giá)",
-      recentNote: "Minh Đức tiếp thu bài hình học rất tốt, đã biết vận dụng định lý vào chứng minh tứ giác nội tiếp.",
-      progress: "88% mục tiêu kỳ 1",
-    },
-    {
-      name: "Trần Hải Đăng",
-      subject: "Tiếng Anh 9 Ôn Thi Tuyển Sinh",
-      rating: "4.9 ★ (19 đánh giá)",
-      recentNote: "Ngữ pháp phần câu gián tiếp còn nhầm lẫn lùi thì, tuần này thầy sẽ cho làm thêm 1 phiếu bài tập củng cố.",
-      progress: "75% mục tiêu kỳ 1",
-    },
-  ];
+interface ActiveTutorItem {
+  name: string;
+  subject: string;
+  rating: string;
+  recentNote: string;
+  progress: string;
+}
+
+interface ParentActiveTutorsProps {
+  tutors?: ActiveTutorItem[];
+}
+
+export function ParentActiveTutors({ tutors = [] }: ParentActiveTutorsProps) {
+  if (tutors.length === 0) {
+    return (
+      <div className="bg-white p-6 rounded-3xl border border-stone-200/80 shadow-xs space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900">
+            Gia sư trực tiếp đồng hành
+          </h3>
+          <span className="text-xs text-neutral-400 font-medium">0 gia sư</span>
+        </div>
+
+        <EmptyState
+          icon={GraduationCap}
+          theme="emerald"
+          compact
+          title="Chưa có gia sư nào đang dạy kèm"
+          description="Khám phá mạng lưới gia sư sư phạm chuyên môn cao, đã được EduFit xác minh chứng chỉ và lý lịch rõ ràng."
+          action={{
+            label: "Tìm kiếm gia sư cho con",
+            href: "/dashboard/tutors",
+            icon: Search,
+          }}
+          secondaryAction={{
+            label: "Xem gợi ý AI Match",
+            href: "/dashboard/tutors?tab=matches",
+            icon: Sparkles,
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-6 rounded-3xl border border-stone-200/80 shadow-xs">
@@ -57,26 +84,19 @@ export function ParentActiveTutors() {
               <div className="flex items-center gap-2 self-end sm:self-auto">
                 <button
                   type="button"
-                  className="px-3 py-1.5 border border-stone-200 hover:bg-stone-50 text-neutral-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  className="px-3 py-1.5 border border-stone-200 hover:bg-stone-50 text-neutral-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <MessageSquare className="size-3.5" />
+                  <MessageSquare className="size-3.5 text-neutral-500" />
                   <span>Nhắn tin</span>
                 </button>
-                <Link
-                  href="/dashboard/progress"
-                  className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold transition-colors"
-                >
-                  Sổ theo dõi
-                </Link>
               </div>
             </div>
 
-            <div className="p-3 bg-stone-50 rounded-xl border border-stone-100 text-xs text-neutral-600 space-y-1">
-              <div className="flex items-center gap-1.5 font-bold text-neutral-800">
-                <Sparkles className="size-3 text-emerald-600" />
-                <span>Nhận xét buổi học gần nhất:</span>
-              </div>
-              <p className="italic text-neutral-500 font-sans">{`"${tutor.recentNote}"`}</p>
+            <div className="p-3 bg-stone-50 rounded-xl border border-stone-200/60 text-xs text-neutral-600 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">
+                Nhận xét gần nhất từ gia sư
+              </span>
+              <p className="italic font-sans">{`"${tutor.recentNote}"`}</p>
             </div>
           </div>
         ))}

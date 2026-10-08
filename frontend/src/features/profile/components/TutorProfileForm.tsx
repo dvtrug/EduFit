@@ -9,19 +9,22 @@ import {
 } from "@/services/profile";
 import { catalogService, SubjectItem, EducationLevel } from "@/services/catalog";
 import { AvailabilitySlotPicker } from "./AvailabilitySlotPicker";
+import {
+  normalizeAvailabilityTime,
+  sortAvailabilitySlots,
+  validateAvailabilitySlots,
+} from "./availabilitySlotUtils";
 import { useToast } from "@/shared/ui/Toast";
 import {
   User,
   DollarSign,
   BookOpen,
   MapPin,
-  Clock,
   Plus,
   Trash2,
   Save,
   Loader2,
   Briefcase,
-  Sparkles,
 } from "lucide-react";
 
 /**
@@ -118,6 +121,13 @@ export function TutorProfileForm({ initialProfile, onSaved }: TutorProfileFormPr
   // Lưu thông tin chung & Lịch rảnh
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const availabilityValidation = validateAvailabilitySlots(availabilitySlots);
+    if (!availabilityValidation.valid) {
+      showToast(availabilityValidation.message || "Lịch rảnh chưa hợp lệ", "error");
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -136,10 +146,10 @@ export function TutorProfileForm({ initialProfile, onSaved }: TutorProfileFormPr
       const updatedProfile = await profileService.updateTutorProfile(payload);
 
       // 2. Cập nhật khung giờ rảnh
-      const formattedSlots = availabilitySlots.map((s) => ({
+      const formattedSlots = sortAvailabilitySlots(availabilitySlots).map((s) => ({
         dayOfWeek: s.dayOfWeek,
-        startTime: s.startTime,
-        endTime: s.endTime,
+        startTime: normalizeAvailabilityTime(s.startTime),
+        endTime: normalizeAvailabilityTime(s.endTime),
       }));
       await profileService.setAvailabilitySlots(formattedSlots);
 
@@ -382,8 +392,8 @@ export function TutorProfileForm({ initialProfile, onSaved }: TutorProfileFormPr
           >
             <option value="">-- Chọn môn học --</option>
             {subjectsCatalog.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} ({s.educationLevelName})
+              <option key={s.subjectId} value={s.subjectId}>
+                {s.name}
               </option>
             ))}
           </select>
@@ -395,7 +405,7 @@ export function TutorProfileForm({ initialProfile, onSaved }: TutorProfileFormPr
           >
             <option value="">-- Chọn cấp học --</option>
             {levelsCatalog.map((lvl) => (
-              <option key={lvl.id} value={lvl.id}>
+              <option key={lvl.levelId} value={lvl.levelId}>
                 {lvl.name}
               </option>
             ))}
@@ -413,7 +423,7 @@ export function TutorProfileForm({ initialProfile, onSaved }: TutorProfileFormPr
         </div>
       </div>
 
-      {/* 3. Lưới Ma Trận Lịch Rảnh (Availability Slots Matrix) */}
+      {/* 3. Lịch rảnh định kỳ của gia sư */}
       <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200/90 shadow-xs">
         <AvailabilitySlotPicker slots={availabilitySlots} onChange={setAvailabilitySlots} />
       </div>

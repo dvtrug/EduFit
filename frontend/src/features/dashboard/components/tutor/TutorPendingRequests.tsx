@@ -2,22 +2,56 @@
 
 import React from "react";
 import Link from "next/link";
+import { UserCheck, ShieldCheck, Sparkles } from "lucide-react";
+import { EmptyState } from "@/shared/ui/EmptyState";
 
-export function TutorPendingRequests() {
-  const requests = [
-    {
-      name: "Nguyễn Hải Long (Lớp 11)",
-      subject: "Toán 11 & Hình Không Gian",
-      note: "Muốn học 2 buổi/tuần, cần lấy lại gốc hình không gian trước kỳ thi giữa kỳ.",
-      match: "96% AI Match",
-    },
-    {
-      name: "Phạm Thùy Linh (Lớp 9)",
-      subject: "Toán 9 Ôn Thi Vào 10 Chuyên",
-      note: "Phụ huynh gửi lời mời kết nối trực tiếp từ gợi ý của nền tảng.",
-      match: "92% AI Match",
-    },
-  ];
+export interface PendingRequestItem {
+  name: string;
+  subject: string;
+  note: string;
+  match: string;
+}
+
+interface TutorPendingRequestsProps {
+  requests?: PendingRequestItem[];
+}
+
+export function TutorPendingRequests({ requests = [] }: TutorPendingRequestsProps) {
+  if (requests.length === 0) {
+    return (
+      <div className="bg-white p-6 rounded-3xl border border-stone-200/80 shadow-xs space-y-4">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900">
+              Yêu cầu kết nối đang chờ phản hồi
+            </h3>
+            <span className="size-5 bg-stone-200 text-neutral-600 font-bold text-[10px] rounded-full flex items-center justify-center">
+              0
+            </span>
+          </div>
+          <span className="text-xs text-neutral-400 font-medium">Hàng đợi</span>
+        </div>
+
+        <EmptyState
+          icon={UserCheck}
+          theme="sky"
+          compact
+          title="Chưa có yêu cầu kết nối mới"
+          description="Hồ sơ được xác minh bằng cấp KYC và có lịch rảnh đầy đủ sẽ nhận được nhiều hơn 80% lượt mời dạy từ phụ huynh."
+          action={{
+            label: "Xác minh bằng cấp KYC",
+            href: "/dashboard/verification",
+            icon: ShieldCheck,
+          }}
+          secondaryAction={{
+            label: "Cập nhật hồ sơ & Môn dạy",
+            href: "/dashboard/profile",
+            icon: Sparkles,
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-6 rounded-3xl border border-stone-200/80 shadow-xs">
@@ -27,7 +61,7 @@ export function TutorPendingRequests() {
             Yêu cầu kết nối đang chờ phản hồi
           </h3>
           <span className="size-5 bg-amber-400 text-neutral-950 font-bold text-[10px] rounded-full flex items-center justify-center">
-            2
+            {requests.length}
           </span>
         </div>
         <Link href="/dashboard/requests" className="text-xs text-sky-600 font-bold hover:underline">
@@ -54,15 +88,15 @@ export function TutorPendingRequests() {
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
-                className="px-3 py-1.5 border border-stone-200 hover:bg-stone-50 text-neutral-700 rounded-xl text-xs font-bold transition-colors"
+                className="px-3 py-1.5 border border-stone-200 hover:bg-stone-50 text-neutral-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
                 Chi tiết
               </button>
               <button
                 type="button"
-                className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-2xs transition-colors"
+                className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow-2xs transition-colors cursor-pointer"
               >
-                Nhận lớp
+                Chấp nhận
               </button>
             </div>
           </div>

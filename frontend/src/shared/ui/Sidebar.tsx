@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { EduFitLogo } from "@/shared/ui/EduFitLogo";
 import {
   LayoutDashboard,
   Search,
@@ -20,7 +21,6 @@ import {
   Settings,
   DollarSign,
   FileCheck2,
-  Clock,
   HeartHandshake,
   BarChart3,
   LucideIcon,
@@ -63,7 +63,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
         title: "HỌC TẬP",
         items: [
           { label: "Lớp của tôi", href: "/dashboard/classes", icon: BookOpen },
-          { label: "Lịch học tuần", href: "/dashboard/schedule", icon: Calendar, badge: "2" },
+          { label: "Lịch học tuần", href: "/dashboard/schedule", icon: Calendar },
         ],
       },
       {
@@ -93,9 +93,9 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "GIẢNG DẠY",
         items: [
-          { label: "Lịch dạy", href: "/dashboard/schedule", icon: Calendar, badge: "3" },
+          { label: "Lịch dạy", href: "/dashboard/schedule", icon: Calendar },
           { label: "Lớp học 1-1", href: "/dashboard/classes", icon: BookOpen },
-          { label: "Yêu cầu học viên", href: "/dashboard/requests", icon: UserCheck, badge: "Mới" },
+          { label: "Yêu cầu học viên", href: "/dashboard/requests", icon: UserCheck },
         ],
       },
       {
@@ -191,33 +191,26 @@ export function Sidebar({
     <aside
       className={`${
         collapsed ? "w-20" : "w-64"
-      } bg-white border-r border-stone-200/80 transition-all duration-300 flex flex-col justify-between shrink-0 h-screen sticky top-0 z-40 select-none`}
+      } bg-white border-r border-stone-200/80 transition-[width] duration-300 ease-in-out flex flex-col justify-between shrink-0 h-screen sticky top-0 z-40 select-none`}
     >
-      <div className="p-4 sm:p-5 flex flex-col gap-5 overflow-y-auto">
-        {/* Logo EduFit */}
-        <Link href="/" className="flex items-center gap-2.5 px-1 group">
-          <div className="size-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-400 flex items-center justify-center text-white font-heading font-black text-lg shadow-sm group-hover:scale-105 transition-transform">
-            E
-          </div>
-          {!collapsed && (
-            <div className="flex flex-col">
-              <span className="font-heading text-lg font-bold tracking-tight text-neutral-900 group-hover:text-amber-600 transition-colors">
-                EduFit
-              </span>
-              <span className="text-[10px] text-neutral-400 font-medium">{currentConfig.roleTitle}</span>
-            </div>
-          )}
-        </Link>
+      <div className="p-4 flex flex-col gap-5 overflow-y-auto overflow-x-hidden">
+        {/* Logo EduFit chuẩn thương hiệu */}
+        <div className="h-12 px-1 flex items-center">
+          <EduFitLogo href="/dashboard#dashboard-top" showText={!collapsed} roleBadge={currentConfig.roleTitle} />
+        </div>
 
         {/* Navigation Sections */}
         <nav className="flex flex-col gap-5">
           {currentConfig.sections.map((section, idx) => (
             <div key={idx} className="flex flex-col gap-1">
-              {!collapsed && (
-                <span className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 font-sans">
+              <span
+                aria-hidden={collapsed}
+                className={`h-4 px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 font-sans whitespace-nowrap transition-opacity duration-200 ${
+                  collapsed ? "opacity-0" : "opacity-100"
+                }`}
+              >
                   {section.title}
-                </span>
-              )}
+              </span>
               {section.items.map((item, itemIdx) => {
                 const Icon = item.icon;
                 const isActive = currentPath === item.href;
@@ -226,7 +219,7 @@ export function Sidebar({
                   <Link
                     key={itemIdx}
                     href={item.href}
-                    className={`flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium transition-all group ${
+                    className={`h-10 flex items-center justify-between px-2.5 rounded-xl text-xs font-medium transition-colors group ${
                       isActive
                         ? "bg-amber-500/10 text-amber-900 font-semibold shadow-xs"
                         : "text-neutral-600 hover:bg-stone-100 hover:text-neutral-900"
@@ -239,7 +232,14 @@ export function Sidebar({
                           isActive ? "text-amber-600" : "text-neutral-400 group-hover:text-neutral-700"
                         }`}
                       />
-                      {!collapsed && <span className="truncate">{item.label}</span>}
+                      <span
+                        aria-hidden={collapsed}
+                        className={`truncate whitespace-nowrap transition-[max-width,opacity] duration-200 ${
+                          collapsed ? "max-w-0 opacity-0" : "max-w-40 opacity-100"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
                     </div>
 
                     {!collapsed && item.badge && (
@@ -273,12 +273,17 @@ export function Sidebar({
           )}
         </button>
 
-        {user && !collapsed && (
-          <div className="px-2 py-1.5 flex items-center gap-2 bg-white rounded-xl border border-stone-200/60">
+        {user && (
+          <div className={`h-11 px-2 flex items-center bg-white rounded-xl border border-stone-200/60 transition-[gap] duration-300 ${collapsed ? "justify-center gap-0" : "gap-2"}`}>
             <div className="size-7 rounded-lg bg-amber-100 text-amber-700 font-bold text-xs flex items-center justify-center shrink-0">
               {user.fullName.charAt(0).toUpperCase()}
             </div>
-            <div className="flex flex-col min-w-0">
+            <div
+              aria-hidden={collapsed}
+              className={`flex flex-col overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ${
+                collapsed ? "max-w-0 opacity-0" : "max-w-44 opacity-100"
+              }`}
+            >
               <span className="text-xs font-semibold text-neutral-900 truncate">{user.fullName}</span>
               <span className="text-[10px] text-neutral-400 truncate">{user.email}</span>
             </div>

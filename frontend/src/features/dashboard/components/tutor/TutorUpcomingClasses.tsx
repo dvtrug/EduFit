@@ -2,26 +2,48 @@
 
 import React from "react";
 import Link from "next/link";
+import { Clock, CalendarPlus } from "lucide-react";
+import { EmptyState } from "@/shared/ui/EmptyState";
 
-export function TutorUpcomingClasses() {
-  const classes = [
-    {
-      time: "17:30",
-      title: "Toán 9 Luyện Đề Tuyển Sinh · Học sinh: Trần Minh Đức",
-      topic: "Chuyên đề: Phương trình bậc hai & Định lý Vi-ét (Buổi 15/24)",
-      statusBadge: "Sắp diễn ra",
-      actionText: "Vào dạy",
-      isPrimary: true,
-    },
-    {
-      time: "19:30",
-      title: "Toán 8 Nâng Cao · Học sinh: Lê Quỳnh Nga",
-      topic: "Chuyên đề: Định lý Talet và tam giác đồng dạng (Buổi 8/16)",
-      statusBadge: "Tối nay",
-      actionText: "Chuẩn bị bài",
-      isPrimary: false,
-    },
-  ];
+export interface UpcomingClassItem {
+  time: string;
+  title: string;
+  topic: string;
+  statusBadge: string;
+  actionText: string;
+  isPrimary: boolean;
+}
+
+interface TutorUpcomingClassesProps {
+  classes?: UpcomingClassItem[];
+}
+
+export function TutorUpcomingClasses({ classes = [] }: TutorUpcomingClassesProps) {
+  if (classes.length === 0) {
+    return (
+      <div className="bg-white p-6 rounded-3xl border border-stone-200/80 shadow-xs space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900">
+            Lịch dạy hôm nay
+          </h3>
+          <span className="text-xs text-neutral-400 font-medium">0 buổi</span>
+        </div>
+
+        <EmptyState
+          icon={CalendarPlus}
+          theme="sky"
+          compact
+          title="Chưa có lịch dạy nào được xếp hôm nay"
+          description="Cập nhật ma trận khung giờ rảnh trong tuần để hệ thống tự động gợi ý lịch học tương thích tới học sinh & phụ huynh."
+          action={{
+            label: "Cập nhật ma trận lịch rảnh",
+            href: "/dashboard/profile",
+            icon: Clock,
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-6 rounded-3xl border border-stone-200/80 shadow-xs">
@@ -58,17 +80,17 @@ export function TutorUpcomingClasses() {
                 className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
                   cls.isPrimary
                     ? "bg-sky-50 text-sky-800 border border-sky-100"
-                    : "bg-stone-200 text-neutral-700"
+                    : "bg-stone-100 text-neutral-700"
                 }`}
               >
                 {cls.statusBadge}
               </span>
               <button
                 type="button"
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
                   cls.isPrimary
-                    ? "bg-sky-600 hover:bg-sky-700 text-white shadow-2xs"
-                    : "bg-stone-200 hover:bg-stone-300 text-neutral-800"
+                    ? "bg-stone-900 hover:bg-neutral-800 text-white shadow-xs"
+                    : "border border-stone-200 hover:bg-stone-50 text-neutral-700"
                 }`}
               >
                 {cls.actionText}

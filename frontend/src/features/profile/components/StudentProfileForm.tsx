@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { profileService, StudentProfileData } from "@/services/profile";
 import { catalogService, EducationLevel } from "@/services/catalog";
 import { useToast } from "@/shared/ui/Toast";
-import { GraduationCap, MapPin, Loader2, Save, Sparkles, CheckCircle2 } from "lucide-react";
+import { GraduationCap, MapPin, Loader2, Save, Sparkles, CheckCircle2, Target } from "lucide-react";
 
 /**
  * =========================================================================
@@ -29,13 +29,19 @@ export function StudentProfileForm({ initialProfile, onSaved }: StudentProfileFo
   const [saving, setSaving] = useState(false);
   const [educationLevels, setEducationLevels] = useState<EducationLevel[]>([]);
 
-  // Form State
+  // Form State: Khối lớp & Khu vực
   const [selectedLevelId, setSelectedLevelId] = useState<number | undefined>(
     initialProfile?.educationLevelId
   );
   const [area, setArea] = useState<string>(initialProfile?.area || "");
 
-  // Tải danh mục cấp lớp từ Catalog Service
+  // Form State: Mục tiêu học tập cá nhân
+  const [goalTitle, setGoalTitle] = useState("Chuẩn bị cho mục tiêu vào lớp 10");
+  const [targetSubjects, setTargetSubjects] = useState("Toán, Tiếng Anh");
+  const [targetScore, setTargetScore] = useState("8.5+ điểm");
+  const [learningNote, setLearningNote] = useState("");
+
+  // Tải danh mục cấp lớp và hồ sơ
   useEffect(() => {
     async function loadData() {
       try {
@@ -49,6 +55,26 @@ export function StudentProfileForm({ initialProfile, onSaved }: StudentProfileFo
         if (currentProfile) {
           setSelectedLevelId(currentProfile.educationLevelId);
           setArea(currentProfile.area || "");
+        }
+
+        // Tải mục tiêu đã thiết lập trước đó từ storage
+        const savedGoalStr = localStorage.getItem("edufit_student_onboarding_goal");
+        if (savedGoalStr) {
+          try {
+            const savedGoal = JSON.parse(savedGoalStr);
+            if (savedGoal.title) setGoalTitle(savedGoal.title);
+            if (savedGoal.subjects) {
+              setTargetSubjects(
+                Array.isArray(savedGoal.subjects)
+                  ? savedGoal.subjects.join(", ")
+                  : savedGoal.subjects
+              );
+            }
+            if (savedGoal.targetScore) setTargetScore(savedGoal.targetScore);
+            if (savedGoal.learningNote) setLearningNote(savedGoal.learningNote);
+          } catch {
+            // ignore
+          }
         }
       } catch (err) {
         console.error("Lỗi khi tải dữ liệu hồ sơ học sinh:", err);
@@ -65,12 +91,29 @@ export function StudentProfileForm({ initialProfile, onSaved }: StudentProfileFo
     setSaving(true);
 
     try {
+      // 1. Cập nhật hồ sơ học viên lên Backend
       await profileService.updateStudentProfile({
         educationLevelId: selectedLevelId,
         area: area.trim() || undefined,
       });
 
-      showToast("Cập nhật hồ sơ học viên thành công!", "success");
+      // 2. Lưu mục tiêu học tập vào localStorage để đồng bộ tức thì với Dashboard
+      const selectedLevelName =
+        educationLevels.find((lvl) => lvl.levelId === selectedLevelId)?.name || "Lớp 9";
+      localStorage.setItem(
+        "edufit_student_onboarding_goal",
+        JSON.stringify({
+          grade: selectedLevelName,
+          title: goalTitle.trim(),
+          subjects: targetSubjects.split(",").map((s) => s.trim()).filter(Boolean),
+          targetScore: targetScore.trim(),
+          learningNote: learningNote.trim(),
+          area: area.trim(),
+          updatedAt: new Date().toISOString(),
+        })
+      );
+
+      showToast("Cập nhật hồ sơ và mục tiêu học tập thành công!", "success");
       onSaved?.();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Có lỗi xảy ra khi lưu hồ sơ";
@@ -129,8 +172,8 @@ export function StudentProfileForm({ initialProfile, onSaved }: StudentProfileFo
             >
               <option value="">-- Chọn khối lớp theo học --</option>
               {educationLevels.map((lvl) => (
-                <option key={lvl.id} value={lvl.id}>
-                  {lvl.name} ({lvl.code})
+                <option key={lvl.levelId} value={lvl.levelId}>
+                  {lvl.name}
                 </option>
               ))}
             </select>
@@ -159,6 +202,73 @@ export function StudentProfileForm({ initialProfile, onSaved }: StudentProfileFo
           <p className="text-[11px] text-neutral-400">
             Tối đa 100 ký tự (Dùng để tìm gia sư dạy Offline tại nhà)
           </p>
+        </div>
+      </div>
+
+      {/* 2. CHỈNH SỬA MỤC TIÊU HỌC TẬP (LEARNING GOALS) */}
+      <div className="pt-6 border-t border-stone-100 space-y-4">
+        <div className="flex items-center gap-2">
+          <Target className="size-4 text-amber-600" />
+          <h4 className="text-sm font-bold text-neutral-900">
+            Mục tiêu học tập & Kế hoạch cá nhân
+          </h4>
+        </div>
+        <p className="text-xs text-neutral-500">
+          EduFit sẽ dựa trên mục tiêu này để đồng bộ lộ trình tiến độ tại Bảng điều khiển và gợi ý gia sư phù hợp.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+          <div>
+            <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+              Tiêu đề mục tiêu học tập
+            </label>
+            <input
+              type="text"
+              value={goalTitle}
+              onChange={(e) => setGoalTitle(e.target.value)}
+              placeholder="VD: Ôn thi vào lớp 10 THPT chuyên, Nâng cao điểm số môn Toán..."
+              className="w-full px-3.5 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 text-neutral-900 font-medium transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+              Môn học trọng tâm cần kèm cặp
+            </label>
+            <input
+              type="text"
+              value={targetSubjects}
+              onChange={(e) => setTargetSubjects(e.target.value)}
+              placeholder="VD: Toán, Tiếng Anh, Ngữ văn"
+              className="w-full px-3.5 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 text-neutral-900 font-medium transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+              Điểm số / Mức độ kỳ vọng
+            </label>
+            <input
+              type="text"
+              value={targetScore}
+              onChange={(e) => setTargetScore(e.target.value)}
+              placeholder="VD: Đạt 8.5+ điểm, Lấy lại căn bản sau 2 tháng..."
+              className="w-full px-3.5 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 text-neutral-900 font-medium transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+              Ghi chú thêm cho gia sư
+            </label>
+            <input
+              type="text"
+              value={learningNote}
+              onChange={(e) => setLearningNote(e.target.value)}
+              placeholder="VD: Cần kèm dạng bài Hình học và Phương trình..."
+              className="w-full px-3.5 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 text-neutral-900 font-medium transition-all"
+            />
+          </div>
         </div>
       </div>
 

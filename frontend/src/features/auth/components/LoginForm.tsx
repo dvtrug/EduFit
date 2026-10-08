@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { AuthCardHeader } from "./AuthCardHeader";
 import { QuickLoginPills } from "./QuickLoginPills";
 import { SocialAuthButtons } from "./SocialAuthButtons";
+import { profileService } from "@/services/profile";
 import { Lock, Mail, Loader2 } from "lucide-react";
 
 export function LoginForm() {
@@ -24,7 +25,41 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      await login({ email, password });
+      const loggedUser = await login({ email: email.trim(), password });
+      if (loggedUser.role === "STUDENT") {
+        try {
+          const profile = await profileService.getMyStudentProfile();
+          if (!profile.profileComplete) {
+            router.push("/onboarding/student");
+            return;
+          }
+        } catch {
+          router.push("/onboarding/student");
+          return;
+        }
+      } else if (loggedUser.role === "TUTOR") {
+        try {
+          const profile = await profileService.getMyTutorProfile();
+          const hasOnboarded =
+            typeof window !== "undefined" &&
+            localStorage.getItem("edufit_tutor_onboarding_completed");
+          if (!profile?.bio && !hasOnboarded) {
+            router.push("/onboarding/tutor");
+            return;
+          }
+        } catch {
+          router.push("/onboarding/tutor");
+          return;
+        }
+      } else if (loggedUser.role === "PARENT") {
+        const hasOnboarded =
+          typeof window !== "undefined" &&
+          localStorage.getItem("edufit_parent_onboarding_completed");
+        if (!hasOnboarded) {
+          router.push("/onboarding/parent");
+          return;
+        }
+      }
       router.push("/dashboard");
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -60,14 +95,17 @@ export function LoginForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-            Email hoặc Số điện thoại
+          <label htmlFor="loginEmail" className="block text-xs font-semibold text-neutral-700 mb-1.5">
+            Email tài khoản
           </label>
           <div className="relative">
             <Mail className="size-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
-              type="text"
+              id="loginEmail"
+              name="email"
+              type="email"
               required
+              autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="example@edufit.vn"
@@ -78,7 +116,9 @@ export function LoginForm() {
 
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <label className="text-xs font-semibold text-neutral-700">Mật khẩu</label>
+            <label htmlFor="loginPassword" className="text-xs font-semibold text-neutral-700">
+              Mật khẩu
+            </label>
             <Link href="/forgot-password" className="text-xs text-amber-600 hover:underline font-medium">
               Quên mật khẩu?
             </Link>
@@ -86,8 +126,11 @@ export function LoginForm() {
           <div className="relative">
             <Lock className="size-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
+              id="loginPassword"
+              name="password"
               type="password"
               required
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"

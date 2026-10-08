@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+import { EmptyState } from "@/shared/ui/EmptyState";
 
 /**
  * =========================================================================
@@ -103,8 +104,23 @@ export function AdminKycQueueView() {
             <span className="text-xs text-neutral-500">Đang tải danh sách hàng đợi từ máy chủ...</span>
           </div>
         ) : items.length === 0 ? (
-          <div className="p-12 text-center text-xs text-neutral-400">
-            Hiện không có hồ sơ nào đang chờ duyệt trong hàng đợi.
+          <div className="p-8 sm:p-12">
+            <EmptyState
+              icon={ShieldCheck}
+              theme="purple"
+              badge="HÀNG ĐỢI HOÀN TẤT"
+              title="Không có hồ sơ nào đang chờ duyệt"
+              description="Tất cả hồ sơ bằng cấp, chứng chỉ và giấy tờ định danh của gia sư đã được xem xét và xử lý. Khi có gia sư nộp tài liệu mới, hệ thống sẽ tự động cập nhật vào đây."
+              action={{
+                label: "Làm mới hàng đợi",
+                onClick: loadQueue,
+                icon: RefreshCw,
+              }}
+              secondaryAction={{
+                label: "Về trang tổng quan",
+                href: "/dashboard",
+              }}
+            />
           </div>
         ) : (
           <div className="overflow-x-auto">
