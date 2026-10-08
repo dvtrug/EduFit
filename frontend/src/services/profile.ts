@@ -1,29 +1,66 @@
 import { apiClient } from "@/lib/api";
 
 export interface StudentProfileData {
-  id: string;
-  gradeLevel?: string;
-  targetSubjects?: string[];
-  learningGoals?: string;
-  preferredSchedule?: string;
+  studentId: string;
+  userId: string;
+  educationLevelId?: number;
+  educationLevelName?: string;
+  area?: string;
+  profileComplete: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UpdateStudentProfilePayload {
+  educationLevelId?: number;
+  area?: string;
+}
+
+export interface TutorSubjectItem {
+  tutorSubjectId: string;
+  subjectId: number;
+  subjectName: string;
+  educationLevelId: number;
+  educationLevelName: string;
+}
+
+export interface TutorAvailabilitySlot {
+  slotId?: string;
+  dayOfWeek: number; // 1 = Monday .. 7 = Sunday
+  startTime: string; // "HH:mm:ss" or "HH:mm"
+  endTime: string;   // "HH:mm:ss" or "HH:mm"
 }
 
 export interface TutorProfileData {
-  id: string;
+  tutorId: string;
+  userId: string;
+  displayName: string;
   headline?: string;
   bio?: string;
-  hourlyRate?: number;
-  teachingSubjects?: Array<{
-    subjectId: number;
-    subjectName: string;
-    educationLevelName: string;
-  }>;
-  availabilitySlots?: Array<{
-    dayOfWeek: number;
-    startTime: string;
-    endTime: string;
-  }>;
-  verificationStatus?: string;
+  teachingMode: "ONLINE" | "OFFLINE" | "BOTH";
+  area?: string;
+  pricePerSession: number;
+  experienceYears?: number;
+  teachingMethod?: string;
+  status: string;
+  verifiedAt?: string;
+  ratingAvg?: number;
+  reviewCount?: number;
+  subjects: TutorSubjectItem[];
+  availabilitySlots: TutorAvailabilitySlot[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UpdateTutorProfilePayload {
+  displayName: string;
+  headline?: string;
+  bio?: string;
+  teachingMode: "ONLINE" | "OFFLINE" | "BOTH";
+  area?: string;
+  pricePerSession: number;
+  experienceYears?: number;
+  teachingMethod?: string;
 }
 
 export interface MyProfileComposite {
@@ -54,7 +91,7 @@ export const profileService = {
   /**
    * Cập nhật hồ sơ học viên
    */
-  async updateStudentProfile(payload: Partial<StudentProfileData>): Promise<StudentProfileData> {
+  async updateStudentProfile(payload: UpdateStudentProfilePayload): Promise<StudentProfileData> {
     const res = await apiClient.put<StudentProfileData>("/api/v1/profiles/students/me", payload);
     return res.data as StudentProfileData;
   },
@@ -70,7 +107,7 @@ export const profileService = {
   /**
    * Cập nhật hồ sơ gia sư
    */
-  async updateTutorProfile(payload: Partial<TutorProfileData>): Promise<TutorProfileData> {
+  async updateTutorProfile(payload: UpdateTutorProfilePayload): Promise<TutorProfileData> {
     const res = await apiClient.put<TutorProfileData>("/api/v1/profiles/tutors/me", payload);
     return res.data as TutorProfileData;
   },
@@ -93,6 +130,18 @@ export const profileService = {
     const res = await apiClient.delete<TutorProfileData>(
       `/api/v1/profiles/tutors/me/subjects?subjectId=${subjectId}&educationLevelId=${educationLevelId}`
     );
+    return res.data as TutorProfileData;
+  },
+
+  /**
+   * Cập nhật danh sách khung giờ rảnh của gia sư
+   */
+  async setAvailabilitySlots(
+    slots: Array<{ dayOfWeek: number; startTime: string; endTime: string }>
+  ): Promise<TutorProfileData> {
+    const res = await apiClient.put<TutorProfileData>("/api/v1/profiles/tutors/me/availability-slots", {
+      slots,
+    });
     return res.data as TutorProfileData;
   },
 };

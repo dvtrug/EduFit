@@ -72,6 +72,12 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
           { label: "Học phí & Thanh toán", href: "/dashboard/payments", icon: CreditCard },
         ],
       },
+      {
+        title: "CÀI ĐẶT",
+        items: [
+          { label: "Hồ sơ học tập", href: "/dashboard/profile", icon: Settings },
+        ],
+      },
     ],
   },
   TUTOR: {
