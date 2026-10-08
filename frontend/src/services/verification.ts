@@ -1,32 +1,64 @@
 import { apiClient } from "@/lib/api";
 
-export type VerificationStatus = "DRAFT" | "PENDING" | "VERIFIED" | "REJECTED";
+export type VerificationStatus = "DRAFT" | "PENDING" | "APPROVED" | "VERIFIED" | "REJECTED";
+
+export interface CredentialFileResponse {
+  fileId: string;
+  fileName: string;
+  storageKey: string;
+  contentType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+}
+
+export interface CredentialResponse {
+  credentialId: string;
+  type: "DEGREE" | "CERTIFICATE" | "IDENTITY_CARD";
+  institution: string;
+  year?: number;
+  note?: string;
+  files: CredentialFileResponse[];
+}
 
 export interface VerificationRequestDetail {
-  id: string;
+  requestId: string;
   tutorId: string;
   status: VerificationStatus;
   rejectionReason?: string;
   submittedAt?: string;
+  reviewedBy?: string;
   reviewedAt?: string;
-  documents?: Array<{
-    id: string;
-    documentType: string;
-    fileUrl: string;
-    fileName: string;
-  }>;
+  credentials: CredentialResponse[];
+}
+
+export interface PendingQueueItem {
+  requestId: string;
+  tutorId: string;
+  status: string;
+  submittedAt: string;
+}
+
+export interface PendingQueueResponse {
+  items: PendingQueueItem[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
 }
 
 export interface SubmitVerificationPayload {
-  institutionName: string;
-  graduationYear?: number;
-  documentType: string;
-  notes?: string;
+  credentials: Array<{
+    type: "DEGREE" | "CERTIFICATE" | "IDENTITY_CARD";
+    institution: string;
+    year?: number;
+    note?: string;
+    fileIndexes: number[];
+  }>;
 }
 
 export const verificationService = {
   /**
-   * Lấy trạng thái hồ sơ xác minh mới nhất của gia sư
+   * Lấy trạng thái hồ sơ xác minh mới nhất của gia sư (TUTOR)
    */
   async getMyRequest(): Promise<VerificationRequestDetail | null> {
     try {
@@ -38,7 +70,7 @@ export const verificationService = {
   },
 
   /**
-   * Nộp hồ sơ xác minh KYC (gửi Multipart form kèm file)
+   * Nộp hồ sơ xác minh KYC kèm tệp tin thật (TUTOR)
    */
   async submitVerification(payload: SubmitVerificationPayload, files: File[]): Promise<VerificationRequestDetail> {
     const formData = new FormData();
@@ -50,6 +82,34 @@ export const verificationService = {
     });
 
     const res = await apiClient.post<VerificationRequestDetail>("/api/v1/verifications", formData);
+    return res.data as VerificationRequestDetail;
+  },
+
+  /**
+   * Lấy hàng đợi hồ sơ KYC đang chờ duyệt (ADMIN)
+   */
+  async getPendingQueue(page = 0, size = 20): Promise<PendingQueueResponse> {
+    const res = await apiClient.get<PendingQueueResponse>(
+      `/api/v1/admin/verifications/pending?page=${page}&size=${size}`
+    );
+    return res.data as PendingQueueResponse;
+  },
+
+  /**
+   * Duyệt hoặc từ chối hồ sơ xác minh của gia sư (ADMIN)
+   */
+  async reviewVerification(
+    requestId: string,
+    decision: "APPROVED" | "REJECTED",
+    rejectionReason?: string
+  ): Promise<VerificationRequestDetail> {
+    const res = await apiClient.post<VerificationRequestDetail>(
+      `/api/v1/admin/verifications/${requestId}/review`,
+      {
+        decision,
+        rejectionReason: rejectionReason || undefined,
+      }
+    );
     return res.data as VerificationRequestDetail;
   },
 };

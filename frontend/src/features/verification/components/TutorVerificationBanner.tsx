@@ -16,6 +16,7 @@ export function TutorVerificationBanner({
   onOpenUploadModal,
 }: TutorVerificationBannerProps) {
   switch (status) {
+    case "APPROVED":
     case "VERIFIED":
       return (
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between gap-3 text-emerald-950">

@@ -44,10 +44,15 @@ export function UploadCredentialModal({ isOpen, onClose, onSuccess }: UploadCred
       setError(null);
       await verificationService.submitVerification(
         {
-          institutionName,
-          graduationYear,
-          documentType,
-          notes,
+          credentials: [
+            {
+              type: documentType === "CERTIFICATE" ? "CERTIFICATE" : documentType === "IDENTITY_CARD" ? "IDENTITY_CARD" : "DEGREE",
+              institution: institutionName.trim(),
+              year: graduationYear,
+              note: notes.trim() || undefined,
+              fileIndexes: selectedFiles.map((_, idx) => idx),
+            },
+          ],
         },
         selectedFiles
       );
