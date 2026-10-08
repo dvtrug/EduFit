@@ -37,6 +37,9 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-edufit-local-only}
       MAIL_HOST: mail
       MAIL_PORT: 1025
+      AI_PROVIDER: ${AI_PROVIDER:-stub}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:

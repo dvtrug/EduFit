@@ -62,7 +62,17 @@ spring:
     validate-on-migrate: true # Kiểm tra checksum, migration đã áp dụng bị sửa -> build fail ngay
     baseline-on-migrate: true # Khởi tạo từ CSDL trắng, không baseline giả lập
 
-# 5. Cấu hình Swagger / OpenAPI Documentation
+# 5. Cấu hình AI Gateway (platform/ai)
+edufit:
+  ai:
+    provider: ${AI_PROVIDER:stub} # 'stub' cho offline/test, 'gemini' cho gọi thật
+    timeout: 15s                 # NFR-10: khống chế timeout 15 giây
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      model: ${GEMINI_MODEL:gemini-1.5-flash}
+      base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
+
+# 6. Cấu hình Swagger / OpenAPI Documentation
 springdoc:
   api-docs:
     path: /v3/api-docs
