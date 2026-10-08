@@ -20,7 +20,7 @@ spring:
 
   # 2. Cấu hình Cơ sở dữ liệu PostgreSQL
   datasource:
-    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:edufit}}
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:edufit}?options=-c%20timezone=Asia/Ho_Chi_Minh}
     username: ${DB_USERNAME:${DB_USER:edufit}}
     password: ${DB_PASSWORD:edufit-local-only}
     driver-class-name: org.postgresql.Driver
