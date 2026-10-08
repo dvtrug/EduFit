@@ -49,6 +49,9 @@ public class TutorMatchingService {
 
   @Transactional
   public List<TutorMatchResponse> match(CurrentUser currentUser, TutorMatchRequest request) {
+    if (!currentUser.hasRole("STUDENT") && !currentUser.hasRole("PARENT")) {
+      throw new ForbiddenOperationException("Chỉ học sinh hoặc phụ huynh được yêu cầu ghép đôi gia sư.");
+    }
     LearningGoalDiscoveryDto goal = profileFacade.findLearningGoalForDiscovery(request.goalId())
         .orElseThrow(() -> EntityNotFoundException.of("LearningGoal", request.goalId()));
     validateAccess(currentUser, goal);

@@ -44,6 +44,8 @@ Chi tiết được quyết định theo tài liệu kiến trúc [ADR-001](file
 Chi tiết được quyết định theo tài liệu kiến trúc [ADR-002](file:///e:/iykyk/S5/SWP391/Projects/EduFit/docs/ADR-002-multi-module-architecture.md):
 
 ### 3.1. Backend: Modular Monolith (Maven Multi-Module)
+Luồng code Discovery hiện tại: [Discovery backend: cấu trúc và luồng xử lý](discovery-module-flow.md).
+
 Chạy trên **một JVM duy nhất** (1 Database, 1 Schema `public`), không phải Microservices, giúp tránh chi phí vận hành mạng và phân tán transaction.
 
 ```

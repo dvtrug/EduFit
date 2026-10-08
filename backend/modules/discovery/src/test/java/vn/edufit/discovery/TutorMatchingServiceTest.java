@@ -88,6 +88,16 @@ class TutorMatchingServiceTest {
     );
   }
 
+  @Test
+  @DisplayName("Từ chối role ngoài STUDENT/PARENT trước khi đọc goal")
+  void shouldRejectNonLearnerRole() {
+    assertThrows(
+        ForbiddenOperationException.class,
+        () -> matchingService.match(currentUser(userId, "TUTOR"), new TutorMatchRequest(goalId, 5))
+    );
+    org.mockito.Mockito.verifyNoInteractions(profileFacade);
+  }
+
   private LearningGoalDiscoveryDto goal(UUID ownerId) {
     return new LearningGoalDiscoveryDto(
         goalId, UUID.randomUUID(), ownerId, 1, 2, "ONLINE", "Hà Nội",
@@ -110,6 +120,10 @@ class TutorMatchingServiceTest {
   }
 
   private CurrentUser currentUser(UUID id) {
+    return currentUser(id, "STUDENT");
+  }
+
+  private CurrentUser currentUser(UUID id, String role) {
     return new CurrentUser() {
       @Override
       public UUID getUserId() {
@@ -123,7 +137,7 @@ class TutorMatchingServiceTest {
 
       @Override
       public Set<String> getRoles() {
-        return Set.of("STUDENT");
+        return Set.of(role);
       }
 
       @Override

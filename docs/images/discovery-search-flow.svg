@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1370 590" role="img" aria-labelledby="title desc">
+  <title id="title">Luồng tìm kiếm gia sư Discovery</title>
+  <desc id="desc">GET đi từ Client qua DiscoveryController và DiscoveryQueryService đến ProfileFacade. Profile lọc gia sư VERIFIED, lấy chi tiết theo lô ID, sau đó Discovery trả Page card.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#45646b"/></marker>
+    <style>
+      .bg{fill:#f8fbfa}.box{fill:#fff;stroke:#a8c3c1;stroke-width:2}.web{fill:#e8f4f2;stroke:#58a69b}.data{fill:#eef3fa;stroke:#7c9cbd}.line{fill:none;stroke:#45646b;stroke-width:2.5;marker-end:url(#arrow)}
+      .title{font:700 26px Arial,sans-serif;fill:#19383f}.label{font:700 18px Arial,sans-serif;fill:#19383f}.small{font:15px Arial,sans-serif;fill:#506a70}.step{font:700 14px Arial,sans-serif;fill:#5a8487}
+    </style>
+  </defs>
+  <rect class="bg" width="1370" height="590"/>
+  <text class="title" x="40" y="50">Tìm kiếm: lọc trước, bổ sung chi tiết theo trang</text>
+  <text class="small" x="40" y="78">GET /api/v1/discovery/tutors · chỉ hồ sơ VERIFIED</text>
+
+  <path class="line" d="M235 200 H265"/><path class="line" d="M475 200 H505"/><path class="line" d="M715 200 H745"/><path class="line" d="M985 200 H1015"/>
+  <path class="line" d="M1120 241 V357"/>
+  <path class="line" d="M1015 400 H985"/><path class="line" d="M745 400 H715"/><path class="line" d="M505 400 H475"/><path class="line" d="M265 400 H235"/>
+
+  <text class="step" x="50" y="137">1</text><rect class="box web" x="50" y="157" width="185" height="84" rx="6"/><text class="label" x="142" y="191" text-anchor="middle">Client</text><text class="small" x="142" y="216" text-anchor="middle">Bộ lọc + phân trang</text>
+  <text class="step" x="265" y="137">2</text><rect class="box web" x="265" y="157" width="210" height="84" rx="6"/><text class="label" x="370" y="191" text-anchor="middle">Controller</text><text class="small" x="370" y="216" text-anchor="middle">Validate, tạo Pageable</text>
+  <text class="step" x="505" y="137">3</text><rect class="box" x="505" y="157" width="210" height="84" rx="6"/><text class="label" x="610" y="191" text-anchor="middle">QueryService</text><text class="small" x="610" y="216" text-anchor="middle">Đổi sang criteria</text>
+  <text class="step" x="745" y="137">4</text><rect class="box" x="745" y="157" width="240" height="84" rx="6"/><text class="label" x="865" y="191" text-anchor="middle">ProfileFacade</text><text class="small" x="865" y="216" text-anchor="middle">searchTutors(criteria)</text>
+  <text class="step" x="1015" y="137">5</text><rect class="box data" x="1015" y="157" width="210" height="84" rx="6"/><text class="label" x="1120" y="191" text-anchor="middle">Profile DB</text><text class="small" x="1120" y="216" text-anchor="middle">Lọc VERIFIED, Page</text>
+
+  <text class="step" x="1015" y="338">6</text><rect class="box data" x="1015" y="357" width="210" height="84" rx="6"/><text class="label" x="1120" y="391" text-anchor="middle">Profile DB</text><text class="small" x="1120" y="416" text-anchor="middle">Subjects + slots theo ID</text>
+  <text class="step" x="745" y="338">7</text><rect class="box" x="745" y="357" width="240" height="84" rx="6"/><text class="label" x="865" y="391" text-anchor="middle">ProfileFacade</text><text class="small" x="865" y="416" text-anchor="middle">findVerifiedTutorDetails</text>
+  <text class="step" x="505" y="338">8</text><rect class="box" x="505" y="357" width="210" height="84" rx="6"/><text class="label" x="610" y="391" text-anchor="middle">QueryService</text><text class="small" x="610" y="416" text-anchor="middle">Map sang card DTO</text>
+  <text class="step" x="265" y="338">9</text><rect class="box web" x="265" y="357" width="210" height="84" rx="6"/><text class="label" x="370" y="391" text-anchor="middle">Controller</text><text class="small" x="370" y="416" text-anchor="middle">ApiResponse</text>
+  <text class="step" x="50" y="338">10</text><rect class="box web" x="50" y="357" width="185" height="84" rx="6"/><text class="label" x="142" y="391" text-anchor="middle">Client</text><text class="small" x="142" y="416" text-anchor="middle">Page tutor cards</text>
+
+  <text class="small" x="50" y="530">Chi tiết một gia sư: GET /tutors/{tutorId} → ProfileFacade.findVerifiedTutorDetail → TutorDetailResponse</text>
+</svg>

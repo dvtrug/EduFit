@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1410 900" role="img" aria-labelledby="title desc">
+  <title id="title">Luồng matching gia sư Discovery</title>
+  <desc id="desc">Người học gửi goalId, hệ thống kiểm tra quyền và goal, lấy gia sư VERIFIED, chấm điểm, xếp hạng, tạo giải thích AI hoặc fallback và ghi matching_run_log.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#42636b"/></marker>
+    <style>
+      .bg{fill:#f8fbfa}.box{fill:#fff;stroke:#abc4c3;stroke-width:2}.web{fill:#e8f4f2;stroke:#58a69b}.domain{fill:#eef3fa;stroke:#7c9cbd}.ai{fill:#fff3e8;stroke:#d8a46b}.data{fill:#f3f5f7;stroke:#91a6ad}
+      .line{fill:none;stroke:#42636b;stroke-width:2.5;marker-end:url(#arrow)}.link{fill:none;stroke:#729498;stroke-width:2;stroke-dasharray:6 5;marker-end:url(#arrow)}
+      .title{font:700 26px Arial,sans-serif;fill:#19383f}.label{font:700 18px Arial,sans-serif;fill:#19383f}.small{font:15px Arial,sans-serif;fill:#506a70}.step{font:700 14px Arial,sans-serif;fill:#5a8487}
+    </style>
+  </defs>
+  <rect class="bg" width="1410" height="900"/>
+  <text class="title" x="40" y="48">Matching: quyền truy cập → xếp hạng → giải thích</text>
+  <text class="small" x="40" y="76">POST /api/v1/discovery/match · điểm số do MatchScorer quyết định, AI chỉ diễn giải</text>
+
+  <path class="line" d="M290 175 V207"/><path class="line" d="M290 275 V307"/><path class="line" d="M290 375 V407"/><path class="line" d="M290 475 V507"/><path class="line" d="M290 575 V607"/><path class="line" d="M290 675 V707"/>
+  <path class="link" d="M520 242 H805"/><path class="link" d="M520 442 H805"/><path class="link" d="M520 542 H805"/>
+  <path class="link" d="M520 642 H805"/><path class="link" d="M520 742 H805"/>
+
+  <text class="step" x="60" y="106">1 · REQUEST</text><rect class="box web" x="60" y="108" width="460" height="67" rx="6"/><text class="label" x="80" y="138">Learner → Controller</text><text class="small" x="80" y="161">{goalId, topN}; lấy CurrentUser từ session</text>
+  <text class="step" x="60" y="205">2 · ACCESS</text><rect class="box" x="60" y="208" width="460" height="67" rx="6"/><text class="label" x="80" y="238">TutorMatchingService kiểm tra quyền</text><text class="small" x="80" y="261">Role STUDENT/PARENT, rồi đối chiếu owner goal</text>
+  <text class="step" x="60" y="305">3 · GOAL</text><rect class="box" x="60" y="308" width="460" height="67" rx="6"/><text class="label" x="80" y="338">Kiểm tra goal hợp lệ</text><text class="small" x="80" y="361">ACTIVE, có cấp học, budgetMax &gt; 0 và slots</text>
+  <text class="step" x="60" y="405">4 · CANDIDATES</text><rect class="box" x="60" y="408" width="460" height="67" rx="6"/><text class="label" x="80" y="438">Lấy ứng viên đã xác minh</text><text class="small" x="80" y="461">ProfileFacade.findVerifiedTutorsForMatching()</text>
+  <text class="step" x="60" y="505">5 · RANKING</text><rect class="box domain" x="60" y="508" width="460" height="67" rx="6"/><text class="label" x="80" y="538">Lọc, chấm điểm và lấy topN</text><text class="small" x="80" y="561">Hard filters → score → sort → limit</text>
+  <text class="step" x="60" y="605">6 · EXPLANATION</text><rect class="box ai" x="60" y="608" width="460" height="67" rx="6"/><text class="label" x="80" y="638">Giải thích tutor đầu tiên</text><text class="small" x="80" y="661">Các tutor còn lại dùng lời giải thích theo điểm</text>
+  <text class="step" x="60" y="705">7 · RESPONSE</text><rect class="box data" x="60" y="708" width="460" height="67" rx="6"/><text class="label" x="80" y="738">Ghi log và trả danh sách</text><text class="small" x="80" y="761">TutorMatchResponse gồm score, breakdown, explanation</text>
+
+  <rect class="box data" x="805" y="207" width="520" height="70" rx="6"/><text class="label" x="825" y="237">ProfileFacade.findLearningGoalForDiscovery</text><text class="small" x="825" y="261">Goal + studentUserId + lịch mong muốn</text>
+  <rect class="box data" x="805" y="407" width="520" height="70" rx="6"/><text class="label" x="825" y="437">Profile-owned tables</text><text class="small" x="825" y="461">Chỉ lấy tutor có status VERIFIED</text>
+  <rect class="box domain" x="805" y="507" width="520" height="70" rx="6"/><text class="label" x="825" y="537">MatchScorer (Java thuần)</text><text class="small" x="825" y="561">40% lịch + 30% rating + 30% ngân sách</text>
+  <rect class="box ai" x="805" y="597" width="520" height="90" rx="6"/><text class="label" x="825" y="627">MatchExplanationService</text><text class="small" x="825" y="651">Quota còn: AiGateway · hết quota/lỗi: rule-based</text><text class="small" x="825" y="674">AI không thay đổi điểm hoặc thứ hạng</text>
+  <rect class="box data" x="805" y="707" width="520" height="70" rx="6"/><text class="label" x="825" y="737">matching_run_log</text><text class="small" x="825" y="761">userId, studentId, goalId, resultCount, createdAt</text>
+  <text class="small" x="60" y="845">Giới hạn hiện tại: PARENT chưa match thay con cho đến khi Connection có API xác minh liên kết.</text>
+</svg>
