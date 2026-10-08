@@ -27,6 +27,8 @@ import vn.edufit.profile.infra.persistence.entity.TutorProfile;
 import vn.edufit.profile.infra.persistence.entity.TutorStatus;
 import vn.edufit.profile.infra.persistence.repository.StudentProfileRepository;
 import vn.edufit.profile.infra.persistence.repository.TutorProfileRepository;
+import vn.edufit.profile.infra.persistence.repository.LearningGoalRepository;
+import vn.edufit.profile.infra.persistence.repository.TutorSubjectRepository;
 import vn.edufit.shared.exception.EntityNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,11 +40,15 @@ class ProfileFacadeImplTest {
   @Mock
   private StudentProfileRepository studentProfileRepository;
 
+  @Mock private LearningGoalRepository learningGoalRepository;
+  @Mock private TutorSubjectRepository tutorSubjectRepository;
+
   private ProfileFacadeImpl profileFacade;
 
   @BeforeEach
   void setUp() {
-    profileFacade = new ProfileFacadeImpl(tutorProfileRepository, studentProfileRepository);
+    profileFacade = new ProfileFacadeImpl(tutorProfileRepository, studentProfileRepository,
+        learningGoalRepository, tutorSubjectRepository);
   }
 
   @Test

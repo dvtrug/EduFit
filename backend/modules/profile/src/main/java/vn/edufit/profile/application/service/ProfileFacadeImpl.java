@@ -7,11 +7,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
+import vn.edufit.profile.api.dto.ConnectionGoalDto;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
 import vn.edufit.profile.infra.persistence.entity.StudentProfile;
 import vn.edufit.profile.infra.persistence.entity.TutorProfile;
 import vn.edufit.profile.infra.persistence.repository.StudentProfileRepository;
 import vn.edufit.profile.infra.persistence.repository.TutorProfileRepository;
+import vn.edufit.profile.infra.persistence.repository.LearningGoalRepository;
+import vn.edufit.profile.infra.persistence.repository.TutorSubjectRepository;
 import vn.edufit.shared.exception.EntityNotFoundException;
 
 @Service
@@ -19,13 +22,19 @@ public class ProfileFacadeImpl implements ProfileFacade {
 
   private final TutorProfileRepository tutorProfileRepository;
   private final StudentProfileRepository studentProfileRepository;
+  private final LearningGoalRepository learningGoalRepository;
+  private final TutorSubjectRepository tutorSubjectRepository;
 
   public ProfileFacadeImpl(
       TutorProfileRepository tutorProfileRepository,
-      StudentProfileRepository studentProfileRepository
+      StudentProfileRepository studentProfileRepository,
+      LearningGoalRepository learningGoalRepository,
+      TutorSubjectRepository tutorSubjectRepository
   ) {
     this.tutorProfileRepository = tutorProfileRepository;
     this.studentProfileRepository = studentProfileRepository;
+    this.learningGoalRepository = learningGoalRepository;
+    this.tutorSubjectRepository = tutorSubjectRepository;
   }
 
   @Override
@@ -105,6 +114,23 @@ public class ProfileFacadeImpl implements ProfileFacade {
   @Transactional(readOnly = true)
   public boolean existsStudentByUserId(UUID userId) {
     return studentProfileRepository.existsByUserId(userId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Optional<ConnectionGoalDto> findGoalForConnection(UUID goalId) {
+    return learningGoalRepository.findById(goalId).flatMap(goal -> studentProfileRepository
+        .findById(goal.getStudentId()).map(student -> new ConnectionGoalDto(
+            goal.getGoalId(), goal.getStudentId(), student.getUserId(), goal.getSubjectId(),
+            student.getEducationLevelId(), goal.getGoalType().name(), goal.getDeadline(),
+            goal.getStatus().name())));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public boolean tutorTeaches(UUID tutorId, Integer subjectId, Integer educationLevelId) {
+    return tutorSubjectRepository.existsByTutorIdAndSubjectIdAndEducationLevelId(
+        tutorId, subjectId, educationLevelId);
   }
 
   private TutorSummaryDto toTutorDto(TutorProfile profile) {

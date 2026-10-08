@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
+import vn.edufit.profile.api.dto.ConnectionGoalDto;
 
 /**
  * Public Facade Interface của module Profile cung cấp cho các module khác (Verification, Discovery, IAM...) tương tác (ADR-002).
@@ -32,4 +33,8 @@ public interface ProfileFacade {
   boolean existsTutorByUserId(UUID userId);
 
   boolean existsStudentByUserId(UUID userId);
+
+  Optional<ConnectionGoalDto> findGoalForConnection(UUID goalId);
+
+  boolean tutorTeaches(UUID tutorId, Integer subjectId, Integer educationLevelId);
 }

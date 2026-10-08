@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -51,7 +50,10 @@ class FlywayMigrationScriptTest {
           .toList();
 
       assertFalse(sqlFiles.isEmpty(), "Phải có ít nhất một file migration SQL trong db/migration");
-      assertEquals(8, sqlFiles.size(), "Phải có đúng 8 file migration tương ứng 8 module V1.01 -> V1.08");
+      assertTrue(sqlFiles.size() >= 9, "Phải giữ các migration V1.01 -> V1.08 và migration Connection V1.09");
+      assertTrue(Files.exists(migrationRootDir.resolve("connection")
+          .resolve("V1.09__allow_relink_after_revocation.sql")),
+          "Migration cho relink, optimistic version và invite quota phải tồn tại");
 
       for (Path file : sqlFiles) {
         String fileName = file.getFileName().toString();

@@ -21,6 +21,8 @@ public interface IamFacade {
    */
   Optional<UserSummaryView> findUserSummaryById(UUID id);
 
+  Optional<UserSummaryView> findUserSummaryByEmail(String email);
+
   /**
    * Kiểm tra sự tồn tại của người dùng trong hệ thống theo ID.
    *

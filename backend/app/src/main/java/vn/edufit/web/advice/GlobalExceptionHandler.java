@@ -65,7 +65,8 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ApiError> handleResourceConflict(ResourceConflictException ex) {
     log.warn("Resource conflict: {} [ErrorCode: {}]", ex.getMessage(), ex.getErrorCode());
     ApiError error = ApiError.of(ex.getErrorCode().name(), ex.getMessage());
-    return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    return ResponseEntity.status(ex.getErrorCode() == ErrorCode.RATE_LIMIT_EXCEEDED
+        ? HttpStatus.TOO_MANY_REQUESTS : HttpStatus.CONFLICT).body(error);
   }
 
   /**
@@ -249,6 +250,7 @@ public class GlobalExceptionHandler {
       case UNAUTHORIZED, INVALID_CREDENTIALS -> HttpStatus.UNAUTHORIZED;
       case FORBIDDEN -> HttpStatus.FORBIDDEN;
       case RESOURCE_NOT_FOUND -> HttpStatus.NOT_FOUND;
+      case RATE_LIMIT_EXCEEDED -> HttpStatus.TOO_MANY_REQUESTS;
       case CONFLICT_DETECTED, USER_ALREADY_EXISTS, SCHEDULE_OVERLAP, REVIEW_ALREADY_EXISTS -> HttpStatus.CONFLICT;
       case AI_SERVICE_UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;
       case AI_REQUEST_TIMEOUT -> HttpStatus.GATEWAY_TIMEOUT;
