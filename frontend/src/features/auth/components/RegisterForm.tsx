@@ -1,68 +1,31 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import { Lock, Mail, User, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { AuthCardHeader } from "./AuthCardHeader";
-import { RoleSelector, RoleType } from "./RoleSelector";
+import { RoleSelector } from "./RoleSelector";
 import { SocialAuthButtons } from "./SocialAuthButtons";
-import { Lock, Mail, User, Loader2 } from "lucide-react";
+import { useRegisterForm } from "../hooks/useRegisterForm";
 
 export function RegisterForm() {
-  const router = useRouter();
-  const { register } = useAuth();
-
-  const [role, setRole] = useState<RoleType>("STUDENT");
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg("");
-
-    if (password !== confirmPassword) {
-      setErrorMsg("Mật khẩu xác nhận không khớp!");
-      return;
-    }
-
-    if (password.length < 8) {
-      setErrorMsg("Mật khẩu phải có độ dài tối thiểu 8 ký tự!");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await register({
-        fullName,
-        email,
-        password,
-        role,
-      });
-      if (role === "STUDENT") {
-        router.push("/onboarding/student");
-      } else if (role === "TUTOR") {
-        router.push("/onboarding/tutor");
-      } else if (role === "PARENT") {
-        router.push("/onboarding/parent");
-      } else {
-        router.push("/dashboard");
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setErrorMsg(err.message);
-      } else {
-        setErrorMsg("Đăng ký không thành công. Vui lòng kiểm tra lại thông tin.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    role,
+    fullName,
+    email,
+    password,
+    confirmPassword,
+    setRole,
+    setFullName,
+    setEmail,
+    setPassword,
+    setConfirmPassword,
+    passwordCriteria,
+    fieldErrors,
+    generalError,
+    isSubmitting,
+    handleSubmit,
+  } = useRegisterForm();
 
   return (
     <div className="w-full max-w-lg bg-white rounded-3xl border border-stone-200/90 shadow-xl shadow-stone-200/50 p-6 sm:p-8 space-y-5">
@@ -73,9 +36,9 @@ export function RegisterForm() {
 
       <RoleSelector selectedRole={role} onChange={setRole} />
 
-      {errorMsg && (
+      {generalError && (
         <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-2xl animate-in fade-in">
-          {errorMsg}
+          {generalError}
         </div>
       )}
 
@@ -98,6 +61,11 @@ export function RegisterForm() {
               className="w-full pl-10 pr-4 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-neutral-900"
             />
           </div>
+          {fieldErrors.fullName && (
+            <p className="text-[11px] text-rose-600 font-medium mt-1 pl-1">
+              {fieldErrors.fullName}
+            </p>
+          )}
         </div>
 
         <div>
@@ -118,6 +86,11 @@ export function RegisterForm() {
               className="w-full pl-10 pr-4 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-neutral-900"
             />
           </div>
+          {fieldErrors.email && (
+            <p className="text-[11px] text-rose-600 font-medium mt-1 pl-1">
+              {fieldErrors.email}
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -139,6 +112,11 @@ export function RegisterForm() {
                 className="w-full pl-10 pr-4 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-neutral-900"
               />
             </div>
+            {fieldErrors.password && (
+              <p className="text-[11px] text-rose-600 font-medium mt-1 pl-1">
+                {fieldErrors.password}
+              </p>
+            )}
           </div>
 
           <div>
@@ -159,16 +137,58 @@ export function RegisterForm() {
                 className="w-full pl-10 pr-4 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-neutral-900"
               />
             </div>
+            {fieldErrors.confirmPassword && (
+              <p className="text-[11px] text-rose-600 font-medium mt-1 pl-1">
+                {fieldErrors.confirmPassword}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Tiêu chí mật khẩu trực quan BR-02 */}
+        <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200/80 space-y-1.5 text-xs">
+          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+            Yêu cầu mật khẩu (BR-02):
+          </span>
+          <div className="flex items-center gap-2">
+            {passwordCriteria.hasMinLength ? (
+              <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+            ) : (
+              <XCircle className="size-3.5 text-neutral-400 shrink-0" />
+            )}
+            <span className={passwordCriteria.hasMinLength ? "text-emerald-700 font-medium" : "text-neutral-500"}>
+              Tối thiểu 8 ký tự
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {passwordCriteria.hasLetter ? (
+              <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+            ) : (
+              <XCircle className="size-3.5 text-neutral-400 shrink-0" />
+            )}
+            <span className={passwordCriteria.hasLetter ? "text-emerald-700 font-medium" : "text-neutral-500"}>
+              Ít nhất 1 chữ cái (a-z, A-Z)
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {passwordCriteria.hasDigit ? (
+              <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+            ) : (
+              <XCircle className="size-3.5 text-neutral-400 shrink-0" />
+            )}
+            <span className={passwordCriteria.hasDigit ? "text-emerald-700 font-medium" : "text-neutral-500"}>
+              Ít nhất 1 chữ số (0-9)
+            </span>
           </div>
         </div>
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={isSubmitting}
           className="w-full py-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white font-bold text-xs rounded-2xl shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
         >
-          {loading && <Loader2 className="size-4 animate-spin" />}
-          <span>{loading ? "Đang tạo tài khoản..." : "Tạo tài khoản ngay"}</span>
+          {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+          <span>{isSubmitting ? "Đang tạo tài khoản..." : "Tạo tài khoản ngay"}</span>
         </button>
       </form>
 

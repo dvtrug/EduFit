@@ -1,76 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { authService } from "@/services/auth";
-import { AuthCardHeader } from "./AuthCardHeader";
 import { Lock, ArrowRight, Loader2, CheckCircle2, XCircle } from "lucide-react";
-
-/**
- * =========================================================================
- * SPRING BOOT API CONNECTION:
- * =========================================================================
- * Endpoint: POST /api/v1/auth/reset-password
- * Controller: vn.edufit.iam.web.AuthController#resetPassword
- * Payload: ResetPasswordPayload { token: String, newPassword: String }
- * Business Rule: BR-02 - Mật khẩu tối thiểu 8 ký tự, ít nhất 1 chữ cái và 1 chữ số
- * =========================================================================
- */
+import { AuthCardHeader } from "./AuthCardHeader";
+import { useResetPasswordForm } from "../hooks/usePasswordReset";
 
 interface ResetPasswordFormProps {
   token: string;
 }
 
 export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
-  const router = useRouter();
-
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-
-  // Kiểm tra tiêu chí mật khẩu (BR-02)
-  const hasMinLength = newPassword.length >= 8;
-  const hasLetter = /[a-zA-Z]/.test(newPassword);
-  const hasDigit = /\d/.test(newPassword);
-  const isPasswordValid = hasMinLength && hasLetter && hasDigit;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg("");
-
-    if (!isPasswordValid) {
-      setErrorMsg("Mật khẩu chưa đáp ứng đầy đủ yêu cầu bảo mật (BR-02)!");
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setErrorMsg("Mật khẩu xác nhận không khớp!");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await authService.resetPassword({
-        token,
-        newPassword,
-      });
-      setSuccess(true);
-      setTimeout(() => {
-        router.push("/login");
-      }, 3000);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setErrorMsg(err.message);
-      } else {
-        setErrorMsg("Mã token không hợp lệ hoặc đã hết hạn (30 phút). Vui lòng yêu cầu lại.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    newPassword,
+    confirmPassword,
+    setNewPassword,
+    setConfirmPassword,
+    passwordCriteria,
+    fieldErrors,
+    generalError,
+    isSubmitting,
+    success,
+    handleSubmit,
+  } = useResetPasswordForm(token);
 
   return (
     <div className="w-full max-w-md bg-white rounded-3xl border border-stone-200/90 shadow-xl shadow-stone-200/50 p-6 sm:p-8 space-y-6">
@@ -102,9 +54,9 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          {errorMsg && (
+          {generalError && (
             <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-2xl animate-in fade-in">
-              {errorMsg}
+              {generalError}
             </div>
           )}
 
@@ -123,6 +75,11 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
                 className="w-full pl-10 pr-4 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-neutral-900"
               />
             </div>
+            {fieldErrors.newPassword && (
+              <p className="text-[11px] text-rose-600 font-medium mt-1 pl-1">
+                {fieldErrors.newPassword}
+              </p>
+            )}
           </div>
 
           <div>
@@ -140,6 +97,11 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
                 className="w-full pl-10 pr-4 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-neutral-900"
               />
             </div>
+            {fieldErrors.confirmPassword && (
+              <p className="text-[11px] text-rose-600 font-medium mt-1 pl-1">
+                {fieldErrors.confirmPassword}
+              </p>
+            )}
           </div>
 
           {/* Tiêu chí mật khẩu trực quan BR-02 */}
@@ -148,32 +110,32 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
               Yêu cầu mật khẩu (BR-02):
             </span>
             <div className="flex items-center gap-2">
-              {hasMinLength ? (
+              {passwordCriteria.hasMinLength ? (
                 <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
               ) : (
                 <XCircle className="size-3.5 text-neutral-400 shrink-0" />
               )}
-              <span className={hasMinLength ? "text-emerald-700 font-medium" : "text-neutral-500"}>
+              <span className={passwordCriteria.hasMinLength ? "text-emerald-700 font-medium" : "text-neutral-500"}>
                 Tối thiểu 8 ký tự
               </span>
             </div>
             <div className="flex items-center gap-2">
-              {hasLetter ? (
+              {passwordCriteria.hasLetter ? (
                 <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
               ) : (
                 <XCircle className="size-3.5 text-neutral-400 shrink-0" />
               )}
-              <span className={hasLetter ? "text-emerald-700 font-medium" : "text-neutral-500"}>
+              <span className={passwordCriteria.hasLetter ? "text-emerald-700 font-medium" : "text-neutral-500"}>
                 Ít nhất 1 chữ cái (a-z, A-Z)
               </span>
             </div>
             <div className="flex items-center gap-2">
-              {hasDigit ? (
+              {passwordCriteria.hasDigit ? (
                 <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
               ) : (
                 <XCircle className="size-3.5 text-neutral-400 shrink-0" />
               )}
-              <span className={hasDigit ? "text-emerald-700 font-medium" : "text-neutral-500"}>
+              <span className={passwordCriteria.hasDigit ? "text-emerald-700 font-medium" : "text-neutral-500"}>
                 Ít nhất 1 chữ số (0-9)
               </span>
             </div>
@@ -181,11 +143,11 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
           <button
             type="submit"
-            disabled={loading || !isPasswordValid}
+            disabled={isSubmitting || !passwordCriteria.isValid}
             className="w-full py-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white font-bold text-xs rounded-2xl shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            {loading && <Loader2 className="size-4 animate-spin" />}
-            <span>{loading ? "Đang cập nhật..." : "Lưu mật khẩu mới"}</span>
+            {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+            <span>{isSubmitting ? "Đang cập nhật..." : "Lưu mật khẩu mới"}</span>
           </button>
         </form>
       )}

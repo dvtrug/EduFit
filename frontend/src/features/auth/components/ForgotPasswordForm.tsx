@@ -1,45 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { authService } from "@/services/auth";
-import { AuthCardHeader } from "./AuthCardHeader";
 import { Mail, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { AuthCardHeader } from "./AuthCardHeader";
+import { useForgotPasswordForm } from "../hooks/usePasswordReset";
 
-/**
- * =========================================================================
- * SPRING BOOT API CONNECTION:
- * =========================================================================
- * Endpoint: POST /api/v1/auth/forgot-password
- * Controller: vn.edufit.iam.web.AuthController#forgotPassword
- * Payload: ForgotPasswordPayload { email: String }
- * Contract: docs/authentication-contract.md
- * =========================================================================
- */
 export function ForgotPasswordForm() {
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg("");
-    setLoading(true);
-
-    try {
-      await authService.forgotPassword({ email: email.trim() });
-      setSubmitted(true);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setErrorMsg(err.message);
-      } else {
-        setErrorMsg("Không thể gửi yêu cầu đặt lại mật khẩu. Vui lòng thử lại sau.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    email,
+    setEmail,
+    fieldError,
+    generalError,
+    isSubmitting,
+    submitted,
+    handleSubmit,
+  } = useForgotPasswordForm();
 
   return (
     <div className="w-full max-w-md bg-white rounded-3xl border border-stone-200/90 shadow-xl shadow-stone-200/50 p-6 sm:p-8 space-y-6">
@@ -72,9 +48,9 @@ export function ForgotPasswordForm() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          {errorMsg && (
+          {generalError && (
             <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-2xl animate-in fade-in">
-              {errorMsg}
+              {generalError}
             </div>
           )}
 
@@ -93,15 +69,20 @@ export function ForgotPasswordForm() {
                 className="w-full pl-10 pr-4 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-neutral-900 placeholder:text-neutral-400"
               />
             </div>
+            {fieldError && (
+              <p className="text-[11px] text-rose-600 font-medium mt-1 pl-1">
+                {fieldError}
+              </p>
+            )}
           </div>
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isSubmitting}
             className="w-full py-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white font-bold text-xs rounded-2xl shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            {loading && <Loader2 className="size-4 animate-spin" />}
-            <span>{loading ? "Đang gửi yêu cầu..." : "Gửi liên kết khôi phục"}</span>
+            {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+            <span>{isSubmitting ? "Đang gửi yêu cầu..." : "Gửi liên kết khôi phục"}</span>
           </button>
 
           <div className="text-center pt-2">

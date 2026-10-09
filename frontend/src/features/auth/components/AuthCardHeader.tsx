@@ -1,8 +1,6 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-
 import { EduFitLogo } from "@/shared/ui/EduFitLogo";
 
 interface AuthCardHeaderProps {
