@@ -41,7 +41,7 @@ public class TutoringSessionRepositoryAdapter implements TutoringSessionDomainRe
   @Override
   public TutoringSession save(TutoringSession session) {
     TutoringSessionJpaEntity entity = sessionMapper.toJpaEntity(session);
-    TutoringSessionJpaEntity saved = springDataRepository.save(entity);
+    TutoringSessionJpaEntity saved = springDataRepository.saveAndFlush(entity);
     return sessionMapper.toDomain(saved);
   }
 

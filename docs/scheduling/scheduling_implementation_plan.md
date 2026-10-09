@@ -1150,13 +1150,133 @@ flowchart TD
     NextEligible -- "Còn" --> LoopEligible
     NextEligible -- "Hết" --> OutcomeEnd
 
-    classDef proc fill:#e3f2fd,stroke:#1565c0,stroke-width:1px;
-    classDef decision fill:#fff8e1,stroke:#f57f17,stroke-width:2px;
-    classDef ok fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
-
     class CronOutcome,OutcomeEnd ok;
     class HasEnded,HasEligible,NextEligible decision;
     class OutcomeStart,QueryEnded,FilterGrace,LoopEligible,PubOutcome proc;
+```
+
+---
+
+#### Flowchart 13: Vòng Đời Yêu Cầu REST API & Phân Giải `CurrentUser` (`SessionController`)
+
+Mô tả hành trình một HTTP Request từ Client đi qua lớp Web Controller, kiểm tra bảo mật, validation, gọi Application Service và bọc chuẩn phản hồi `ApiResponse<T>`:
+
+```mermaid
+flowchart TD
+    ClientReq(["Client gửi HTTP Request\nVí dụ: POST /api/v1/scheduling/sessions/propose"]) --> Dispatcher["Spring DispatcherServlet phân giải Route\ntới SessionController"]
+    
+    Dispatcher --> BeanValidation{"Jakarta Bean Validation (@Valid):\n- @NotNull, @Future, v.v.\nRequest DTO có hợp lệ?"}
+    
+    BeanValidation -- "Vi phạm" --> HandleValEx["GlobalExceptionHandler bắt\nMethodArgumentNotValidException"]
+    HandleValEx --> Ret400(["Trả về HTTP 400 VALIDATION_FAILED\nkèm danh sách trường lỗi"])
+    
+    BeanValidation -- "Hợp lệ" --> AuthResolve{"currentUserProvider.getIfAvailable():\nNgười dùng đã xác thực (JWT Auth)?"}
+    
+    AuthResolve -- "Chưa đăng nhập / null" --> HandleAuthEx["Ném UnauthorizedException\n-> HTTP 401 UNAUTHORIZED"]
+    AuthResolve -- "Đã xác thực" --> ExtractUser["Trích xuất currentUserId = user.getUserId()"]
+    
+    ExtractUser --> RouteService{"Phân tuyến theo Endpoint"}
+    
+    RouteService -- "POST /sessions/propose" --> CallPropose["proposeSessionService.proposeSession(...)"]
+    RouteService -- "POST /sessions/{id}/respond" --> CallRespond["respondToProposalService.respondToProposal(...)"]
+    RouteService -- "POST /sessions/{id}/reschedule" --> CallResched["rescheduleSessionService.proposeReschedule(...)"]
+    RouteService -- "POST /sessions/{id}/reschedule/respond" --> CallRespResched["rescheduleSessionService.respondToReschedule(...)"]
+    RouteService -- "POST /sessions/{id}/cancel" --> CallCancel["cancelSessionService.cancelSession(...)"]
+    RouteService -- "POST /sessions/{id}/outcome" --> CallOutcome["recordSessionOutcomeService.recordSessionOutcome(...)"]
+    RouteService -- "GET /calendar" --> CallCalendar["getCalendarService.getCalendarSessions(...)"]
+    
+    CallPropose --> WrapResp["Đóng gói DTO (SessionResponse, v.v.)\nvào ApiResponse.success(data)"]
+    CallRespond --> WrapResp
+    CallResched --> WrapResp
+    CallRespResched --> WrapResp
+    CallCancel --> WrapResp
+    CallOutcome --> WrapResp
+    CallCalendar --> WrapResp
+    
+    WrapResp --> CheckStatus{"Thao tác tạo mới\n(Propose / Reschedule)?"}
+    CheckStatus -- "Đúng" --> Ret201Resp(["Trả về ResponseEntity.status(201)\nHTTP 201 CREATED"])
+    CheckStatus -- "Sai" --> Ret200Resp(["Trả về ResponseEntity.ok()\nHTTP 200 OK"])
+
+    classDef proc fill:#e3f2fd,stroke:#1565c0,stroke-width:1px;
+    classDef decision fill:#fff8e1,stroke:#f57f17,stroke-width:2px;
+    classDef ok fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef err fill:#ffebee,stroke:#c62828,stroke-width:1px;
+
+    class ClientReq,Ret201Resp,Ret200Resp ok;
+    class BeanValidation,AuthResolve,RouteService,CheckStatus decision;
+    class Dispatcher,ExtractUser,CallPropose,CallRespond,CallResched,CallRespResched,CallCancel,CallOutcome,CallCalendar,WrapResp proc;
+    class HandleValEx,Ret400,HandleAuthEx err;
+```
+
+---
+
+#### Flowchart 14: Luồng Tra Cứu Lịch Biểu Tuần/Tháng (`GetCalendarService`)
+
+Mô tả Use Case hiển thị màn hình thời khóa biểu cho Gia sư và Học sinh theo khoảng thời gian tùy chọn:
+
+```mermaid
+flowchart TD
+    CalendarIn(["Client gửi GET /api/v1/scheduling/calendar?from={utc}&to={utc}"]) --> ParseTime["Phân tích chuỗi ISO-8601 sang UTC Instant:\nfrom = Instant.parse(...)\nto = Instant.parse(...)"]
+    
+    ParseTime --> CheckRange{"from != null && to != null\nVÀ from.isBefore(to)?"}
+    
+    CheckRange -- "Sai (Khoảng thời gian ngược/null)" --> Err400_Range["Ném InvalidOperationException\n-> Trả về HTTP 400 (from phải trước to)"]
+    CheckRange -- "Hợp lệ" --> GetUser["Lấy currentUserId từ Spring Security context"]
+    
+    GetUser --> QueryCalendar["sessionRepository.findCalendarSessions(userId, from, to)\n(WHERE tutor_id = :userId OR student_id = :userId\n AND start_at >= :from AND end_at <= :to)"]
+    
+    QueryCalendar --> MapItems["Duyệt danh sách List<TutoringSession>:\nÁnh xạ từng session sang CalendarItemResponse:\n- id: sessionId\n- classId: classId\n- title: mode.name() ('ONLINE' / 'OFFLINE')\n- start: startAt\n- end: endAt\n- status: status.name()\n- placeOrLink: link học hoặc địa chỉ"]
+    
+    MapItems --> WrapCalResp["Bọc vào ApiResponse.success('Lấy lịch thành công', items)"]
+    WrapCalResp --> Ret200_Cal(["Trả về HTTP 200 OK\n{ success: true, data: [ ... ] }"])
+
+    classDef proc fill:#e3f2fd,stroke:#1565c0,stroke-width:1px;
+    classDef decision fill:#fff8e1,stroke:#f57f17,stroke-width:2px;
+    classDef ok fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef err fill:#ffebee,stroke:#c62828,stroke-width:1px;
+
+    class CalendarIn,Ret200_Cal ok;
+    class CheckRange decision;
+    class ParseTime,GetUser,QueryCalendar,MapItems,WrapCalResp proc;
+    class Err400_Range err;
+```
+
+---
+
+#### Flowchart 15: Kiến Trúc Kiểm Thử Tải Đồng Thời Với PostgreSQL Thật (`ConcurrentSchedulingIT` - NFR-17)
+
+Mô tả thiết kế kịch bản Stress Test đa luồng mô phỏng Race Condition tại Bước 7:
+
+```mermaid
+flowchart TD
+    SetupEnv["Khởi động Test Environment:\n1. Testcontainers khởi chạy PostgreSQL 17 Docker\n2. Kích hoạt Extension: CREATE EXTENSION btree_gist\n3. Flyway chạy Migration V1.05 tạo bảng và GiST Constraint"] --> SeedData["Khởi tạo dữ liệu mẫu:\n- 1 Gia sư (Tutor)\n- 2 Học sinh (Student A, Student B)\n- Tạo 2 Session PROPOSED trùng chính xác khung giờ:\n  Session 1: [08:00 - 10:00]\n  Session 2: [08:00 - 10:00]"]
+    
+    SeedData --> PrepareThreads["Chuẩn bị Stress Test Environment:\n- ExecutorService với ThreadPool (10 Virtual/Platform Threads)\n- startGate = new CountDownLatch(1)\n- endGate = new CountDownLatch(10)"]
+    
+    PrepareThreads --> LaunchWait["10 Threads chuẩn bị gọi respondToProposal(sessionId, tutorId, true)\nCả 10 luồng bị chặn lại tại startGate.await()"]
+    
+    LaunchWait --> FireGate["startGate.countDown():\nPHÁT LỆNH ĐỒNG LOẠT TRONG CÙNG 1 MICRO-GIÂY!"]
+    
+    FireGate --> ConcurrencyExec["10 Luồng đồng thời tranh chấp ghi dữ liệu vào CSDL:"]
+    
+    ConcurrencyExec --> Tier1Defense["TẦNG 1: Pessimistic Row Lock (SELECT ... FOR UPDATE)\nTuần tự hóa (Serialize) cập nhật trên từng session cụ thể"]
+    Tier1Defense --> Tier2Defense["TẦNG 2: PostgreSQL GiST Exclusion Constraint\n(ex_tutoring_session_no_tutor_overlap)\nStorage Engine kiểm tra trùng lặp trên cây chỉ mục GiST"]
+    
+    Tier2Defense --> Result1["1 Luồng Ghi Thành Công:\n- Status -> SCHEDULED\n- Trả về HTTP 200 OK\n- successCount.incrementAndGet()"]
+    Tier2Defense --> Result9["9 Luồng Bị Storage Engine Chặn Đứng:\n- SQLSTATE 23P01 (Exclusion Violation)\n- Spring bẫy DataIntegrityViolationException\n- Ném ResourceConflictException (HTTP 409)\n- conflictCount.incrementAndGet()"]
+    
+    Result1 --> AssertResult["endGate.await() hoàn thành:\nASSERTION KIỂM CHỨNG BẢO VỆ NFR-17:\n1. assertThat(successCount.get()).isEqualTo(1)\n2. assertThat(conflictCount.get()).isEqualTo(9)\n3. Database chỉ tồn tại DUY NHẤT 1 buổi học SCHEDULED trong khung giờ!"]
+    Result9 --> AssertResult
+    
+    AssertResult --> TestPass(["TEST CASE PASSED HOÀN TOÀN:\nChứng minh hệ thống miễn nhiễm 100% với Double-Booking!"])
+
+    classDef proc fill:#e3f2fd,stroke:#1565c0,stroke-width:1px;
+    classDef ok fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef warn fill:#fff8e1,stroke:#f57f17,stroke-width:2px;
+
+    class SetupEnv,SeedData,PrepareThreads,LaunchWait,FireGate,ConcurrencyExec,Tier1Defense,Tier2Defense proc;
+    class Result1,AssertResult,TestPass ok;
+    class Result9 warn;
 ```
 
 ---

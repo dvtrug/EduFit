@@ -42,7 +42,7 @@ public class SessionRescheduleProposalRepositoryAdapter
   @Override
   public SessionRescheduleProposal save(SessionRescheduleProposal proposal) {
     SessionRescheduleProposalJpaEntity entity = sessionMapper.toJpaEntity(proposal);
-    SessionRescheduleProposalJpaEntity saved = springDataRepository.save(entity);
+    SessionRescheduleProposalJpaEntity saved = springDataRepository.saveAndFlush(entity);
     return sessionMapper.toDomain(saved);
   }
 
