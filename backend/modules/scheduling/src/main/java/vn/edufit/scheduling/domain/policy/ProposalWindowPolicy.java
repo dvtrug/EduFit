@@ -38,7 +38,7 @@ public class ProposalWindowPolicy {
    * @param now     Thời điểm hiện tại từ Clock.
    * @throws InvalidOperationException Nếu vi phạm bất kỳ điều kiện nào về thời gian.
    */
-  public void validateWindow(Instant startAt, Instant endAt, Instant now) {
+  public static void validateWindow(Instant startAt, Instant endAt, Instant now) {
     if (startAt == null || endAt == null) {
       throw new InvalidOperationException(
           ErrorCode.VALIDATION_FAILED,
@@ -49,6 +49,19 @@ public class ProposalWindowPolicy {
       throw new InvalidOperationException(
           ErrorCode.VALIDATION_FAILED,
           "Thời gian bắt đầu buổi học phải ở trong tương lai"
+      );
+    }
+    validateDuration(startAt, endAt);
+  }
+
+  /**
+   * Kiểm tra thời lượng buổi học [30..240] phút theo BR-41.
+   */
+  public static void validateDuration(Instant startAt, Instant endAt) {
+    if (startAt == null || endAt == null) {
+      throw new InvalidOperationException(
+          ErrorCode.VALIDATION_FAILED,
+          "Thời gian bắt đầu và kết thúc buổi học không được phép null"
       );
     }
     if (!endAt.isAfter(startAt)) {
@@ -75,7 +88,7 @@ public class ProposalWindowPolicy {
    * @param now     Thời điểm hiện tại từ Clock.
    * @return {@code min(now + 3 ngày, startAt)}.
    */
-  public Instant calculateExpiresAt(Instant startAt, Instant now) {
+  public static Instant calculateExpiresAt(Instant startAt, Instant now) {
     Instant maxExpiry = now.plus(PROPOSAL_EXPIRY_DAYS, ChronoUnit.DAYS);
     return maxExpiry.isBefore(startAt) ? maxExpiry : startAt;
   }

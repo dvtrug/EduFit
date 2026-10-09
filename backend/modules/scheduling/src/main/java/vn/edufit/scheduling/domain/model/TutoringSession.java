@@ -152,6 +152,30 @@ public class TutoringSession {
   }
 
   /**
+   * Alias cho {@link #createProposed}.
+   */
+  public static TutoringSession propose(
+      UUID sessionId,
+      UUID classId,
+      UUID tutorId,
+      UUID studentId,
+      Instant startAt,
+      Instant endAt,
+      SessionMode mode,
+      String placeOrLink,
+      String repeatNote,
+      String message,
+      UUID proposedBy,
+      Instant expiresAt,
+      Instant now
+  ) {
+    return createProposed(
+        sessionId, classId, tutorId, studentId, startAt, endAt, mode,
+        placeOrLink, repeatNote, message, proposedBy, expiresAt, now
+    );
+  }
+
+  /**
    * Chấp nhận đề xuất buổi học -> chuyển sang trạng thái {@link SessionStatus#SCHEDULED}.
    */
   public void accept(UUID responderId, Instant now) {

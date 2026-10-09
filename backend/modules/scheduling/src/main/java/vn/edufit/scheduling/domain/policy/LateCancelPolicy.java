@@ -27,7 +27,7 @@ public class LateCancelPolicy {
    * @param now     Thời điểm thực hiện hủy buổi học.
    * @return {@code true} nếu khoảng cách từ {@code now} đến {@code startAt} nhỏ hơn 12 giờ.
    */
-  public boolean isLateCancel(Instant startAt, Instant now) {
+  public static boolean isLateCancel(Instant startAt, Instant now) {
     Objects.requireNonNull(startAt, "startAt không được null");
     Objects.requireNonNull(now, "now không được null");
 
