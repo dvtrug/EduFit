@@ -32,7 +32,7 @@ public class ConflictPolicy {
    * @param slot2 Khoảng thời gian thứ hai.
    * @return {@code true} nếu bị chồng lấn (xung đột), ngược lại {@code false}.
    */
-  public boolean isOverlapping(TimeInterval slot1, TimeInterval slot2) {
+  public static boolean isOverlapping(TimeInterval slot1, TimeInterval slot2) {
     Objects.requireNonNull(slot1, "Khoảng thời gian slot1 không được null");
     Objects.requireNonNull(slot2, "Khoảng thời gian slot2 không được null");
     return slot1.overlapsWith(slot2);
@@ -47,7 +47,7 @@ public class ConflictPolicy {
    * @param end2   Mốc kết thúc khoảng 2.
    * @return {@code true} nếu hai khoảng thời gian giao nhau, ngược lại {@code false}.
    */
-  public boolean isOverlapping(Instant start1, Instant end1, Instant start2, Instant end2) {
+  public static boolean isOverlapping(Instant start1, Instant end1, Instant start2, Instant end2) {
     Objects.requireNonNull(start1, "start1 không được null");
     Objects.requireNonNull(end1, "end1 không được null");
     Objects.requireNonNull(start2, "start2 không được null");

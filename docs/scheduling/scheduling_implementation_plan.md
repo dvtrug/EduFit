@@ -73,40 +73,257 @@ sequenceDiagram
     Note over DB: HẬU QUẢ: Gia sư Minh bị Double-Booking!
 ```
 
-### 2.3. Giải Pháp: Chiến Lược Bảo Vệ 2 Tầng (Two-Tier Concurrency Protection)
+### 2.3. Giải Pháp: Chiến Lược Bảo Vệ 2 Tầng & Kiến Thức Chuyên Sâu (Concurrency & Indexing Deep-Dive)
 
-Để triệt tiêu vĩnh viễn nguy cơ Double-Booking, EduFit thiết lập **2 chốt chặn phòng thủ độc lập**:
+Để triệt tiêu vĩnh viễn nguy cơ **Double-Booking (NFR-17)** và hiện tượng mất mát dữ liệu (**Lost Update**) trong môi trường phân tán đa luồng, EduFit thiết lập kiến trúc phòng thủ **2 tầng độc lập (Two-Tier Defense)** kết hợp cả 3 kỹ thuật tiên tiến: **Optimistic Locking**, **Pessimistic Locking**, và **PostgreSQL GiST Exclusion Constraints (`btree_gist`)**.
 
-```
-[Client Request: Chấp nhận lịch]
-         │
-         ▼
-┌─────────────────────────────────────────────────────────────┐
-│ TẦNG 1 (Ứng Dụng / JPA): PESSIMISTIC & OPTIMISTIC LOCKING   │
-│ • Khi bắt đầu xác nhận, lấy khóa bi quan trên dòng bản ghi: │
-│   SELECT * FROM tutoring_session WHERE id = ? FOR UPDATE     │
-│ • Kiểm tra Optimistic Locking @Version để chống Lost Update │
-│ • Kiểm tra Domain ConflictPolicy trên bộ nhớ RAM            │
-└─────────────────────────────────────────────────────────────┘
-         │ (Nếu qua được tầng 1, ghi dữ liệu xuống DB)
-         ▼
-┌─────────────────────────────────────────────────────────────┐
-│ TẦNG 2 (Cơ Sở Dữ Liệu): POSTGRESQL GIST EXCLUSION CONSTRAINT │
-│ • Extension: btree_gist                                     │
-│ • Ràng buộc cấp ổ đĩa:                                      │
-│   EXCLUDE USING gist (tutor_id WITH =,                      │
-│                       tstzrange(start_at, end_at, '[)')     │
-│                       WITH &&) WHERE (status = 'SCHEDULED') │
-│ • Nếu có vi phạm -> PostgreSQL ném lỗi SQLSTATE 23P01        │
-│   exclusion_violation -> Rollback giao dịch ngay lập tức!   │
-└─────────────────────────────────────────────────────────────┘
+Dưới đây là phần giải thích toàn diện từ lý thuyết nền tảng, cơ chế hoạt động tầng máy chủ, câu lệnh SQL thực thi, đến cách áp dụng thực tế trong mã nguồn dự án:
+
+---
+
+#### 2.3.1. Khóa Lạc Quan (Optimistic Locking) với `@Version`
+
+##### A. Khái niệm & Triết lý:
+- **Tư tưởng chủ đạo:** "Lạc quan" (Optimistic) giả định rằng xung đột dữ liệu rất hiếm khi xảy ra. Do đó, hệ thống **không khóa bất kỳ tài nguyên hay dòng dữ liệu nào** trong suốt thời gian người dùng đọc và xử lý nghiệp vụ trên bộ nhớ RAM.
+- **Cơ chế nhận diện xung đột:** Sử dụng một trường số nguyên phiên bản (`version`) đi kèm mỗi bản ghi. Khi đọc dữ liệu ra, hệ thống lưu lại số phiên bản hiện tại (ví dụ: `version = 1`). Khi cập nhật (`UPDATE`), hệ thống sẽ kiểm tra xem phiên bản dưới database có còn đúng bằng `1` hay không. Nếu còn đúng bằng `1`, lệnh ghi thành công và tự động tăng `version` lên `2`. Nếu một giao dịch khác đã cập nhật trước đó và đẩy `version` lên `2`, câu lệnh cập nhật sẽ phát hiện số dòng bị tác động là 0 (`0 rows updated`) và báo lỗi xung đột ngay lập tức!
+
+##### B. Hiện thực hóa trong EduFit (`TutoringSessionJpaEntity`):
+```java
+@Entity
+@Table(name = "tutoring_session")
+public class TutoringSessionJpaEntity {
+    // ...
+    @Version
+    @Column(name = "version", nullable = false)
+    private int version;
+}
 ```
 
-#### Tại sao không dùng Redis Distributed Lock?
-Nhóm đã cân nhắc Redis Distributed Lock (Redlock). Tuy nhiên:
-1. EduFit là **Modular Monolith** triển khai trên 1 cơ sở dữ liệu PostgreSQL 17 duy nhất.
-2. Việc thêm Redis làm tăng thêm 1 thành phần hạ tầng cần duy trì và giám sát, tiềm ẩn rủi ro "split-brain" hoặc mất đồng bộ giữa Redis cache và PostgreSQL disk.
-3. PostgreSQL GiST Exclusion Constraint là tính năng gốc mạnh mẽ nhất của PostgreSQL, giải quyết bài toán giao thoa dải thời gian ở cấp độ Storage Engine với chi phí $O(\log N)$ nhờ cây chỉ mục GiST (Generalized Search Tree).
+##### C. Câu lệnh SQL do Hibernate tự động sinh ngầm:
+Khi bạn gọi `repository.save(session)` để cập nhật trạng thái hoặc dữ liệu:
+```sql
+UPDATE tutoring_session
+SET status = 'CANCELLED',
+    cancelled_by = '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    version = 2                     -- Tự động tăng phiên bản
+WHERE session_id = 'c1a2b3c4-...' 
+  AND version = 1;                  -- BẮT BUỘC phiên bản hiện tại ở DB phải là 1!
+```
+- Nếu một người khác đã thay đổi bản ghi này trước đó (phiên bản ở DB đã là `2`):
+  $\rightarrow$ Điều kiện `version = 1` không khớp $\rightarrow$ Database trả về `0 rows updated`.
+  $\rightarrow$ Hibernate lập tức ném ra ngoại lệ: `jakarta.persistence.OptimisticLockException` (được Spring Data gói lại thành `org.springframework.orm.ObjectOptimisticLockingFailureException`).
+
+##### D. Ưu điểm & Giới hạn:
+- **Ưu điểm vượt trội:**
+  - **Non-blocking (Hoàn toàn không khóa):** Các luồng đọc và ghi không bao giờ phải xếp hàng chờ đợi nhau. Băng thông xử lý (Throughput) của hệ thống đạt mức tối đa.
+  - **Không sợ Deadlock:** Vì không giữ khóa tài nguyên DB trong thời gian dài.
+- **Giới hạn:**
+  - Nếu tỷ lệ tranh chấp cao (nhiều người cùng tranh nhau cập nhật 1 bản ghi), luồng đến sau sẽ bị thất bại và bắt buộc phải Rollback giao dịch hoặc Retry lại từ đầu.
+- **Phạm vi sử dụng trong EduFit:**
+  - Áp dụng làm chốt chặn an toàn nền tảng cho **toàn bộ các hành động sửa đổi buổi học** (chỉnh sửa ghi chú `SessionNote`, hủy buổi học song song, rút lại đề xuất) để triệt tiêu lỗi **Lost Update** kinh điển.
+
+---
+
+#### 2.3.2. Khóa Bi Quan (Pessimistic Locking) với `@Lock(LockModeType.PESSIMISTIC_WRITE)`
+
+##### A. Khái niệm & Triết lý:
+- **Tư tưởng chủ đạo:** "Bi quan" (Pessimistic) giả định rằng nguy cơ xung đột là rất cao (ví dụ: thời khắc Gia sư bấm Chấp nhận lịch dạy, hoặc 2 học sinh cùng muốn giành 1 khung giờ). Hệ thống quyết định **khóa chặt dòng dữ liệu ngay từ lúc đọc (SELECT)**, ngăn chặn tất cả các giao dịch khác không được phép đọc-để-ghi hoặc sửa đổi dòng đó cho đến khi giao dịch hiện tại hoàn tất (`COMMIT` hoặc `ROLLBACK`).
+
+##### B. Hiện thực hóa trong EduFit (`SpringDataTutoringSessionRepository`):
+```java
+@Repository
+public interface SpringDataTutoringSessionRepository extends JpaRepository<TutoringSessionJpaEntity, UUID> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM TutoringSessionJpaEntity s WHERE s.sessionId = :sessionId")
+    Optional<TutoringSessionJpaEntity> findByIdForUpdate(@Param("sessionId") UUID sessionId);
+}
+```
+
+##### C. Câu lệnh SQL do Hibernate chuyển thể xuống PostgreSQL:
+```sql
+SELECT session_id, class_id, tutor_id, student_id, start_at, end_at, status, version, ...
+FROM tutoring_session
+WHERE session_id = 'c1a2b3c4-...'
+FOR UPDATE;    -- Khóa ghi độc quyền (Exclusive Row-Level Lock) tại mức Engine!
+```
+- **Cơ chế cấp thấp tại Storage Engine của PostgreSQL:**
+  1. Transaction 1 (`T1`) gọi `findByIdForUpdate`: PostgreSQL cấp một khóa độc quyền (Exclusive Lock) trên tuple (dòng) vật lý tương ứng trong bảng `tutoring_session`.
+  2. Transaction 2 (`T2`) gọi `findByIdForUpdate` cùng dòng đó trong lúc `T1` chưa commit: `T2` sẽ **lập tức bị chặn (Blocked / Suspended)** ở trạng thái chờ.
+  3. Khi `T1` hoàn tất nghiệp vụ và `COMMIT`: Khóa được giải phóng. `T2` được đánh thức và đọc dữ liệu **mới nhất** mà `T1` vừa ghi. Khi đó `T2` sẽ thấy trạng thái đã chuyển thành `SCHEDULED` và bị Domain Policy từ chối một cách an toàn!
+
+##### D. Ưu điểm & Giới hạn:
+- **Ưu điểm:**
+  - **Bảo toàn tính nhất quán tuyệt đối:** Tuần tự hóa (Serialize) các yêu cầu tranh chấp, ngăn chặn hoàn toàn hiện tượng Dirty Read, Non-repeatable Read và Race Condition logic.
+  - Phù hợp hoàn hảo cho luồng chuyển đổi trạng thái then chốt (`PROPOSE -> SCHEDULED`, `RESCHEDULE -> ACCEPTED`).
+- **Giới hạn:**
+  - Có thể gây nghẽn tài nguyên (Thread starvation / DB Connection Pool exhaustion) nếu một giao dịch giữ khóa quá lâu.
+  - Nguy cơ Deadlock nếu hai giao dịch cùng khóa chéo các dòng dữ liệu khác nhau.
+- **Chiến lược áp dụng của EduFit:**
+  - Chỉ khóa đúng 1 dòng cần thiết (`findByIdForUpdate`).
+  - Toàn bộ thao tác bên trong Transaction (kiểm tra `ConflictPolicy`, bắn Event) đều chạy thuần RAM trong vòng chưa đầy $5 \text{ ms}$, giải phóng khóa tức thì.
+
+---
+
+#### 2.3.3. Cây Chỉ Mục GiST (Generalized Search Tree) & PostgreSQL Extension `btree_gist`
+
+Đây là "vũ khí tối thượng" ở tầng lưu trữ vật lý của cơ sở dữ liệu để triệt tiêu hoàn toàn bài toán Double-Booking.
+
+##### A. Giới hạn cốt lõi của B-Tree truyền thống:
+- Hầu hết các hệ quản trị cơ sở dữ liệu (MySQL, SQL Server, Oracle) mặc định dùng chỉ mục **B-Tree (Balanced Tree)**.
+- **Đặc tính của B-Tree:** Dựa trên quan hệ thứ tự 1 chiều tuyệt đối: `<`, `=`, `>`. B-Tree chỉ kiểm tra được sự trùng lặp giá trị đơn lẻ (Ví dụ: `UNIQUE(tutor_id, start_at)`).
+- **Tại sao B-Tree bất lực trước dải thời gian:**
+  - Hai buổi học trùng giờ nhau **không nhất thiết phải có cùng `start_at` hay `end_at`**!
+  - *Ví dụ:* Buổi 1 học từ `14:00 - 16:00`. Buổi 2 học từ `15:00 - 17:00`.
+    - Rõ ràng: $14:00 \neq 15:00$ và $16:00 \neq 17:00$. Ràng buộc `UNIQUE(tutor_id, start_at)` của B-Tree hoàn toàn vô tác dụng và cho phép cả 2 buổi cùng tồn tại!
+    - Việc kiểm tra trùng dải thời gian đòi hỏi toán tử **giao thoa tập hợp (Overlap Operator `&&`)**:
+      $$[14:00, 16:00) \cap [15:00, 17:00) \neq \emptyset \implies \text{TRÙNG LỊCH!}$$
+    - B-Tree không thể lập chỉ mục hay giải quyết toán tử `&&` trong không gian 2 chiều $[start, end)$.
+
+##### B. Bản chất của GiST (Generalized Search Tree):
+- **GiST** là một cấu trúc cây cân bằng tổng quát hóa (được phát triển bởi Hellerstein et al. tại UC Berkeley).
+- **Nguyên lý Bounding Box / Bounding Range:**
+  - Thay vì lưu các giá trị đơn lẻ như B-Tree, mỗi nút nhánh của cây GiST lưu trữ một **Vùng bao (Bounding Interval)** chứa toàn bộ các khoảng thời gian con bên dưới.
+  - Khi cần kiểm tra xem khoảng $[S_x, E_x)$ có giao nhau với bất kỳ khoảng nào trong DB hay không:
+    - PostgreSQL duyệt từ nút gốc của cây GiST.
+    - Nếu khoảng cần kiểm tra không giao với Vùng bao của một nhánh, thuật toán **bỏ qua toàn bộ nhánh con đó (Pruning)**.
+    - Nhờ vậy, phép kiểm tra giao thoa dải thời gian đạt tốc độ cực nhanh: $\mathcal{O}(\log N)$ thay vì phải quét toàn bộ bảng ($\mathcal{O}(N)$ - Full Table Scan).
+
+```
+                            [CÂY CHỈ MỤC GiST: PHẠM VI DẢI THỜI GIAN]
+                                       ┌───────────────────────┐
+                                       │ Root Bounding Range:  │
+                                       │   [08:00, 20:00)      │
+                                       └───────────┬───────────┘
+                         ┌─────────────────────────┴─────────────────────────┐
+                         ▼                                                   ▼
+            ┌─────────────────────────┐                         ┌─────────────────────────┐
+            │ Branch 1 Bounding Range:│                         │ Branch 2 Bounding Range:│
+            │      [08:00, 14:00)     │                         │      [14:00, 20:00)     │
+            └────────────┬────────────┘                         └────────────┬────────────┘
+        ┌────────────────┴────────────────┐                 ┌────────────────┴────────────────┐
+        ▼                                 ▼                 ▼                                 ▼
+   [Leaf: 08:00-10:00)               [Leaf: 10:00-12:00) [Leaf: 14:00-16:00)               [Leaf: 18:00-20:00)
+```
+
+##### C. Extension `btree_gist` trong PostgreSQL:
+- Mặc định, GiST chỉ hỗ trợ các kiểu dữ liệu hình học hoặc dải số/thời gian (`box`, `polygon`, `range`). Nó **không hỗ trợ** các kiểu dữ liệu vô hướng thông thường như `UUID` hay `BIGINT`.
+- Do đó, PostgreSQL không thể vừa kiểm tra `tutor_id` (kiểu `UUID`, dùng toán tử so bằng `=`) vừa kiểm tra khoảng thời gian (kiểu `tstzrange`, dùng toán tử giao thoa `&&`) trên cùng một cây GiST.
+- **Extension `btree_gist` ra đời để giải quyết vấn đề này:** Nó cài đặt các hàm toán tử của B-Tree (như `=`) tương thích hoàn toàn vào kiến trúc cây GiST!
+- Nhờ kích hoạt extension này:
+  ```sql
+  CREATE EXTENSION IF NOT EXISTS btree_gist;
+  ```
+  PostgreSQL cho phép ta tạo một ràng buộc loại trừ kết hợp cả trường định danh vô hướng lẫn dải thời gian đa chiều trong cùng một chỉ mục duy nhất!
+
+##### D. Kiểu dữ liệu Range `tstzrange` và Ký hiệu nửa mở `[)`:
+Trong file migration [`V1.05__create_tutoring_session_tables.sql`](file:///c:/University/Semester%205/SWP391/Edufit/EduFit/backend/app/src/main/resources/db/migration/scheduling/V1.05__create_tutoring_session_tables.sql):
+```sql
+CONSTRAINT ex_tutoring_session_no_tutor_overlap EXCLUDE USING gist (
+    tutor_id WITH =,
+    tstzrange(start_at, end_at, '[)') WITH &&
+) WHERE (status IN ('SCHEDULED', 'PROPOSED'));
+```
+- `tstzrange`: Kiểu dữ liệu khoảng thời gian có múi giờ (`timestamp with time zone range`).
+- Chuỗi format `'[)'`:
+  - `[` (Dấu ngoặc vuông bên trái): **Inclusive (Bao gồm điểm bắt đầu)** $\rightarrow$ $t \ge start\_at$.
+  - `)` (Dấu ngoặc đơn bên phải): **Exclusive (Không bao gồm điểm kết thúc)** $\rightarrow$ $t < end\_at$.
+- **Ý nghĩa sống còn:**
+  - Nếu Gia sư có buổi 1: `[08:00, 10:00)` và buổi 2: `[10:00, 12:00)`.
+  - Hai khoảng này tiếp giáp nhau tại đúng mốc `10:00:00`. Nhưng vì buổi 1 là ngoặc tròn `)`, nó không chứa điểm `10:00:00`.
+  - Phép toán `[08:00, 10:00) && [10:00, 12:00)` trả về **FALSE (Không giao nhau)** $\rightarrow$ Gia sư dạy 2 ca liền kề hoàn toàn hợp lệ!
+
+##### E. Cơ chế bẫy lỗi Exclusion Constraint ở tầng Storage Engine:
+Khi có 2 giao dịch đồng thời gửi dữ liệu vi phạm:
+1. PostgreSQL kiểm tra cây GiST: Thấy đã tồn tại một dòng có cùng `tutor_id` mà khoảng thời gian giao nhau (`&&`) và `status` nằm trong `('SCHEDULED', 'PROPOSED')`.
+2. PostgreSQL lập tức từ chối thao tác ghi và trả về mã lỗi chuẩn SQL:
+   - **SQLSTATE:** `23P01` (`exclusion_violation`).
+3. Spring Boot / Hibernate nhận lỗi SQL và bọc lại thành:
+   - `org.springframework.dao.DataIntegrityViolationException`.
+4. Tầng Application Service của EduFit bắt ngoại lệ này và dịch sang mã lỗi nghiệp vụ:
+   - Ném: `ResourceConflictException(ErrorCode.SCHEDULE_OVERLAP)`.
+   - Kết quả: REST API trả về mã HTTP `409 Conflict` kèm thông báo rõ ràng cho phía người dùng, bảo vệ hệ thống tuyệt đối không bị sập hay lưu sai dữ liệu.
+
+---
+
+#### 2.3.4. Bảng So Sánh Toàn Diện Giữa 3 Cơ Chế Khóa & Ràng Buộc
+
+| Tiêu Chí So Sánh | Optimistic Locking (`@Version`) | Pessimistic Locking (`@Lock`) | PostgreSQL GiST Exclusion (`btree_gist`) |
+| :--- | :--- | :--- | :--- |
+| **Bản chất kỹ thuật** | Phi khóa (Lock-free), so sánh số phiên bản `version` khi UPDATE. | Khóa dòng vật lý (`SELECT ... FOR UPDATE`) tại DB. | Ràng buộc loại trừ hình học/dải giá trị ở cấp Storage Engine. |
+| **Vị trí thực thi** | Ứng dụng (JPA/Hibernate) + SQL `WHERE version = ?`. | Database Engine (PostgreSQL Lock Manager). | Database Storage Engine (Cây chỉ mục GiST trên ổ đĩa). |
+| **Mức độ ảnh hưởng hiệu năng** | **Rất nhẹ (Tối ưu nhất):** Không tốn tài nguyên khóa hay hàng đợi. | **Trung bình:** Các luồng phải xếp hàng chờ giải phóng khóa. | **Cực nhanh cho kiểm tra dải ($\mathcal{O}(\log N)$):** Tối ưu hóa trên cây chỉ mục. |
+| **Khả năng chống Race Condition** | Chỉ bảo vệ bản ghi đơn lẻ khi cập nhật (chống Lost Update). | Bảo vệ bản ghi đơn lẻ khi đọc để chuyển trạng thái. | **Toàn năng:** Bảo vệ toàn bộ dải thời gian liên tục chống Double-Booking. |
+| **Môi trường đa máy chủ (Multi-Pod / Multi-Server)** | Hoạt động tốt (dựa trên DB `version`). | Hoạt động tốt (dựa trên DB Lock Manager). | **Bất khả xâm phạm (Ultimate defense):** Ngay cả khi có 100 Pods chạy song song hay lệnh SQL thủ công. |
+| **Hành vi khi phát hiện xung đột** | Ném `OptimisticLockException` $\rightarrow$ Rollback transaction. | Luồng đến sau xếp hàng chờ luồng trước hoàn tất. | Ném `SQLSTATE 23P01` $\rightarrow$ Ném `DataIntegrityViolationException`. |
+| **Ứng dụng cụ thể trong EduFit** | Bảo vệ sửa đổi ghi chú, hủy lịch, rút lại đề xuất. | Khóa phiên học khi Xác nhận (`RESPOND`) hoặc Đổi lịch (`RESCHEDULE`). | Chặn đứng trùng giờ dạy của Gia sư và giờ học của Học sinh. |
+
+---
+
+#### 2.3.5. Sự Phối Hợp Nhịp Nhàng 2 Tầng (Two-Tier Synergy) trong EduFit
+
+EduFit không phụ thuộc vào một kỹ thuật đơn lẻ, mà kết hợp chúng thành một quy trình phòng ngự có chiều sâu:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as Học sinh / Gia sư
+    participant Web as SessionController
+    participant Svc as RespondToProposalService
+    participant Domain as ConflictPolicy (POJO)
+    participant Lock as TẦNG 1: Pessimistic + Optimistic
+    participant DB as TẦNG 2: PostgreSQL Storage Engine (GiST)
+
+    Client->>Web: POST /api/v1/scheduling/sessions/{id}/respond (ACCEPT)
+    Web->>Svc: respondToProposal(sessionId, ACCEPT)
+
+    rect rgb(235, 245, 255)
+        Note over Svc,Lock: BƯỚC 1: TẦNG 1 - KHÓA DÒNG BI QUAN
+        Svc->>Lock: findByIdForUpdate(sessionId)
+        Lock->>DB: SELECT * FROM tutoring_session WHERE id = ? FOR UPDATE
+        Note over DB: Giữ Exclusive Row Lock trên bản ghi session này!
+        DB-->>Svc: Trả về TutoringSessionJpaEntity (với version = V)
+    end
+
+    rect rgb(240, 255, 240)
+        Note over Svc,Domain: BƯỚC 2: KIỂM TRA NGHIỆP VỤ TRÊN RAM (IN-MEMORY)
+        Svc->>Domain: ConflictPolicy.isOverlapping(slotMới, cácSlotHiệnCó)
+        Domain-->>Svc: Hợp lệ (Không phát hiện xung đột sơ bộ)
+        Svc->>Domain: session.acceptProposal() (Cập nhật FSM sang SCHEDULED)
+    end
+
+    rect rgb(255, 245, 235)
+        Note over Svc,DB: BƯỚC 3: TẦNG 2 - GHI DỮ LIỆU & BỨC TƯỜNG THÀNH GiST
+        Svc->>Lock: save(session)
+        Lock->>DB: UPDATE tutoring_session SET status = 'SCHEDULED', version = V + 1 WHERE id = ? AND version = V
+        Note over DB: PostgreSQL kiểm tra cây GiST (ex_tutoring_session_no_tutor_overlap)
+        alt Không trùng lặp thời gian trong dải [start, end)
+            DB-->>Svc: UPDATE 1 row thành công -> COMMIT giao dịch!
+            Svc-->>Web: Trả về SessionResponse (200 OK)
+            Web-->>Client: Hiển thị buổi học đã được xác nhận thành công
+        else Trùng lịch với một buổi khác (Do luồng khác vừa ghi đồng thời)
+            DB-->>Svc: Lỗi SQLSTATE 23P01 (exclusion_violation)!
+            Note over Svc: Bắt DataIntegrityViolationException
+            Svc-->>Web: Dịch sang ResourceConflictException(SCHEDULE_OVERLAP)
+            Web-->>Client: Trả về HTTP 409 Conflict ("Gia sư đã có lịch dạy trong khung giờ này!")
+        end
+    end
+```
+
+---
+
+#### 2.3.6. So Sánh với Redis Distributed Lock & Lý Do Lựa Chọn Giải Pháp Này
+
+Trong quá trình thiết kế kiến trúc, nhóm kỹ sư EduFit đã cân nhắc việc sử dụng **Redis Distributed Lock (Redlock)**. Tuy nhiên, giải pháp phối hợp **PostgreSQL GiST (`btree_gist`) + Pessimistic Lock** được lựa chọn vì những ưu điểm vượt trội sau:
+
+1. **Tuân thủ triệt để nguyên lý KISS & Tối ưu hóa tài nguyên:**
+   - EduFit là một kiến trúc **Modular Monolith** hoạt động trên một cơ sở dữ liệu PostgreSQL 17 duy nhất.
+   - Việc đưa thêm Redis vào hệ thống đồng nghĩa với việc phát sinh thêm 1 thành phần hạ tầng độc lập cần cấu hình, bảo trì, giám sát, cấp phát bộ nhớ RAM và dự phòng sự cố (failover).
+2. **Loại bỏ rủi ro mất đồng bộ giữa Cache và Database:**
+   - Khóa phân tán trên Redis là khóa "ngoài luồng" (out-of-band lock). Nếu tiến trình ứng dụng bị tạm dừng vì Garbage Collection (GC pause) hoặc rớt mạng khi Redis key hết hạn (TTL expired), hai luồng vẫn có thể ghi đè dữ liệu lên database.
+   - Ngược lại, **GiST Exclusion Constraint nằm ngay bên trong PostgreSQL Storage Engine**, gắn liền với giao dịch ACID. Dữ liệu chỉ được commit nếu vượt qua ràng buộc hình học này.
+3. **Hiệu năng và độ tin cậy được chứng minh:**
+   - Cây chỉ mục GiST hoạt động với độ phức tạp $\mathcal{O}(\log N)$, chạy hoàn toàn bằng mã C tối ưu của PostgreSQL core engine, đem lại tốc độ cực kỳ nhanh chóng và độ tin cậy 100%.
 
 ### 2.4. Thuật Toán Giao Thoa Khoảng Thời Gian Nửa Mở: Half-Open Interval $[start, end)$ (BR-42)
 
@@ -498,17 +715,29 @@ flowchart TD
     ReqIn(["Client gửi POST /api/v1/scheduling/sessions/propose\n{ classId, startAt, endAt, mode, placeOrLink, message }"]) --> BeanVal{"Bean Validation (@Valid):\nstartAt, endAt != null;\nmode hợp lệ?"}
     
     BeanVal -- "Sai" --> Err400_Val["Trả về HTTP 400 VALIDATION_FAILED"]
-    BeanVal -- "Đúng" --> TimeVal{"ProposalWindowPolicy.validateWindow():\n1. startAt > now (Tương lai)?\n2. endAt > startAt?\n3. 30m <= duration <= 240m?"}
+    BeanVal -- "Đúng" --> AuthPCheck{"proposedBy là Tutor HOẶC Student\ncủa lớp học (classId)?"}
+    
+    AuthPCheck -- "Người ngoài" --> Err403_P["Ném ForbiddenOperationException\n-> Trả về HTTP 403 FORBIDDEN"]
+    AuthPCheck -- "Hợp lệ" --> ConnCheck{"ConnectionValidationPort.isConnectionActive():\nLớp học có đang ACTIVE?"}
+    
+    ConnCheck -- "Không active" --> Err400_Conn["Ném InvalidOperationException\n-> Trả về HTTP 400 INVALID_OPERATION"]
+    ConnCheck -- "Active" --> TimeVal{"ProposalWindowPolicy:\n1. startAt > now (Tương lai)?\n2. 30m <= duration <= 240m (BR-41)?"}
     
     TimeVal -- "Vi phạm" --> Err400_Time["Ném InvalidOperationException\n-> Trả về HTTP 400 (Thời lượng sai hoặc quá khứ)"]
-    TimeVal -- "Hợp lệ" --> ClassCheck{"ConnectionValidationPort.isClassActive():\n1. classId tồn tại & status == 'ACTIVE'?\n2. proposedBy là Tutor hoặc Student của lớp?"}
+    TimeVal -- "Hợp lệ" --> CalcTTL["Tính toán TTL hết hạn (BR-43):\nexpiresAt = ProposalWindowPolicy.calculateExpiresAt(startAt, now)"]
     
-    ClassCheck -- "Không hợp lệ" --> Err403["Ném ForbiddenException / InvalidOperationException\n-> Trả về HTTP 403 / 400"]
-    ClassCheck -- "Hợp lệ" --> CalcTTL["Tính toán TTL hết hạn:\nexpiresAt = min(now + 3 ngày, startAt)"]
+    CalcTTL --> RamOverlapCheck{"Kiểm tra trùng lịch trên RAM (ConflictPolicy):\n1. findTutorBusySlots(tutorId, startAt, endAt)\n2. findCalendarSessions(studentId, startAt, endAt)"}
     
-    CalcTTL --> CreatePOJO["Khởi tạo Aggregate Root POJO:\nTutoringSession.createProposed(\n  status = 'PROPOSED',\n  version = 0\n)"]
+    RamOverlapCheck -- "Trùng lịch" --> Err409_Ram["Ném ResourceConflictException\n-> Trả về HTTP 409 SCHEDULE_OVERLAP"]
+    RamOverlapCheck -- "Không trùng" --> CreatePOJO["Khởi tạo Aggregate Root POJO:\nTutoringSession.propose(...) status = PROPOSED"]
+    
     CreatePOJO --> SaveDB["TutoringSessionRepository.save(session)"]
-    SaveDB --> PubEvent["ApplicationEventPublisher.publishEvent(\n  new SessionProposedEvent(...)\n)"]
+    SaveDB --> GistTrap{"PostgreSQL GiST Exclusion Check:\nCó vi phạm ex_tutoring_session_no_tutor_overlap?"}
+    
+    GistTrap -- "Vi phạm đồng thời" --> CatchGistP["Bắt DataIntegrityViolationException\n-> Ném ResourceConflictException (HTTP 409)"]
+    GistTrap -- "Thành công" --> SaveHistP["Lưu Audit Trail (SessionHistory):\naction = 'PROPOSE'"]
+    
+    SaveHistP --> PubEvent["ApplicationEventPublisher.publishEvent(\n  SessionProposedEvent.of(...)\n)"]
     PubEvent --> Ret201(["Trả về HTTP 201 CREATED\n{ sessionId, status: 'PROPOSED', expiresAt }"])
 
     classDef err fill:#ffebee,stroke:#c62828,stroke-width:2px;
@@ -516,10 +745,10 @@ flowchart TD
     classDef decision fill:#fff8e1,stroke:#f57f17,stroke-width:2px;
     classDef proc fill:#e3f2fd,stroke:#1565c0,stroke-width:1px;
 
-    class Err400_Val,Err400_Time,Err403 err;
+    class Err400_Val,Err403_P,Err400_Conn,Err400_Time,Err409_Ram,CatchGistP err;
     class Ret201 ok;
-    class BeanVal,TimeVal,ClassCheck decision;
-    class CalcTTL,CreatePOJO,SaveDB,PubEvent proc;
+    class BeanVal,AuthPCheck,ConnCheck,TimeVal,RamOverlapCheck,GistTrap decision;
+    class CalcTTL,CreatePOJO,SaveDB,SaveHistP,PubEvent proc;
 ```
 
 ---
@@ -698,6 +927,119 @@ flowchart TD
     class SweepStart,QueryExpired,ForEach,UpdateStatus,SaveSession,InsertHist,PubExpEvent,LogNoop,LogDone proc;
     class HasRecords,NextSession decision;
     class SweepEnd ok;
+```
+
+---
+
+#### Flowchart 7: Luồng Ghi Nhận Kết Quả Buổi Học & Đồng Bộ Biên Bản Học Tập (`RecordSessionOutcomeService`)
+
+Mô tả logic xử lý Use Case UC4.6 khi Gia sư ghi nhận buổi học hoàn thành (`COMPLETED`) hoặc vắng mặt (`ABSENT`), và chuyển tiếp `SessionNote` sang phân hệ `progress`:
+
+```mermaid
+flowchart TD
+    OutcomeReq(["Gia sư gửi POST /api/v1/scheduling/sessions/{id}/outcome\n{ outcome: 'COMPLETED' | 'ABSENT', noteContent: '...' }"]) --> BeginOutcomeTx["Bắt đầu @Transactional"]
+    
+    BeginOutcomeTx --> RowLockO["Khóa bi quan dòng bản ghi:\nSELECT * FROM tutoring_session WHERE session_id = ? FOR UPDATE"]
+    RowLockO --> SessFoundO{"Tìm thấy buổi học trong DB?"}
+    
+    SessFoundO -- "Không" --> Err404_O["Ném EntityNotFoundException\n-> Trả về HTTP 404 NOT_FOUND"]
+    SessFoundO -- "Có" --> StatusCheckO{"session.status == 'SCHEDULED' ?"}
+    
+    StatusCheckO -- "Không phải SCHEDULED" --> Err400_FinO["Ném InvalidOperationException\n-> Trả về HTTP 400 (SESSION_ALREADY_FINALIZED)"]
+    StatusCheckO -- "Đang SCHEDULED" --> TutorCheck{"currentUserId == session.tutorId ?\n(Chỉ Gia sư của buổi học mới có quyền ghi nhận)"}
+    
+    TutorCheck -- "Không phải Gia sư" --> Err403_O["Ném ForbiddenOperationException\n-> Trả về HTTP 403 FORBIDDEN"]
+    TutorCheck -- "Đúng Gia sư" --> OutcomeVal{"outcome == 'COMPLETED' HOẶC 'ABSENT' ?"}
+    
+    OutcomeVal -- "Sai giá trị" --> Err400_ValO["Ném InvalidOperationException\n-> Trả về HTTP 400 VALIDATION_FAILED"]
+    OutcomeVal -- "Hợp lệ" --> TimelineCheck{"Thời điểm hiện tại now >= session.startAt ?\n(Buổi học đã bắt đầu hoặc diễn ra)"}
+    
+    TimelineCheck -- "Chưa diễn ra (now < startAt)" --> Err400_Early["Ném InvalidOperationException\n-> Trả về HTTP 400 INVALID_OPERATION\n(Chưa thể ghi nhận khi buổi học chưa diễn ra)"]
+    TimelineCheck -- "Đã diễn ra" --> ApplyOutcome["Cập nhật Aggregate Root:\nsession.recordOutcome(outcome, tutorId, now)"]
+    
+    ApplyOutcome --> SaveOutcomeDB["TutoringSessionRepository.save(session)\n(status = COMPLETED hoặc ABSENT)"]
+    SaveOutcomeDB --> HasNoteCheck{"noteContent != null VÀ !noteContent.isBlank() ?"}
+    
+    HasNoteCheck -- "Có ghi chú" --> CallProgressPort["Gọi Outbound Port:\nprogressSyncPort.recordSessionNote(\n  sessionId, classId, noteContent, now\n)"]
+    CallProgressPort --> WriteAuditO["Ghi lịch sử biến động (SessionHistory):\naction = 'OUTCOME_' + outcome.name()"]
+    HasNoteCheck -- "Không có ghi chú" --> WriteAuditO
+    
+    WriteAuditO --> PubOutcomeEvent["ApplicationEventPublisher.publishEvent(\n  SessionOutcomeRecordedEvent.of(...)\n)"]
+    PubOutcomeEvent --> Ret200_Outcome(["Trả về HTTP 200 OK\n{ sessionId, status: outcome, recordedAt }"])
+
+    classDef err fill:#ffebee,stroke:#c62828,stroke-width:2px;
+    classDef ok fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef decision fill:#fff8e1,stroke:#f57f17,stroke-width:2px;
+    classDef proc fill:#e3f2fd,stroke:#1565c0,stroke-width:1px;
+
+    class Err404_O,Err400_FinO,Err403_O,Err400_ValO,Err400_Early err;
+    class Ret200_Outcome ok;
+    class SessFoundO,StatusCheckO,TutorCheck,OutcomeVal,TimelineCheck,HasNoteCheck decision;
+    class BeginOutcomeTx,RowLockO,ApplyOutcome,SaveOutcomeDB,CallProgressPort,WriteAuditO,PubOutcomeEvent proc;
+```
+
+---
+
+#### Flowchart 8: Cơ Chế Điều Phối Độc Lập Qua Outbound Port & Adapter (`ConnectionValidationPort` & `@ConditionalOnProperty`)
+
+Mô tả cơ chế chuyển mạch Adapter thông minh giúp phân hệ `scheduling` phát triển và test độc lập với tiến độ của phân hệ `connection`:
+
+```mermaid
+flowchart TD
+    BootStart(["Khởi động ứng dụng Spring Boot / Chạy Slice Test"]) --> ReadProp{"Đọc cấu hình trong application.yml:\n'edufit.scheduling.use-mock-connection'"}
+    
+    ReadProp -- "true HOẶC chưa khai báo (matchIfMissing = true)" --> LoadMock["Spring IoC khởi tạo Bean:\nMockConnectionValidationAdapter\n(@ConditionalOnProperty)"]
+    ReadProp -- "false (Môi trường Staging/Production tích hợp)" --> LoadReal["Spring IoC khởi tạo Bean:\nRealConnectionValidationAdapter\n(@ConditionalOnProperty)"]
+    
+    LoadMock --> InjectedPort1["ProposeSessionService inject ConnectionValidationPort"]
+    LoadReal --> InjectedPort2["ProposeSessionService inject ConnectionValidationPort"]
+    
+    InjectedPort1 --> ExecMock["Thực thi isConnectionActive(classId, tutorId, studentId):\n1. Ghi log DEBUG/INFO [MOCK]\n2. Trả về true nếu classId, tutorId, studentId != null\n=> Cho phép module scheduling phát triển & test độc lập 100%!"]
+    
+    InjectedPort2 --> ExecReal["Thực thi isConnectionActive(classId, tutorId, studentId):\n1. Gọi ConnectionFacade qua JVM In-Memory\n2. Kiểm tra quan hệ hợp đồng Engagement trong DB\n=> Đảm bảo toàn vẹn dữ liệu thực tế!"]
+
+    classDef proc fill:#e3f2fd,stroke:#1565c0,stroke-width:1px;
+    classDef decision fill:#fff8e1,stroke:#f57f17,stroke-width:2px;
+    classDef ok fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+
+    class ReadProp decision;
+    class BootStart,LoadMock,LoadReal,InjectedPort1,InjectedPort2 proc;
+    class ExecMock,ExecReal ok;
+```
+
+---
+
+#### Flowchart 9: Luồng Tra Cứu Xuyên Phân Hệ Qua `SessionFacade` (Modular Monolith Public Contract)
+
+Mô tả cách các phân hệ khác (`discovery`, `progress`, `review`) truy vấn dữ liệu lịch học qua Interface công khai duy nhất mà không làm rò rỉ JPA Entity hoặc vi phạm tính đóng gói:
+
+```mermaid
+flowchart TD
+    ExtCaller(["Phân hệ bên ngoài gọi qua JVM RAM:\n(discovery, progress, review)"]) --> ChooseApi{"Chọn phương thức trên SessionFacade"}
+    
+    ChooseApi -- "discovery: findBusySlotsByTutorId(tutorId, from, to)" --> QueryBusy["Gọi sessionRepository.findTutorBusySlots(tutorId, from, to)"]
+    QueryBusy --> MapBusy["Ánh xạ sang immutable Java Record:\nTutorBusySlotView(sessionId, tutorId, startAt, endAt)"]
+    MapBusy --> RetBusy(["Trả về List<TutorBusySlotView>:\nDiscovery loại trừ các slot bận này khỏi lịch rảnh gia sư"])
+    
+    ChooseApi -- "review: getCompletedStatsByClassId(classId)" --> QueryCount["Gọi sessionRepository.countCompletedSessions(classId)"]
+    QueryCount --> MapStats["Đóng gói vào CompletedSessionStatsView:\n(classId, totalCompletedSessions, lastCompletedAt)"]
+    MapStats --> RetStats(["Trả về CompletedSessionStatsView:\nReview kiểm tra học sinh đã hoàn thành đủ số buổi để mở review (BR-61)"])
+    
+    ChooseApi -- "discovery / progress: hasActiveSessionAt(tutorId, startAt, endAt)" --> QueryActive["Gọi sessionRepository.findTutorBusySlots(tutorId, startAt, endAt)"]
+    QueryActive --> EvalOverlapF["Kiểm tra qua ConflictPolicy.isOverlapping()"]
+    EvalOverlapF --> RetBool(["Trả về boolean:\ntrue nếu gia sư đang có lịch dạy SCHEDULED bị trùng"])
+
+    ChooseApi -- "progress: findSessionById(sessionId)" --> QueryDetail["Gọi sessionRepository.findById(sessionId)"]
+    QueryDetail --> MapSummary["Ánh xạ sang immutable Record SessionSummaryView"]
+    MapSummary --> RetSummary(["Trả về Optional<SessionSummaryView> an toàn"])
+
+    classDef proc fill:#e3f2fd,stroke:#1565c0,stroke-width:1px;
+    classDef decision fill:#fff8e1,stroke:#f57f17,stroke-width:2px;
+    classDef ok fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+
+    class ChooseApi decision;
+    class QueryBusy,MapBusy,QueryCount,MapStats,QueryActive,EvalOverlapF,QueryDetail,MapSummary proc;
+    class ExtCaller,RetBusy,RetStats,RetBool,RetSummary ok;
 ```
 
 ---
