@@ -2,7 +2,7 @@
 
 import React, { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { ResetPasswordForm } from "@/features/auth/components/ResetPasswordForm";
+import { ResetPasswordForm } from "@/features/auth";
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
@@ -22,18 +22,19 @@ function ResetPasswordContent() {
   return <ResetPasswordForm token={token} />;
 }
 
+/**
+ * Trang Đặt Lại Mật Khẩu (App Router Page)
+ */
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans selection:bg-amber-200">
-      <Suspense
-        fallback={
-          <div className="w-full max-w-md bg-white rounded-3xl border border-stone-200 p-8 text-center text-xs text-neutral-500">
-            Đang tải biểu mẫu...
-          </div>
-        }
-      >
-        <ResetPasswordContent />
-      </Suspense>
-    </div>
+    <Suspense
+      fallback={
+        <div className="w-full max-w-md bg-white rounded-3xl border border-stone-200 p-8 text-center text-xs text-neutral-500">
+          Đang tải biểu mẫu...
+        </div>
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
