@@ -78,4 +78,20 @@ public class TutoringSessionRepositoryAdapter implements TutoringSessionDomainRe
   public int countCompletedSessionsBetween(UUID tutorId, UUID studentId) {
     return springDataRepository.countCompletedSessionsBetween(tutorId, studentId);
   }
+
+  @Override
+  public List<TutoringSession> findUpcomingSessions(Instant windowStart, Instant windowEnd) {
+    return springDataRepository.findUpcomingSessions(windowStart, windowEnd)
+        .stream()
+        .map(sessionMapper::toDomain)
+        .toList();
+  }
+
+  @Override
+  public List<TutoringSession> findOverdueOutcomeSessions(Instant cutoff) {
+    return springDataRepository.findOverdueOutcomeSessions(cutoff)
+        .stream()
+        .map(sessionMapper::toDomain)
+        .toList();
+  }
 }

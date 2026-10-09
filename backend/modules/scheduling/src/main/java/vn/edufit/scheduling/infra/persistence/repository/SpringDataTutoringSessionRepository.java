@@ -126,4 +126,15 @@ public interface SpringDataTutoringSessionRepository extends JpaRepository<Tutor
       @Param("windowStart") Instant windowStart,
       @Param("windowEnd") Instant windowEnd
   );
+
+  /**
+   * Quét các buổi học đã kết thúc nhưng Gia sư chưa ghi nhận kết quả (FR-20).
+   */
+  @Query("""
+      SELECT s FROM TutoringSessionJpaEntity s
+      WHERE s.status = 'SCHEDULED'
+        AND s.endAt < :cutoff
+      ORDER BY s.endAt ASC
+  """)
+  List<TutoringSessionJpaEntity> findOverdueOutcomeSessions(@Param("cutoff") Instant cutoff);
 }

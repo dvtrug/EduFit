@@ -1044,6 +1044,123 @@ flowchart TD
 
 ---
 
+#### Flowchart 10: Tác Vụ Ngầm Quét Hết Hạn Đề Xuất Buổi Học & Đổi Lịch (`ExpireProposalsJob` - FR-17, BR-43, BR-44)
+
+Mô tả thuật toán quét dọn định kỳ các đề xuất buổi học và dời lịch quá hạn phản hồi để thu hồi và thông báo cho người dùng:
+
+```mermaid
+flowchart TD
+    CronTrigger(["Cron Trigger (Mỗi 15 phút):\n0 */15 * * * *"]) --> JobStart["ExpireProposalsJob.sweepExpiredProposals()\nLấy now = clock.instant()"]
+    
+    JobStart --> QueryS["1. sessionRepository.findExpiredProposals(now)\n(status = 'PROPOSED' AND expires_at < now)"]
+    QueryS --> HasS{"Có buổi học\nquá hạn không?"}
+    
+    HasS -- "Không" --> QueryR["2. proposalRepository.findExpiredPendingProposals(now)\n(status = 'PENDING' AND expires_at < now)"]
+    HasS -- "Có (N sessions)" --> LoopS["Vòng lặp từng session:"]
+    
+    LoopS --> TryS{"Khối try-catch\ncục bộ"}
+    TryS --> ExpireS["session.expire(now)\nstatus = EXPIRED"]
+    ExpireS --> SaveS["sessionRepository.save(session)"]
+    SaveS --> HistS["historyRepository.save(\n  action = 'EXPIRE',\n  reason = 'Tự động hết hạn do quá thời gian (FR-17)'\n)"]
+    HistS --> PubEventS["eventPublisher.publishEvent(\n  SessionExpiredEvent.of(sessionId, ...)\n)"]
+    PubEventS --> NextS{"Còn session\nkhác không?"}
+    NextS -- "Còn" --> LoopS
+    NextS -- "Hết" --> QueryR
+    TryS -- "Bắt ngoại lệ" --> LogErrS["log.error(...) & tiếp tục batch"] --> NextS
+
+    QueryR --> HasR{"Có đề xuất dời lịch\nquá hạn không?"}
+    HasR -- "Không" --> JobEnd(["Kết thúc lượt quét"])
+    HasR -- "Có (M proposals)" --> LoopR["Vòng lặp từng proposal:"]
+
+    LoopR --> TryR{"Khối try-catch\ncục bộ"}
+    TryR --> ExpireR["proposal.expire(now)\nstatus = EXPIRED"]
+    ExpireR --> SaveR["proposalRepository.save(proposal)"]
+    SaveR --> HistR["historyRepository.save(\n  action = 'RESCHEDULE_EXPIRE'\n)"]
+    HistR --> NextR{"Còn proposal\nkhác không?"}
+    NextR -- "Còn" --> LoopR
+    NextR -- "Hết" --> JobEnd
+    TryR -- "Bắt ngoại lệ" --> LogErrR["log.error(...) & tiếp tục batch"] --> NextR
+
+    classDef proc fill:#e3f2fd,stroke:#1565c0,stroke-width:1px;
+    classDef decision fill:#fff8e1,stroke:#f57f17,stroke-width:2px;
+    classDef ok fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef err fill:#ffebee,stroke:#c62828,stroke-width:1px;
+
+    class CronTrigger,JobEnd ok;
+    class HasS,HasR,NextS,NextR,TryS,TryR decision;
+    class JobStart,QueryS,LoopS,ExpireS,SaveS,HistS,PubEventS,QueryR,LoopR,ExpireR,SaveR,HistR proc;
+    class LogErrS,LogErrR err;
+```
+
+---
+
+#### Flowchart 11: Tác Vụ Ngầm Quét Nhắc Lịch Học Cửa Sổ Trượt Không Giao Thoa (`SessionReminderJob` - FR-31)
+
+Mô tả giải thuật cửa sổ trượt 10 phút triệt tiêu hoàn toàn trùng lặp thông báo (Spam Protection):
+
+```mermaid
+flowchart TD
+    CronRemind(["Cron Trigger (Mỗi 10 phút):\n0 */10 * * * *"]) --> RemindStart["SessionReminderJob.scanAndSendSessionReminders()\nLấy now = clock.instant()"]
+    
+    RemindStart --> Window24["Tính cửa sổ nhắc trước 24 giờ:\nwindowStart = now + 24h\nwindowEnd = windowStart + 10m"]
+    Window24 --> Query24["sessionRepository.findUpcomingSessions(windowStart, windowEnd)\n(status = 'SCHEDULED' AND start_at in [windowStart, windowEnd))"]
+    
+    Query24 --> Has24{"Có buổi học\ntrong khung 24h?"}
+    Has24 -- "Không" --> Window2["Tính cửa sổ nhắc trước 2 giờ:\nwindowStart = now + 2h\nwindowEnd = windowStart + 10m"]
+    Has24 -- "Có" --> Loop24["Phát SessionUpcomingReminderEvent(hoursBefore = 24)\ncho từng buổi học -> notification gửi Push/Email"]
+    Loop24 --> Window2
+
+    Window2 --> Query2["sessionRepository.findUpcomingSessions(windowStart, windowEnd)\n(status = 'SCHEDULED' AND start_at in [windowStart, windowEnd))"]
+    Query2 --> Has2{"Có buổi học\ntrong khung 2h?"}
+    Has2 -- "Không" --> RemindEnd(["Hoàn tất lượt nhắc nhở"])
+    Has2 -- "Có" --> Loop2["Phát SessionUpcomingReminderEvent(hoursBefore = 2)\ncho từng buổi học -> notification gửi Push/Email"]
+    Loop2 --> RemindEnd
+
+    classDef proc fill:#e3f2fd,stroke:#1565c0,stroke-width:1px;
+    classDef decision fill:#fff8e1,stroke:#f57f17,stroke-width:2px;
+    classDef ok fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+
+    class CronRemind,RemindEnd ok;
+    class Has24,Has2 decision;
+    class RemindStart,Window24,Query24,Loop24,Window2,Query2,Loop2 proc;
+```
+
+---
+
+#### Flowchart 12: Tác Vụ Ngầm Nhắc Nhở Gia Sư Ghi Nhận Kết Quả Ca Học (`OverdueOutcomeReminderJob` - FR-20)
+
+Mô tả cơ chế kiểm tra các buổi học đã kết thúc nhưng Gia sư chưa đánh dấu `COMPLETED` hoặc `ABSENT`:
+
+```mermaid
+flowchart TD
+    CronOutcome(["Cron Trigger (Mỗi 1 giờ):\n0 0 * * * *"]) --> OutcomeStart["OverdueOutcomeReminderJob.scanAndRemindOverdueOutcomes()\nLấy now = clock.instant()"]
+    
+    OutcomeStart --> QueryEnded["sessionRepository.findOverdueOutcomeSessions(now)\n(status = 'SCHEDULED' AND end_at < now)"]
+    QueryEnded --> HasEnded{"Có buổi học\nchưa ghi nhận?"}
+    
+    HasEnded -- "Không" --> OutcomeEnd(["Kết thúc tác vụ"])
+    HasEnded -- "Có" --> FilterGrace["Lọc cửa sổ Lookback (Grace Window):\nend_at > now - 48h (loại trừ các ca quá cũ để tránh spam)"]
+    
+    FilterGrace --> HasEligible{"Còn buổi học\nhợp lệ?"}
+    HasEligible -- "Không" --> OutcomeEnd
+    HasEligible -- "Có" --> LoopEligible["Vòng lặp từng buổi học:"]
+    
+    LoopEligible --> PubOutcome["eventPublisher.publishEvent(\n  OverdueOutcomeReminderEvent.of(sessionId, classId, tutorId, endAt)\n)"]
+    PubOutcome --> NextEligible{"Còn buổi học\nkhác không?"}
+    NextEligible -- "Còn" --> LoopEligible
+    NextEligible -- "Hết" --> OutcomeEnd
+
+    classDef proc fill:#e3f2fd,stroke:#1565c0,stroke-width:1px;
+    classDef decision fill:#fff8e1,stroke:#f57f17,stroke-width:2px;
+    classDef ok fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+
+    class CronOutcome,OutcomeEnd ok;
+    class HasEnded,HasEligible,NextEligible decision;
+    class OutcomeStart,QueryEnded,FilterGrace,LoopEligible,PubOutcome proc;
+```
+
+---
+
 ## 4. Giải Phẫu Từng File & Lý Do Tồn Tại (File Anatomy & Architectural Rationale)
 
 Bảng phân tích giải thích vì sao từng file lại tồn tại, nó giải quyết bài toán gì, và nếu không có nó thì hệ thống sẽ gặp sự cố gì:
