@@ -30,4 +30,8 @@ public interface TutoringSessionDomainRepository {
   int countCompletedSessions(UUID classId);
 
   int countCompletedSessionsBetween(UUID tutorId, UUID studentId);
+
+  List<TutoringSession> findUpcomingSessions(Instant windowStart, Instant windowEnd);
+
+  List<TutoringSession> findOverdueOutcomeSessions(Instant cutoff);
 }
