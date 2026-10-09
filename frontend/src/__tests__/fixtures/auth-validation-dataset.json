@@ -1,0 +1,65 @@
+{
+  "passwordCases": [
+    {
+      "password": "Password123",
+      "valid": true,
+      "error": null,
+      "desc": "Mật khẩu mạnh hợp lệ"
+    },
+    {
+      "password": "Abc12345",
+      "valid": true,
+      "error": null,
+      "desc": "Đúng biên dưới 8 ký tự"
+    },
+    {
+      "password": "short1",
+      "valid": false,
+      "error": "Mật khẩu tối thiểu 8 ký tự",
+      "desc": "Dưới 8 ký tự"
+    },
+    {
+      "password": "OnlyLettersLong",
+      "valid": false,
+      "error": "Phải chứa ít nhất 1 chữ số",
+      "desc": "Không có số"
+    },
+    {
+      "password": "1234567890",
+      "valid": false,
+      "error": "Phải chứa ít nhất 1 chữ cái",
+      "desc": "Không có chữ"
+    },
+    {
+      "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+      "valid": false,
+      "error": "Mật khẩu tối đa 64 ký tự",
+      "desc": "Vượt 64 ký tự (65 ký tự)"
+    },
+    {
+      "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+      "valid": true,
+      "error": null,
+      "desc": "Đúng biên trên 64 ký tự"
+    }
+  ],
+  "roleCases": [
+    { "role": "STUDENT", "valid": true, "desc": "Học sinh được phép tự đăng ký" },
+    { "role": "PARENT", "valid": true, "desc": "Phụ huynh được phép tự đăng ký" },
+    { "role": "TUTOR", "valid": true, "desc": "Gia sư được phép tự đăng ký" },
+    { "role": "ADMIN", "valid": false, "desc": "Cấm tự đăng ký ADMIN (BR-03)" },
+    { "role": "GUEST", "valid": false, "desc": "Vai trò GUEST không hợp lệ" }
+  ],
+  "emailCases": [
+    { "email": "student@edufit.vn", "valid": true, "desc": "Email chuẩn edufit.vn" },
+    { "email": "tutor.le@gmail.com", "valid": true, "desc": "Email gmail chuẩn" },
+    { "email": "invalid-email", "valid": false, "error": "Email không hợp lệ", "desc": "Email thiếu @" },
+    { "email": "@edufit.vn", "valid": false, "error": "Email không hợp lệ", "desc": "Email thiếu tên tài khoản" },
+    { "email": "student@", "valid": false, "error": "Email không hợp lệ", "desc": "Email thiếu domain" }
+  ],
+  "fullNameCases": [
+    { "fullName": "Nguyen Van A", "valid": true, "desc": "Họ tên hợp lệ" },
+    { "fullName": "Le", "valid": true, "desc": "Họ tên 2 ký tự (biên dưới)" },
+    { "fullName": "A", "valid": false, "error": "Họ tên quá ngắn", "desc": "Họ tên 1 ký tự (dưới biên)" }
+  ]
+}
