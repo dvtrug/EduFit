@@ -713,14 +713,14 @@ flowchart TD
 Dưới đây là các đầu việc triển khai cụ thể được chia theo từng nhóm công việc:
 
 ### Nhóm 1: Cấu hình Testing & Quality Gate cho Frontend (Next.js)
-* [ ] Cài đặt Vitest, React Testing Library, user-event, jsdom vào `frontend/package.json`.
-* [ ] Tạo file cấu hình `vitest.config.ts` hỗ trợ path alias `@/*`.
-* [ ] Tạo thư mục `frontend/src/__tests__/fixtures/` và viết test parameterized cho auth/booking schemas.
-* [ ] Cấu hình script `npm run type-check` và bổ sung vào CI workflow.
+* [x] Cài đặt Vitest, React Testing Library, user-event, jsdom vào `frontend/package.json`.
+* [x] Tạo file cấu hình `vitest.config.ts` hỗ trợ path alias `@/*`.
+* [x] Tạo thư mục `frontend/src/__tests__/fixtures/` và viết test parameterized cho auth/booking schemas.
+* [x] Cấu hình script `npm run type-check` và bổ sung vào CI workflow.
 
 ### Nhóm 2: Cấu hình Quality Gate cho Backend (Maven)
-* [ ] Bổ sung cấu hình `jacoco-maven-plugin` vào `backend/pom.xml` với rule `minimum 0.80` cho LINE và BRANCH coverage.
-* [ ] Kiểm tra lệnh `mvn clean verify` để kích hoạt JaCoCo check gate.
+* [x] Bổ sung cấu hình `jacoco-maven-plugin` vào `backend/pom.xml` với rule `minimum 0.80` cho LINE và BRANCH coverage.
+* [x] Kiểm tra lệnh `mvn clean verify` để kích hoạt JaCoCo check gate.
 
 ### Nhóm 3: Tái cấu trúc (Refactor) Test Suite của các Module Hiện Tại
 * [ ] Tạo thư mục `src/test/resources/testdata/` trong các module `iam`, `profile`, `verification`, `platform/storage`.
