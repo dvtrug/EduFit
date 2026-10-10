@@ -6,9 +6,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edufit.connection.api.ConnectionFacade;
+import vn.edufit.discovery.api.event.MatchingExecutedEvent;
 import vn.edufit.discovery.application.dto.TutorMatchResult;
 import vn.edufit.discovery.domain.model.AvailabilitySlot;
 import vn.edufit.discovery.domain.model.MatchCriteria;
@@ -36,19 +38,22 @@ public class TutorMatchingService {
   private final MatchExplanationService explanationService;
   private final DiscoveryQueryService queryService;
   private final ConnectionFacade connectionFacade;
+  private final ApplicationEventPublisher eventPublisher;
 
   public TutorMatchingService(
       ProfileFacade profileFacade,
       MatchingRunLogRepository matchingRunLogRepository,
       MatchExplanationService explanationService,
       DiscoveryQueryService queryService,
-      ConnectionFacade connectionFacade
+      ConnectionFacade connectionFacade,
+      ApplicationEventPublisher eventPublisher
   ) {
     this.profileFacade = profileFacade;
     this.matchingRunLogRepository = matchingRunLogRepository;
     this.explanationService = explanationService;
     this.queryService = queryService;
     this.connectionFacade = connectionFacade;
+    this.eventPublisher = eventPublisher;
   }
 
   @Transactional
@@ -81,9 +86,12 @@ public class TutorMatchingService {
     List<TutorMatchResult> results = ranked.stream()
         .map(score -> toResult(currentUser.getUserId(), score, byTutorId.get(score.tutorId()), score.equals(ranked.getFirst())))
         .toList();
-    matchingRunLogRepository.save(new MatchingRunLogEntity(
+    var log = new MatchingRunLogEntity(
         currentUser.getUserId(), goal.studentId(), goal.goalId(), results.size()
-    ));
+    );
+    matchingRunLogRepository.save(log);
+    eventPublisher.publishEvent(new MatchingExecutedEvent(
+        log.getUserId(), log.getStudentId(), log.getGoalId(), log.getResultCount(), log.getCreatedAt()));
     return results;
   }
 

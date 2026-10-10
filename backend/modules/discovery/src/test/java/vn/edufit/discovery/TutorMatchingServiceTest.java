@@ -51,6 +51,7 @@ class TutorMatchingServiceTest {
   @Mock
   private MatchExplanationService explanationService;
   @Mock private ConnectionFacade connectionFacade;
+  @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
   private TutorMatchingService matchingService;
   private UUID userId;
@@ -60,7 +61,7 @@ class TutorMatchingServiceTest {
   @BeforeEach
   void setUp() {
     matchingService = new TutorMatchingService(profileFacade, logRepository, explanationService,
-        new DiscoveryQueryService(profileFacade), connectionFacade);
+        new DiscoveryQueryService(profileFacade), connectionFacade, eventPublisher);
     userId = UUID.randomUUID();
     goalId = UUID.randomUUID();
     monday = new WeeklyAvailabilityDto((short) 1, LocalTime.of(18, 0), LocalTime.of(20, 0));
@@ -85,6 +86,9 @@ class TutorMatchingServiceTest {
     assertEquals("Giải thích theo quy tắc", result.get(1).explanation());
     verify(logRepository).save(any(MatchingRunLogEntity.class));
     org.mockito.Mockito.verifyNoInteractions(connectionFacade);
+    var event = org.mockito.ArgumentCaptor.forClass(vn.edufit.discovery.api.event.MatchingExecutedEvent.class);
+    verify(eventPublisher).publishEvent(event.capture());
+    assertEquals(2, event.getValue().resultCount());
   }
 
   @Test
@@ -184,7 +188,7 @@ class TutorMatchingServiceTest {
   @Test
   void missingActorIsDeniedBeforeReadingGoal() {
     assertThrows(ForbiddenOperationException.class, () -> matchingService.match(null, goalId, 5));
-    org.mockito.Mockito.verifyNoInteractions(profileFacade, connectionFacade, explanationService, logRepository);
+    org.mockito.Mockito.verifyNoInteractions(profileFacade, connectionFacade, explanationService, logRepository, eventPublisher);
   }
 
   @ParameterizedTest
@@ -232,6 +236,47 @@ class TutorMatchingServiceTest {
     verify(profileFacade, org.mockito.Mockito.times(2))
         .findVerifiedCandidatesBySubject(new TutorCandidateCriteria(1, "ONLINE", "Hà Nội"));
     org.mockito.Mockito.verify(profileFacade, org.mockito.Mockito.never()).findVerifiedTutorsForMatching();
+  }
+
+  @Test
+  void successfulEmptyRunPublishesExactlyOneEventMatchingLog() {
+    var goal = goal(userId);
+    when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal));
+    matchingService.match(currentUser(userId), goalId, 5);
+    var log = org.mockito.ArgumentCaptor.forClass(MatchingRunLogEntity.class);
+    var event = org.mockito.ArgumentCaptor.forClass(vn.edufit.discovery.api.event.MatchingExecutedEvent.class);
+    verify(logRepository).save(log.capture());
+    verify(eventPublisher).publishEvent(event.capture());
+    assertEquals(log.getValue().getUserId(), event.getValue().userId());
+    assertEquals(log.getValue().getStudentId(), event.getValue().studentId());
+    assertEquals(log.getValue().getGoalId(), event.getValue().goalId());
+    assertEquals(log.getValue().getResultCount(), event.getValue().resultCount());
+    assertEquals(log.getValue().getCreatedAt(), event.getValue().executedAt());
+    org.mockito.Mockito.verifyNoMoreInteractions(logRepository, eventPublisher);
+  }
+
+  @Test
+  void failedLogSaveDoesNotPublishEvent() {
+    when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal(userId)));
+    when(logRepository.save(any())).thenThrow(new IllegalStateException("Storage unavailable"));
+    assertThrows(IllegalStateException.class, () -> matchingService.match(currentUser(userId), goalId, 5));
+    org.mockito.Mockito.verifyNoInteractions(eventPublisher);
+  }
+
+  @Test
+  void facadeMapsAuthorizedMatchingToPublicSummary() {
+    var tutor = tutor(BigDecimal.valueOf(5), 10, 200000);
+    when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal(userId)));
+    when(profileFacade.findVerifiedCandidatesBySubject(any())).thenReturn(List.of(tutor));
+    when(explanationService.explainTopMatch(eq(userId), any(), eq(tutor)))
+        .thenReturn(new MatchExplanationService.Explanation("Grounded explanation", true));
+    var facade = new vn.edufit.discovery.application.service.DiscoveryFacadeImpl(matchingService);
+    var summary = facade.findTopMatchesForGoal(currentUser(userId), goalId, 5).getFirst();
+    assertEquals(tutor.tutor().tutorId(), summary.tutorId());
+    assertEquals(tutor.tutor().displayName(), summary.displayName());
+    assertEquals(new BigDecimal("100.00"), summary.matchScore());
+    assertEquals("Grounded explanation", summary.explanation());
+    assertEquals(true, summary.aiGenerated());
   }
 
   private TutorDiscoveryProfileDto tutor(BigDecimal rating, int reviews, long price) {
