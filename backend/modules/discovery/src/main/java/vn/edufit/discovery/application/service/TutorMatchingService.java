@@ -32,16 +32,18 @@ public class TutorMatchingService {
   private final ProfileFacade profileFacade;
   private final MatchingRunLogRepository matchingRunLogRepository;
   private final MatchExplanationService explanationService;
-  private final MatchScorer matchScorer = new MatchScorer();
+  private final DiscoveryQueryService queryService;
 
   public TutorMatchingService(
       ProfileFacade profileFacade,
       MatchingRunLogRepository matchingRunLogRepository,
-      MatchExplanationService explanationService
+      MatchExplanationService explanationService,
+      DiscoveryQueryService queryService
   ) {
     this.profileFacade = profileFacade;
     this.matchingRunLogRepository = matchingRunLogRepository;
     this.explanationService = explanationService;
+    this.queryService = queryService;
   }
 
   @Transactional
@@ -53,6 +55,7 @@ public class TutorMatchingService {
         .orElseThrow(() -> EntityNotFoundException.of("LearningGoal", goalId));
     validateAccess(currentUser, goal);
     MatchCriteria criteria = toCriteria(goal);
+    var matchScorer = new MatchScorer(queryService.getEducationLevelOrder());
 
     List<TutorDiscoveryProfileDto> profiles = profileFacade.findVerifiedTutorsForMatching();
     Map<UUID, TutorDiscoveryProfileDto> byTutorId = profiles.stream()

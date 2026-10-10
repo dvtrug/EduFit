@@ -1,6 +1,6 @@
 # Discovery: Final Implementation Plan
 
-Trạng thái: Phase 1 và Phase 2 hoàn tất trên `feat/discovery`; Phase 3 đang triển khai.
+Trạng thái: Phase 1, Phase 2 và Phase 3 hoàn tất trên `feat/discovery`; Phase 4 chưa triển khai.
 
 Nguồn đối chiếu: `D:/backend_discovery_implementation_plan.md`, code hiện tại trên `feat/discovery`, SADS, module structure guide và master sprint plan trong `docs/`. Trước mỗi task phải đọc lại phần docs liên quan và code bị tác động.
 
@@ -226,6 +226,10 @@ git status --short
 - Phase 1 đã được cho phép triển khai; các phase sau tiếp tục theo phạm vi được duyệt.
 
 ## 6. Execution Notes
+
+- T07: triển khai MatchWeights 30/20/20/15/15 và MatchScore đủ subject/level/price/time/rating; giữ tên field HTTP cũ, thêm subjectFit/levelFit. Scorer chỉ hard-filter subject/mode/area; level dùng catalog business order, giá giảm qua mốc 130%/150%, time dùng union/intersection duration theo ngày, rating có confidence và mặc định 35. Tổng tính từ điểm chưa round; phép chia scale 12, output scale 2 HALF_UP. overlappingSlots giữ nghĩa số slot yêu cầu ban đầu có giao để tương thích, tie-break chuyển sang scheduleFit rồi reviews/registeredAt/tutorId. Matching tái sử dụng DiscoveryQueryService.getEducationLevelOrder một lần mỗi run; chưa đổi full-scan caller (T09). Prompt/fallback có đủ 5 điểm; docs policy được đồng bộ, toàn bộ diagram vẫn thuộc T15.
+- T07 verification: 19 cases mới chạy RED trên công thức cũ (9 assertion failures, 1 error do tutor bị lọc), sau đó GREEN. Regression tới app PASS: Discovery 73/73 (40 scorer, 4 weights, ranking, catalog, application/HTTP/explanation), Profile 44/44 gồm 6 PostgreSQL Testcontainers cases, GlobalExceptionHandler 6/6; không skip. Sau chỉnh wiring tái sử dụng query helper, chạy lại Discovery 73/73 và GlobalExceptionHandler 6/6 tới app PASS. `git diff --check` PASS; rà soát domain không import Spring/JPA/Hibernate/Profile. Không coi test MockMvc standalone là kiểm chứng security filters, không tuyên bố p95 hoặc transaction event (T10/T12/T13 còn lại).
+- Checkpoint 3 PASS: policy Java thuần đủ 5 yếu tố; các biên cấp học, 100/130/150% giá, overlapping/touching/empty slots, rating confidence, zero budget, ranking ổn định và JSON breakdown đã kiểm chứng. Phase 4 cần Connection confirmed-link API trước T08 như prerequisite đã ghi.
 
 - T06: chuyển MatchScorer và unit test sang domain/policy, cập nhật import application; không đổi thuật toán. Clean reactor build và Discovery 29/29 tests PASS, gồm 5 scorer cases giữ nguyên hành vi; không skip. Domain vẫn thuần Java, không Spring/JPA.
 - T05: thêm TutorCandidateCriteria và Profile API bounded candidates; lọc VERIFIED/subject/mode/area trong DB bằng EXISTS, không duplicate tutor khi dạy nhiều cấp. Cap mặc định 200 qua DISCOVERY_MATCHING_CANDIDATE_LIMIT, phải dương; pre-order rating/reviews/createdAt/tutorId. BOTH nhận tutor dạy online ở mọi khu vực hoặc tutor offline cùng khu vực. Batch subject/name/level projection và availability giữ 3 query khi có kết quả, 1 query khi rỗng. PostgreSQL 17 Testcontainers chạy thật: 6/6 integration cases PASS, gồm 205 tutor/200 kết quả và kiểm tra SQL cap, dữ liệu mềm không bị loại, ordering lặp lại ổn định. Tổng Profile 44/44 và Discovery 29/29 tests PASS, không skip. Test dùng Hibernate create-drop cho schema cô lập, chưa thay thế kiểm chứng Flyway/p95/ranking-cap tại T12. API full scan và caller hiện tại giữ nguyên đến T09/T14.

@@ -2,9 +2,11 @@ package vn.edufit.discovery;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -14,6 +16,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import vn.edufit.ai.api.AiFeature;
 import vn.edufit.ai.api.AiGateway;
@@ -39,7 +42,7 @@ class MatchExplanationServiceTest {
     var explanation = service().explainTopMatch(userId, score(), tutor());
 
     assertFalse(explanation.aiGenerated());
-    assertEquals("Phù hợp lịch 100.00%, đánh giá 80.00% và ngân sách 100.00%; có 1 khung giờ giao nhau.", explanation.text());
+    assertEquals("Phù hợp môn 100.00%, cấp học 100.00%, lịch 100.00%, đánh giá 80.00% và ngân sách 100.00%; có 1 khung giờ giao nhau.", explanation.text());
     verifyNoInteractions(aiGateway);
   }
 
@@ -53,15 +56,32 @@ class MatchExplanationServiceTest {
     var explanation = service().explainTopMatch(userId, score(), tutor());
 
     assertFalse(explanation.aiGenerated());
-    assertEquals("Phù hợp lịch 100.00%, đánh giá 80.00% và ngân sách 100.00%; có 1 khung giờ giao nhau.", explanation.text());
+    assertEquals("Phù hợp môn 100.00%, cấp học 100.00%, lịch 100.00%, đánh giá 80.00% và ngân sách 100.00%; có 1 khung giờ giao nhau.", explanation.text());
   }
 
   private MatchExplanationService service() {
     return new MatchExplanationService(aiGateway, aiUsageQuery);
   }
 
+  @Test
+  void promptIncludesVerifiedFiveFactorBreakdown() {
+    when(aiGateway.complete(any(AiRequest.class))).thenThrow(new IllegalStateException("Offline test"));
+    service().explainTopMatch(UUID.randomUUID(), score(), tutor());
+    var request = ArgumentCaptor.forClass(AiRequest.class);
+    verify(aiGateway).complete(request.capture());
+    String prompt = request.getValue().userPrompt();
+    assertTrue(prompt.contains("Điểm môn học: 100.00/100"));
+    assertTrue(prompt.contains("Điểm cấp học: 100.00/100"));
+    assertTrue(prompt.contains("Điểm lịch phù hợp: 100.00/100"));
+    assertTrue(prompt.contains("Điểm đánh giá: 80.00/100"));
+    assertTrue(prompt.contains("Điểm ngân sách: 100.00/100"));
+    assertTrue(prompt.contains("Điểm tổng: 97.00/100"));
+    assertFalse(prompt.contains("Gia sư A"));
+  }
+
   private MatchScore score() {
-    return new MatchScore(UUID.randomUUID(), new BigDecimal("94.00"), new BigDecimal("100.00"),
+    return new MatchScore(UUID.randomUUID(), new BigDecimal("97.00"), new BigDecimal("100.00"),
+        new BigDecimal("100.00"), new BigDecimal("100.00"),
         new BigDecimal("80.00"), new BigDecimal("100.00"), 1, 8, Instant.now());
   }
 

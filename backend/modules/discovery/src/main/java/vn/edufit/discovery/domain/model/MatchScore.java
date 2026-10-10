@@ -8,6 +8,8 @@ import java.util.UUID;
 public record MatchScore(
     UUID tutorId,
     BigDecimal total,
+    BigDecimal subjectFit,
+    BigDecimal levelFit,
     BigDecimal scheduleFit,
     BigDecimal ratingFit,
     BigDecimal budgetFit,
@@ -18,7 +20,7 @@ public record MatchScore(
 
   public static Comparator<MatchScore> rankingOrder() {
     return Comparator.comparing(MatchScore::total).reversed()
-        .thenComparing(MatchScore::overlappingSlots, Comparator.reverseOrder())
+        .thenComparing(MatchScore::scheduleFit, Comparator.reverseOrder())
         .thenComparing(MatchScore::reviewCount, Comparator.reverseOrder())
         .thenComparing(MatchScore::registeredAt, Comparator.nullsLast(Comparator.naturalOrder()))
         .thenComparing(MatchScore::tutorId);

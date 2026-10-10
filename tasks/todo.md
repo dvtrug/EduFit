@@ -22,8 +22,8 @@ Nguồn chi tiết: `tasks/plan.md`. Mỗi task tương ứng một commit; ch�
 ## Phase 3 — Domain policy
 
 - [x] T06: Move MatchScorer và test sang domain/policy; test hành vi hiện tại. Commit `refactor(discovery): move match scorer into domain policy`.
-- [ ] T07: MatchWeights + 5-factor scoring + breakdown mapping; parameterized boundaries/time/rating/tie-break tests. Commit `feat(discovery): implement five-factor matching policy`.
-- [ ] Checkpoint 3: Policy thuần Java và công thức 5 yếu tố đúng.
+- [x] T07: MatchWeights + 5-factor scoring + breakdown mapping; parameterized boundaries/time/rating/tie-break tests. Commit `feat(discovery): implement five-factor matching policy`.
+- [x] Checkpoint 3: Policy thuần Java và công thức 5 yếu tố đúng.
 
 ## Phase 4 — Workflow
 

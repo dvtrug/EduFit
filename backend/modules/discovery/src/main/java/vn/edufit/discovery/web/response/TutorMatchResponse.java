@@ -18,7 +18,8 @@ public record TutorMatchResponse(
     return new TutorMatchResponse(
         score.tutorId(), score.total(),
         new MatchScoreBreakdownResponse(
-            score.scheduleFit(), score.ratingFit(), score.budgetFit(), score.overlappingSlots()
+            score.scheduleFit(), score.ratingFit(), score.budgetFit(), score.overlappingSlots(),
+            score.subjectFit(), score.levelFit()
         ),
         result.explanation(), result.aiGenerated(), TutorDiscoveryCardResponse.from(result.profile())
     );

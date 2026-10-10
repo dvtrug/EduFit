@@ -6,5 +6,7 @@ public record MatchScoreBreakdownResponse(
     BigDecimal scheduleFit,
     BigDecimal ratingFit,
     BigDecimal budgetFit,
-    int overlappingSlots
+    int overlappingSlots,
+    BigDecimal subjectFit,
+    BigDecimal levelFit
 ) {}

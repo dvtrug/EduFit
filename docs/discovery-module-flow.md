@@ -1,6 +1,6 @@
 # Discovery backend: cấu trúc và luồng xử lý
 
-> Mô tả code trên nhánh `feat/discovery`, ngày 2026-10-08. Đọc cùng [SADS](software-architecture-design-specification.md) để biết API dự kiến và [hướng dẫn cấu trúc module](backend-module-structure-guide.md) để biết quy tắc phân tầng.
+> Mô tả code trên nhánh `feat/discovery`, cập nhật policy ở Phase 3 ngày 2026-10-10. Đọc cùng [SADS](software-architecture-design-specification.md) và [hướng dẫn cấu trúc module](backend-module-structure-guide.md). Các ảnh bên dưới là snapshot trước refactor; bản flow/diagram đầy đủ sẽ cập nhật ở T15 theo [plan](../tasks/plan.md).
 
 ## Phạm vi module
 
@@ -15,10 +15,10 @@ Discovery phục vụ tìm kiếm gia sư đã xác minh, xem hồ sơ công kha
 | `application/service/DiscoveryQueryService` | Tìm kiếm và xem chi tiết qua Profile facade. |
 | `application/service/TutorMatchingService` | Kiểm tra quyền/goal, chuyển DTO thành candidate, xếp hạng, ghi log. |
 | `application/service/MatchExplanationService` | Kiểm tra quota AI, gọi gateway hoặc dùng câu giải thích theo quy tắc. |
-| `domain/model`, `domain/service/MatchScorer` | Thuật toán Java thuần, không phụ thuộc Spring/JPA. |
-| `infra/persistence/MatchingRunLog*` | Entity và repository của lượt match. |
+| `domain/model`, `domain/policy/MatchScorer`, `domain/policy/MatchWeights` | Thuật toán 5 yếu tố Java thuần, không phụ thuộc Spring/JPA. |
+| `infra/persistence/entity/MatchingRunLogEntity`, `infra/persistence/repository/MatchingRunLogRepository` | Entity và repository của lượt match. |
 
-Điểm vào code: [controller](../backend/modules/discovery/src/main/java/vn/edufit/discovery/web/DiscoveryController.java), [query service](../backend/modules/discovery/src/main/java/vn/edufit/discovery/application/service/DiscoveryQueryService.java), [matching service](../backend/modules/discovery/src/main/java/vn/edufit/discovery/application/service/TutorMatchingService.java), [scorer](../backend/modules/discovery/src/main/java/vn/edufit/discovery/domain/service/MatchScorer.java), [ProfileFacade](../backend/modules/profile/src/main/java/vn/edufit/profile/api/ProfileFacade.java).
+Điểm vào code: [controller](../backend/modules/discovery/src/main/java/vn/edufit/discovery/web/DiscoveryController.java), [query service](../backend/modules/discovery/src/main/java/vn/edufit/discovery/application/service/DiscoveryQueryService.java), [matching service](../backend/modules/discovery/src/main/java/vn/edufit/discovery/application/service/TutorMatchingService.java), [scorer](../backend/modules/discovery/src/main/java/vn/edufit/discovery/domain/policy/MatchScorer.java), [ProfileFacade](../backend/modules/profile/src/main/java/vn/edufit/profile/api/ProfileFacade.java).
 
 ## API và quyền truy cập
 
@@ -42,29 +42,34 @@ Bộ lọc chạy trong `profile.infra.persistence.repository.TutorProfileReposi
 
 ![Luồng matching từ kiểm tra quyền đến xếp hạng, giải thích và ghi log](images/discovery-matching-flow.svg)
 
-Goal phải `ACTIVE`, có cấp học, `budgetMax > 0` và ít nhất một slot. Profile trả toàn bộ tutor `VERIFIED`; Discovery lọc và xếp hạng trong bộ nhớ, sau đó mới áp dụng `topN`. Chưa có prefilter hay giới hạn ứng viên ở DB, nên cần đo với dữ liệu lớn trước khi khẳng định đạt NFR-14 (<500ms p95).
+Goal phải `ACTIVE`, có cấp học, `budgetMax > 0` và ít nhất một slot. Matching hiện vẫn đọc toàn bộ tutor `VERIFIED`; Discovery lọc và xếp hạng trong bộ nhớ, sau đó áp dụng `topN`. T05 đã thêm Profile API `findVerifiedCandidatesBySubject` có cap mặc định 200 và batch hydration; caller matching sẽ chuyển sang API này tại T09. Chưa khẳng định đạt NFR-14 (<500ms p95); đo hiệu năng tại T12.
 
-`MatchScorer` loại tutor nếu không khớp cặp `(subjectId, educationLevelId)`, không hợp mode/khu vực hoặc không có slot giao nhau. ONLINE nhận tutor ONLINE/BOTH. OFFLINE nhận OFFLINE/BOTH với khu vực trùng. BOTH nhận tutor ONLINE hoặc tutor có khu vực trùng. Hai slot giao nhau khi cùng ngày và `startA < endB && endA > startB`; chỉ chạm ranh giới giờ không tính là giao.
+`MatchScorer` chỉ loại tutor không dạy đúng môn hoặc không hợp mode/khu vực; Profile chịu trách nhiệm trạng thái VERIFIED. ONLINE nhận ONLINE/BOTH ở mọi khu vực. OFFLINE nhận OFFLINE/BOTH cùng khu vực (trim, không phân biệt hoa/thường). BOTH nhận tutor có thể dạy online ở mọi khu vực hoặc offline cùng khu vực. Không loại tutor chỉ vì lệch cấp, vượt giá hay không trùng giờ. Hai slot giao nhau khi cùng ngày và `startA < endB && endA > startB`; chạm ranh giới không tính là giao.
 
-Với tutor vượt qua điều kiện loại trừ, điểm được tính:
+Với tutor hợp lệ, mọi điểm thành phần ở thang 0..100:
 
-```text
-scheduleFit = số slot yêu cầu giao với ít nhất 1 slot tutor / tổng slot yêu cầu * 100
-ratingFit   = clamp(ratingAvg, 0, 5) * 20; nếu chưa có review thì 50
-budgetFit   = 100 nếu giá <= budgetMax; giảm tuyến tính về 0 tại 120% budgetMax
-matchScore  = 0.4 * scheduleFit + 0.3 * ratingFit + 0.3 * budgetFit
-```
+| Field breakdown | Công thức |
+| --- | --- |
+| `subjectFit` (mới) | 100 khi dạy đúng môn; sai môn không xuất hiện trong kết quả. |
+| `levelFit` (mới) | Đúng cấp 100; cấp liền kề 50; còn lại 0. Chỉ xét cấp tutor dạy cho môn được yêu cầu, lấy điểm tốt nhất. Liền kề theo vị trí trong catalog `education_level.sort_order`, không trừ numeric ID. Catalog gồm cả cấp đã ngừng hoạt động; sort_order thiếu/trùng bị từ chối tại Profile. |
+| `budgetFit` (giữ tên cũ) | Giá <= budgetMax: 100; đoạn 100%..130% ngân sách giảm tuyến tính 100..50; đoạn 130%..150% giảm 50..0; cao hơn nhận 0. Budget phải dương, giá không âm. `budgetMin` không dùng để phạt tutor giá thấp. |
+| `scheduleFit` (giữ tên cũ) | Thời lượng giao / tổng thời lượng mong muốn * 100. Hợp nhất các slot chồng/tiếp giáp theo ngày ở cả goal và tutor trước khi tính để không đếm trùng. Rỗng hoặc không giao nhận 0. |
+| `ratingFit` (giữ tên cũ) | clamp(ratingAvg, 0, 5) / 5 * (0.5 + 0.5 * min(1, reviewCount / 5)) * 100; không chia nguyên. Chưa có review hoặc thiếu rating: 35. |
 
-Điểm tổng làm tròn 2 chữ số. Khi bằng điểm: ưu tiên nhiều slot giao hơn, nhiều review hơn, ngày đăng ký sớm hơn, rồi `tutorId`. `budgetMin` có trong goal nhưng chưa dùng trong công thức. Môn/cấp học và mode/khu vực là điều kiện loại trừ, không cộng điểm. Đây là chính sách **đang chạy**; công thức trong sprint plan và test specification chưa được đồng bộ với code.
+Điểm tổng = 0.30 * subjectFit + 0.20 * levelFit + 0.20 * budgetFit + 0.15 * scheduleFit + 0.15 * ratingFit. `MatchWeights` từ chối trọng số âm hoặc tổng khác 1. Tính tổng trước khi làm tròn điểm thành phần; phép chia nội bộ dùng 12 chữ số thập phân, output và tổng dùng 2 chữ số HALF_UP.
+
+Khi bằng tổng điểm: ưu tiên `scheduleFit` cao hơn, nhiều review hơn, đăng ký sớm hơn (null cuối), rồi `tutorId`. Field cũ `overlappingSlots` vẫn đếm số slot yêu cầu ban đầu có giao với ít nhất một slot tutor; giữ để tương thích response, không còn dùng làm trọng số/tie-break. Ví dụ catalog [80, 3, 41, 12]: goal cấp 3 và tutor cấp 80 đạt levelFit 50 dù numeric ID cách xa; tutor cấp 4 đạt 0 dù ID sát nhau.
+
+HTTP giữ routes và các field cũ, bổ sung `subjectFit`, `levelFit` trong `scoreBreakdown`. Prompt AI và fallback đều có đủ 5 điểm, không mặc định khẳng định tutor đúng cấp hoặc trong ngân sách khi điểm tương ứng thấp.
 
 Chỉ kết quả đầu tiên gọi AI (`MATCH_EXPLANATION`), tối đa 10 yêu cầu trong 24 giờ gần nhất cho mỗi user theo `AiUsageQuery`. Các kết quả còn lại dùng giải thích theo điểm. AI lỗi, timeout hoặc hết quota sẽ trả fallback với `aiGenerated=false`. `matching_run_log` ghi user, student, goal, số kết quả và thời điểm; không ghi prompt hay criteria.
 
 ## Việc còn phụ thuộc module khác
 
 - Connection cần public facade xác minh parent-student link đã xác nhận. Sau đó mới mở `TutorMatchingService.validateAccess` cho PARENT truy cập goal của con. Hiện Connection chỉ có `pom.xml`.
-- SADS dự kiến `DiscoveryFacade`, `MatchingExecutedEvent`, dữ liệu review/scheduling cho UC2.5; các contract/consumer này chưa có trong code. Dependency trong `pom.xml` chưa đồng nghĩa với triển khai.
-- Chưa có integration/performance test với PostgreSQL cho truy vấn nhiều bộ lọc và việc tải toàn bộ tutor khi match.
+- `DiscoveryFacade`, summary DTO và `MatchingExecutedEvent` đã có contract từ T02; facade implementation/publisher còn ở T10. Dữ liệu review/scheduling cho UC2.5 vẫn cần consumer tương ứng; dependency trong `pom.xml` không đồng nghĩa đã triển khai.
+- Candidate query đã có 6 integration cases PostgreSQL tại T05. Search nhiều bộ lọc, p95 và ảnh hưởng cap lên ranking sẽ kiểm chứng ở T12.
 
 ## Đọc code và chạy test
 
-Bắt đầu từ `DiscoveryController`; theo `DiscoveryQueryService` cho GET hoặc `TutorMatchingService` cho POST; sau đó đọc `ProfileFacade` và `MatchScorer`. Unit tests ở `backend/modules/discovery/src/test/java/vn/edufit/discovery/`: `DiscoveryQueryServiceTest`, `TutorMatchingServiceTest`, `MatchScorerTest`, `MatchExplanationServiceTest`. Từ thư mục `backend`, dùng JDK 21 chạy `mvn -pl modules/discovery -am test`. Khi Connection/Profile thêm API cho PARENT, cập nhật tài liệu và test quyền cùng lúc.
+Bắt đầu từ `DiscoveryController`; theo `DiscoveryQueryService` cho GET hoặc `TutorMatchingService` cho POST; sau đó đọc `ProfileFacade` và `MatchScorer`. Test dưới `backend/modules/discovery/src/test/java/vn/edufit/discovery/`: services ở package gốc, scorer/weights ở `domain/policy`, ranking/catalog ở `domain/model`, HTTP JSON ở `web`. Từ thư mục `backend`, dùng JDK 21 chạy `mvn -pl modules/discovery -am test`. Khi Connection/Profile thêm API cho PARENT, cập nhật tài liệu và test quyền cùng lúc.

@@ -59,7 +59,7 @@ class DiscoveryControllerTest {
   void setUp() {
     mvc = MockMvcBuilders.standaloneSetup(new DiscoveryController(
         new DiscoveryQueryService(profileFacade),
-        new TutorMatchingService(profileFacade, logRepository, explanationService),
+        new TutorMatchingService(profileFacade, logRepository, explanationService, new DiscoveryQueryService(profileFacade)),
         currentUserProvider
     )).build();
     profile = new TutorDiscoveryProfileDto(
@@ -154,6 +154,8 @@ class DiscoveryControllerTest {
         .andExpect(jsonPath("$.data[0].scoreBreakdown.scheduleFit").value(100))
         .andExpect(jsonPath("$.data[0].scoreBreakdown.ratingFit").value(100))
         .andExpect(jsonPath("$.data[0].scoreBreakdown.budgetFit").value(100))
+        .andExpect(jsonPath("$.data[0].scoreBreakdown.subjectFit").value(100))
+        .andExpect(jsonPath("$.data[0].scoreBreakdown.levelFit").value(100))
         .andExpect(jsonPath("$.data[0].scoreBreakdown.overlappingSlots").value(1))
         .andExpect(jsonPath("$.data[0].explanation").value("Grounded explanation"))
         .andExpect(jsonPath("$.data[0].aiGenerated").value(true))

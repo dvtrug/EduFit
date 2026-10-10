@@ -43,6 +43,8 @@ public class MatchExplanationService {
           Chỉ được dùng các dữ kiện sau, không suy đoán thêm:
           - Hình thức dạy: %s
           - Học phí mỗi buổi: %d
+          - Điểm môn học: %s/100
+          - Điểm cấp học: %s/100
           - Điểm lịch phù hợp: %s/100
           - Điểm đánh giá: %s/100
           - Điểm ngân sách: %s/100
@@ -50,6 +52,8 @@ public class MatchExplanationService {
           """.formatted(
           tutor.tutor().teachingMode(),
           tutor.tutor().pricePerSession(),
+          score.subjectFit(),
+          score.levelFit(),
           score.scheduleFit(),
           score.ratingFit(),
           score.budgetFit(),
@@ -69,8 +73,9 @@ public class MatchExplanationService {
   }
 
   public String ruleBased(MatchScore score) {
-    return "Phù hợp lịch %s%%, đánh giá %s%% và ngân sách %s%%; có %d khung giờ giao nhau."
-        .formatted(score.scheduleFit(), score.ratingFit(), score.budgetFit(), score.overlappingSlots());
+    return "Phù hợp môn %s%%, cấp học %s%%, lịch %s%%, đánh giá %s%% và ngân sách %s%%; có %d khung giờ giao nhau."
+        .formatted(score.subjectFit(), score.levelFit(), score.scheduleFit(), score.ratingFit(),
+            score.budgetFit(), score.overlappingSlots());
   }
 
   public record Explanation(String text, boolean aiGenerated) {}

@@ -18,13 +18,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import vn.edufit.discovery.application.service.MatchExplanationService;
+import vn.edufit.discovery.application.service.DiscoveryQueryService;
 import vn.edufit.discovery.application.service.TutorMatchingService;
 import vn.edufit.discovery.infra.persistence.entity.MatchingRunLogEntity;
 import vn.edufit.discovery.infra.persistence.repository.MatchingRunLogRepository;
 import vn.edufit.profile.api.ProfileFacade;
+import vn.edufit.profile.api.dto.EducationLevelOrderDto;
 import vn.edufit.profile.api.dto.LearningGoalDiscoveryDto;
 import vn.edufit.profile.api.dto.TutorDiscoveryProfileDto;
 import vn.edufit.profile.api.dto.TutorSubjectDto;
@@ -50,7 +54,8 @@ class TutorMatchingServiceTest {
 
   @BeforeEach
   void setUp() {
-    matchingService = new TutorMatchingService(profileFacade, logRepository, explanationService);
+    matchingService = new TutorMatchingService(profileFacade, logRepository, explanationService,
+        new DiscoveryQueryService(profileFacade));
     userId = UUID.randomUUID();
     goalId = UUID.randomUUID();
     monday = new WeeklyAvailabilityDto((short) 1, LocalTime.of(18, 0), LocalTime.of(20, 0));
@@ -85,6 +90,27 @@ class TutorMatchingServiceTest {
         ForbiddenOperationException.class,
         () -> matchingService.match(currentUser(userId), goalId, 5)
     );
+  }
+
+  @ParameterizedTest
+  @CsvSource({"80,90.00,50.00", "41,90.00,50.00", "3,80.00,0.00"})
+  void matchingLoadsCatalogOnceAndAppliesSoftLevelFit(int level, String total, String levelFit) {
+    var base = tutor(BigDecimal.valueOf(5), 10, 200000);
+    var candidate = new TutorDiscoveryProfileDto(base.tutor(), List.of(new TutorSubjectDto(1, "Math", level, "Level")),
+        base.availabilitySlots(), base.registeredAt());
+    when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal(userId)));
+    when(profileFacade.findEducationLevelsForMatching()).thenReturn(List.of(
+        new EducationLevelOrderDto(80, 10), new EducationLevelOrderDto(2, 30),
+        new EducationLevelOrderDto(41, 60), new EducationLevelOrderDto(12, 90)));
+    when(profileFacade.findVerifiedTutorsForMatching()).thenReturn(List.of(candidate));
+    when(explanationService.explainTopMatch(eq(userId), any(), eq(candidate)))
+        .thenReturn(new MatchExplanationService.Explanation("Explanation", false));
+
+    var result = matchingService.match(currentUser(userId), goalId, 5).getFirst();
+
+    assertEquals(new BigDecimal(total), result.score().total());
+    assertEquals(new BigDecimal(levelFit), result.score().levelFit());
+    verify(profileFacade).findEducationLevelsForMatching();
   }
 
   @Test
