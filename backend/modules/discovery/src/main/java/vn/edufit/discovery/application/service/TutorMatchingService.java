@@ -14,7 +14,7 @@ import vn.edufit.discovery.domain.model.MatchCriteria;
 import vn.edufit.discovery.domain.model.MatchScore;
 import vn.edufit.discovery.domain.model.SubjectLevel;
 import vn.edufit.discovery.domain.model.TutorCandidate;
-import vn.edufit.discovery.domain.service.MatchScorer;
+import vn.edufit.discovery.domain.policy.MatchScorer;
 import vn.edufit.discovery.infra.persistence.entity.MatchingRunLogEntity;
 import vn.edufit.discovery.infra.persistence.repository.MatchingRunLogRepository;
 import vn.edufit.profile.api.ProfileFacade;

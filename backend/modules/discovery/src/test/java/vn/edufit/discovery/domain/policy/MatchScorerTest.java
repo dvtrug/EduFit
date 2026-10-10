@@ -1,4 +1,4 @@
-package vn.edufit.discovery;
+package vn.edufit.discovery.domain.policy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -15,7 +15,7 @@ import vn.edufit.discovery.domain.model.AvailabilitySlot;
 import vn.edufit.discovery.domain.model.MatchCriteria;
 import vn.edufit.discovery.domain.model.SubjectLevel;
 import vn.edufit.discovery.domain.model.TutorCandidate;
-import vn.edufit.discovery.domain.service.MatchScorer;
+import vn.edufit.discovery.domain.policy.MatchScorer;
 
 class MatchScorerTest {
 

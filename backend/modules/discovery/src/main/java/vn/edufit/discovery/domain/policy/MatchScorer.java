@@ -1,4 +1,4 @@
-package vn.edufit.discovery.domain.service;
+package vn.edufit.discovery.domain.policy;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
