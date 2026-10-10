@@ -22,6 +22,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import vn.edufit.connection.api.ConnectionFacade;
+import vn.edufit.shared.exception.EntityNotFoundException;
+import vn.edufit.shared.exception.InvalidOperationException;
 import vn.edufit.discovery.application.service.MatchExplanationService;
 import vn.edufit.discovery.application.service.DiscoveryQueryService;
 import vn.edufit.discovery.application.service.TutorMatchingService;
@@ -46,6 +49,7 @@ class TutorMatchingServiceTest {
   private MatchingRunLogRepository logRepository;
   @Mock
   private MatchExplanationService explanationService;
+  @Mock private ConnectionFacade connectionFacade;
 
   private TutorMatchingService matchingService;
   private UUID userId;
@@ -55,7 +59,7 @@ class TutorMatchingServiceTest {
   @BeforeEach
   void setUp() {
     matchingService = new TutorMatchingService(profileFacade, logRepository, explanationService,
-        new DiscoveryQueryService(profileFacade));
+        new DiscoveryQueryService(profileFacade), connectionFacade);
     userId = UUID.randomUUID();
     goalId = UUID.randomUUID();
     monday = new WeeklyAvailabilityDto((short) 1, LocalTime.of(18, 0), LocalTime.of(20, 0));
@@ -79,6 +83,7 @@ class TutorMatchingServiceTest {
     assertEquals(true, result.getFirst().aiGenerated());
     assertEquals("Giải thích theo quy tắc", result.get(1).explanation());
     verify(logRepository).save(any(MatchingRunLogEntity.class));
+    org.mockito.Mockito.verifyNoInteractions(connectionFacade);
   }
 
   @Test
@@ -128,6 +133,57 @@ class TutorMatchingServiceTest {
         goalId, UUID.randomUUID(), ownerId, 1, 2, "ONLINE", "Hà Nội",
         100_000L, 300_000L, "ACTIVE", List.of(monday)
     );
+  }
+
+  @Test
+  void linkedParentCanMatchStudentGoal() {
+    var goal = goal(UUID.randomUUID());
+    when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal));
+    when(connectionFacade.hasConfirmedParentLink(userId, goal.studentId())).thenReturn(true);
+    assertEquals(0, matchingService.match(currentUser(userId, "PARENT"), goalId, 5).size());
+    verify(logRepository).save(any(MatchingRunLogEntity.class));
+  }
+
+  @Test
+  void parentWithoutConfirmedLinkIsDeniedEvenWithMatchingUserId() {
+    var goal = goal(userId);
+    when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal));
+    assertThrows(ForbiddenOperationException.class,
+        () -> matchingService.match(currentUser(userId, "PARENT"), goalId, 5));
+    verify(connectionFacade).hasConfirmedParentLink(userId, goal.studentId());
+    org.mockito.Mockito.verifyNoInteractions(explanationService, logRepository);
+    org.mockito.Mockito.verify(profileFacade, org.mockito.Mockito.never()).findEducationLevelsForMatching();
+  }
+
+  @Test
+  void studentCannotBorrowParentLinkForForeignGoal() {
+    when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal(UUID.randomUUID())));
+    assertThrows(ForbiddenOperationException.class,
+        () -> matchingService.match(currentUser(userId), goalId, 5));
+    org.mockito.Mockito.verifyNoInteractions(connectionFacade, explanationService, logRepository);
+  }
+
+  @Test
+  void missingGoalDoesNotCallConnectionAiOrLog() {
+    assertThrows(EntityNotFoundException.class,
+        () -> matchingService.match(currentUser(userId, "PARENT"), goalId, 5));
+    org.mockito.Mockito.verifyNoInteractions(connectionFacade, explanationService, logRepository);
+  }
+
+  @ParameterizedTest
+  @CsvSource({"INACTIVE,2,300000,true", "ACTIVE,,300000,true", "ACTIVE,2,0,true", "ACTIVE,2,300000,false"})
+  void invalidGoalDoesNotExecuteMatching(String status, Integer level, long budget, boolean hasSlots) {
+    var goal = new LearningGoalDiscoveryDto(goalId, UUID.randomUUID(), userId, 1, level,
+        "ONLINE", "Hanoi", 0L, budget, status, hasSlots ? List.of(monday) : List.of());
+    when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal));
+    assertThrows(InvalidOperationException.class, () -> matchingService.match(currentUser(userId), goalId, 5));
+    org.mockito.Mockito.verifyNoInteractions(connectionFacade, explanationService, logRepository);
+  }
+
+  @Test
+  void missingActorIsDeniedBeforeReadingGoal() {
+    assertThrows(ForbiddenOperationException.class, () -> matchingService.match(null, goalId, 5));
+    org.mockito.Mockito.verifyNoInteractions(profileFacade, connectionFacade, explanationService, logRepository);
   }
 
   private TutorDiscoveryProfileDto tutor(BigDecimal rating, int reviews, long price) {

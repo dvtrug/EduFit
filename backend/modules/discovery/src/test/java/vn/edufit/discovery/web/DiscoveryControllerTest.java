@@ -59,7 +59,8 @@ class DiscoveryControllerTest {
   void setUp() {
     mvc = MockMvcBuilders.standaloneSetup(new DiscoveryController(
         new DiscoveryQueryService(profileFacade),
-        new TutorMatchingService(profileFacade, logRepository, explanationService, new DiscoveryQueryService(profileFacade)),
+        new TutorMatchingService(profileFacade, logRepository, explanationService, new DiscoveryQueryService(profileFacade),
+            org.mockito.Mockito.mock(vn.edufit.connection.api.ConnectionFacade.class)),
         currentUserProvider
     )).build();
     profile = new TutorDiscoveryProfileDto(

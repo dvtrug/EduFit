@@ -8,6 +8,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import vn.edufit.connection.api.ConnectionFacade;
 import vn.edufit.discovery.application.dto.TutorMatchResult;
 import vn.edufit.discovery.domain.model.AvailabilitySlot;
 import vn.edufit.discovery.domain.model.MatchCriteria;
@@ -33,22 +34,26 @@ public class TutorMatchingService {
   private final MatchingRunLogRepository matchingRunLogRepository;
   private final MatchExplanationService explanationService;
   private final DiscoveryQueryService queryService;
+  private final ConnectionFacade connectionFacade;
 
   public TutorMatchingService(
       ProfileFacade profileFacade,
       MatchingRunLogRepository matchingRunLogRepository,
       MatchExplanationService explanationService,
-      DiscoveryQueryService queryService
+      DiscoveryQueryService queryService,
+      ConnectionFacade connectionFacade
   ) {
     this.profileFacade = profileFacade;
     this.matchingRunLogRepository = matchingRunLogRepository;
     this.explanationService = explanationService;
     this.queryService = queryService;
+    this.connectionFacade = connectionFacade;
   }
 
   @Transactional
   public List<TutorMatchResult> match(CurrentUser currentUser, UUID goalId, int topN) {
-    if (!currentUser.hasRole("STUDENT") && !currentUser.hasRole("PARENT")) {
+    if (currentUser == null || currentUser.getUserId() == null
+        || (!currentUser.hasRole("STUDENT") && !currentUser.hasRole("PARENT"))) {
       throw new ForbiddenOperationException("Chỉ học sinh hoặc phụ huynh được yêu cầu ghép đôi gia sư.");
     }
     LearningGoalDiscoveryDto goal = profileFacade.findLearningGoalForDiscovery(goalId)
@@ -78,7 +83,10 @@ public class TutorMatchingService {
   }
 
   private void validateAccess(CurrentUser currentUser, LearningGoalDiscoveryDto goal) {
-    if (!goal.studentUserId().equals(currentUser.getUserId())) {
+    boolean owner = currentUser.hasRole("STUDENT") && currentUser.getUserId().equals(goal.studentUserId());
+    boolean linkedParent = !owner && currentUser.hasRole("PARENT")
+        && connectionFacade.hasConfirmedParentLink(currentUser.getUserId(), goal.studentId());
+    if (!owner && !linkedParent) {
       throw new ForbiddenOperationException("Bạn không có quyền ghép đôi cho mục tiêu học tập này.");
     }
     if (!"ACTIVE".equals(goal.status())) {
