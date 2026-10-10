@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
+import vn.edufit.profile.api.dto.EducationLevelOrderDto;
 import vn.edufit.profile.api.dto.LearningGoalDiscoveryDto;
 import vn.edufit.profile.api.dto.TutorDiscoveryProfileDto;
 import vn.edufit.profile.api.dto.TutorSearchCriteria;
@@ -28,6 +29,13 @@ public interface ProfileFacade {
   List<TutorDiscoveryProfileDto> findVerifiedTutorDetails(List<UUID> tutorIds);
 
   List<TutorDiscoveryProfileDto> findVerifiedTutorsForMatching();
+
+  /**
+   * Returns the complete level catalog in business order, including retired levels so
+   * deactivation does not make previously non-adjacent levels adjacent.
+   * Missing or duplicate sort orders are rejected as ambiguous catalog data.
+   */
+  List<EducationLevelOrderDto> findEducationLevelsForMatching();
 
   Optional<LearningGoalDiscoveryDto> findLearningGoalForDiscovery(UUID goalId);
 

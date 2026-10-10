@@ -21,11 +21,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.util.ReflectionTestUtils;
+import vn.edufit.profile.api.dto.EducationLevelOrderDto;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.profile.api.dto.TutorSearchCriteria;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
 import vn.edufit.profile.application.service.ProfileFacadeImpl;
 import vn.edufit.profile.infra.persistence.entity.StudentProfile;
+import vn.edufit.profile.infra.persistence.entity.EducationLevel;
 import vn.edufit.profile.infra.persistence.entity.TeachingMode;
 import vn.edufit.profile.infra.persistence.entity.TutorProfile;
 import vn.edufit.profile.infra.persistence.entity.TutorStatus;
@@ -38,6 +41,7 @@ import vn.edufit.profile.infra.persistence.repository.SubjectRepository;
 import vn.edufit.profile.infra.persistence.repository.EducationLevelRepository;
 import vn.edufit.profile.infra.persistence.repository.TutorProfileRepository;
 import vn.edufit.shared.exception.EntityNotFoundException;
+import vn.edufit.shared.exception.InvalidOperationException;
 
 @ExtendWith(MockitoExtension.class)
 class ProfileFacadeImplTest {
@@ -67,6 +71,39 @@ class ProfileFacadeImplTest {
   private EducationLevelRepository educationLevelRepository;
 
   private ProfileFacadeImpl profileFacade;
+
+  @Test
+  void shouldExposeBusinessOrderingWithoutChangingLevelIds() {
+    var first = level(80, 10, true);
+    var retired = level(3, 30, false);
+    var last = level(41, 60, true);
+    when(educationLevelRepository.findAllByOrderBySortOrderAscLevelIdAsc())
+        .thenReturn(List.of(first, retired, last));
+
+    assertEquals(List.of(new EducationLevelOrderDto(80, 10), new EducationLevelOrderDto(3, 30),
+        new EducationLevelOrderDto(41, 60)), profileFacade.findEducationLevelsForMatching());
+  }
+
+  @Test
+  void shouldRejectAmbiguousLevelOrdering() {
+    when(educationLevelRepository.findAllByOrderBySortOrderAscLevelIdAsc())
+        .thenReturn(List.of(level(80, 10, true), level(3, 10, true)));
+    assertThrows(InvalidOperationException.class, profileFacade::findEducationLevelsForMatching);
+  }
+
+  @Test
+  void shouldRejectMissingLevelOrdering() {
+    var level = level(80, 10, true);
+    level.setSortOrder(null);
+    when(educationLevelRepository.findAllByOrderBySortOrderAscLevelIdAsc()).thenReturn(List.of(level));
+    assertThrows(InvalidOperationException.class, profileFacade::findEducationLevelsForMatching);
+  }
+
+  private EducationLevel level(int id, int sortOrder, boolean active) {
+    var level = new EducationLevel("Level " + id, sortOrder, active);
+    ReflectionTestUtils.setField(level, "levelId", id);
+    return level;
+  }
 
   @BeforeEach
   void setUp() {

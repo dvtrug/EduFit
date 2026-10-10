@@ -1,6 +1,6 @@
 # Discovery: Final Implementation Plan
 
-Trạng thái: Phase 1 hoàn tất trên `feat/discovery`; Phase 2 chưa bắt đầu.
+Trạng thái: Phase 1 hoàn tất; Phase 2 đang triển khai trên `feat/discovery`.
 
 Nguồn đối chiếu: `D:/backend_discovery_implementation_plan.md`, code hiện tại trên `feat/discovery`, SADS, module structure guide và master sprint plan trong `docs/`. Trước mỗi task phải đọc lại phần docs liên quan và code bị tác động.
 
@@ -49,8 +49,8 @@ Plan trước đã có các nhóm công việc chính nhưng thiếu cách chia 
 - Trước T08, base phải có ConnectionFacade và confirmed-link implementation từ `feat/connection`. Kiểm tra lịch sử trước khi tích hợp; ưu tiên base đã merge hai feature. Nếu cần integration riêng, ghi rõ commit nguồn và tránh trộn việc sửa Connection vào task Discovery.
 - Không tự merge feature vào main trong bước lập plan này.
 - T00 là commit tài liệu plan; T01-T15 mỗi task là đúng một commit gồm code và test liên quan. Không gom nhiều task vào một commit.
-- Mỗi task: đọc docs -> sửa code/test -> chạy kiểm tra phù hợp -> review diff -> stage đường dẫn cụ thể -> commit -> báo SHA, thay đổi và kết quả test để bạn review.
-- Không push hoặc merge tự động từ plan này. Nếu test fail thì task chưa hoàn thành; sửa trong phạm vi task trước khi commit.
+- Mỗi task: đọc docs -> sửa code/test -> chạy kiểm tra phù hợp -> review diff -> stage đường dẫn cụ thể -> commit -> push -> báo SHA, thay đổi và kết quả test để bạn review.
+- Theo yêu cầu cập nhật, commit đồng nghĩa commit và push ngay sau mỗi task. Không tự merge. Nếu test fail thì task chưa hoàn thành; sửa trong phạm vi task trước khi commit.
 - Checklist được cập nhật trong commit của task; ghi SHA trong báo cáo review, tránh cần commit phụ chỉ để ghi SHA của chính nó.
 
 ## 4. Phase và task theo từng commit
@@ -226,6 +226,8 @@ git status --short
 - Phase 1 đã được cho phép triển khai; các phase sau tiếp tục theo phạm vi được duyệt.
 
 ## 6. Execution Notes
+
+- T04: Profile API trả catalog levelId/sortOrder theo business order; giữ cả cấp đã ngừng hoạt động để không tạo quan hệ liền kề mới. sort_order thiếu/trùng bị từ chối rõ ràng. Discovery map sang EducationLevelOrder thuần Java; ID không liên tục và khoảng cách sort_order không ảnh hưởng adjacency theo vị trí. Không đổi HTTP DTO hay scorer. Profile 30/30 và Discovery 29/29 tests PASS; diff check PASS.
 
 - Baseline ngày 2026-10-10: `mvnw.cmd -pl modules/discovery -am test -B -ntp` PASS; Discovery 12 tests, dependencies 91 tests.
 - Runtime kiểm tra: JDK 21.0.10. Maven dùng `-Djavax.net.ssl.trustStoreType=Windows-ROOT` để xác thực HTTPS bằng kho chứng chỉ Windows; không thay cấu hình repo hoặc tắt xác thực TLS.

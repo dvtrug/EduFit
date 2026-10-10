@@ -9,7 +9,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import vn.edufit.discovery.domain.model.EducationLevelOrder;
 import vn.edufit.profile.api.ProfileFacade;
+import vn.edufit.profile.api.dto.EducationLevelOrderDto;
 import vn.edufit.profile.api.dto.TutorDiscoveryProfileDto;
 import vn.edufit.profile.api.dto.TutorSearchCriteria;
 import vn.edufit.shared.exception.EntityNotFoundException;
@@ -45,5 +47,11 @@ public class DiscoveryQueryService {
   public TutorDiscoveryProfileDto getTutorDetail(UUID tutorId) {
     return profileFacade.findVerifiedTutorDetail(tutorId)
         .orElseThrow(() -> EntityNotFoundException.of("TutorProfile", tutorId));
+  }
+
+  @Transactional(readOnly = true)
+  public EducationLevelOrder getEducationLevelOrder() {
+    return new EducationLevelOrder(profileFacade.findEducationLevelsForMatching().stream()
+        .map(EducationLevelOrderDto::levelId).toList());
   }
 }

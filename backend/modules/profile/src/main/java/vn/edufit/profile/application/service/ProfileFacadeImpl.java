@@ -2,6 +2,7 @@ package vn.edufit.profile.application.service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edufit.profile.api.ProfileFacade;
+import vn.edufit.profile.api.dto.EducationLevelOrderDto;
 import vn.edufit.profile.api.dto.LearningGoalDiscoveryDto;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.profile.api.dto.TutorDiscoveryProfileDto;
@@ -134,6 +136,21 @@ public class ProfileFacadeImpl implements ProfileFacade {
   @Transactional(readOnly = true)
   public List<TutorDiscoveryProfileDto> findVerifiedTutorsForMatching() {
     return toDiscoveryProfiles(tutorProfileRepository.findByStatus(TutorStatus.VERIFIED));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<EducationLevelOrderDto> findEducationLevelsForMatching() {
+    var levels = educationLevelRepository.findAllByOrderBySortOrderAscLevelIdAsc();
+    Set<Integer> sortOrders = new HashSet<>();
+    for (EducationLevel level : levels) {
+      if (level.getSortOrder() == null || !sortOrders.add(level.getSortOrder())) {
+        throw new InvalidOperationException("Education level sort orders must be present and unique for matching.");
+      }
+    }
+    return levels.stream()
+        .map(level -> new EducationLevelOrderDto(level.getLevelId(), level.getSortOrder()))
+        .toList();
   }
 
   @Override

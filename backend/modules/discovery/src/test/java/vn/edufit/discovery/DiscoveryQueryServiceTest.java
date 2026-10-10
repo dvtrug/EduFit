@@ -22,6 +22,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import vn.edufit.discovery.application.service.DiscoveryQueryService;
 import vn.edufit.profile.api.ProfileFacade;
+import vn.edufit.profile.api.dto.EducationLevelOrderDto;
 import vn.edufit.profile.api.dto.TutorDiscoveryProfileDto;
 import vn.edufit.profile.api.dto.TutorSearchCriteria;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
@@ -36,6 +37,18 @@ class DiscoveryQueryServiceTest {
   private ProfileFacade profileFacade;
 
   private DiscoveryQueryService discoveryQueryService;
+
+  @Test
+  void shouldMapCatalogOrderingToPureDomainModel() {
+    when(profileFacade.findEducationLevelsForMatching()).thenReturn(List.of(
+        new EducationLevelOrderDto(80, 10), new EducationLevelOrderDto(3, 30),
+        new EducationLevelOrderDto(41, 60)
+    ));
+    var order = discoveryQueryService.getEducationLevelOrder();
+    assertEquals(List.of(80, 3, 41), order.levelIds());
+    assertEquals(true, order.areAdjacent(80, 3));
+    assertEquals(false, order.areAdjacent(80, 41));
+  }
 
   @BeforeEach
   void setUp() {
