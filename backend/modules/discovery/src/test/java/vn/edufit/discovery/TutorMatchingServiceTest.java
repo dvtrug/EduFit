@@ -34,6 +34,7 @@ import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.profile.api.dto.EducationLevelOrderDto;
 import vn.edufit.profile.api.dto.LearningGoalDiscoveryDto;
 import vn.edufit.profile.api.dto.TutorDiscoveryProfileDto;
+import vn.edufit.profile.api.dto.TutorCandidateCriteria;
 import vn.edufit.profile.api.dto.TutorSubjectDto;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
 import vn.edufit.profile.api.dto.WeeklyAvailabilityDto;
@@ -71,7 +72,7 @@ class TutorMatchingServiceTest {
     TutorDiscoveryProfileDto best = tutor(BigDecimal.valueOf(5), 20, 250_000L);
     TutorDiscoveryProfileDto second = tutor(BigDecimal.valueOf(4), 8, 320_000L);
     when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal(userId)));
-    when(profileFacade.findVerifiedTutorsForMatching()).thenReturn(List.of(second, best));
+    when(profileFacade.findVerifiedCandidatesBySubject(any())).thenReturn(List.of(second, best));
     when(explanationService.explainTopMatch(eq(userId), any(), eq(best)))
         .thenReturn(new MatchExplanationService.Explanation("Giải thích AI", true));
     when(explanationService.ruleBased(any())).thenReturn("Giải thích theo quy tắc");
@@ -107,7 +108,7 @@ class TutorMatchingServiceTest {
     when(profileFacade.findEducationLevelsForMatching()).thenReturn(List.of(
         new EducationLevelOrderDto(80, 10), new EducationLevelOrderDto(2, 30),
         new EducationLevelOrderDto(41, 60), new EducationLevelOrderDto(12, 90)));
-    when(profileFacade.findVerifiedTutorsForMatching()).thenReturn(List.of(candidate));
+    when(profileFacade.findVerifiedCandidatesBySubject(any())).thenReturn(List.of(candidate));
     when(explanationService.explainTopMatch(eq(userId), any(), eq(candidate)))
         .thenReturn(new MatchExplanationService.Explanation("Explanation", false));
 
@@ -184,6 +185,53 @@ class TutorMatchingServiceTest {
   void missingActorIsDeniedBeforeReadingGoal() {
     assertThrows(ForbiddenOperationException.class, () -> matchingService.match(null, goalId, 5));
     org.mockito.Mockito.verifyNoInteractions(profileFacade, connectionFacade, explanationService, logRepository);
+  }
+
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(ints = {-1, 0, 11, Integer.MAX_VALUE})
+  void invalidTopNStopsBeforeDataAccess(int topN) {
+    assertThrows(InvalidOperationException.class, () -> matchingService.match(currentUser(userId), goalId, topN));
+    org.mockito.Mockito.verifyNoInteractions(profileFacade, connectionFacade, explanationService, logRepository);
+  }
+
+  @Test
+  void missingGoalIdStopsBeforeDataAccess() {
+    assertThrows(InvalidOperationException.class, () -> matchingService.match(currentUser(userId), null, 5));
+    org.mockito.Mockito.verifyNoInteractions(profileFacade, connectionFacade, explanationService, logRepository);
+  }
+
+  @Test
+  void emptyBoundedCandidatesStillLogWithoutCallingAi() {
+    var goal = goal(userId);
+    when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal));
+    assertEquals(List.of(), matchingService.match(currentUser(userId), goalId, 5));
+    verify(profileFacade).findVerifiedCandidatesBySubject(new TutorCandidateCriteria(1, "ONLINE", "Hà Nội"));
+    org.mockito.Mockito.verify(profileFacade, org.mockito.Mockito.never()).findVerifiedTutorsForMatching();
+    org.mockito.Mockito.verifyNoInteractions(explanationService);
+    var log = org.mockito.ArgumentCaptor.forClass(MatchingRunLogEntity.class);
+    verify(logRepository).save(log.capture());
+    assertEquals(0, log.getValue().getResultCount());
+  }
+
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(ints = {1, 5, 10})
+  void boundedCandidatesProduceStableTopN(int topN) {
+    var candidates = java.util.stream.IntStream.range(0, 12)
+        .mapToObj(i -> tutor(BigDecimal.valueOf(5), 10, 200000)).toList();
+    when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal(userId)));
+    when(profileFacade.findVerifiedCandidatesBySubject(any())).thenReturn(candidates);
+    when(explanationService.explainTopMatch(eq(userId), any(), any()))
+        .thenReturn(new MatchExplanationService.Explanation("Explanation", false));
+    org.mockito.Mockito.lenient().when(explanationService.ruleBased(any())).thenReturn("Fallback");
+    var first = matchingService.match(currentUser(userId), goalId, topN);
+    var second = matchingService.match(currentUser(userId), goalId, topN);
+    assertEquals(topN, first.size());
+    assertEquals(first, second);
+    assertEquals(candidates.stream().map(p -> p.tutor().tutorId()).sorted().limit(topN).toList(),
+        first.stream().map(p -> p.score().tutorId()).toList());
+    verify(profileFacade, org.mockito.Mockito.times(2))
+        .findVerifiedCandidatesBySubject(new TutorCandidateCriteria(1, "ONLINE", "Hà Nội"));
+    org.mockito.Mockito.verify(profileFacade, org.mockito.Mockito.never()).findVerifiedTutorsForMatching();
   }
 
   private TutorDiscoveryProfileDto tutor(BigDecimal rating, int reviews, long price) {

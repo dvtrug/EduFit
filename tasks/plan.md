@@ -227,6 +227,8 @@ git status --short
 
 ## 6. Execution Notes
 
+- T09: matching calls bounded Profile API with subject/mode/area only; soft level/price/time/rating remain scoring factors. Service validates non-null goalId and topN 1..10 before reads; REST default stays 5. Nine new cases RED then GREEN; Discovery 91/91 PASS without skips. Tests capture exact criteria, prohibit old full-scan calls, cover empty/log/no-AI and deterministic top 1/5/10. Database cap remains Profile responsibility, proven in T05 PostgreSQL tests; global ranking/cap performance report remains T12. Old API retained until T14.
+
 - T08: authorized STUDENT ownership or PARENT via ConnectionFacade confirmed-link lookup using studentId, not studentUserId. Parent role alone or matching userId cannot bypass link checks; Student cannot borrow a link. Null actor, foreign/missing/invalid goals stop before AI/log. RED parent test reproduced ForbiddenOperationException before implementation; GREEN Discovery 82/82 and Connection 13/13, no skips. Link-state unit cases verify the facade queries only CONFIRMED (repository mocked, not PostgreSQL status evidence). Transaction/facade integration remains T10. Dependency is public Connection API only, no reverse Discovery dependency.
 
 - Phase 4 prerequisite: integrated Connection commit `43e7461` from `origin/feat/connection` without overwriting Profile bounded candidates/catalog wiring. Discovery -> Connection -> Profile/IAM has no reverse dependency. Kept unrelated AccountStatus change unstaged. Updated Flyway integration assertions for V1.09. Regression PASS: Connection 8, Profile 44 (6 PostgreSQL cases), Discovery 73, app handler/script 8; actual PostgreSQL 17 Flyway integration 1/1 PASS with all 9 migrations. Prerequisite is a separate commit before T08.

@@ -21,6 +21,7 @@ import vn.edufit.discovery.infra.persistence.repository.MatchingRunLogRepository
 import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.profile.api.dto.LearningGoalDiscoveryDto;
 import vn.edufit.profile.api.dto.TutorDiscoveryProfileDto;
+import vn.edufit.profile.api.dto.TutorCandidateCriteria;
 import vn.edufit.profile.api.dto.WeeklyAvailabilityDto;
 import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.exception.EntityNotFoundException;
@@ -56,13 +57,17 @@ public class TutorMatchingService {
         || (!currentUser.hasRole("STUDENT") && !currentUser.hasRole("PARENT"))) {
       throw new ForbiddenOperationException("Chỉ học sinh hoặc phụ huynh được yêu cầu ghép đôi gia sư.");
     }
+    if (goalId == null || topN < 1 || topN > 10) {
+      throw new InvalidOperationException("goalId là bắt buộc và topN phải từ 1 đến 10.");
+    }
     LearningGoalDiscoveryDto goal = profileFacade.findLearningGoalForDiscovery(goalId)
         .orElseThrow(() -> EntityNotFoundException.of("LearningGoal", goalId));
     validateAccess(currentUser, goal);
     MatchCriteria criteria = toCriteria(goal);
     var matchScorer = new MatchScorer(queryService.getEducationLevelOrder());
 
-    List<TutorDiscoveryProfileDto> profiles = profileFacade.findVerifiedTutorsForMatching();
+    List<TutorDiscoveryProfileDto> profiles = profileFacade.findVerifiedCandidatesBySubject(
+        new TutorCandidateCriteria(goal.subjectId(), goal.mode(), goal.area()));
     Map<UUID, TutorDiscoveryProfileDto> byTutorId = profiles.stream()
         .collect(Collectors.toMap(profile -> profile.tutor().tutorId(), Function.identity()));
     List<MatchScore> ranked = profiles.stream()

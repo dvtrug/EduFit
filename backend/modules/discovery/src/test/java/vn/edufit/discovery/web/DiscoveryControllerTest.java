@@ -141,7 +141,7 @@ class DiscoveryControllerTest {
                 "Practice", "VERIFIED", Instant.parse("2025-01-01T00:00:00Z"), BigDecimal.valueOf(5), 10),
             profile.subjects(), profile.availabilitySlots(), profile.registeredAt()
         )).toList();
-    when(profileFacade.findVerifiedTutorsForMatching()).thenReturn(candidates);
+    when(profileFacade.findVerifiedCandidatesBySubject(any())).thenReturn(candidates);
     when(explanationService.explainTopMatch(eq(userId), any(), any()))
         .thenReturn(new MatchExplanationService.Explanation("Grounded explanation", true));
     when(explanationService.ruleBased(any())).thenReturn("Rule explanation");
