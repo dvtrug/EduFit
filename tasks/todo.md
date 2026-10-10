@@ -36,7 +36,7 @@ Nguồn chi tiết: `tasks/plan.md`. Mỗi task tương ứng một commit; ch�
 
 ## Phase 5 — Integration và architecture
 
-- [ ] T12: PostgreSQL search/detail/filter/pagination/OSIV/query count/p95/candidate cap ranking report. Commit `test(discovery): verify search hydration and candidate performance`.
+- [x] T12: PostgreSQL search/detail/filter/pagination/OSIV/query count/p95/candidate cap ranking report. Commit `test(discovery): verify search hydration and candidate performance`.
 - [ ] T13: ArchUnit đúng package; module/layer boundaries và dependency cycle checks. Commit `test(discovery): enforce module and layer boundaries`.
 - [ ] T14: Xóa matching full-scan API cũ khi hết caller; reactor regression và diff check. Commit `refactor(profile): remove obsolete full-scan matching API`.
 - [ ] Checkpoint 5: PostgreSQL evidence, regression và architecture checks hoàn tất.

@@ -1,6 +1,6 @@
 # Discovery: Final Implementation Plan
 
-Trạng thái: Phase 1, Phase 2 và Phase 3 hoàn tất trên `feat/discovery`; Phase 4 chưa triển khai.
+Trạng thái: Phase 1-4 hoàn tất trên `feat/discovery`; Phase 5 đang triển khai (T12 hoàn tất).
 
 Nguồn đối chiếu: `D:/backend_discovery_implementation_plan.md`, code hiện tại trên `feat/discovery`, SADS, module structure guide và master sprint plan trong `docs/`. Trước mỗi task phải đọc lại phần docs liên quan và code bị tác động.
 
@@ -226,6 +226,8 @@ git status --short
 - Phase 1 đã được cho phép triển khai; các phase sau tiếp tục theo phạm vi được duyệt.
 
 ## 6. Execution Notes
+
+- T12: actual PostgreSQL 17.11 with all 9 Flyway migrations and detached DTO reads; 22 new integration cases PASS. Search 5 SQL statements including count, detail 3, candidates 3, matching without AI 8 remain fixed at 20/200/240 tutors; empty first page needs 1. Covers individual/combined filters, VERIFIED, 404, overlapping/touching slots and complete non-duplicate pagination. Initial RED exposed PostgreSQL lower(bytea) on null keyword/area parameters; explicit HQL String casts fixed nullable binding. Regression PASS: Profile 44, Discovery 104, app PostgreSQL 31 (22 new + 9 workflow), zero skips. Local p95, representative EXPLAIN and adversarial cap recall recorded in docs/discovery-performance-report.md; no production SLA/security-filter certification.
 
 - T11: tests cover quota 0/9 success, quota 10 fallback, actor-based rolling 24h lookup (Parent pays own quota), exactly one Top 1 AI call, no AI for empty results, grounded five-factor/mode/price prompt with no bio/contact PII, timeout/unavailable/usage-error fallback, and HTTP 200 with correct aiGenerated. Found socket connect/read timeouts did not bound total provider wait: new Spring-wiring test RED (100ms configured, slow provider returned SUCCESS at ~2008ms). Added shared gateway deadline using managed virtual-thread executor, Future timeout/cancellation and existing caller-thread audit logging; GREEN timeout at ~129ms with one TIMEOUT log and cancelled provider. Default Spring timeout 15s and application.yml 15s verified. Cancellation is best-effort, not forced provider termination; DB audit duration is outside provider deadline. Existing quota count-then-call is not an atomic reservation for concurrent requests; event is in-process, not durable delivery. Updated current text docs; final diagrams remain T15.
 - Checkpoint 4 PASS: reactor through app compiles; Discovery 104, Profile 44 (6 PostgreSQL cases), Connection 13, AI 12 (including 2 architecture rules and 2 runtime wiring/deadline cases), app 18 (9 PostgreSQL transaction/link states, 1 real Flyway, 2 migration script, 6 exception mapping) all PASS with zero skips. Total selected regression 191 tests; 16 PostgreSQL integration cases actually executed. Tests do not certify security filters, p95/global ranking under cap, or corrected app architecture rules (T12/T13). No external LLM calls. Diff check PASS; unrelated AccountStatus remains excluded.

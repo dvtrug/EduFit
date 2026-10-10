@@ -66,21 +66,21 @@ public interface TutorProfileRepository extends JpaRepository<TutorProfile, UUID
             and (:subjectId is null or ts.subjectId = :subjectId)
             and (:levelId is null or ts.educationLevelId = :levelId)
         ))
-        and (:area is null or lower(t.area) like lower(concat('%', :area, '%')))
+        and (:area is null or lower(t.area) like lower(concat('%', cast(:area as String), '%')))
         and (:mode is null or t.teachingMode = :mode or (:includeBothMode = true and t.teachingMode = :bothMode))
         and (:minPrice is null or t.pricePerSession >= :minPrice)
         and (:maxPrice is null or t.pricePerSession <= :maxPrice)
         and (:minRating is null or t.ratingAvg >= :minRating)
         and (:keyword is null
-          or lower(t.displayName) like lower(concat('%', :keyword, '%'))
-          or lower(t.headline) like lower(concat('%', :keyword, '%'))
-          or lower(t.bio) like lower(concat('%', :keyword, '%'))
+          or lower(t.displayName) like lower(concat('%', cast(:keyword as String), '%'))
+          or lower(t.headline) like lower(concat('%', cast(:keyword as String), '%'))
+          or lower(t.bio) like lower(concat('%', cast(:keyword as String), '%'))
           or exists (
             select 1
             from TutorSubject keywordTs, Subject keywordSubject
             where keywordTs.tutorId = t.tutorId
               and keywordSubject.subjectId = keywordTs.subjectId
-              and lower(keywordSubject.name) like lower(concat('%', :keyword, '%'))
+              and lower(keywordSubject.name) like lower(concat('%', cast(:keyword as String), '%'))
           )
         )
         and (:dayOfWeek is null or exists (
