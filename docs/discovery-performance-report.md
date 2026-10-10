@@ -1,5 +1,10 @@
 # Discovery PostgreSQL Verification
 
+Related handover: [API contract](discovery-api-contract.md), [code/flows and diagrams](discovery-module-flow.md), [documentation index](README.md).
+Tables preserve the original successful T12 measurement. Later regression runs
+rerun the same fixtures and can produce different latency/plan timings; Surefire
+reports are overwritten on each run, not a permanent copy of this snapshot.
+
 ## Scope and Reproduction
 
 Run on 2026-10-10, branch `feat/discovery`, T12. Test source:

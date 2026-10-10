@@ -43,7 +43,8 @@ Nguồn chi tiết: `tasks/plan.md`. Mỗi task tương ứng một commit; ch�
 
 ## Phase 6 — Handover docs
 
-- [ ] T15: Docs package/API/scoring/authorization/AI/log/event/performance/Q&A; diagram ảnh và link verification. Commit `docs(discovery): document matching architecture and execution flows`.
+- [x] T15: Docs package/API/scoring/authorization/AI/log/event/performance/Q&A; diagram ảnh và link verification. Commit `docs(discovery): document matching architecture and execution flows`.
+- [x] Checkpoint 6: Bốn PNG đã kiểm tra trực quan, links/JSON/công thức đã đối chiếu; regression 300 tests PASS, không skip.
 
 ## Kiểm tra trước mỗi commit
 
@@ -56,6 +57,6 @@ Nguồn chi tiết: `tasks/plan.md`. Mỗi task tương ứng một commit; ch�
 
 - [x] Discovery/Profile/Connection tests và app architecture tests pass.
 - [x] PostgreSQL integration/transaction/query count đã chạy; báo cáo p95 và ảnh hưởng candidate cap có bằng chứng.
-- [ ] REST field cũ tương thích, breakdown mới có docs/test.
-- [ ] Docs/diagram ảnh khớp code cuối; git diff --check pass.
-- [ ] Các task có commit riêng; không có thay đổi ngoài phạm vi trong commits.
+- [x] REST field cũ tương thích, breakdown mới có docs/test.
+- [x] Docs/diagram ảnh khớp code cuối; git diff --check pass.
+- [x] Các task có commit riêng; không có thay đổi ngoài phạm vi trong commits.

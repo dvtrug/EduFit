@@ -1,6 +1,6 @@
 # Discovery: Final Implementation Plan
 
-Trạng thái: Phase 1-5 hoàn tất trên `feat/discovery`; Phase 6 (T15, docs/diagram bàn giao) chưa triển khai.
+Trạng thái: Phase 0-6 (T00-T15) hoàn tất trên `feat/discovery` theo phạm vi đã duyệt; chưa merge vào `main`.
 
 Nguồn đối chiếu: `D:/backend_discovery_implementation_plan.md`, code hiện tại trên `feat/discovery`, SADS, module structure guide và master sprint plan trong `docs/`. Trước mỗi task phải đọc lại phần docs liên quan và code bị tác động.
 
@@ -226,6 +226,8 @@ git status --short
 - Phase 1 đã được cho phép triển khai; các phase sau tiếp tục theo phạm vi được duyệt.
 
 ## 6. Execution Notes
+
+- T15 / Checkpoint 6 PASS: synchronized Discovery package/class ownership, HTTP and Java API contracts, search/detail/matching flows, confirmed Parent authorization, five-factor formulas and worked 66.95 fixture, bounded-candidate ranking limits, AI quota/deadline/fallback, transaction/event semantics, test commands and Q&A. Added docs index/API contract, updated architecture/overview/performance cross-links, and embedded four PNG diagrams with editable SVG sources and a reproducible renderer. All four images opened for visual review; text-bound and nonblank-pixel checks PASS. Local links, two JSON examples and score arithmetic checked; no Mermaid blocks in Discovery handover docs. Repeated full T14 reactor command: 300 tests PASS, zero failures/errors/skips, including 38 actual PostgreSQL cases and 9 app architecture checks. Original T12 timing snapshot retained, not replaced by rerun timings. Final diff/whitespace review PASS. Documentation/tooling only; unrelated AccountStatus excluded, no main merge. Candidate-cap recall loss, non-atomic AI quota, non-durable events and unverified security-filter behavior remain explicitly documented limitations, not silently declared fixed.
 
 - T14 / Checkpoint 5 PASS: removed obsolete full-scan Profile facade method, its implementation and repository findByStatus after confirming no production caller remained. Removed two obsolete never-call assertions; exact bounded-query assertions remain. Retained shared batch hydration used by detail/candidates. rg finds no legacy method/query references anywhere in backend. Full reactor command: `mvnw.cmd -pl app -am test '-Dtest=*Test,FlywayMigrationIT' '-Dsurefire.failIfNoSpecifiedTests=false' -B -ntp`. All 17 reactor projects SUCCESS; 300 tests PASS, zero failures/errors/skips: Shared 22, AI 12, Storage 6, IAM 32, Profile 44, Verification 16, Connection 13, Discovery 104, app 51. Includes 38 actual PostgreSQL cases (6 candidate + 22 reads/performance + 9 workflow + 1 migration), 9 app architecture checks, all 9 Flyway migrations. Repeated cap oracle still gives 97.00 uncapped vs 78.50 bounded, Top 5 recall 4/5. Diff reviewed and whitespace check PASS; unrelated AccountStatus excluded. No main merge. Phase 6 remains for final docs/diagram synchronization (old diagram snapshots are not the current API reference).
 
