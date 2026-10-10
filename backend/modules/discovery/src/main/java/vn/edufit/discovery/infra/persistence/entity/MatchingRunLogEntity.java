@@ -1,4 +1,4 @@
-package vn.edufit.discovery.infra.persistence;
+package vn.edufit.discovery.infra.persistence.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "matching_run_log")
-public class MatchingRunLog {
+public class MatchingRunLogEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -33,11 +33,11 @@ public class MatchingRunLog {
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt = Instant.now();
 
-  protected MatchingRunLog() {
+  protected MatchingRunLogEntity() {
     // JPA required
   }
 
-  public MatchingRunLog(UUID userId, UUID studentId, UUID goalId, int resultCount) {
+  public MatchingRunLogEntity(UUID userId, UUID studentId, UUID goalId, int resultCount) {
     this.userId = userId;
     this.studentId = studentId;
     this.goalId = goalId;

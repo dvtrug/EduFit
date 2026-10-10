@@ -22,8 +22,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import vn.edufit.discovery.application.service.MatchExplanationService;
 import vn.edufit.discovery.application.service.TutorMatchingService;
-import vn.edufit.discovery.infra.persistence.MatchingRunLog;
-import vn.edufit.discovery.infra.persistence.MatchingRunLogRepository;
+import vn.edufit.discovery.infra.persistence.entity.MatchingRunLogEntity;
+import vn.edufit.discovery.infra.persistence.repository.MatchingRunLogRepository;
 import vn.edufit.discovery.web.request.TutorMatchRequest;
 import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.profile.api.dto.LearningGoalDiscoveryDto;
@@ -74,7 +74,7 @@ class TutorMatchingServiceTest {
     assertEquals(best.tutor().tutorId(), result.getFirst().tutorId());
     assertEquals(true, result.getFirst().aiGenerated());
     assertEquals("Giải thích theo quy tắc", result.get(1).explanation());
-    verify(logRepository).save(any(MatchingRunLog.class));
+    verify(logRepository).save(any(MatchingRunLogEntity.class));
   }
 
   @Test

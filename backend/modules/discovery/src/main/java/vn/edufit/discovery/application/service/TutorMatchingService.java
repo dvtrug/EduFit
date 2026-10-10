@@ -14,8 +14,8 @@ import vn.edufit.discovery.domain.model.MatchScore;
 import vn.edufit.discovery.domain.model.SubjectLevel;
 import vn.edufit.discovery.domain.model.TutorCandidate;
 import vn.edufit.discovery.domain.service.MatchScorer;
-import vn.edufit.discovery.infra.persistence.MatchingRunLog;
-import vn.edufit.discovery.infra.persistence.MatchingRunLogRepository;
+import vn.edufit.discovery.infra.persistence.entity.MatchingRunLogEntity;
+import vn.edufit.discovery.infra.persistence.repository.MatchingRunLogRepository;
 import vn.edufit.discovery.web.request.TutorMatchRequest;
 import vn.edufit.discovery.web.response.MatchScoreBreakdownResponse;
 import vn.edufit.discovery.web.response.TutorDiscoveryCardResponse;
@@ -71,7 +71,7 @@ public class TutorMatchingService {
     List<TutorMatchResponse> response = ranked.stream()
         .map(score -> toResponse(currentUser.getUserId(), score, byTutorId.get(score.tutorId()), score.equals(ranked.getFirst())))
         .toList();
-    matchingRunLogRepository.save(new MatchingRunLog(
+    matchingRunLogRepository.save(new MatchingRunLogEntity(
         currentUser.getUserId(), goal.studentId(), goal.goalId(), response.size()
     ));
     return response;

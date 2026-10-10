@@ -230,3 +230,4 @@ git status --short
 - Baseline ngày 2026-10-10: `mvnw.cmd -pl modules/discovery -am test -B -ntp` PASS; Discovery 12 tests, dependencies 91 tests.
 - Runtime kiểm tra: JDK 21.0.10. Maven dùng `-Djavax.net.ssl.trustStoreType=Windows-ROOT` để xác thực HTTPS bằng kho chứng chỉ Windows; không thay cấu hình repo hoặc tắt xác thực TLS.
 - Connection trên base hiện vẫn là skeleton; confirmed-link API cần được tích hợp trước T08. Phase 1 không phụ thuộc implementation đó.
+- T01: move/rename entity + repository, cập nhật caller/test; mapping đối chiếu V1.08 không đổi. Discovery 12/12 tests PASS, reactor compile PASS. Test dùng Mockito cần chạy ngoài sandbox để attach Java agent.
