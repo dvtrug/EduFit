@@ -9,7 +9,7 @@ Nguồn chi tiết: `tasks/plan.md`. Mỗi task tương ứng một commit; ch�
 ## Phase 1 — Structure và contract
 
 - [x] T01: Move/rename matching log entity + repository; giữ mapping; compile/service tests. Commit `refactor(discovery): normalize matching log persistence packages`.
-- [ ] T02: Public facade actor-aware + summary DTO + event contract; compile/API dependency review. Commit `feat(discovery): define public matching facade and event contracts`.
+- [x] T02: Public facade actor-aware + summary DTO + event contract; compile/API dependency review. Commit `feat(discovery): define public matching facade and event contracts`.
 - [ ] T03: Application input/output tách web DTO; controller mapping và REST JSON regression. Commit `refactor(discovery): decouple application services from HTTP DTOs`.
 - [ ] Checkpoint 1: Contract và REST regression pass.
 
