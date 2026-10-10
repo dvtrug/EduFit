@@ -28,6 +28,34 @@ public interface TutorProfileRepository extends JpaRepository<TutorProfile, UUID
   List<TutorProfile> findByTutorIdInAndStatus(Collection<UUID> tutorIds, TutorStatus status);
 
   @Query("""
+      select t from TutorProfile t
+      where t.status = :status
+        and exists (
+          select 1 from TutorSubject ts
+          where ts.tutorId = t.tutorId and ts.subjectId = :subjectId
+        )
+        and (
+          (:allowOnline = true and t.teachingMode in (
+            vn.edufit.profile.infra.persistence.entity.TeachingMode.ONLINE,
+            vn.edufit.profile.infra.persistence.entity.TeachingMode.BOTH
+          ))
+          or (:allowOffline = true and t.teachingMode in (
+            vn.edufit.profile.infra.persistence.entity.TeachingMode.OFFLINE,
+            vn.edufit.profile.infra.persistence.entity.TeachingMode.BOTH
+          ) and :area is not null and lower(trim(t.area)) = :area)
+        )
+      order by coalesce(t.ratingAvg, 0) desc, t.reviewCount desc, t.createdAt asc, t.tutorId asc
+      """)
+  List<TutorProfile> findVerifiedCandidatesBySubject(
+      @Param("status") TutorStatus status,
+      @Param("subjectId") Integer subjectId,
+      @Param("allowOnline") boolean allowOnline,
+      @Param("allowOffline") boolean allowOffline,
+      @Param("area") String area,
+      Pageable pageable
+  );
+
+  @Query("""
       select t
       from TutorProfile t
       where t.status = :status

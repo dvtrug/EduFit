@@ -16,8 +16,8 @@ Nguồn chi tiết: `tasks/plan.md`. Mỗi task tương ứng một commit; ch�
 ## Phase 2 — Candidate data
 
 - [x] T04: Education-level ordering metadata; tests ID không liên tục/exact/adjacent/other. Commit `feat(profile): expose education level ordering for matching`.
-- [ ] T05: Bounded candidate API/query + batch hydration; PostgreSQL filter/cap/duplicate tests. Commit `perf(profile): add bounded discovery candidate queries`.
-- [ ] Checkpoint 2: Dữ liệu scorer đủ, query có giới hạn và ordering ổn định.
+- [x] T05: Bounded candidate API/query + batch hydration; PostgreSQL filter/cap/duplicate tests. Commit `perf(profile): add bounded discovery candidate queries`.
+- [x] Checkpoint 2: Dữ liệu scorer đủ, query có giới hạn và ordering ổn định.
 
 ## Phase 3 — Domain policy
 

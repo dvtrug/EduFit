@@ -3,6 +3,7 @@ package vn.edufit.profile.application.service;
 import java.time.Instant;
 import java.util.List;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -11,9 +12,12 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.PageRequest;
 import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.profile.api.dto.EducationLevelOrderDto;
+import vn.edufit.profile.api.dto.TutorCandidateCriteria;
 import vn.edufit.profile.api.dto.LearningGoalDiscoveryDto;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.profile.api.dto.TutorDiscoveryProfileDto;
@@ -24,7 +28,6 @@ import vn.edufit.profile.api.dto.WeeklyAvailabilityDto;
 import vn.edufit.profile.infra.persistence.entity.EducationLevel;
 import vn.edufit.profile.infra.persistence.entity.LearningGoal;
 import vn.edufit.profile.infra.persistence.entity.StudentProfile;
-import vn.edufit.profile.infra.persistence.entity.Subject;
 import vn.edufit.profile.infra.persistence.entity.TeachingMode;
 import vn.edufit.profile.infra.persistence.entity.TutorProfile;
 import vn.edufit.profile.infra.persistence.entity.TutorStatus;
@@ -32,7 +35,6 @@ import vn.edufit.profile.infra.persistence.repository.EducationLevelRepository;
 import vn.edufit.profile.infra.persistence.repository.GoalAvailabilitySlotRepository;
 import vn.edufit.profile.infra.persistence.repository.LearningGoalRepository;
 import vn.edufit.profile.infra.persistence.repository.StudentProfileRepository;
-import vn.edufit.profile.infra.persistence.repository.SubjectRepository;
 import vn.edufit.profile.infra.persistence.repository.TutorAvailabilitySlotRepository;
 import vn.edufit.profile.infra.persistence.repository.TutorProfileRepository;
 import vn.edufit.profile.infra.persistence.repository.TutorSubjectRepository;
@@ -49,8 +51,8 @@ public class ProfileFacadeImpl implements ProfileFacade {
   private final TutorAvailabilitySlotRepository tutorAvailabilitySlotRepository;
   private final LearningGoalRepository learningGoalRepository;
   private final GoalAvailabilitySlotRepository goalAvailabilitySlotRepository;
-  private final SubjectRepository subjectRepository;
   private final EducationLevelRepository educationLevelRepository;
+  private final int candidateLimit;
 
   public ProfileFacadeImpl(
       TutorProfileRepository tutorProfileRepository,
@@ -59,8 +61,8 @@ public class ProfileFacadeImpl implements ProfileFacade {
       TutorAvailabilitySlotRepository tutorAvailabilitySlotRepository,
       LearningGoalRepository learningGoalRepository,
       GoalAvailabilitySlotRepository goalAvailabilitySlotRepository,
-      SubjectRepository subjectRepository,
-      EducationLevelRepository educationLevelRepository
+      EducationLevelRepository educationLevelRepository,
+      @Value("${edufit.discovery.matching.candidate-limit:200}") int candidateLimit
   ) {
     this.tutorProfileRepository = tutorProfileRepository;
     this.studentProfileRepository = studentProfileRepository;
@@ -68,8 +70,11 @@ public class ProfileFacadeImpl implements ProfileFacade {
     this.tutorAvailabilitySlotRepository = tutorAvailabilitySlotRepository;
     this.learningGoalRepository = learningGoalRepository;
     this.goalAvailabilitySlotRepository = goalAvailabilitySlotRepository;
-    this.subjectRepository = subjectRepository;
     this.educationLevelRepository = educationLevelRepository;
+    if (candidateLimit < 1) {
+      throw new IllegalArgumentException("Matching candidate limit must be positive.");
+    }
+    this.candidateLimit = candidateLimit;
   }
 
   @Override
@@ -136,6 +141,29 @@ public class ProfileFacadeImpl implements ProfileFacade {
   @Transactional(readOnly = true)
   public List<TutorDiscoveryProfileDto> findVerifiedTutorsForMatching() {
     return toDiscoveryProfiles(tutorProfileRepository.findByStatus(TutorStatus.VERIFIED));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<TutorDiscoveryProfileDto> findVerifiedCandidatesBySubject(TutorCandidateCriteria criteria) {
+    if (criteria == null || criteria.subjectId() == null || criteria.subjectId() < 1) {
+      throw new InvalidOperationException(ErrorCode.VALIDATION_FAILED, "Matching requires a valid subject ID.");
+    }
+    TeachingMode mode = parseTeachingMode(criteria.mode());
+    if (mode == null) {
+      throw new InvalidOperationException(ErrorCode.VALIDATION_FAILED, "Matching requires a teaching mode.");
+    }
+    String area = normalizeBlank(criteria.area());
+    area = area == null ? null : area.toLowerCase(Locale.ROOT);
+    boolean allowOnline = mode == TeachingMode.ONLINE || mode == TeachingMode.BOTH;
+    boolean allowOffline = mode == TeachingMode.OFFLINE || mode == TeachingMode.BOTH;
+    if (!allowOnline && area == null) {
+      return List.of();
+    }
+    return toDiscoveryProfiles(tutorProfileRepository.findVerifiedCandidatesBySubject(
+        TutorStatus.VERIFIED, criteria.subjectId(), allowOnline, allowOffline, area,
+        PageRequest.of(0, candidateLimit)
+    ));
   }
 
   @Override
@@ -263,21 +291,15 @@ public class ProfileFacadeImpl implements ProfileFacade {
       return List.of();
     }
     Set<UUID> tutorIds = profiles.stream().map(TutorProfile::getTutorId).collect(Collectors.toSet());
-    var tutorSubjects = tutorSubjectRepository.findByTutorIdIn(tutorIds);
-    Map<Integer, String> subjectNames = subjectRepository.findAllById(
-        tutorSubjects.stream().map(item -> item.getSubjectId()).collect(Collectors.toSet())
-    ).stream().collect(Collectors.toMap(Subject::getSubjectId, Subject::getName));
-    Map<Integer, String> levelNames = educationLevelRepository.findAllById(
-        tutorSubjects.stream().map(item -> item.getEducationLevelId()).collect(Collectors.toSet())
-    ).stream().collect(Collectors.toMap(EducationLevel::getLevelId, EducationLevel::getName));
+    var tutorSubjects = tutorSubjectRepository.findDiscoverySubjectsByTutorIdIn(tutorIds);
     Map<UUID, List<TutorSubjectDto>> subjectsByTutor = tutorSubjects.stream()
         .collect(Collectors.groupingBy(
             item -> item.getTutorId(),
             Collectors.mapping(item -> new TutorSubjectDto(
                 item.getSubjectId(),
-                subjectNames.get(item.getSubjectId()),
+                item.getSubjectName(),
                 item.getEducationLevelId(),
-                levelNames.get(item.getEducationLevelId())
+                item.getEducationLevelName()
             ), Collectors.toList())
         ));
     Map<UUID, List<WeeklyAvailabilityDto>> slotsByTutor = tutorAvailabilitySlotRepository
@@ -328,7 +350,7 @@ public class ProfileFacadeImpl implements ProfileFacade {
     }
 
     try {
-      return TeachingMode.valueOf(normalized.toUpperCase());
+      return TeachingMode.valueOf(normalized.toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException ex) {
       throw new InvalidOperationException(
           ErrorCode.VALIDATION_FAILED,

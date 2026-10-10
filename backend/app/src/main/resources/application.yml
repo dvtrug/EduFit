@@ -64,6 +64,9 @@ spring:
 
 # 5. Cấu hình AI Gateway (platform/ai)
 edufit:
+  discovery:
+    matching:
+      candidate-limit: ${DISCOVERY_MATCHING_CANDIDATE_LIMIT:200}
   ai:
     provider: ${AI_PROVIDER:stub} # 'stub' cho offline/test, 'gemini' cho gọi thật
     timeout: 15s                 # NFR-10: khống chế timeout 15 giây

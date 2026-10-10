@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.profile.api.dto.EducationLevelOrderDto;
+import vn.edufit.profile.api.dto.TutorCandidateCriteria;
 import vn.edufit.profile.api.dto.LearningGoalDiscoveryDto;
 import vn.edufit.profile.api.dto.TutorDiscoveryProfileDto;
 import vn.edufit.profile.api.dto.TutorSearchCriteria;
@@ -29,6 +30,12 @@ public interface ProfileFacade {
   List<TutorDiscoveryProfileDto> findVerifiedTutorDetails(List<UUID> tutorIds);
 
   List<TutorDiscoveryProfileDto> findVerifiedTutorsForMatching();
+
+  /**
+   * Returns a bounded, fully hydrated candidate set ordered by rating, review count,
+   * registration time and tutor ID. This preselection does not guarantee a global Top N.
+   */
+  List<TutorDiscoveryProfileDto> findVerifiedCandidatesBySubject(TutorCandidateCriteria criteria);
 
   /**
    * Returns the complete level catalog in business order, including retired levels so

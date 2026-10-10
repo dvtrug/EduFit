@@ -1,6 +1,6 @@
 # Discovery: Final Implementation Plan
 
-Trạng thái: Phase 1 hoàn tất; Phase 2 đang triển khai trên `feat/discovery`.
+Trạng thái: Phase 1 và Phase 2 hoàn tất trên `feat/discovery`; Phase 3 chưa triển khai.
 
 Nguồn đối chiếu: `D:/backend_discovery_implementation_plan.md`, code hiện tại trên `feat/discovery`, SADS, module structure guide và master sprint plan trong `docs/`. Trước mỗi task phải đọc lại phần docs liên quan và code bị tác động.
 
@@ -226,6 +226,10 @@ git status --short
 - Phase 1 đã được cho phép triển khai; các phase sau tiếp tục theo phạm vi được duyệt.
 
 ## 6. Execution Notes
+
+- T05: thêm TutorCandidateCriteria và Profile API bounded candidates; lọc VERIFIED/subject/mode/area trong DB bằng EXISTS, không duplicate tutor khi dạy nhiều cấp. Cap mặc định 200 qua DISCOVERY_MATCHING_CANDIDATE_LIMIT, phải dương; pre-order rating/reviews/createdAt/tutorId. BOTH nhận tutor dạy online ở mọi khu vực hoặc tutor offline cùng khu vực. Batch subject/name/level projection và availability giữ 3 query khi có kết quả, 1 query khi rỗng. PostgreSQL 17 Testcontainers chạy thật: 6/6 integration cases PASS, gồm 205 tutor/200 kết quả và kiểm tra SQL cap, dữ liệu mềm không bị loại, ordering lặp lại ổn định. Tổng Profile 44/44 và Discovery 29/29 tests PASS, không skip. Test dùng Hibernate create-drop cho schema cô lập, chưa thay thế kiểm chứng Flyway/p95/ranking-cap tại T12. API full scan và caller hiện tại giữ nguyên đến T09/T14.
+- Checkpoint 2 PASS: metadata nghiệp vụ và candidate read DTO đủ dữ liệu cho scorer; query bounded/batch hydration được kiểm chứng trên PostgreSQL. Không tuyên bố đạt NFR hiệu năng hoặc global Top N từ các test này.
+- T05 build verification: `mvnw.cmd -pl app -am test-compile -DskipTests -B -ntp` PASS toàn bộ 17 reactor projects; bước này kiểm tra compilation tới app, không phải full app test suite. `git diff --check` PASS.
 
 - T04: Profile API trả catalog levelId/sortOrder theo business order; giữ cả cấp đã ngừng hoạt động để không tạo quan hệ liền kề mới. sort_order thiếu/trùng bị từ chối rõ ràng. Discovery map sang EducationLevelOrder thuần Java; ID không liên tục và khoảng cách sort_order không ảnh hưởng adjacency theo vị trí. Không đổi HTTP DTO hay scorer. Profile 30/30 và Discovery 29/29 tests PASS; diff check PASS.
 

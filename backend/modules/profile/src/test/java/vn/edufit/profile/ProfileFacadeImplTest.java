@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
@@ -17,12 +18,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 import vn.edufit.profile.api.dto.EducationLevelOrderDto;
+import vn.edufit.profile.api.dto.TutorCandidateCriteria;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.profile.api.dto.TutorSearchCriteria;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
@@ -37,7 +42,6 @@ import vn.edufit.profile.infra.persistence.repository.TutorSubjectRepository;
 import vn.edufit.profile.infra.persistence.repository.TutorAvailabilitySlotRepository;
 import vn.edufit.profile.infra.persistence.repository.LearningGoalRepository;
 import vn.edufit.profile.infra.persistence.repository.GoalAvailabilitySlotRepository;
-import vn.edufit.profile.infra.persistence.repository.SubjectRepository;
 import vn.edufit.profile.infra.persistence.repository.EducationLevelRepository;
 import vn.edufit.profile.infra.persistence.repository.TutorProfileRepository;
 import vn.edufit.shared.exception.EntityNotFoundException;
@@ -65,12 +69,58 @@ class ProfileFacadeImplTest {
   private GoalAvailabilitySlotRepository goalAvailabilitySlotRepository;
 
   @Mock
-  private SubjectRepository subjectRepository;
-
-  @Mock
   private EducationLevelRepository educationLevelRepository;
 
   private ProfileFacadeImpl profileFacade;
+
+  @ParameterizedTest
+  @CsvSource({"online, HANOI, true,false,hanoi", "OFFLINE, Hanoi,false,true,hanoi", "BOTH,,true,true,"})
+  void candidateQueryNormalizesCriteriaAndLimitsBeforeHydration(
+      String mode, String area, boolean online, boolean offline, String normalizedArea
+  ) {
+    when(tutorProfileRepository.findVerifiedCandidatesBySubject(
+        TutorStatus.VERIFIED, 1, online, offline, normalizedArea, PageRequest.of(0, 200)
+    )).thenReturn(List.of());
+
+    assertEquals(List.of(), profileFacade.findVerifiedCandidatesBySubject(new TutorCandidateCriteria(1, mode, area)));
+    verify(tutorProfileRepository).findVerifiedCandidatesBySubject(
+        TutorStatus.VERIFIED, 1, online, offline, normalizedArea, PageRequest.of(0, 200));
+    verifyNoInteractions(tutorSubjectRepository, tutorAvailabilitySlotRepository);
+  }
+
+  @Test
+  void offlineWithoutAreaCannotProduceCandidates() {
+    assertEquals(List.of(), profileFacade.findVerifiedCandidatesBySubject(new TutorCandidateCriteria(1, "OFFLINE", " ")));
+    verifyNoInteractions(tutorProfileRepository);
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"invalid"})
+  void matchingRequiresValidMode(String mode) {
+    assertThrows(InvalidOperationException.class,
+        () -> profileFacade.findVerifiedCandidatesBySubject(new TutorCandidateCriteria(1, mode, null)));
+    verifyNoInteractions(tutorProfileRepository);
+  }
+
+  @Test
+  void matchingRejectsMissingSubjectAndSupportsConfiguredLimit() {
+    assertThrows(InvalidOperationException.class, () -> profileFacade.findVerifiedCandidatesBySubject(null));
+    assertThrows(InvalidOperationException.class,
+        () -> profileFacade.findVerifiedCandidatesBySubject(new TutorCandidateCriteria(null, "ONLINE", null)));
+    assertThrows(InvalidOperationException.class,
+        () -> profileFacade.findVerifiedCandidatesBySubject(new TutorCandidateCriteria(0, "ONLINE", null)));
+    var limited = new ProfileFacadeImpl(tutorProfileRepository, studentProfileRepository, tutorSubjectRepository,
+        tutorAvailabilitySlotRepository, learningGoalRepository, goalAvailabilitySlotRepository,
+        educationLevelRepository, 2);
+    limited.findVerifiedCandidatesBySubject(new TutorCandidateCriteria(1, "ONLINE", null));
+    verify(tutorProfileRepository).findVerifiedCandidatesBySubject(
+        TutorStatus.VERIFIED, 1, true, false, null, PageRequest.of(0, 2));
+    assertThrows(IllegalArgumentException.class, () -> new ProfileFacadeImpl(
+        tutorProfileRepository, studentProfileRepository, tutorSubjectRepository,
+        tutorAvailabilitySlotRepository, learningGoalRepository, goalAvailabilitySlotRepository,
+        educationLevelRepository, 0));
+  }
 
   @Test
   void shouldExposeBusinessOrderingWithoutChangingLevelIds() {
@@ -114,8 +164,8 @@ class ProfileFacadeImplTest {
         tutorAvailabilitySlotRepository,
         learningGoalRepository,
         goalAvailabilitySlotRepository,
-        subjectRepository,
-        educationLevelRepository
+        educationLevelRepository,
+        200
     );
   }
 
