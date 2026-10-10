@@ -1,6 +1,6 @@
 # Discovery backend: cấu trúc và luồng xử lý
 
-> Mô tả code trên nhánh `feat/discovery`, cập nhật policy ở Phase 3 ngày 2026-10-10. Đọc cùng [SADS](software-architecture-design-specification.md) và [hướng dẫn cấu trúc module](backend-module-structure-guide.md). Các ảnh bên dưới là snapshot trước refactor; bản flow/diagram đầy đủ sẽ cập nhật ở T15 theo [plan](../tasks/plan.md).
+> Mô tả code trên nhánh `feat/discovery`, cập nhật workflow ở Phase 4 ngày 2026-10-10. Đọc cùng [SADS](software-architecture-design-specification.md) và [hướng dẫn cấu trúc module](backend-module-structure-guide.md). Các ảnh bên dưới là snapshot trước refactor; bản flow/diagram đầy đủ sẽ cập nhật ở T15 theo [plan](../tasks/plan.md).
 
 ## Phạm vi module
 
@@ -13,6 +13,7 @@ Discovery phục vụ tìm kiếm gia sư đã xác minh, xem hồ sơ công kha
 | `web/DiscoveryController` | Nhận HTTP request, tạo `Pageable`, lấy `CurrentUser`, trả `ApiResponse`. |
 | `web/request`, `web/response` | Kiểm tra đầu vào và định nghĩa DTO public; không trả JPA entity. |
 | `application/service/DiscoveryQueryService` | Tìm kiếm và xem chi tiết qua Profile facade. |
+| `application/service/DiscoveryFacadeImpl` | Cửa vào nội bộ dùng chung matching service; trả public summary, không phụ thuộc web DTO. |
 | `application/service/TutorMatchingService` | Kiểm tra quyền/goal, chuyển DTO thành candidate, xếp hạng, ghi log. |
 | `application/service/MatchExplanationService` | Kiểm tra quota AI, gọi gateway hoặc dùng câu giải thích theo quy tắc. |
 | `domain/model`, `domain/policy/MatchScorer`, `domain/policy/MatchWeights` | Thuật toán 5 yếu tố Java thuần, không phụ thuộc Spring/JPA. |
@@ -28,7 +29,7 @@ Discovery phục vụ tìm kiếm gia sư đã xác minh, xem hồ sơ công kha
 | `GET /api/v1/discovery/tutors/{tutorId}` | Public | UUID gia sư | `ApiResponse<TutorDetailResponse>`; 404 nếu không VERIFIED/không tồn tại |
 | `POST /api/v1/discovery/match` | Có session, role STUDENT/PARENT | `{ "goalId": "UUID", "topN": 5 }`; `topN` mặc định 5, tối đa 10 | `ApiResponse<List<TutorMatchResponse>>` |
 
-`SecurityConfig` mở public hai route GET; POST cần session và CSRF token. Service kiểm tra role rồi kiểm tra người sở hữu goal. **Hiện chỉ STUDENT sở hữu goal match được**: code so sánh `goal.studentUserId` với `CurrentUser.userId`. Role PARENT có trong contract nhưng chưa thể match thay con vì module Connection chưa có API xác minh liên kết phụ huynh–học sinh. Không được bỏ kiểm tra owner để mở role này.
+`SecurityConfig` mở public hai route GET; POST cần session và CSRF token. Matching service cho phép STUDENT sở hữu goal hoặc PARENT có liên kết `CONFIRMED` qua `ConnectionFacade.hasConfirmedParentLink(actorId, goal.studentId)`. Invitation PENDING/DECLINED, link REVOKED và không có link đều không cấp quyền. Public `DiscoveryFacade.findTopMatchesForGoal(actor, goalId, topN)` dùng cùng service, cùng quyền/quota/log; actor phải lấy từ trusted server context, không lấy từ request body. Service kiểm tra `goalId` và `topN` 1..10; REST mặc định 5.
 
 Search giới hạn `page >= 0`, `size` trong 1..100 (mặc định 10). `sortBy` nhận `rating`, `relevance`, `price`, `experience`; `relevance` hiện được ánh xạ sang `ratingAvg`, không phải điểm matching. Mặc định rating giảm dần, sau đó `reviewCount` giảm dần. Lọc giờ yêu cầu gửi đủ `dayOfWeek` (1..7), `availableFrom`, `availableTo`, với giờ kết thúc sau giờ bắt đầu.
 
@@ -42,7 +43,7 @@ Bộ lọc chạy trong `profile.infra.persistence.repository.TutorProfileReposi
 
 ![Luồng matching từ kiểm tra quyền đến xếp hạng, giải thích và ghi log](images/discovery-matching-flow.svg)
 
-Goal phải `ACTIVE`, có cấp học, `budgetMax > 0` và ít nhất một slot. Matching hiện vẫn đọc toàn bộ tutor `VERIFIED`; Discovery lọc và xếp hạng trong bộ nhớ, sau đó áp dụng `topN`. T05 đã thêm Profile API `findVerifiedCandidatesBySubject` có cap mặc định 200 và batch hydration; caller matching sẽ chuyển sang API này tại T09. Chưa khẳng định đạt NFR-14 (<500ms p95); đo hiệu năng tại T12.
+Goal phải `ACTIVE`, có cấp học, `budgetMax > 0` và ít nhất một slot. Matching gọi Profile API `findVerifiedCandidatesBySubject(TutorCandidateCriteria(subjectId, mode, area))`: lọc VERIFIED/môn/mode/khu vực tại DB, cap mặc định 200 và batch hydration. Không hard-filter cấp học/giá/lịch/rating; Discovery chấm điểm, sort ổn định rồi lấy topN trong tập bounded. Cap không đảm bảo global Top N trên toàn bộ dữ liệu. Chưa khẳng định đạt NFR-14 (<500ms p95); đo hiệu năng và ảnh hưởng cap tại T12.
 
 `MatchScorer` chỉ loại tutor không dạy đúng môn hoặc không hợp mode/khu vực; Profile chịu trách nhiệm trạng thái VERIFIED. ONLINE nhận ONLINE/BOTH ở mọi khu vực. OFFLINE nhận OFFLINE/BOTH cùng khu vực (trim, không phân biệt hoa/thường). BOTH nhận tutor có thể dạy online ở mọi khu vực hoặc offline cùng khu vực. Không loại tutor chỉ vì lệch cấp, vượt giá hay không trùng giờ. Hai slot giao nhau khi cùng ngày và `startA < endB && endA > startB`; chạm ranh giới không tính là giao.
 
@@ -62,14 +63,18 @@ Khi bằng tổng điểm: ưu tiên `scheduleFit` cao hơn, nhiều review hơn
 
 HTTP giữ routes và các field cũ, bổ sung `subjectFit`, `levelFit` trong `scoreBreakdown`. Prompt AI và fallback đều có đủ 5 điểm, không mặc định khẳng định tutor đúng cấp hoặc trong ngân sách khi điểm tương ứng thấp.
 
-Chỉ kết quả đầu tiên gọi AI (`MATCH_EXPLANATION`), tối đa 10 yêu cầu trong 24 giờ gần nhất cho mỗi user theo `AiUsageQuery`. Các kết quả còn lại dùng giải thích theo điểm. AI lỗi, timeout hoặc hết quota sẽ trả fallback với `aiGenerated=false`. `matching_run_log` ghi user, student, goal, số kết quả và thời điểm; không ghi prompt hay criteria.
+Chỉ kết quả đầu tiên gọi AI (`MATCH_EXPLANATION`); kiểm tra quota 10 yêu cầu trong 24 giờ gần nhất theo actor qua `AiUsageQuery` (Parent dùng quota của Parent). Các kết quả còn lại dùng giải thích theo điểm; không có candidate thì không gọi AI. Prompt chỉ gửi mode, học phí và 5 điểm thành phần/tổng, không gửi tên, email, điện thoại hay bio. AI lỗi, timeout, lỗi tra cứu usage hoặc hết quota đều trả fallback với `aiGenerated=false`, HTTP matching vẫn 200. Quota hiện là count-then-call, chưa phải cơ chế đặt chỗ quota nguyên tử cho request đồng thời.
+
+AI Gateway giới hạn thời gian chờ provider bằng `edufit.ai.timeout` (cấu hình ứng dụng/mặc định 15s), ngoài connect/read socket timeout. Provider chạy trên executor virtual thread do Spring quản lý; quá hạn hủy future và ném `AiTimeoutException`, chỉ ghi TIMEOUT một lần ở thread gọi. Hủy là best-effort: provider phải hỗ trợ interrupt hoặc tự kết thúc theo socket timeout; deadline không giới hạn thời gian DB ghi AI audit. Test runtime dùng provider giả chậm với timeout 100ms, không gọi LLM thật.
+
+Mỗi run thành công, kể cả rỗng, ghi một `matching_run_log` và publish một `MatchingExecutedEvent` cùng actor/student/goal/count/time trong transaction. Listener có side effect phải dùng `@TransactionalEventListener(AFTER_COMMIT)`: rollback hoặc lỗi FK lúc flush không giao event thành công. Event chỉ ở trong process, không phải durable outbox; không đảm bảo delivery khi process chết. Log không ghi prompt hay criteria.
 
 ## Việc còn phụ thuộc module khác
 
-- Connection cần public facade xác minh parent-student link đã xác nhận. Sau đó mới mở `TutorMatchingService.validateAccess` cho PARENT truy cập goal của con. Hiện Connection chỉ có `pom.xml`.
-- `DiscoveryFacade`, summary DTO và `MatchingExecutedEvent` đã có contract từ T02; facade implementation/publisher còn ở T10. Dữ liệu review/scheduling cho UC2.5 vẫn cần consumer tương ứng; dependency trong `pom.xml` không đồng nghĩa đã triển khai.
+- Connection confirmed-link facade, Discovery facade implementation và event publisher đã nối tại Phase 4; transaction/link-state integration chạy trên PostgreSQL với Flyway thật.
+- Dữ liệu review/scheduling cho UC2.5 vẫn cần consumer tương ứng; dependency trong `pom.xml` không đồng nghĩa đã triển khai.
 - Candidate query đã có 6 integration cases PostgreSQL tại T05. Search nhiều bộ lọc, p95 và ảnh hưởng cap lên ranking sẽ kiểm chứng ở T12.
 
 ## Đọc code và chạy test
 
-Bắt đầu từ `DiscoveryController`; theo `DiscoveryQueryService` cho GET hoặc `TutorMatchingService` cho POST; sau đó đọc `ProfileFacade` và `MatchScorer`. Test dưới `backend/modules/discovery/src/test/java/vn/edufit/discovery/`: services ở package gốc, scorer/weights ở `domain/policy`, ranking/catalog ở `domain/model`, HTTP JSON ở `web`. Từ thư mục `backend`, dùng JDK 21 chạy `mvn -pl modules/discovery -am test`. Khi Connection/Profile thêm API cho PARENT, cập nhật tài liệu và test quyền cùng lúc.
+Bắt đầu từ `DiscoveryController` hoặc `DiscoveryFacadeImpl`; theo `DiscoveryQueryService` cho GET hoặc `TutorMatchingService` cho matching; sau đó đọc `ConnectionFacade`, `ProfileFacade` và `MatchScorer`. Test dưới `backend/modules/discovery/src/test/java/vn/edufit/discovery/`: services ở package gốc, scorer/weights ở `domain/policy`, ranking/catalog ở `domain/model`, HTTP JSON ở `web`. Transaction/link-state test nằm tại `backend/app/src/test/java/vn/edufit/discovery/MatchingWorkflowPostgresTest.java`. Từ thư mục `backend`, dùng JDK 21 chạy `mvn -pl modules/discovery -am test`; test PostgreSQL workflow: `mvn -pl app -am test -Dtest=MatchingWorkflowPostgresTest -Dsurefire.failIfNoSpecifiedTests=false` (cần Docker).

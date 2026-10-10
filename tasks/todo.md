@@ -31,8 +31,8 @@ Nguồn chi tiết: `tasks/plan.md`. Mỗi task tương ứng một commit; ch�
 - [x] T08: Student ownership + Parent confirmed link; test allowed/denied/link states. Commit `fix(discovery): authorize parent matching through confirmed links`.
 - [x] T09: Matching dùng bounded candidates; topN/empty result/order/service tests. Commit `perf(discovery): match against bounded profile candidates`.
 - [x] T10: FacadeImpl + matching log/event + transaction commit/rollback tests. Commit `feat(discovery): expose matching facade and publish execution events`.
-- [ ] T11: AI Top 1/quota/grounded prompt/15s timeout/fallback verification. Commit `test(discovery): verify grounded AI explanations and fallback`.
-- [ ] Checkpoint 4: REST/facade matching, authorization, AI, log và event pass.
+- [x] T11: AI Top 1/quota/grounded prompt/15s timeout/fallback verification. Commit `test(discovery): verify grounded AI explanations and fallback`.
+- [x] Checkpoint 4: REST/facade matching, authorization, AI, log và event pass.
 
 ## Phase 5 — Integration và architecture
 

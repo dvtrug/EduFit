@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,10 +46,18 @@ class AiGatewayServiceTest {
   private final OutputSanitizer outputSanitizer = new OutputSanitizer();
 
   private AiGatewayService gatewayService;
+  private java.util.concurrent.ExecutorService executor;
 
   @BeforeEach
   void setUp() {
-    gatewayService = new AiGatewayService(llmProvider, outputSanitizer, requestLogger, logRepository);
+    executor = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor();
+    gatewayService = new AiGatewayService(llmProvider, outputSanitizer, requestLogger, logRepository,
+        executor, new vn.edufit.ai.infra.config.AiProperties(null, null, null));
+  }
+
+  @AfterEach
+  void closeExecutor() {
+    executor.shutdownNow();
   }
 
   @Test

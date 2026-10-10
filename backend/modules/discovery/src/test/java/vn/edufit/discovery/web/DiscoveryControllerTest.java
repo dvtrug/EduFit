@@ -57,13 +57,7 @@ class DiscoveryControllerTest {
 
   @BeforeEach
   void setUp() {
-    mvc = MockMvcBuilders.standaloneSetup(new DiscoveryController(
-        new DiscoveryQueryService(profileFacade),
-        new TutorMatchingService(profileFacade, logRepository, explanationService, new DiscoveryQueryService(profileFacade),
-            org.mockito.Mockito.mock(vn.edufit.connection.api.ConnectionFacade.class),
-            org.mockito.Mockito.mock(org.springframework.context.ApplicationEventPublisher.class)),
-        currentUserProvider
-    )).build();
+    mvc = mvc(explanationService);
     profile = new TutorDiscoveryProfileDto(
         new TutorSummaryDto(
             UUID.randomUUID(), UUID.randomUUID(), "Tutor A", "Math", "x".repeat(200),
@@ -74,6 +68,49 @@ class DiscoveryControllerTest {
         List.of(new WeeklyAvailabilityDto((short) 1, LocalTime.of(18, 0), LocalTime.of(20, 0))),
         Instant.parse("2025-01-01T00:00:00Z")
     );
+  }
+
+  private MockMvc mvc(MatchExplanationService explanations) {
+    return MockMvcBuilders.standaloneSetup(new DiscoveryController(
+        new DiscoveryQueryService(profileFacade),
+        new TutorMatchingService(profileFacade, logRepository, explanations, new DiscoveryQueryService(profileFacade),
+            org.mockito.Mockito.mock(vn.edufit.connection.api.ConnectionFacade.class),
+            org.mockito.Mockito.mock(org.springframework.context.ApplicationEventPublisher.class)),
+        currentUserProvider
+    )).build();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"SUCCESS", "TIMEOUT", "UNAVAILABLE", "QUOTA"})
+  void aiFailuresAndQuotaStillReturnSuccessfulMatchingHttpResponse(String outcome) throws Exception {
+    var gateway = org.mockito.Mockito.mock(vn.edufit.ai.api.AiGateway.class);
+    var usage = org.mockito.Mockito.mock(vn.edufit.ai.api.AiUsageQuery.class);
+    UUID userId = UUID.randomUUID(), goalId = UUID.randomUUID();
+    when(currentUserProvider.getIfAvailable()).thenReturn(currentUser);
+    when(currentUser.getUserId()).thenReturn(userId);
+    when(currentUser.hasRole("STUDENT")).thenReturn(true);
+    when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(new LearningGoalDiscoveryDto(
+        goalId, UUID.randomUUID(), userId, 1, 2, "ONLINE", "Hanoi", 0L, 300000L, "ACTIVE", profile.availabilitySlots())));
+    when(profileFacade.findVerifiedCandidatesBySubject(any())).thenReturn(List.of(profile));
+    when(usage.countRequestsSince(eq(userId), eq(vn.edufit.ai.api.AiFeature.MATCH_EXPLANATION), any()))
+        .thenReturn(outcome.equals("QUOTA") ? 10L : 9L);
+    if (outcome.equals("SUCCESS")) {
+      when(gateway.complete(any())).thenReturn(new vn.edufit.ai.api.AiResponse("Grounded AI", 1, 1));
+    } else if (!outcome.equals("QUOTA")) {
+      when(gateway.complete(any())).thenThrow(outcome.equals("TIMEOUT")
+          ? new vn.edufit.ai.api.AiTimeoutException("Deadline") : new vn.edufit.ai.api.AiUnavailableException("Offline"));
+    }
+    mvc(new MatchExplanationService(gateway, usage))
+        .perform(post("/api/v1/discovery/match").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"goalId\":\"" + goalId + "\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true))
+        .andExpect(jsonPath("$.data[0].matchScore").value(100))
+        .andExpect(jsonPath("$.data[0].aiGenerated").value(outcome.equals("SUCCESS")))
+        .andExpect(jsonPath("$.data[0].explanation").isNotEmpty());
+    verify(logRepository).save(any());
+    if (outcome.equals("QUOTA")) verifyNoInteractions(gateway);
+    else verify(gateway).complete(any());
   }
 
   @Test

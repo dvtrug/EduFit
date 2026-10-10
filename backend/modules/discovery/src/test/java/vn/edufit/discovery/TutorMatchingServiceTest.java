@@ -279,6 +279,30 @@ class TutorMatchingServiceTest {
     assertEquals(true, summary.aiGenerated());
   }
 
+  @Test
+  void linkedParentUsesOwnAiQuotaOnlyForTopOne() {
+    var gateway = org.mockito.Mockito.mock(vn.edufit.ai.api.AiGateway.class);
+    var usage = org.mockito.Mockito.mock(vn.edufit.ai.api.AiUsageQuery.class);
+    var goal = goal(UUID.randomUUID());
+    when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal));
+    when(connectionFacade.hasConfirmedParentLink(userId, goal.studentId())).thenReturn(true);
+    when(profileFacade.findVerifiedCandidatesBySubject(any()))
+        .thenReturn(List.of(tutor(BigDecimal.valueOf(5), 10, 200000), tutor(BigDecimal.valueOf(4), 8, 300000)));
+    when(usage.countRequestsSince(eq(userId), eq(vn.edufit.ai.api.AiFeature.MATCH_EXPLANATION), any())).thenReturn(9L);
+    when(gateway.complete(any())).thenReturn(new vn.edufit.ai.api.AiResponse("AI explanation", 1, 1));
+    var service = new TutorMatchingService(profileFacade, logRepository, new MatchExplanationService(gateway, usage),
+        new DiscoveryQueryService(profileFacade), connectionFacade, eventPublisher);
+    var results = service.match(currentUser(userId, "PARENT"), goalId, 5);
+    assertEquals(2, results.size());
+    assertEquals(true, results.getFirst().aiGenerated());
+    assertEquals(false, results.get(1).aiGenerated());
+    verify(usage).countRequestsSince(eq(userId), eq(vn.edufit.ai.api.AiFeature.MATCH_EXPLANATION), any());
+    var request = org.mockito.ArgumentCaptor.forClass(vn.edufit.ai.api.AiRequest.class);
+    verify(gateway).complete(request.capture());
+    assertEquals(userId, request.getValue().userId());
+    org.mockito.Mockito.verifyNoMoreInteractions(usage, gateway);
+  }
+
   private TutorDiscoveryProfileDto tutor(BigDecimal rating, int reviews, long price) {
     UUID tutorId = UUID.randomUUID();
     TutorSummaryDto summary = new TutorSummaryDto(
