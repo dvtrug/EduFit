@@ -210,7 +210,6 @@ class TutorMatchingServiceTest {
     when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal));
     assertEquals(List.of(), matchingService.match(currentUser(userId), goalId, 5));
     verify(profileFacade).findVerifiedCandidatesBySubject(new TutorCandidateCriteria(1, "ONLINE", "Hà Nội"));
-    org.mockito.Mockito.verify(profileFacade, org.mockito.Mockito.never()).findVerifiedTutorsForMatching();
     org.mockito.Mockito.verifyNoInteractions(explanationService);
     var log = org.mockito.ArgumentCaptor.forClass(MatchingRunLogEntity.class);
     verify(logRepository).save(log.capture());
@@ -235,7 +234,6 @@ class TutorMatchingServiceTest {
         first.stream().map(p -> p.score().tutorId()).toList());
     verify(profileFacade, org.mockito.Mockito.times(2))
         .findVerifiedCandidatesBySubject(new TutorCandidateCriteria(1, "ONLINE", "Hà Nội"));
-    org.mockito.Mockito.verify(profileFacade, org.mockito.Mockito.never()).findVerifiedTutorsForMatching();
   }
 
   @Test

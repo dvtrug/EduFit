@@ -140,12 +140,6 @@ public class ProfileFacadeImpl implements ProfileFacade {
 
   @Override
   @Transactional(readOnly = true)
-  public List<TutorDiscoveryProfileDto> findVerifiedTutorsForMatching() {
-    return toDiscoveryProfiles(tutorProfileRepository.findByStatus(TutorStatus.VERIFIED));
-  }
-
-  @Override
-  @Transactional(readOnly = true)
   public List<TutorDiscoveryProfileDto> findVerifiedCandidatesBySubject(TutorCandidateCriteria criteria) {
     if (criteria == null || criteria.subjectId() == null || criteria.subjectId() < 1) {
       throw new InvalidOperationException(ErrorCode.VALIDATION_FAILED, "Matching requires a valid subject ID.");

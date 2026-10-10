@@ -38,8 +38,8 @@ Nguồn chi tiết: `tasks/plan.md`. Mỗi task tương ứng một commit; ch�
 
 - [x] T12: PostgreSQL search/detail/filter/pagination/OSIV/query count/p95/candidate cap ranking report. Commit `test(discovery): verify search hydration and candidate performance`.
 - [x] T13: ArchUnit đúng package; module/layer boundaries và dependency cycle checks. Commit `test(discovery): enforce module and layer boundaries`.
-- [ ] T14: Xóa matching full-scan API cũ khi hết caller; reactor regression và diff check. Commit `refactor(profile): remove obsolete full-scan matching API`.
-- [ ] Checkpoint 5: PostgreSQL evidence, regression và architecture checks hoàn tất.
+- [x] T14: Xóa matching full-scan API cũ khi hết caller; reactor regression và diff check. Commit `refactor(profile): remove obsolete full-scan matching API`.
+- [x] Checkpoint 5: PostgreSQL evidence, regression và architecture checks hoàn tất.
 
 ## Phase 6 — Handover docs
 
@@ -54,8 +54,8 @@ Nguồn chi tiết: `tasks/plan.md`. Mỗi task tương ứng một commit; ch�
 
 ## Bàn giao cuối
 
-- [ ] Discovery/Profile/Connection tests và app architecture tests pass.
-- [ ] PostgreSQL integration/transaction/query count đã chạy; báo cáo p95 và ảnh hưởng candidate cap có bằng chứng.
+- [x] Discovery/Profile/Connection tests và app architecture tests pass.
+- [x] PostgreSQL integration/transaction/query count đã chạy; báo cáo p95 và ảnh hưởng candidate cap có bằng chứng.
 - [ ] REST field cũ tương thích, breakdown mới có docs/test.
 - [ ] Docs/diagram ảnh khớp code cuối; git diff --check pass.
 - [ ] Các task có commit riêng; không có thay đổi ngoài phạm vi trong commits.

@@ -30,8 +30,6 @@ public interface ProfileFacade {
 
   List<TutorDiscoveryProfileDto> findVerifiedTutorDetails(List<UUID> tutorIds);
 
-  List<TutorDiscoveryProfileDto> findVerifiedTutorsForMatching();
-
   /**
    * Returns a bounded, fully hydrated candidate set ordered by rating, review count,
    * registration time and tutor ID. This preselection does not guarantee a global Top N.

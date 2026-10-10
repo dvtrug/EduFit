@@ -23,8 +23,6 @@ public interface TutorProfileRepository extends JpaRepository<TutorProfile, UUID
 
   boolean existsByUserId(UUID userId);
 
-  List<TutorProfile> findByStatus(TutorStatus status);
-
   List<TutorProfile> findByTutorIdInAndStatus(Collection<UUID> tutorIds, TutorStatus status);
 
   @Query("""

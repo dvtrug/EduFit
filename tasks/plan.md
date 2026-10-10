@@ -1,6 +1,6 @@
 # Discovery: Final Implementation Plan
 
-Trạng thái: Phase 1-4 hoàn tất trên `feat/discovery`; Phase 5 đang triển khai (T12-T13 hoàn tất).
+Trạng thái: Phase 1-5 hoàn tất trên `feat/discovery`; Phase 6 (T15, docs/diagram bàn giao) chưa triển khai.
 
 Nguồn đối chiếu: `D:/backend_discovery_implementation_plan.md`, code hiện tại trên `feat/discovery`, SADS, module structure guide và master sprint plan trong `docs/`. Trước mỗi task phải đọc lại phần docs liên quan và code bị tác động.
 
@@ -226,6 +226,8 @@ git status --short
 - Phase 1 đã được cho phép triển khai; các phase sau tiếp tục theo phạm vi được duyệt.
 
 ## 6. Execution Notes
+
+- T14 / Checkpoint 5 PASS: removed obsolete full-scan Profile facade method, its implementation and repository findByStatus after confirming no production caller remained. Removed two obsolete never-call assertions; exact bounded-query assertions remain. Retained shared batch hydration used by detail/candidates. rg finds no legacy method/query references anywhere in backend. Full reactor command: `mvnw.cmd -pl app -am test '-Dtest=*Test,FlywayMigrationIT' '-Dsurefire.failIfNoSpecifiedTests=false' -B -ntp`. All 17 reactor projects SUCCESS; 300 tests PASS, zero failures/errors/skips: Shared 22, AI 12, Storage 6, IAM 32, Profile 44, Verification 16, Connection 13, Discovery 104, app 51. Includes 38 actual PostgreSQL cases (6 candidate + 22 reads/performance + 9 workflow + 1 migration), 9 app architecture checks, all 9 Flyway migrations. Repeated cap oracle still gives 97.00 uncapped vs 78.50 bounded, Top 5 recall 4/5. Diff reviewed and whitespace check PASS; unrelated AccountStatus excluded. No main merge. Phase 6 remains for final docs/diagram synchronization (old diagram snapshots are not the current API reference).
 
 - T13: replaced vacuous vn.edufit.modules patterns with actual module packages. Cross-module dependencies must target api, other modules cannot depend on notification, and root-package slices must be cycle-free (including Discovery/Connection). Discovery domain permits only Java/own domain; application cannot depend on web; public API cannot expose implementation; outside code can only access Discovery API; Discovery's external EduFit dependencies must use public APIs/shared kernel. Empty rules fail explicitly; import guard confirms actual scorer/services/facade/controller and Connection/Profile implementation classes. Temporary application -> controller field produced the expected architecture failure, then probe removed and clean reactor run passed all 9 app architecture checks, zero skips. No production architecture refactors; full regression remains T14.
 
