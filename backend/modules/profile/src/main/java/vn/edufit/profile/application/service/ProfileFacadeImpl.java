@@ -23,6 +23,7 @@ import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.profile.api.dto.TutorDiscoveryProfileDto;
 import vn.edufit.profile.api.dto.TutorSearchCriteria;
 import vn.edufit.profile.api.dto.TutorSubjectDto;
+import vn.edufit.profile.api.dto.ConnectionGoalDto;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
 import vn.edufit.profile.api.dto.WeeklyAvailabilityDto;
 import vn.edufit.profile.infra.persistence.entity.EducationLevel;
@@ -255,6 +256,23 @@ public class ProfileFacadeImpl implements ProfileFacade {
   @Transactional(readOnly = true)
   public boolean existsStudentByUserId(UUID userId) {
     return studentProfileRepository.existsByUserId(userId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Optional<ConnectionGoalDto> findGoalForConnection(UUID goalId) {
+    return learningGoalRepository.findById(goalId).flatMap(goal -> studentProfileRepository
+        .findById(goal.getStudentId()).map(student -> new ConnectionGoalDto(
+            goal.getGoalId(), goal.getStudentId(), student.getUserId(), goal.getSubjectId(),
+            student.getEducationLevelId(), goal.getGoalType().name(), goal.getDeadline(),
+            goal.getStatus().name())));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public boolean tutorTeaches(UUID tutorId, Integer subjectId, Integer educationLevelId) {
+    return tutorSubjectRepository.existsByTutorIdAndSubjectIdAndEducationLevelId(
+        tutorId, subjectId, educationLevelId);
   }
 
   private TutorSummaryDto toTutorDto(TutorProfile profile) {

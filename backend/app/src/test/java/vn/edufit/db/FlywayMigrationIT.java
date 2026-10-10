@@ -58,7 +58,7 @@ class FlywayMigrationIT {
 
     // 3. Kiểm chứng kết quả thực thi của Flyway
     assertTrue(result.success, "Quá trình migrate của Flyway phải thành công 100%");
-    assertEquals(8, result.migrationsExecuted, "Phải thực thi đúng 8 file migration V1.01 -> V1.08");
+    assertEquals(9, result.migrationsExecuted, "Phải thực thi đúng 9 file migration V1.01 -> V1.09");
 
     // 4. Kiểm tra trực tiếp các bảng và ràng buộc đã được tạo trong PostgreSQL
     try (Connection connection = DriverManager.getConnection(
@@ -90,12 +90,12 @@ class FlywayMigrationIT {
         assertTrue(rs.next(), "Bảng tutoring_session phải tồn tại và cho phép truy vấn");
       }
 
-      // Kiểm tra bảng flyway_schema_history ghi nhận cả 8 version ở trạng thái thành công
+      // Kiểm tra bảng flyway_schema_history ghi nhận cả 9 version ở trạng thái thành công
       try (ResultSet rs = statement.executeQuery(
           "SELECT COUNT(*) FROM flyway_schema_history WHERE success = true"
       )) {
         assertTrue(rs.next());
-        assertEquals(8, rs.getInt(1), "Lịch sử migration phải ghi nhận đúng 8 bản ghi thành công");
+        assertEquals(9, rs.getInt(1), "Lịch sử migration phải ghi nhận đúng 9 bản ghi thành công");
       }
     }
   }

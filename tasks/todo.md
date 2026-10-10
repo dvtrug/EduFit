@@ -27,7 +27,7 @@ Nguồn chi tiết: `tasks/plan.md`. Mỗi task tương ứng một commit; ch�
 
 ## Phase 4 — Workflow
 
-- [ ] Prerequisite T08: ConnectionFacade confirmed-link implementation hiện diện trên base; ghi commit nguồn và kiểm tra dependency cycle.
+- [x] Prerequisite T08: ConnectionFacade confirmed-link implementation hiện diện trên base; ghi commit nguồn và kiểm tra dependency cycle.
 - [ ] T08: Student ownership + Parent confirmed link; test allowed/denied/link states. Commit `fix(discovery): authorize parent matching through confirmed links`.
 - [ ] T09: Matching dùng bounded candidates; topN/empty result/order/service tests. Commit `perf(discovery): match against bounded profile candidates`.
 - [ ] T10: FacadeImpl + matching log/event + transaction commit/rollback tests. Commit `feat(discovery): expose matching facade and publish execution events`.
