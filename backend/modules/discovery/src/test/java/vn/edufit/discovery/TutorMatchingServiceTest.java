@@ -24,7 +24,6 @@ import vn.edufit.discovery.application.service.MatchExplanationService;
 import vn.edufit.discovery.application.service.TutorMatchingService;
 import vn.edufit.discovery.infra.persistence.entity.MatchingRunLogEntity;
 import vn.edufit.discovery.infra.persistence.repository.MatchingRunLogRepository;
-import vn.edufit.discovery.web.request.TutorMatchRequest;
 import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.profile.api.dto.LearningGoalDiscoveryDto;
 import vn.edufit.profile.api.dto.TutorDiscoveryProfileDto;
@@ -68,10 +67,10 @@ class TutorMatchingServiceTest {
         .thenReturn(new MatchExplanationService.Explanation("Giải thích AI", true));
     when(explanationService.ruleBased(any())).thenReturn("Giải thích theo quy tắc");
 
-    var result = matchingService.match(currentUser(userId), new TutorMatchRequest(goalId, 5));
+    var result = matchingService.match(currentUser(userId), goalId, 5);
 
     assertEquals(2, result.size());
-    assertEquals(best.tutor().tutorId(), result.getFirst().tutorId());
+    assertEquals(best.tutor().tutorId(), result.getFirst().score().tutorId());
     assertEquals(true, result.getFirst().aiGenerated());
     assertEquals("Giải thích theo quy tắc", result.get(1).explanation());
     verify(logRepository).save(any(MatchingRunLogEntity.class));
@@ -84,7 +83,7 @@ class TutorMatchingServiceTest {
 
     assertThrows(
         ForbiddenOperationException.class,
-        () -> matchingService.match(currentUser(userId), new TutorMatchRequest(goalId, 5))
+        () -> matchingService.match(currentUser(userId), goalId, 5)
     );
   }
 
@@ -93,7 +92,7 @@ class TutorMatchingServiceTest {
   void shouldRejectNonLearnerRole() {
     assertThrows(
         ForbiddenOperationException.class,
-        () -> matchingService.match(currentUser(userId, "TUTOR"), new TutorMatchRequest(goalId, 5))
+        () -> matchingService.match(currentUser(userId, "TUTOR"), goalId, 5)
     );
     org.mockito.Mockito.verifyNoInteractions(profileFacade);
   }

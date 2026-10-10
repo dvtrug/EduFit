@@ -8,6 +8,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import vn.edufit.discovery.application.dto.TutorMatchResult;
 import vn.edufit.discovery.domain.model.AvailabilitySlot;
 import vn.edufit.discovery.domain.model.MatchCriteria;
 import vn.edufit.discovery.domain.model.MatchScore;
@@ -16,10 +17,6 @@ import vn.edufit.discovery.domain.model.TutorCandidate;
 import vn.edufit.discovery.domain.service.MatchScorer;
 import vn.edufit.discovery.infra.persistence.entity.MatchingRunLogEntity;
 import vn.edufit.discovery.infra.persistence.repository.MatchingRunLogRepository;
-import vn.edufit.discovery.web.request.TutorMatchRequest;
-import vn.edufit.discovery.web.response.MatchScoreBreakdownResponse;
-import vn.edufit.discovery.web.response.TutorDiscoveryCardResponse;
-import vn.edufit.discovery.web.response.TutorMatchResponse;
 import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.profile.api.dto.LearningGoalDiscoveryDto;
 import vn.edufit.profile.api.dto.TutorDiscoveryProfileDto;
@@ -48,12 +45,12 @@ public class TutorMatchingService {
   }
 
   @Transactional
-  public List<TutorMatchResponse> match(CurrentUser currentUser, TutorMatchRequest request) {
+  public List<TutorMatchResult> match(CurrentUser currentUser, UUID goalId, int topN) {
     if (!currentUser.hasRole("STUDENT") && !currentUser.hasRole("PARENT")) {
       throw new ForbiddenOperationException("Chỉ học sinh hoặc phụ huynh được yêu cầu ghép đôi gia sư.");
     }
-    LearningGoalDiscoveryDto goal = profileFacade.findLearningGoalForDiscovery(request.goalId())
-        .orElseThrow(() -> EntityNotFoundException.of("LearningGoal", request.goalId()));
+    LearningGoalDiscoveryDto goal = profileFacade.findLearningGoalForDiscovery(goalId)
+        .orElseThrow(() -> EntityNotFoundException.of("LearningGoal", goalId));
     validateAccess(currentUser, goal);
     MatchCriteria criteria = toCriteria(goal);
 
@@ -65,16 +62,16 @@ public class TutorMatchingService {
         .map(candidate -> matchScorer.score(criteria, candidate))
         .flatMap(java.util.Optional::stream)
         .sorted(MatchScore.rankingOrder())
-        .limit(request.resolvedTopN())
+        .limit(topN)
         .toList();
 
-    List<TutorMatchResponse> response = ranked.stream()
-        .map(score -> toResponse(currentUser.getUserId(), score, byTutorId.get(score.tutorId()), score.equals(ranked.getFirst())))
+    List<TutorMatchResult> results = ranked.stream()
+        .map(score -> toResult(currentUser.getUserId(), score, byTutorId.get(score.tutorId()), score.equals(ranked.getFirst())))
         .toList();
     matchingRunLogRepository.save(new MatchingRunLogEntity(
-        currentUser.getUserId(), goal.studentId(), goal.goalId(), response.size()
+        currentUser.getUserId(), goal.studentId(), goal.goalId(), results.size()
     ));
-    return response;
+    return results;
   }
 
   private void validateAccess(CurrentUser currentUser, LearningGoalDiscoveryDto goal) {
@@ -118,7 +115,7 @@ public class TutorMatchingService {
     return new AvailabilitySlot(slot.dayOfWeek(), slot.startTime(), slot.endTime());
   }
 
-  private TutorMatchResponse toResponse(
+  private TutorMatchResult toResult(
       UUID userId,
       MatchScore score,
       TutorDiscoveryProfileDto profile,
@@ -127,15 +124,6 @@ public class TutorMatchingService {
     MatchExplanationService.Explanation explanation = topMatch
         ? explanationService.explainTopMatch(userId, score, profile)
         : new MatchExplanationService.Explanation(explanationService.ruleBased(score), false);
-    return new TutorMatchResponse(
-        score.tutorId(),
-        score.total(),
-        new MatchScoreBreakdownResponse(
-            score.scheduleFit(), score.ratingFit(), score.budgetFit(), score.overlappingSlots()
-        ),
-        explanation.text(),
-        explanation.aiGenerated(),
-        TutorDiscoveryCardResponse.from(profile)
-    );
+    return new TutorMatchResult(score, profile, explanation.text(), explanation.aiGenerated());
   }
 }

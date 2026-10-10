@@ -58,13 +58,15 @@ public class DiscoveryController {
         Math.min(Math.max(size, 1), MAX_SIZE),
         resolveSort(sortBy, sortDirection)
     );
-    Page<TutorDiscoveryCardResponse> response = discoveryQueryService.searchTutors(request, pageable);
+    Page<TutorDiscoveryCardResponse> response = discoveryQueryService
+        .searchTutors(request.toCriteria(), pageable)
+        .map(TutorDiscoveryCardResponse::from);
     return ResponseEntity.ok(ApiResponse.success(response, "Tìm kiếm gia sư thành công"));
   }
 
   @GetMapping("/tutors/{tutorId}")
   public ResponseEntity<ApiResponse<TutorDetailResponse>> getTutorDetail(@PathVariable UUID tutorId) {
-    TutorDetailResponse response = discoveryQueryService.getTutorDetail(tutorId);
+    TutorDetailResponse response = TutorDetailResponse.from(discoveryQueryService.getTutorDetail(tutorId));
     return ResponseEntity.ok(ApiResponse.success(response, "Lấy thông tin gia sư thành công"));
   }
 
@@ -72,7 +74,9 @@ public class DiscoveryController {
   public ResponseEntity<ApiResponse<List<TutorMatchResponse>>> matchTutors(
       @Valid @RequestBody TutorMatchRequest request
   ) {
-    List<TutorMatchResponse> response = tutorMatchingService.match(currentUser(), request);
+    List<TutorMatchResponse> response = tutorMatchingService
+        .match(currentUser(), request.goalId(), request.resolvedTopN())
+        .stream().map(TutorMatchResponse::from).toList();
     return ResponseEntity.ok(ApiResponse.success(response, "Ghép đôi gia sư thành công"));
   }
 

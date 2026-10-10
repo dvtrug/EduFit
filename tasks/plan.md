@@ -1,6 +1,6 @@
 # Discovery: Final Implementation Plan
 
-Trạng thái: plan đã được duyệt; đang triển khai Phase 1 trên `feat/discovery`.
+Trạng thái: Phase 1 hoàn tất trên `feat/discovery`; Phase 2 chưa bắt đầu.
 
 Nguồn đối chiếu: `D:/backend_discovery_implementation_plan.md`, code hiện tại trên `feat/discovery`, SADS, module structure guide và master sprint plan trong `docs/`. Trước mỗi task phải đọc lại phần docs liên quan và code bị tác động.
 
@@ -232,3 +232,5 @@ git status --short
 - Connection trên base hiện vẫn là skeleton; confirmed-link API cần được tích hợp trước T08. Phase 1 không phụ thuộc implementation đó.
 - T01: move/rename entity + repository, cập nhật caller/test; mapping đối chiếu V1.08 không đổi. Discovery 12/12 tests PASS, reactor compile PASS. Test dùng Mockito cần chạy ngoài sandbox để attach Java agent.
 - T02: thêm DiscoveryFacade(CurrentUser, goalId, topN), TutorMatchSummaryDto và MatchingExecutedEvent. Reactor compile PASS; public API chỉ phụ thuộc Java, discovery.api và shared. Chưa có facade implementation/publisher cho tới T10.
+- T03: QueryService nhận TutorSearchCriteria/trả Profile API read DTO; MatchingService nhận actor/goalId/topN và trả TutorMatchResult. HTTP mapping nằm tại controller/response; application không import discovery.web. Search fallback và pagination metadata được giữ.
+- Checkpoint 1 PASS: clean reactor build tới app, Discovery 20/20 tests (gồm 6 HTTP regression cases), GlobalExceptionHandler 6/6 tests. Tests HTTP dùng standalone MockMvc với services thật và dependency mock; chưa kiểm chứng security filters/DB (ngoài phạm vi Phase 1).
