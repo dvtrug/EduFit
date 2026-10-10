@@ -1,6 +1,6 @@
 # Discovery: Final Implementation Plan
 
-Trạng thái: Phase 1-4 hoàn tất trên `feat/discovery`; Phase 5 đang triển khai (T12 hoàn tất).
+Trạng thái: Phase 1-4 hoàn tất trên `feat/discovery`; Phase 5 đang triển khai (T12-T13 hoàn tất).
 
 Nguồn đối chiếu: `D:/backend_discovery_implementation_plan.md`, code hiện tại trên `feat/discovery`, SADS, module structure guide và master sprint plan trong `docs/`. Trước mỗi task phải đọc lại phần docs liên quan và code bị tác động.
 
@@ -226,6 +226,8 @@ git status --short
 - Phase 1 đã được cho phép triển khai; các phase sau tiếp tục theo phạm vi được duyệt.
 
 ## 6. Execution Notes
+
+- T13: replaced vacuous vn.edufit.modules patterns with actual module packages. Cross-module dependencies must target api, other modules cannot depend on notification, and root-package slices must be cycle-free (including Discovery/Connection). Discovery domain permits only Java/own domain; application cannot depend on web; public API cannot expose implementation; outside code can only access Discovery API; Discovery's external EduFit dependencies must use public APIs/shared kernel. Empty rules fail explicitly; import guard confirms actual scorer/services/facade/controller and Connection/Profile implementation classes. Temporary application -> controller field produced the expected architecture failure, then probe removed and clean reactor run passed all 9 app architecture checks, zero skips. No production architecture refactors; full regression remains T14.
 
 - T12: actual PostgreSQL 17.11 with all 9 Flyway migrations and detached DTO reads; 22 new integration cases PASS. Search 5 SQL statements including count, detail 3, candidates 3, matching without AI 8 remain fixed at 20/200/240 tutors; empty first page needs 1. Covers individual/combined filters, VERIFIED, 404, overlapping/touching slots and complete non-duplicate pagination. Initial RED exposed PostgreSQL lower(bytea) on null keyword/area parameters; explicit HQL String casts fixed nullable binding. Regression PASS: Profile 44, Discovery 104, app PostgreSQL 31 (22 new + 9 workflow), zero skips. Local p95, representative EXPLAIN and adversarial cap recall recorded in docs/discovery-performance-report.md; no production SLA/security-filter certification.
 
