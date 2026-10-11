@@ -33,3 +33,10 @@ No changes to main/Discovery refs or their task documents. Existing user changes
 - PostgreSQL checks: invitation/request expiry persists despite HTTP409; outer rollback restores PENDING; create conflict persists stale expiry; notification conflict rolls back invitation+link and request+class; outer accept rollback leaves no class; forced class flush and deferred-commit constraint errors roll back and allow a later retry.
 - Initial verification exposed raw Hibernate flush errors reaching global500; scoped mapping was corrected, not swallowed in the transaction (`phase2-T09.log`). Final affected reactor verify: 113 Connection + 13 PostgreSQL + 9 architecture tests, zero failures/errors/skips (`phase2-T09-final.log`).
 - Review: public facade and ten routes keep existing success shapes; currentStatus remains internal. Returning Success inside an outer transaction is not a promise of committed data.
+
+## T10a — public event contracts
+
+- Four public immutable Java records under `connection.api.event`: invitation/link/request changes and class creation. Required event/aggregate identity, changed status and timestamp; nullable system actor, nullable creation oldStatus, nullable student scope for unresolved invitations.
+- Recipient/context IDs support later publisher migrations. Invitation cause is a closed enum, including SYSTEM_ALREADY_LINKED; no free-text reason, email or message is published. A class-created event does not itself imply an additional accepted notification.
+- RED: absent records failed contract tests (`phase2-red-events.log`). GREEN: affected app reactor verify, 125 Connection + 13 PostgreSQL + 9 architecture tests, zero failures/errors/skips (`phase2-T10a.log`). Twelve contract cases check exact payload whitelist/types, required envelope, nullable system actor and exact timestamp.
+- No publisher migration in this task. Records document in-memory delivery limits, not durable/exactly-once guarantees.
