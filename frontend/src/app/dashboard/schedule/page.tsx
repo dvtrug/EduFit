@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { ScheduleCalendarView } from "@/features/schedule/components/ScheduleCalendarView";
+import { ScheduleCalendarView } from "@/features/scheduling";
 import { profileService, TutorAvailabilitySlot } from "@/services/profile";
 import { DashboardShell } from "@/shared/ui/DashboardShell";
 import { UserRole } from "@/shared/ui/Sidebar";

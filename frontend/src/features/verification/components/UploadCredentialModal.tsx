@@ -1,13 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { X, UploadCloud, FileText, CheckCircle2, Trash2 } from "lucide-react";
-import { verificationService } from "@/services/verification";
-import { ApiError } from "@/lib/api";
-
-type CredentialType = "DEGREE" | "CERTIFICATE" | "IDENTITY_CARD";
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const ALLOWED_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png"];
+import { useKycUpload } from "../hooks/useKycUpload";
+import type { CredentialType } from "../types";
 
 interface UploadCredentialModalProps {
   isOpen: boolean;
@@ -16,55 +12,25 @@ interface UploadCredentialModalProps {
 }
 
 export function UploadCredentialModal({ isOpen, onClose, onSuccess }: UploadCredentialModalProps) {
-  const [institutionName, setInstitutionName] = useState("");
-  const [graduationYear, setGraduationYear] = useState<number>(2024);
-  const [documentType, setDocumentType] = useState<CredentialType>("DEGREE");
-  const [notes, setNotes] = useState("");
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    institutionName,
+    setInstitutionName,
+    graduationYear,
+    setGraduationYear,
+    documentType,
+    setDocumentType,
+    notes,
+    setNotes,
+    selectedFiles,
+    isSubmitting,
+    error,
+    handleFileChange,
+    removeFile,
+    resetForm,
+    submit,
+  } = useKycUpload();
 
   if (!isOpen) return null;
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const invalidFile = files.find((file) => {
-      const name = file.name.toLowerCase();
-      return !ALLOWED_EXTENSIONS.some((extension) => name.endsWith(extension));
-    });
-    if (invalidFile) {
-      setError(`Tệp ${invalidFile.name} không đúng định dạng PDF, JPG hoặc PNG.`);
-      e.target.value = "";
-      return;
-    }
-    const oversizedFile = files.find((file) => file.size > MAX_FILE_SIZE);
-    if (oversizedFile) {
-      setError(`Tệp ${oversizedFile.name} vượt quá giới hạn 10 MB.`);
-      e.target.value = "";
-      return;
-    }
-
-    setError(null);
-    setSelectedFiles((currentFiles) => {
-      const knownFiles = new Set(
-        currentFiles.map((file) => `${file.name}:${file.size}:${file.lastModified}`)
-      );
-      return [
-        ...currentFiles,
-        ...files.filter((file) => !knownFiles.has(`${file.name}:${file.size}:${file.lastModified}`)),
-      ];
-    });
-    e.target.value = "";
-  };
-
-  const resetForm = () => {
-    setInstitutionName("");
-    setGraduationYear(new Date().getFullYear());
-    setDocumentType("DEGREE");
-    setNotes("");
-    setSelectedFiles([]);
-    setError(null);
-  };
 
   const handleClose = () => {
     if (isSubmitting) return;
@@ -72,46 +38,9 @@ export function UploadCredentialModal({ isOpen, onClose, onSuccess }: UploadCred
     onClose();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!institutionName.trim()) {
-      setError("Vui lòng nhập tên trường / đơn vị cấp bằng.");
-      return;
-    }
-    if (selectedFiles.length === 0) {
-      setError("Vui lòng tải lên ít nhất 1 ảnh chụp bằng cấp hoặc tài liệu chứng minh.");
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      setError(null);
-      await verificationService.submitVerification(
-        {
-          credentials: [
-            {
-              type: documentType,
-              institution: institutionName.trim(),
-              year: graduationYear,
-              note: notes.trim() || undefined,
-              fileIndexes: selectedFiles.map((_, idx) => idx),
-            },
-          ],
-        },
-        selectedFiles
-      );
-      onSuccess();
-      resetForm();
-      onClose();
-    } catch (err: unknown) {
-      if (err instanceof ApiError && err.status === 401) {
-        setError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại trước khi nộp hồ sơ.");
-      } else {
-        setError(err instanceof Error ? err.message : "Không thể gửi hồ sơ xác minh. Vui lòng thử lại.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+    void submit(onSuccess, onClose);
   };
 
   return (
@@ -208,7 +137,7 @@ export function UploadCredentialModal({ isOpen, onClose, onSuccess }: UploadCred
                     <span className="min-w-0 flex-1 truncate">{f.name}</span>
                     <button
                       type="button"
-                      onClick={() => setSelectedFiles((files) => files.filter((_, index) => index !== i))}
+                      onClick={() => removeFile(i)}
                       className="rounded p-1 text-neutral-400 hover:bg-rose-50 hover:text-rose-600"
                       aria-label={`Xóa tệp ${f.name}`}
                     >

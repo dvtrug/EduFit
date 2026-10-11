@@ -1,17 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { verificationService, PendingQueueItem } from "@/services/verification";
+import React from "react";
 import { ReviewKycModal } from "./ReviewKycModal";
+import { useAdminKycQueue } from "../hooks/useAdminKycQueue";
 import {
   ShieldCheck,
-  Search,
   Calendar,
   Eye,
   RefreshCw,
   Loader2,
-  CheckCircle2,
-  AlertCircle,
 } from "lucide-react";
 import { EmptyState } from "@/shared/ui/EmptyState";
 
@@ -25,48 +22,17 @@ import { EmptyState } from "@/shared/ui/EmptyState";
  * Security: @PreAuthorize("hasRole('ADMIN')")
  * =========================================================================
  */
-
 export function AdminKycQueueView() {
-  const [items, setItems] = useState<PendingQueueItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedItem, setSelectedItem] = useState<PendingQueueItem | null>(null);
-  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-
-  const loadQueue = async () => {
-    setLoading(true);
-    try {
-      const res = await verificationService.getPendingQueue(0, 20);
-      setItems(res.items || []);
-    } catch (err) {
-      console.error("Lỗi khi tải hàng đợi KYC:", err);
-      // Fallback demo data nếu backend chưa có request pending nào
-      setItems([
-        {
-          requestId: "req-kyc-10492-demo",
-          tutorId: "tutor-83921-tran-hai-dang",
-          status: "PENDING",
-          submittedAt: new Date(Date.now() - 3600000 * 4).toISOString(),
-        },
-        {
-          requestId: "req-kyc-10493-demo",
-          tutorId: "tutor-94821-le-quynh-nga",
-          status: "PENDING",
-          submittedAt: new Date(Date.now() - 3600000 * 12).toISOString(),
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadQueue();
-  }, []);
-
-  const handleOpenReview = (item: PendingQueueItem) => {
-    setSelectedItem(item);
-    setIsReviewModalOpen(true);
-  };
+  const {
+    items,
+    loading,
+    selectedItem,
+    isReviewModalOpen,
+    loadQueue,
+    handleOpenReview,
+    handleCloseReview,
+    handleReviewSuccess,
+  } = useAdminKycQueue();
 
   return (
     <div className="space-y-6">
@@ -118,7 +84,7 @@ export function AdminKycQueueView() {
               }}
               secondaryAction={{
                 label: "Về trang tổng quan",
-                href: "/dashboard",
+                href: "/admin/dashboard",
               }}
             />
           </div>
@@ -174,8 +140,8 @@ export function AdminKycQueueView() {
       <ReviewKycModal
         item={selectedItem}
         isOpen={isReviewModalOpen}
-        onClose={() => setIsReviewModalOpen(false)}
-        onReviewed={loadQueue}
+        onClose={handleCloseReview}
+        onReviewed={handleReviewSuccess}
       />
     </div>
   );
