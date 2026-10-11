@@ -51,7 +51,7 @@ class FlywayMigrationScriptTest {
           .toList();
 
       assertFalse(sqlFiles.isEmpty(), "Phải có ít nhất một file migration SQL trong db/migration");
-      assertEquals(8, sqlFiles.size(), "Phải có đúng 8 file migration tương ứng 8 module V1.01 -> V1.08");
+      assertEquals(9, sqlFiles.size(), "Phải có đúng 9 file migration tương ứng V1.01 -> V1.09");
 
       for (Path file : sqlFiles) {
         String fileName = file.getFileName().toString();

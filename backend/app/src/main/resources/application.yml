@@ -20,7 +20,7 @@ spring:
 
   # 2. Cấu hình Cơ sở dữ liệu PostgreSQL
   datasource:
-    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:edufit}}
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:edufit}?options=-c%20timezone=Asia/Ho_Chi_Minh}
     username: ${DB_USERNAME:${DB_USER:edufit}}
     password: ${DB_PASSWORD:edufit-local-only}
     driver-class-name: org.postgresql.Driver
@@ -28,9 +28,9 @@ spring:
       maximum-pool-size: 20
       minimum-idle: 5
       pool-name: EduFitHikariPool
-      # Đảm bảo PostgreSQL kết nối với múi giờ UTC (NFR-18), tránh lỗi TimeZone "Asia/Saigon"
+      # Đồng bộ múi giờ PostgreSQL với tầng ứng dụng (Asia/Ho_Chi_Minh - UTC+7 theo NFR-18)
       data-source-properties:
-        options: "-c timezone=UTC"
+        options: "-c timezone=Asia/Ho_Chi_Minh"
 
   # 3. Cấu hình Mail Service (Mailpit cho môi trường local)
   mail:

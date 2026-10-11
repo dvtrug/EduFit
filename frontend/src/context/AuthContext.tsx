@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { authService, AuthUser, LoginPayload, RegisterPayload } from "@/services/auth";
+import { authApi, type AuthUser, type LoginPayload, type RegisterPayload } from "@/features/auth/api/authApi";
 import { ApiError } from "@/lib/api";
 
 /**
@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await authService.getMe();
+      const res = await authApi.getMe();
       if (res.success && res.data) {
         setUser(res.data);
       } else {
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (payload: LoginPayload): Promise<AuthUser> => {
     setError(null);
     try {
-      const res = await authService.login(payload);
+      const res = await authApi.login(payload);
       if (res.success && res.data) {
         setUser(res.data);
         return res.data;
@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = async (payload: RegisterPayload): Promise<AuthUser> => {
     setError(null);
     try {
-      const res = await authService.register(payload);
+      const res = await authApi.register(payload);
       if (res.success && res.data) {
         // Sau khi đăng ký thành công, tài khoản đã sẵn sàng để đăng nhập
         return res.data;
@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const logout = async (): Promise<void> => {
     try {
-      await authService.logout();
+      await authApi.logout();
     } finally {
       setUser(null);
     }
