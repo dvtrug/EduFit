@@ -74,7 +74,23 @@ export function useLoginForm() {
         }
       }
 
-      router.push(user.redirectUrl || "/dashboard");
+      if (user.redirectUrl) {
+        router.push(user.redirectUrl);
+        return;
+      }
+
+      const role = user.role?.toUpperCase();
+      if (role === "STUDENT") {
+        router.push("/student/dashboard");
+      } else if (role === "TUTOR") {
+        router.push("/tutor/dashboard");
+      } else if (role === "PARENT") {
+        router.push("/parent/dashboard");
+      } else if (role === "ADMIN") {
+        router.push("/admin/verification-queue");
+      } else {
+        router.push("/student/dashboard");
+      }
     },
     [router]
   );

@@ -100,7 +100,7 @@ export function useRegisterForm() {
         } else if (role === "PARENT") {
           router.push("/onboarding/parent");
         } else {
-          router.push("/dashboard");
+          router.push("/admin/verification-queue");
         }
         return true;
       } catch (err: unknown) {
