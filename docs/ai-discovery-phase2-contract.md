@@ -13,3 +13,11 @@ Best-effort audit không bảo đảm lưu log nếu DB hỏng. Không nhận th
 Thiết kế dựa trên [Spring TransactionTemplate](https://docs.spring.io/spring-framework/reference/data-access/transaction/programmatic.html). Test `AiLogPostgresTest` dùng PostgreSQL thật với deferred constraint trigger để lỗi tại commit; trigger đếm insert dùng sequence không rollback để chứng minh không có lần ghi ERROR thứ hai. Docker không khả dụng làm test fail, không skip.
 
 Evidence/lệnh test và trạng thái các task: [checklist](../tasks/ai-discovery/todo.md).
+
+## B06 — Persistence contract
+
+Migration mới `V1.12` tạo `ai_match_quota_actor` (khóa theo actor) và `ai_match_reservation`. Chỉ lưu actor, reservation ID, thời điểm/lease và trạng thái; không lưu prompt/output. Reservation MATCH_EXPLANATION có các trạng thái RESERVED/SUCCESS/ERROR/TIMEOUT/EXPIRED. TUTOR_BIO tiếp tục độc lập, không bị áp BR-25.
+
+Upgrade backfill mọi log MATCH_EXPLANATION cũ thành reservation terminal, giữ log ID/time/status. Audit log giữ nguyên; quota sẽ chỉ count reservation, không cộng hai bảng. Student/Parent dùng actor user ID riêng. Lease expiry không hoàn lại quota; mọi reservation vẫn tính trong rolling 24h. Migration cũ không bị sửa.
+
+Java port `AiMatchQuota.tryReserve(actorUserId)` trả ID nếu commit reservation thành công, empty nếu hết quota; store lỗi phải throw AiUnavailableException. Không dùng precheck count rồi call. Commit persistence contract mới chỉ chuẩn bị schema/API; B06 implementation và B07 wiring mới kích hoạt admission runtime.
