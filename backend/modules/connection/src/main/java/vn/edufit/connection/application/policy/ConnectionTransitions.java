@@ -6,6 +6,7 @@ import vn.edufit.shared.exception.ResourceConflictException;
 
 /** Shared state/time rules; persistence retains the existing status values. */
 public final class ConnectionTransitions {
+  public static final Duration REQUEST_TTL = Duration.ofDays(7);
   public static final Duration INVITATION_TTL = Duration.ofDays(14);
   public static final Duration DECLINE_COOLDOWN = Duration.ofDays(7);
   public static final Duration QUOTA_WINDOW = Duration.ofHours(1);

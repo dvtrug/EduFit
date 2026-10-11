@@ -2,6 +2,7 @@ package vn.edufit.connection.infra.persistence.entity;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import vn.edufit.connection.application.policy.ConnectionTransitions;
 import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -36,14 +37,19 @@ public class ConnectionRequest {
     this.message = message;
     status = "PENDING";
     createdAt = now;
-    expiresAt = now.plus(java.time.Duration.ofDays(7));
+    expiresAt = now.plus(ConnectionTransitions.REQUEST_TTL);
   }
   public void expire(Instant now) {
-    if ("PENDING".equals(status) && !expiresAt.isAfter(now)) status = "EXPIRED";
+    if ("PENDING".equals(status) && ConnectionTransitions.isDue(expiresAt, now)) status = "EXPIRED";
   }
-  public void cancel(Instant now) { status = "CANCELLED"; respondedAt = now; }
-  public void accept(Instant now) { status = "ACCEPTED"; respondedAt = now; }
+  public void cancel(Instant now) {
+    ConnectionTransitions.requirePending(status, expiresAt, now);
+    status = "CANCELLED"; respondedAt = now; }
+  public void accept(Instant now) {
+    ConnectionTransitions.requirePending(status, expiresAt, now);
+    status = "ACCEPTED"; respondedAt = now; }
   public void reject(String reason, Instant now) {
+    ConnectionTransitions.requirePending(status, expiresAt, now);
     status = "REJECTED"; rejectReason = reason; respondedAt = now;
   }
   public UUID getId() { return id; }

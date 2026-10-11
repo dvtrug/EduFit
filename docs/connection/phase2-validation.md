@@ -17,3 +17,9 @@ No changes to main/Discovery refs or their task documents. Existing user changes
 - Mutators reject terminal state and action at/after deadline before touching fields. Expiry remains idempotent. Link revoke requires CONFIRMED.
 - RED: 19/25 matrix cases failed against previous mutators (`phase2-red-invitation.log`). GREEN: Connection affected reactor verify, 89 tests, zero failures/errors/skips (`phase2-T08b.log`). Includes 28 invitation/link state, timestamp, expiry and cooldown boundary cases.
 - Review: guarded methods cannot change terminal timestamps/cooldown; existing service authorization/lock order remains unchanged. Expiry persistence/conflict semantics deliberately follow in T09.
+
+## T08c — request guards
+
+- Request TTL remains 7 days. Accept/reject/cancel require PENDING and time strictly before expiry; terminal retries leave state, reason and respondedAt unchanged. Expire remains idempotent.
+- RED: 18/24 state/deadline cases failed (`phase2-red-request.log`). GREEN: affected Connection reactor verify, 113 tests, zero failures/errors/skips (`phase2-T08c.log`). Tests include every terminal/action combination and -1ns/equality/+1ns for each pending action.
+- Review: same central policy as invitations, no schema/new status and no service authorization change.

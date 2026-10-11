@@ -149,7 +149,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 
 ## Phase 2 — Guard, clock, transaction và event foundation
 
-### [ ] T08 — Chuẩn hóa transition guards và thời gian
+### [x] T08 — Chuẩn hóa transition guards và thời gian
 
 - **Files:** `ConnectionTransitions`, entity mutators liên quan, Clock wiring, parameterized tests.
 - **Thực hiện:** Central expected-state guard; reject terminal transitions; inject **Clock có sẵn từ IAM**, một now mỗi operation; loại magic durations theo cấu hình/default đã chốt. Không tạo Clock unconditional trùng IAM/Scheduling. Bắt buộc thực thi T08a–T08c ở mục 6, không gom một commit.
@@ -431,7 +431,7 @@ Các nhóm bên dưới **thay thế commit cha**, không còn là gợi ý “n
 | --- | --- | --- | --- | --- |
 | [x] T08a | Clock injection vào services, config/context tests | Dùng Clock IAM hiện có, chỉ một candidate; quota/time fixed-clock tests pass | T07 | `refactor(connection): reuse shared clock for deterministic time` |
 | [x] T08b | Invitation/link mutator guards, policy và parameterized tests | Terminal reject, deadline/cooldown đúng biên; focused link/invite regression | T08a | `fix(connection): guard invitation and link transitions` |
-| [ ] T08c | Request mutator guard/policy và tests | Request terminal/action matrix và expiry boundary pass | T08b | `fix(connection): guard request transitions` |
+| [x] T08c | Request mutator guard/policy và tests | Request terminal/action matrix và expiry boundary pass | T08b | `fix(connection): guard request transitions` |
 | [ ] T10a | Public event records + contract tests | Payload Java/public IDs, no PII, compile all callers | T09 | `feat(connection): define public transition event records` |
 | [ ] T10b | Notification listener/wiring/pom + transactional tests | BEFORE_COMMIT failure rollback, no outside-transaction execution, graph acyclic | T10a | `feat(notification): consume connection transitions transactionally` |
 | [ ] T11a | Invitation service/repository + tests | Two-way consent, ACTIVE/DEACTIVATED, generic response, known-history cooldown, closure | T10b | `fix(connection): enforce invitation consent and privacy` |
