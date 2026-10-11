@@ -15,7 +15,13 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 @ConfigurationPropertiesScan(basePackages = "vn.edufit")
 public class EduFitApplication {
 
+  static {
+    System.setProperty("user.timezone", "Asia/Ho_Chi_Minh");
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+  }
+
   public static void main(String[] args) {
+    System.setProperty("user.timezone", "Asia/Ho_Chi_Minh");
     TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
     SpringApplication.run(EduFitApplication.class, args);
   }

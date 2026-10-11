@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   Check,
   CheckCircle2,
@@ -11,8 +12,9 @@ import {
   Award,
   Clock,
   Star,
-  BookOpen,
 } from "lucide-react";
+import HeroIllustration from "@/components/HeroIllustration";
+import { EduFitLogo } from "@/shared/ui/EduFitLogo";
 
 export default function HomePage() {
   return (
@@ -20,15 +22,8 @@ export default function HomePage() {
       {/* 1. Header / Navbar */}
       <header className="sticky top-0 z-50 bg-stone-50/90 backdrop-blur-md border-b border-stone-200/60">
         <div className="max-w-6xl mx-auto px-6 h-20 flex justify-between items-center">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="size-9 rounded-xl bg-gradient-to-tr from-sky-500 via-emerald-400 to-orange-400 flex items-center justify-center shadow-sm">
-              <span className="text-white font-bold text-lg font-heading">E</span>
-            </div>
-            <span className="font-heading text-2xl font-bold tracking-tight text-neutral-900 group-hover:text-sky-600 transition-colors">
-              EduFit
-            </span>
-          </Link>
+          {/* Logo EduFit */}
+          <EduFitLogo href="/" size="lg" />
 
           {/* Navigation links */}
           <nav className="hidden md:flex items-center gap-8">
@@ -56,15 +51,15 @@ export default function HomePage() {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="text-sm font-semibold text-neutral-700 hover:text-neutral-900 px-4 py-2"
+              className="text-sm font-semibold text-neutral-700 hover:text-neutral-900 px-4 py-2.5 rounded-full border border-stone-300 bg-white hover:bg-stone-100 transition-colors"
             >
               Đăng nhập
             </Link>
             <Link
-              href="/dashboard"
-              className="text-sm font-semibold bg-sky-600 hover:bg-sky-700 text-white px-5 py-2.5 rounded-full transition shadow-sm"
+              href="/register"
+              className="text-sm font-semibold bg-orange-700 hover:bg-orange-800 text-white px-5 py-2.5 rounded-full transition shadow-sm hover:shadow"
             >
-              Vào Dashboard
+              Đăng ký
             </Link>
           </div>
         </div>
@@ -74,7 +69,7 @@ export default function HomePage() {
       <section className="max-w-6xl mx-auto px-6 pt-12 pb-16 lg:pt-16 lg:pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Left Column */}
-          <div className="lg:col-span-7 flex flex-col items-start gap-6">
+          <div className="lg:col-span-7 flex flex-col items-start gap-6 animate-fade-in-up">
             {/* Target pill */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-stone-100 border border-stone-200/60 rounded-full">
               <span className="size-2 bg-emerald-500 rounded-full animate-pulse" />
@@ -100,13 +95,13 @@ export default function HomePage() {
             <div className="flex flex-wrap items-center gap-3.5 pt-1">
               <Link
                 href="/register"
-                className="px-6 py-3.5 bg-orange-700 hover:bg-orange-800 text-white text-sm font-semibold rounded-full transition shadow-sm hover:shadow active:scale-95"
+                className="px-6 py-3.5 bg-orange-700 hover:bg-orange-800 text-white text-sm font-semibold rounded-full shadow-sm btn-interactive"
               >
-                Đăng ký
+                Đăng ký ngay
               </Link>
               <Link
                 href="/login"
-                className="px-6 py-3.5 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-full transition shadow-sm hover:shadow active:scale-95"
+                className="px-6 py-3.5 bg-white hover:bg-stone-100 text-neutral-800 border border-stone-300 text-sm font-semibold rounded-full shadow-sm btn-interactive"
               >
                 Tôi đã có tài khoản
               </Link>
@@ -132,64 +127,22 @@ export default function HomePage() {
           {/* Right Column: Hero Graphic & Floating Widget */}
           <div className="lg:col-span-5 relative flex justify-center">
             <div className="w-full max-w-[380px] flex flex-col gap-4">
-              {/* Graphic Illustration Box */}
-              <div className="relative w-full aspect-[4/3] rounded-2xl bg-gradient-to-br from-amber-50 via-sky-50 to-orange-50 border border-stone-200/70 p-6 flex flex-col justify-center items-center shadow-sm overflow-hidden">
-                {/* Decorative floating badges */}
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-2.5 py-1 rounded-full shadow-xs border border-stone-100 flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
-                  <CheckCircle2 className="size-3.5" /> Chuẩn THCS
+              {/* Graphic Illustration Box (Minh họa học sinh chinh phục mục tiêu) */}
+              <div className="relative w-full rounded-2xl overflow-hidden border border-stone-200/80 shadow-md group bg-[#FEFAF2] flex items-center justify-center py-6 px-3">
+                <div className="transform transition-transform duration-500 group-hover:scale-105">
+                  <HeroIllustration />
                 </div>
-                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-2.5 py-1 rounded-full shadow-xs border border-stone-100 flex items-center gap-1 text-[11px] font-semibold text-sky-600">
-                  <Target className="size-3.5" /> Lộ trình 1-1
+                {/* Floating badge */}
+                <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full shadow-xs border border-stone-200/50 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700">
+                  <CheckCircle2 className="size-3.5 text-emerald-600" /> Chuẩn THCS Lớp 6-9
                 </div>
-
-                {/* SVG Character illustration */}
-                <svg
-                  className="w-44 h-44 drop-shadow-sm"
-                  viewBox="0 0 200 200"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle cx="100" cy="100" r="80" fill="#FEF3C7" opacity="0.6" />
-                  <path
-                    d="M60 150H140V158C140 160.209 138.209 162 136 162H64C61.7909 162 60 160.209 60 158V150Z"
-                    fill="#D97706"
-                  />
-                  <rect x="70" y="130" width="60" height="20" rx="3" fill="#3B82F6" />
-                  <rect x="75" y="134" width="22" height="12" rx="1" fill="#FFFFFF" />
-                  <rect x="103" y="134" width="22" height="12" rx="1" fill="#FFFFFF" />
-                  {/* Body */}
-                  <path
-                    d="M80 120C80 105 120 105 120 120V130H80V120Z"
-                    fill="#0284C7"
-                  />
-                  {/* Head */}
-                  <circle cx="100" cy="88" r="18" fill="#FBBF24" />
-                  {/* Hair */}
-                  <path
-                    d="M82 85C82 72 90 68 100 68C110 68 118 72 118 85C114 78 108 78 100 78C92 78 86 78 82 85Z"
-                    fill="#1F2937"
-                  />
-                  {/* Arm waving */}
-                  <path
-                    d="M116 112L135 88"
-                    stroke="#FBBF24"
-                    strokeWidth="6"
-                    strokeLinecap="round"
-                  />
-                  {/* Star / Success badge */}
-                  <circle cx="140" cy="80" r="10" fill="#10B981" />
-                  <path
-                    d="M137 80L139 82L144 77"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full shadow-xs border border-stone-200/50 flex items-center gap-1.5 text-[11px] font-semibold text-sky-700">
+                  <Target className="size-3.5 text-sky-600" /> Lộ trình 1-1
+                </div>
               </div>
 
               {/* Floating Goal Card */}
-              <div className="w-full p-5 bg-white rounded-xl border border-stone-200/80 shadow-md flex flex-col gap-3.5">
+              <div className="w-full p-5 bg-white/95 backdrop-blur-md rounded-2xl border border-stone-200/80 shadow-md flex flex-col gap-3.5 animate-float-delayed hover:shadow-xl transition-all duration-300">
                 <div className="flex justify-between items-center">
                   <span className="text-zinc-800 text-xs font-semibold">
                     Mục tiêu của Minh
@@ -222,7 +175,7 @@ export default function HomePage() {
 
       {/* 3. Stats Bar */}
       <section className="max-w-6xl mx-auto px-6 mb-16">
-        <div className="bg-stone-100 border border-stone-200/60 rounded-2xl px-8 py-6 grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="bg-white/80 backdrop-blur-md border border-stone-200/70 rounded-2xl px-8 py-6 grid grid-cols-2 md:grid-cols-4 gap-6 shadow-sm card-interactive">
           <div className="flex flex-col gap-1">
             <div className="text-neutral-900 text-xl font-semibold font-heading">
               Lớp 6-9
@@ -268,15 +221,15 @@ export default function HomePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Step 1 */}
-          <div className="bg-white p-7 rounded-2xl border border-stone-200/70 shadow-xs flex flex-col justify-between h-72 hover:shadow-md transition">
+          <div className="bg-white p-7 rounded-2xl border border-stone-200/70 shadow-xs flex flex-col justify-between h-72 card-interactive group">
             <div className="flex justify-between items-center">
               <span className="text-neutral-400 text-sm font-semibold">01</span>
-              <div className="size-11 bg-sky-100 text-sky-600 rounded-2xl flex justify-center items-center">
+              <div className="size-11 bg-sky-100 text-sky-600 rounded-2xl flex justify-center items-center group-hover:scale-110 transition-transform duration-300">
                 <Target className="size-5" />
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <h3 className="text-zinc-900 text-lg font-semibold">
+              <h3 className="text-zinc-900 text-lg font-semibold group-hover:text-sky-600 transition-colors">
                 Nói điều bạn muốn đạt
               </h3>
               <p className="text-neutral-600 text-sm leading-relaxed">
@@ -286,15 +239,15 @@ export default function HomePage() {
           </div>
 
           {/* Step 2 */}
-          <div className="bg-white p-7 rounded-2xl border border-stone-200/70 shadow-xs flex flex-col justify-between h-72 hover:shadow-md transition">
+          <div className="bg-white p-7 rounded-2xl border border-stone-200/70 shadow-xs flex flex-col justify-between h-72 card-interactive group">
             <div className="flex justify-between items-center">
               <span className="text-neutral-400 text-sm font-semibold">02</span>
-              <div className="size-11 bg-orange-100 text-orange-600 rounded-2xl flex justify-center items-center">
+              <div className="size-11 bg-orange-100 text-orange-600 rounded-2xl flex justify-center items-center group-hover:scale-110 transition-transform duration-300">
                 <Users2 className="size-5" />
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <h3 className="text-zinc-900 text-lg font-semibold">
+              <h3 className="text-zinc-900 text-lg font-semibold group-hover:text-orange-600 transition-colors">
                 Nhận gợi ý có lý do
               </h3>
               <p className="text-neutral-600 text-sm leading-relaxed">
@@ -304,15 +257,15 @@ export default function HomePage() {
           </div>
 
           {/* Step 3 */}
-          <div className="bg-white p-7 rounded-2xl border border-stone-200/70 shadow-xs flex flex-col justify-between h-72 hover:shadow-md transition">
+          <div className="bg-white p-7 rounded-2xl border border-stone-200/70 shadow-xs flex flex-col justify-between h-72 card-interactive group">
             <div className="flex justify-between items-center">
               <span className="text-neutral-400 text-sm font-semibold">03</span>
-              <div className="size-11 bg-emerald-100 text-emerald-600 rounded-2xl flex justify-center items-center">
+              <div className="size-11 bg-emerald-100 text-emerald-600 rounded-2xl flex justify-center items-center group-hover:scale-110 transition-transform duration-300">
                 <TrendingUp className="size-5" />
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <h3 className="text-zinc-900 text-lg font-semibold">
+              <h3 className="text-zinc-900 text-lg font-semibold group-hover:text-emerald-600 transition-colors">
                 Học và nhìn thấy tiến bộ
               </h3>
               <p className="text-neutral-600 text-sm leading-relaxed">
@@ -380,7 +333,7 @@ export default function HomePage() {
 
             {/* Right Tutor Card */}
             <div className="lg:col-span-7 flex justify-center">
-              <div className="w-full max-w-md shadow-md rounded-2xl overflow-hidden border border-stone-200/80">
+              <div className="w-full max-w-md shadow-md rounded-2xl overflow-hidden border border-stone-200/80 card-interactive">
                 {/* Header Match Badge */}
                 <div className="bg-neutral-900 text-white px-5 py-3.5 flex justify-between items-center text-xs">
                   <span className="font-medium">
@@ -394,9 +347,13 @@ export default function HomePage() {
                 {/* Card Content */}
                 <div className="bg-white p-6 sm:p-7 flex flex-col gap-5">
                   <div className="flex items-center gap-4">
-                    <div className="size-14 rounded-2xl bg-sky-100 flex items-center justify-center text-sky-700 font-bold text-lg font-heading">
-                      NL
-                    </div>
+                    <Image
+                      src="/images/tutor-lan.jpg"
+                      alt="Cô Nguyễn Hoàng Lan"
+                      width={56}
+                      height={56}
+                      className="size-14 rounded-2xl object-cover border-2 border-stone-200 shadow-xs"
+                    />
                     <div className="flex-1">
                       <h4 className="text-neutral-900 text-lg font-semibold">
                         Cô Nguyễn Hoàng Lan
@@ -602,8 +559,8 @@ export default function HomePage() {
       <footer className="border-t border-stone-200/80 py-10 bg-stone-50">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 text-xs text-neutral-500">
           <div>
-            <div className="font-heading text-xl font-bold text-neutral-900 mb-1">
-              EduFit
+            <div className="mb-2">
+              <EduFitLogo href="/" size="md" />
             </div>
             <p>Đúng gia sư - Đúng mục tiêu - Thấy rõ tiến bộ</p>
           </div>

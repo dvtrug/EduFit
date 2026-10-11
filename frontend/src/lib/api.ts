@@ -86,3 +86,24 @@ export async function fetchApi<T = unknown>(
     );
   }
 }
+
+/**
+ * Tiện ích gọi API dạng phương thức RESTful (GET, POST, PUT, DELETE)
+ */
+export const apiClient = {
+  get: <T>(url: string, init?: RequestInit) => fetchApi<T>(url, { ...init, method: "GET" }),
+  post: <T>(url: string, body?: unknown, init?: RequestInit) =>
+    fetchApi<T>(url, {
+      ...init,
+      method: "POST",
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
+    }),
+  put: <T>(url: string, body?: unknown, init?: RequestInit) =>
+    fetchApi<T>(url, {
+      ...init,
+      method: "PUT",
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
+    }),
+  delete: <T>(url: string, init?: RequestInit) => fetchApi<T>(url, { ...init, method: "DELETE" }),
+};
+

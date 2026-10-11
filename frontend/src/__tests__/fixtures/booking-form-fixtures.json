@@ -1,0 +1,71 @@
+{
+  "bookingCases": [
+    {
+      "desc": "Đặt lịch hợp lệ đủ thông tin",
+      "payload": {
+        "tutorId": "tutor-uuid-001",
+        "subject": "Toán lớp 10",
+        "startTime": "08:00",
+        "endTime": "10:00",
+        "notes": "Học sinh cần ôn tập phần hàm số"
+      },
+      "valid": true,
+      "expectedErrorField": null
+    },
+    {
+      "desc": "Thiếu gia sư (tutorId rỗng)",
+      "payload": {
+        "tutorId": "",
+        "subject": "Toán lớp 10",
+        "startTime": "08:00",
+        "endTime": "10:00"
+      },
+      "valid": false,
+      "expectedErrorField": "tutorId"
+    },
+    {
+      "desc": "Thiếu môn học (subject rỗng)",
+      "payload": {
+        "tutorId": "tutor-uuid-001",
+        "subject": "",
+        "startTime": "08:00",
+        "endTime": "10:00"
+      },
+      "valid": false,
+      "expectedErrorField": "subject"
+    },
+    {
+      "desc": "Sai định dạng startTime (thiếu số 0 ở đầu)",
+      "payload": {
+        "tutorId": "tutor-uuid-001",
+        "subject": "Vật lý",
+        "startTime": "8:00",
+        "endTime": "10:00"
+      },
+      "valid": false,
+      "expectedErrorField": "startTime"
+    },
+    {
+      "desc": "Sai định dạng endTime (giờ 25:00 vượt 23:59)",
+      "payload": {
+        "tutorId": "tutor-uuid-001",
+        "subject": "Hóa học",
+        "startTime": "14:00",
+        "endTime": "25:00"
+      },
+      "valid": false,
+      "expectedErrorField": "endTime"
+    },
+    {
+      "desc": "Ghi chú hợp lệ không bắt buộc",
+      "payload": {
+        "tutorId": "tutor-uuid-001",
+        "subject": "Tiếng Anh",
+        "startTime": "15:00",
+        "endTime": "17:00"
+      },
+      "valid": true,
+      "expectedErrorField": null
+    }
+  ]
+}
