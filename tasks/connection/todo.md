@@ -105,7 +105,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** `refactor(connection): isolate public facade implementation`.
 - **Kết thúc:** Commit + push + consumer compatibility.
 
-### [ ] T04 — Tách DTO khỏi entity ở HTTP boundary
+### [x] T04 — Tách DTO khỏi entity ở HTTP boundary
 
 - **Files:** controller, `web/request`, `web/response`, `application/dto`, mapper/service result signatures và regression test.
 - **Thực hiện:** Extract nested records, service trả application results; web không import persistence. Giữ tên/kiểu JSON cũ, đổi `accept` primitive thành nullable validated Boolean theo T01. Chưa thêm batch behavior; giữ mapping equivalent trước tối ưu.

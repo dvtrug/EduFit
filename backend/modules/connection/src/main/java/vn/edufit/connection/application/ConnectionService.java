@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edufit.connection.api.ConnectionFacade;
+import vn.edufit.connection.application.dto.*;
 import vn.edufit.connection.infra.persistence.entity.*;
 import vn.edufit.connection.infra.persistence.repository.*;
 import vn.edufit.iam.api.AccountRole;
@@ -105,16 +106,16 @@ public class ConnectionService {
   }
 
   @Transactional
-  public List<LinkInvitation> invitations(CurrentUser actor) {
+  public List<InvitationResult> invitations(CurrentUser actor) {
     requireRole(actor, "PARENT", "STUDENT");
     List<LinkInvitation> result = invitations.findByInviterUserIdOrInvitedUserIdOrderByCreatedAtDesc(
         actor.getUserId(), actor.getUserId());
     result.forEach(i -> i.expire(Instant.now()));
-    return result;
+    return result.stream().map(InvitationResult::from).toList();
   }
 
   @Transactional(noRollbackFor = ResourceConflictException.class)
-  public ParentStudentLink respondInvitation(CurrentUser actor, UUID id, boolean accept) {
+  public ParentStudentLinkResult respondInvitation(CurrentUser actor, UUID id, boolean accept) {
     requireRole(actor, "PARENT", "STUDENT");
     LinkInvitation initial = invitations.findById(id).orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
     UUID a = initial.getInviterUserId(), b = initial.getInvitedUserId();
@@ -146,7 +147,7 @@ public class ConnectionService {
     ParentStudentLink link = links.save(new ParentStudentLink(parent, student.studentId(), now));
     notifications.notify(a, student.studentId(), "LINK_CONFIRMED", "Liên kết đã xác nhận",
         "Người nhận đã chấp nhận lời mời", "PARENT_STUDENT_LINK", link.getId());
-    return link;
+    return ParentStudentLinkResult.from(link);
   }
 
   @Transactional(noRollbackFor = ResourceConflictException.class)
@@ -167,11 +168,11 @@ public class ConnectionService {
   }
 
   @Transactional(readOnly = true)
-  public List<ParentStudentLink> links(CurrentUser actor) {
+  public List<ParentStudentLinkResult> links(CurrentUser actor) {
     requireRole(actor, "PARENT", "STUDENT");
-    if (actor.hasRole("PARENT")) return links.findByParentUserIdAndStatus(actor.getUserId(), "CONFIRMED");
+    if (actor.hasRole("PARENT")) return links.findByParentUserIdAndStatus(actor.getUserId(), "CONFIRMED").stream().map(ParentStudentLinkResult::from).toList();
     UUID studentId = profile.getStudentIdByUserId(actor.getUserId());
-    return links.findByStudentIdAndStatus(studentId, "CONFIRMED");
+    return links.findByStudentIdAndStatus(studentId, "CONFIRMED").stream().map(ParentStudentLinkResult::from).toList();
   }
 
   @Transactional
@@ -200,7 +201,7 @@ public class ConnectionService {
   }
 
   @Transactional(noRollbackFor = ResourceConflictException.class)
-  public ConnectionRequest request(CurrentUser actor, UUID goalId, UUID tutorId,
+  public ConnectionRequestResult request(CurrentUser actor, UUID goalId, UUID tutorId,
       List<String> desiredSlots, String message) {
     requireRole(actor, "STUDENT", "PARENT");
     ConnectionGoalDto goal = profile.findGoalForConnection(goalId)
@@ -230,16 +231,16 @@ public class ConnectionService {
         actor.getUserId(), desiredSlots, message, now));
     notifications.notify(tutor.userId(), goal.studentId(), "CONNECTION_REQUESTED",
         "Yêu cầu kết nối mới", "Bạn có yêu cầu dạy học mới", "CONNECTION_REQUEST", created.getId());
-    return created;
+    return ConnectionRequestResult.from(created);
   }
 
   @Transactional
-  public List<ConnectionRequest> requests(CurrentUser actor, UUID studentId) {
+  public List<ConnectionRequestResult> requests(CurrentUser actor, UUID studentId) {
     if (actor.hasRole("TUTOR")) {
       UUID tutorId = profile.getTutorIdByUserId(actor.getUserId());
       List<ConnectionRequest> result = requests.findByTutorIdOrderByCreatedAtDesc(tutorId);
       result.forEach(r -> r.expire(Instant.now()));
-      return result;
+      return result.stream().map(ConnectionRequestResult::from).toList();
     }
     requireRole(actor, "STUDENT", "PARENT");
     UUID scope = actor.hasRole("STUDENT") ? profile.getStudentIdByUserId(actor.getUserId()) : studentId;
@@ -247,7 +248,7 @@ public class ConnectionService {
     requireStudentAccess(actor, scope);
     List<ConnectionRequest> result = requests.findByStudentIdOrderByCreatedAtDesc(scope);
     result.forEach(r -> r.expire(Instant.now()));
-    return result;
+    return result.stream().map(ConnectionRequestResult::from).toList();
   }
 
   @Transactional(noRollbackFor = ResourceConflictException.class)
@@ -263,7 +264,7 @@ public class ConnectionService {
   }
 
   @Transactional(noRollbackFor = ResourceConflictException.class)
-  public TutoringClass respondRequest(CurrentUser actor, UUID id, boolean accept, String reason) {
+  public ClassResult respondRequest(CurrentUser actor, UUID id, boolean accept, String reason) {
     requireRole(actor, "TUTOR");
     ConnectionRequest initial = requests.findById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
     UUID tutorId = profile.getTutorIdByUserId(actor.getUserId());
@@ -293,6 +294,6 @@ public class ConnectionService {
     TutoringClass created = classes.save(new TutoringClass(request, now));
     notifications.notify(request.getSentByUserId(), request.getStudentId(), "CONNECTION_ACCEPTED",
         "Yêu cầu đã được chấp nhận", "Gia sư đã chấp nhận yêu cầu", "CLASS", created.getId());
-    return created;
+    return ClassResult.from(created);
   }
 }

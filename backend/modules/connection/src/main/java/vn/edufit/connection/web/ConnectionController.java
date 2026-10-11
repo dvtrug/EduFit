@@ -1,17 +1,14 @@
 package vn.edufit.connection.web;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.bind.annotation.*;
 import vn.edufit.connection.application.ConnectionService;
-import vn.edufit.connection.infra.persistence.entity.*;
-import vn.edufit.connection.infra.persistence.repository.*;
+import vn.edufit.connection.application.dto.*;
+import vn.edufit.connection.web.request.*;
+import vn.edufit.connection.web.response.*;
 import vn.edufit.iam.api.AccountRole;
 import vn.edufit.iam.api.IamFacade;
 import vn.edufit.profile.api.ProfileFacade;
@@ -40,42 +37,6 @@ public class ConnectionController {
 
   private CurrentUser user() { return users.getObject(); }
 
-  public record InviteBody(@NotBlank @Email String targetEmail) {}
-  public record InvitationResponse(UUID invitationId, UUID inviterUserId, UUID invitedUserId,
-      String status, Instant createdAt, Instant expiresAt) {
-    static InvitationResponse of(LinkInvitation i) {
-      return new InvitationResponse(i.getId(), i.getInviterUserId(), i.getInvitedUserId(),
-          i.getStatus(), i.getCreatedAt(), i.getExpiresAt());
-    }
-  }
-  public record RespondBody(@NotNull UUID invitationId, boolean accept) {}
-  public record LinkResponse(UUID linkId, UUID parentUserId, UUID studentId, String status,
-      Instant confirmedAt) {
-    static LinkResponse of(ParentStudentLink l) {
-      return new LinkResponse(l.getId(), l.getParentUserId(), l.getStudentId(),
-          l.getStatus(), l.getConfirmedAt());
-    }
-  }
-  public record RevokeBody(String reason) {}
-  public record CreateRequestBody(@NotNull UUID goalId, @NotNull UUID tutorId,
-      @NotNull List<String> desiredSlots, String message) {}
-  public record RequestResponse(UUID requestId, UUID studentId, UUID tutorId, UUID goalId,
-      String status, Instant createdAt, Instant expiresAt) {
-    static RequestResponse of(ConnectionRequest r) {
-      return new RequestResponse(r.getId(), r.getStudentId(), r.getTutorId(), r.getGoalId(),
-          r.getStatus(), r.getCreatedAt(), r.getExpiresAt());
-    }
-  }
-  public record TutorInboxResponse(UUID requestId, String goalType, Integer subjectId,
-      Integer educationLevelId, List<String> desiredSlots, String message, String senderRole,
-      String status, Instant expiresAt) {}
-  public record RequestRespondBody(boolean accept, String reason) {}
-  public record ClassResponse(UUID classId, UUID studentId, UUID tutorId, UUID goalId) {
-    static ClassResponse of(TutoringClass c) {
-      return new ClassResponse(c.getId(), c.getStudentId(), c.getTutorId(), c.getGoalId());
-    }
-  }
-
   @PostMapping("/parent-student/invite")
   public ApiResponse<Void> invite(@Valid @RequestBody InviteBody body) {
     if (!service.invite(user(), body.targetEmail()))
@@ -91,7 +52,7 @@ public class ConnectionController {
 
   @PostMapping("/parent-student/respond")
   public ApiResponse<LinkResponse> respond(@Valid @RequestBody RespondBody body) {
-    ParentStudentLink link = service.respondInvitation(user(), body.invitationId(), body.accept());
+    ParentStudentLinkResult link = service.respondInvitation(user(), body.invitationId(), body.accept());
     return ApiResponse.success(link == null ? null : LinkResponse.of(link));
   }
 
@@ -121,15 +82,15 @@ public class ConnectionController {
   @GetMapping("/requests")
   public ApiResponse<?> requests(@RequestParam(required = false) UUID studentId) {
     CurrentUser actor = user();
-    List<ConnectionRequest> result = service.requests(actor, studentId);
+    List<ConnectionRequestResult> result = service.requests(actor, studentId);
     if (actor.hasRole("TUTOR")) return ApiResponse.success(result.stream().map(r -> {
-      ConnectionGoalDto goal = profile.findGoalForConnection(r.getGoalId())
-          .orElseThrow(() -> EntityNotFoundException.of("LearningGoal", r.getGoalId()));
-      String senderRole = iam.findUserSummaryById(r.getSentByUserId())
+      ConnectionGoalDto goal = profile.findGoalForConnection(r.goalId())
+          .orElseThrow(() -> EntityNotFoundException.of("LearningGoal", r.goalId()));
+      String senderRole = iam.findUserSummaryById(r.sentByUserId())
           .map(u -> u.role() == AccountRole.PARENT ? "PARENT" : "STUDENT").orElse("STUDENT");
-      return new TutorInboxResponse(r.getId(), goal.goalType(), goal.subjectId(),
-          goal.educationLevelId(), r.getDesiredSlots(), r.getMessage(), senderRole,
-          r.getStatus(), r.getExpiresAt());
+      return new TutorInboxResponse(r.requestId(), goal.goalType(), goal.subjectId(),
+          goal.educationLevelId(), r.desiredSlots(), r.message(), senderRole,
+          r.status(), r.expiresAt());
     }).toList());
     return ApiResponse.success(result.stream().map(RequestResponse::of).toList());
   }
@@ -143,7 +104,7 @@ public class ConnectionController {
   @PostMapping("/requests/{id}/respond")
   public ApiResponse<ClassResponse> respondRequest(@PathVariable UUID id,
       @Valid @RequestBody RequestRespondBody body) {
-    TutoringClass c = service.respondRequest(user(), id, body.accept(), body.reason());
+    ClassResult c = service.respondRequest(user(), id, body.accept(), body.reason());
     return ApiResponse.success(c == null ? null : ClassResponse.of(c));
   }
 }
