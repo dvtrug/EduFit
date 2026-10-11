@@ -6,6 +6,7 @@ import java.time.Instant;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -77,6 +78,7 @@ public class SecurityConfig {
                 "/actuator/health",
                 "/error"
             ).permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/v1/discovery/tutors/**").permitAll()
 
             // 2.2. Phân quyền dành riêng cho Quản trị viên (ADMIN)
             .requestMatchers(

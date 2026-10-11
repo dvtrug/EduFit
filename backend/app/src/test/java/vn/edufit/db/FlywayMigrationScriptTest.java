@@ -10,8 +10,8 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -38,6 +38,14 @@ class FlywayMigrationScriptTest {
   private final Path migrationRootDir =
       Paths.get("src", "main", "resources", "db", "migration");
 
+  private int checksum(Path file) throws IOException {
+    var checksum = new java.util.zip.CRC32();
+    for (String line : Files.readAllLines(file, java.nio.charset.StandardCharsets.UTF_8)) {
+      checksum.update(line.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+    return (int) checksum.getValue();
+  }
+
   @Test
   @DisplayName("Tất cả file SQL migration phải tuân thủ chuẩn đặt tên và không được để trống")
   void allMigrationFilesShouldFollowNamingConvention() throws IOException {
@@ -51,7 +59,21 @@ class FlywayMigrationScriptTest {
           .toList();
 
       assertFalse(sqlFiles.isEmpty(), "Phải có ít nhất một file migration SQL trong db/migration");
-      assertEquals(9, sqlFiles.size(), "Phải có đúng 9 file migration tương ứng V1.01 -> V1.09");
+      assertEquals(11, sqlFiles.size(), "Giữ seed main V1.09, seed V1.10 và Connection V1.11");
+      assertEquals(sqlFiles.size(), sqlFiles.stream()
+          .map(path -> path.getFileName().toString().split("__", 2)[0])
+          .distinct().count(), "Version Flyway phải duy nhất trên tất cả module");
+      assertTrue(Files.exists(migrationRootDir.resolve("connection")
+          .resolve("V1.11__allow_relink_after_revocation.sql")),
+          "Migration cho relink, optimistic version và invite quota phải tồn tại");
+      assertTrue(Files.exists(migrationRootDir.resolve("platform")
+          .resolve("V1.10__seed_demo_accounts_and_catalogs.sql")), "Seed main được tích hợp ở V1.10");
+      assertEquals(-1594466614, checksum(migrationRootDir.resolve("platform/V1.09__seed_demo_accounts_and_catalogs.sql")),
+          "V1.09 phải khớp history main, không thay bằng DDL Connection");
+      assertEquals(-1594466614, checksum(migrationRootDir.resolve("platform/V1.10__seed_demo_accounts_and_catalogs.sql")),
+          "Giữ nguyên checksum V1.10 đã phát hành");
+      assertEquals(1468271677, checksum(migrationRootDir.resolve("connection/V1.11__allow_relink_after_revocation.sql")),
+          "Connection chỉ đổi version migration, giữ nguyên SQL");
 
       for (Path file : sqlFiles) {
         String fileName = file.getFileName().toString();

@@ -560,7 +560,7 @@ TC_STATE_09,CANCELLED,ACCEPT,TUTOR,CANCELLED,false,ILLEGAL_STATE_TRANSITION
 
 #### A. Kỹ Thuật Kiểm Thử:
 1. **Decision Table Testing:** Ma trận quyền hạn giữa Parent và Student khi gửi đề nghị ghép cặp.
-2. **Token Lifecycle Testing:** Mã lời mời kết nối phụ huynh (`link_invitation`) với TTL 48 giờ.
+2. **Invitation Lifecycle Testing:** Lời mời kết nối phụ huynh (`link_invitation`) có TTL 14 ngày theo BR-29 và migration V1.04; sau khi từ chối, cùng người gửi chỉ được mời lại sau 7 ngày.
 
 #### B. Thiết Kế Bộ Dữ Liệu CSV Cho `connection`:
 

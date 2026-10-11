@@ -11,6 +11,8 @@ public interface EducationLevelRepository extends JpaRepository<EducationLevel, 
 
   List<EducationLevel> findByIsActiveTrueOrderBySortOrderAsc();
 
+  List<EducationLevel> findAllByOrderBySortOrderAscLevelIdAsc();
+
   Optional<EducationLevel> findByName(String name);
 
   boolean existsByName(String name);

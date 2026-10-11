@@ -1,6 +1,8 @@
 package vn.edufit.ai.infra.config;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,13 +20,18 @@ import org.springframework.web.client.RestClient;
  *       mang lại hiệu năng tương đương Reactive Programming mà code tuần tự, dễ debug.</li>
  *   <li><b>Cưỡng chế Timeout 15s ở tầng Socket (NFR-10):</b> Đặt cả {@code ConnectTimeout} và
  *       {@code ReadTimeout} theo thuộc tính {@link AiProperties#timeout()} (mặc định 15s).
- *       Nếu mạng đứt hoặc máy chủ LLM bị nghẽn quá 15 giây, Socket sẽ tự động ngắt và ném
- *       {@link java.net.SocketTimeoutException}, kích hoạt ngay ngoại lệ timeout để bảo vệ hệ thống.</li>
+ *       Socket timeout bổ sung cho deadline tổng của provider tại AiGatewayService;
+ *       riêng connect/read timeout không giới hạn tổng thời gian của một response chậm.</li>
  * </ul>
  */
 @Configuration
 @EnableConfigurationProperties(AiProperties.class)
 public class AiClientConfig {
+
+  @Bean(destroyMethod = "shutdownNow")
+  public ExecutorService aiProviderExecutor() {
+    return Executors.newVirtualThreadPerTaskExecutor();
+  }
 
   /**
    * Tạo Bean {@link RestClient} chuyên dụng cho các yêu cầu gọi AI.

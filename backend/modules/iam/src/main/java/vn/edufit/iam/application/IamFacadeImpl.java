@@ -1,6 +1,7 @@
 package vn.edufit.iam.application;
 
 import java.util.Optional;
+import java.util.Locale;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import vn.edufit.iam.api.IamFacade;
@@ -24,13 +25,20 @@ public class IamFacadeImpl implements IamFacade {
     if (id == null) {
       return Optional.empty();
     }
-    return accountRepository.findById(id).map(account -> new UserSummaryView(
-        account.getId(),
-        account.getEmail(),
-        account.getFullName(),
-        account.getRole(),
-        account.getStatus()
-    ));
+    return accountRepository.findById(id).map(this::toSummary);
+  }
+
+  @Override
+  public Optional<UserSummaryView> findUserSummaryByEmail(String email) {
+    if (email == null || email.isBlank()) {
+      return Optional.empty();
+    }
+    return accountRepository.findByEmail(email.trim().toLowerCase(Locale.ROOT)).map(this::toSummary);
+  }
+
+  private UserSummaryView toSummary(vn.edufit.iam.infra.persistence.Account account) {
+    return new UserSummaryView(account.getId(), account.getEmail(), account.getFullName(),
+        account.getRole(), account.getStatus());
   }
 
   @Override

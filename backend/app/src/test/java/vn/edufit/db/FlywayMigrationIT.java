@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationVersion;
 import org.flywaydb.core.api.output.MigrateResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,52 @@ class FlywayMigrationIT {
       .withPassword("edufit-local-only");
 
   @Test
+  @DisplayName("Nâng cấp DB main đã seed V1.09: giữ history/dữ liệu, chạy V1.10/V1.11 và rerun no-op")
+  void shouldUpgradeMainSeedHistoryWithoutRepair() throws Exception {
+    String schema = "main_seed_upgrade";
+    Flyway previous = Flyway.configure()
+        .dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
+        .locations("classpath:db/migration/iam", "classpath:db/migration/profile",
+            "classpath:db/migration/verification",
+            "classpath:db/migration/scheduling", "classpath:db/migration/progress",
+            "classpath:db/migration/review", "classpath:db/legacy-main")
+        .schemas(schema)
+        .target(MigrationVersion.fromVersion("1.09"))
+        .load();
+    assertEquals(9, previous.migrate().migrationsExecuted);
+    try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+         Statement statement = connection.createStatement()) {
+      statement.execute("SET search_path TO " + schema);
+      statement.executeUpdate("UPDATE account SET full_name = 'User edited name' WHERE user_id = '11111111-1111-1111-1111-111111111111'");
+      statement.executeUpdate("INSERT INTO parent_student_link(link_id,parent_user_id,student_id,confirmed_at) VALUES ('99999999-1111-1111-1111-111111111111','33333333-3333-3333-3333-333333333333','11111111-1111-1111-1111-000000000001',now())");
+    }
+    Flyway upgraded = Flyway.configure()
+        .dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
+        .locations("classpath:db/migration").schemas(schema)
+        .outOfOrder(false).validateOnMigrate(true).baselineOnMigrate(false).load();
+    assertEquals(2, upgraded.migrate().migrationsExecuted);
+    upgraded.validate();
+    assertEquals(0, upgraded.migrate().migrationsExecuted, "Rerun không thực thi lại migration");
+    try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+         Statement statement = connection.createStatement()) {
+      statement.execute("SET search_path TO " + schema);
+      try (ResultSet rs = statement.executeQuery("SELECT checksum FROM flyway_schema_history WHERE version = '1.09'")) {
+        assertTrue(rs.next()); assertEquals(-1594466614, rs.getInt(1));
+      }
+      try (ResultSet rs = statement.executeQuery("SELECT full_name FROM account WHERE user_id = '11111111-1111-1111-1111-111111111111'")) {
+        assertTrue(rs.next()); assertEquals("User edited name", rs.getString(1));
+      }
+      try (ResultSet rs = statement.executeQuery("SELECT count(*) FROM account")) {
+        assertTrue(rs.next()); assertEquals(4, rs.getInt(1));
+      }
+      try (ResultSet rs = statement.executeQuery("SELECT status,version FROM parent_student_link WHERE link_id = '99999999-1111-1111-1111-111111111111'")) {
+        assertTrue(rs.next()); assertEquals("CONFIRMED", rs.getString(1)); assertEquals(0, rs.getLong(2));
+      }
+      statement.executeQuery("SELECT user_id,window_started_at,attempts FROM connection_invite_quota").close();
+    }
+  }
+
+  @Test
   @DisplayName("Thực thi Flyway migrate trên CSDL sạch và xác minh bảng account, email_token và các bảng SRS")
   void shouldMigrateCleanDatabaseSuccessfully() throws Exception {
     assertTrue(postgres.isRunning(), "Container PostgreSQL phải đang chạy để thực hiện kiểm thử");
@@ -58,7 +105,7 @@ class FlywayMigrationIT {
 
     // 3. Kiểm chứng kết quả thực thi của Flyway
     assertTrue(result.success, "Quá trình migrate của Flyway phải thành công 100%");
-    assertEquals(9, result.migrationsExecuted, "Phải thực thi đúng 9 file migration V1.01 -> V1.09");
+    assertEquals(11, result.migrationsExecuted, "Phải thực thi đúng 11 file migration V1.01 -> V1.11");
 
     // 4. Kiểm tra trực tiếp các bảng và ràng buộc đã được tạo trong PostgreSQL
     try (Connection connection = DriverManager.getConnection(
@@ -71,7 +118,7 @@ class FlywayMigrationIT {
       // Kiểm tra bảng account tồn tại và có thể truy vấn
       try (ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM account")) {
         assertTrue(rs.next(), "Bảng account phải tồn tại và cho phép truy vấn");
-        assertEquals(4, rs.getInt(1), "Bảng account có 4 bản ghi demo khởi tạo từ V1.09");
+        assertEquals(4, rs.getInt(1), "Bảng account có 4 bản ghi demo khởi tạo từ V1.10");
       }
 
       // Kiểm tra bảng email_token tồn tại và có thể truy vấn
@@ -90,12 +137,12 @@ class FlywayMigrationIT {
         assertTrue(rs.next(), "Bảng tutoring_session phải tồn tại và cho phép truy vấn");
       }
 
-      // Kiểm tra bảng flyway_schema_history ghi nhận cả 9 version ở trạng thái thành công
+      // Kiểm tra bảng flyway_schema_history ghi nhận cả 11 version ở trạng thái thành công
       try (ResultSet rs = statement.executeQuery(
           "SELECT COUNT(*) FROM flyway_schema_history WHERE success = true"
       )) {
         assertTrue(rs.next());
-        assertEquals(9, rs.getInt(1), "Lịch sử migration phải ghi nhận đúng 9 bản ghi thành công");
+        assertEquals(11, rs.getInt(1), "Lịch sử migration phải ghi nhận đúng 11 bản ghi thành công");
       }
     }
   }

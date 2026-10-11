@@ -14,6 +14,21 @@
   <name>EduFit :: Module :: Profile</name>
 
   <dependencies>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
     <!-- Nền tảng nội bộ -->
     <dependency>
       <groupId>vn.edufit</groupId>
