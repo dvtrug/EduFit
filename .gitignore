@@ -18,3 +18,8 @@ Thumbs.db
 
 # Local document review artifacts
 .codex-doc-review/
+
+# Runtime uploads and local cookies
+**/var/
+cookie*.txt
+*.cookie

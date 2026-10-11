@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -50,10 +51,15 @@ class FlywayMigrationScriptTest {
           .toList();
 
       assertFalse(sqlFiles.isEmpty(), "Phải có ít nhất một file migration SQL trong db/migration");
-      assertTrue(sqlFiles.size() >= 9, "Phải giữ các migration V1.01 -> V1.08 và migration Connection V1.09");
+      assertEquals(10, sqlFiles.size(), "Giữ V1.01 -> V1.09 Connection và seed demo V1.10");
+      assertEquals(sqlFiles.size(), sqlFiles.stream()
+          .map(path -> path.getFileName().toString().split("__", 2)[0])
+          .distinct().count(), "Version Flyway phải duy nhất trên tất cả module");
       assertTrue(Files.exists(migrationRootDir.resolve("connection")
           .resolve("V1.09__allow_relink_after_revocation.sql")),
           "Migration cho relink, optimistic version và invite quota phải tồn tại");
+      assertTrue(Files.exists(migrationRootDir.resolve("platform")
+          .resolve("V1.10__seed_demo_accounts_and_catalogs.sql")), "Seed main được tích hợp ở V1.10");
 
       for (Path file : sqlFiles) {
         String fileName = file.getFileName().toString();

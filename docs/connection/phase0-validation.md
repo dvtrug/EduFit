@@ -30,10 +30,25 @@ Lần chạy trong sandbox bị Mockito attach pipe lỗi và treo; đã dừng,
 
 Fetch thành công: main hiện là `6755121122c79dc9705282225d14ffb76e17c29a`, đã merge frontend-auth PR14. Vì vậy audit main `4eaa333` trong plan là snapshot lịch sử, không còn là tip dùng cho T00a.
 
-- Merge-tree `feat/connection + origin/main` mới báo conflict ở `backend/app/src/test/java/vn/edufit/db/FlywayMigrationScriptTest.java`. Resolve giữ manifest V1.01–V1.09 và kiểm tra V1.09 Connection, không sửa SQL migration.
+- Merge-tree `feat/connection + origin/main` mới báo conflict ở `backend/app/src/test/java/vn/edufit/db/FlywayMigrationScriptTest.java`. Ngoài conflict văn bản, phát hiện hai migration cùng V1.09: Connection relink và main seed demo. Giữ nguyên Connection V1.09; chuyển seed mới nhập sang V1.10, giữ nguyên bytes SQL. Manifest kiểm tra 10 migration và uniqueness version xuyên module.
 - Upstream JaCoCo vẫn LINE/BRANCH 80% nhưng `jacoco.haltOnFailure=false`. T00a giữ upstream và chạy thêm `verify -Djacoco.haltOnFailure=true` để báo gap thật; không gọi mặc định BUILD SUCCESS là coverage đạt 80%.
 - T00b vẫn dùng Discovery `dd9068e`, giữ APIs/tests đầy đủ khi resolution. Các refs nguồn không bị merge/push ngược.
 
-## T00a / T00b / T01
+## T00a — Tích hợp main
 
-Chưa hoàn tất. Kết quả và giới hạn được cập nhật trong commit tương ứng, chỉ tick checklist sau kiểm chứng task và push xác nhận.
+T00 đã commit/push `1fcad8f13ffee85aa64ec6075fcf512bd128fd04`. Merge nguồn main `6755121122c79dc9705282225d14ffb76e17c29a` chỉ vào Connection; frontend-auth là delta upstream, không viết thêm frontend.
+
+- Clean full reactor: `./mvnw.cmd clean verify -B -ntp -Dtest=*,FlywayMigrationIT -Dsurefire.failIfNoSpecifiedTests=false -Djavax.net.ssl.trustStoreType=Windows-ROOT`. BUILD SUCCESS, 133 tests, 0 failure/error/skip, 2:03 phút. Log `t00a-verify.log` trong thư mục evidence ignored.
+- Sau thêm upgrade assertion: `./mvnw.cmd -pl app -am test -B -ntp -Dtest=FlywayMigrationIT,FlywayMigrationScriptTest -Dsurefire.failIfNoSpecifiedTests=false -Djavax.net.ssl.trustStoreType=Windows-ROOT`. 4 tests pass, không skip: clean PostgreSQL 17, upgrade target 1.09 -> 1.10, validate, rerun no-op, manifest/unique versions. Log `t00a-migration-upgrade.log`.
+- Strict: `./mvnw.cmd verify -B -ntp -Djacoco.haltOnFailure=true -Djavax.net.ssl.trustStoreType=Windows-ROOT`. FAIL ở Shared, LINE 75%/BRANCH 71%; các module sau không được strict-verify. Đây là baseline, không đổi code Shared. Log `t00a-strict-verify.log`.
+- Default verify còn warnings: AI 34%/14%, Storage BRANCH 64%, IAM 54%/49%, Profile 71%/53%, Connection 41%/22%, App 26%/41% (LINE/BRANCH). Modules không có execution data bị JaCoCo skip, không coi là coverage đạt.
+
+### Migration lineage phải kiểm tra trước rollout
+
+SQL seed chuyển V1.09 -> V1.10 có Git blob `9e3b3d94df95e90b5814d521a49fe5a597f7a95f`, trùng bytes upstream. Connection V1.09 vẫn blob `cca5b0a4d145cd5bda22adbe7c755573836b9d35`.
+
+Clean DB và Connection-history V1.09 đã được kiểm chứng. Database đã chạy **seed main V1.09** có history khác: không thể dùng thẳng manifest Connection này mà tự động validate. Trước dùng nhánh Connection trên DB đó phải đối chiếu script/checksum/history, backup và lập migration reconciliation riêng; không dùng `repair`, đổi history hoặc clean DB thật trong Phase 0. Không có database người dùng nào bị thay đổi; chỉ Testcontainers cô lập.
+
+## T00b / T01
+
+Chưa hoàn tất; evidence tiếp tục cập nhật trong task tương ứng.

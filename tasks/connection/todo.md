@@ -8,7 +8,7 @@
 
 ## 1. Quy tắc thực thi giống Discovery
 
-1. Chỉ dùng folder `C:/Users/ASUS/Desktop/EduFit/EduFit` để thực thi mọi task/code/test/docs Connection, trên nhánh `feat/connection`. Không dùng folder `EduFit-connection` làm workspace triển khai. Hiện folder `EduFit` vẫn ở `feat/discovery`; lượt này chỉ chuyển tài liệu, chưa switch branch. Trước code phải bảo toàn dirty Discovery changes riêng, giải phóng `feat/connection` đang gắn checkout cũ sau kiểm tra an toàn, rồi switch trong folder `EduFit`; không force/reset/ghi đè hoặc dùng cùng branch ở hai worktree.
+1. Chỉ dùng folder `C:/Users/ASUS/Desktop/EduFit/EduFit` để thực thi mọi task/code/test/docs Connection, trên nhánh `feat/connection`. T00 đã bảo toàn dirty Discovery changes vào stash riêng, detached checkout cũ và switch EduFit sang Connection. Không force/reset/ghi đè hoặc dùng cùng branch ở hai worktree. Chỉ push `HEAD:feat/connection`; không merge/push ngược vào main hoặc Discovery.
 2. T00 là task tài liệu/baseline; T00a/T00b là hai prerequisite integration trước refactor. Mỗi **task thực thi hoặc task con bắt buộc ở mục 6** là đúng một commit gồm code, test và checklist; task cha đã chia chỉ là nhóm, không tạo thêm commit cha. Mechanical move/import có thể nhiều file nhưng phải cùng một thay đổi kiểm chứng được.
 3. Mỗi task: đọc docs + code liên quan -> test tái hiện nếu sửa logic -> sửa nhỏ -> focused tests/affected callers -> review diff -> `git diff --check` -> stage đường dẫn cụ thể -> commit -> **push ngay** -> xác minh remote -> báo SHA/test/điểm cần review. Không chỉ commit local rồi chờ cuối phase mới push.
 4. Không dùng `git add .`/`git add -A` cho toàn repo. File checklist được commit cùng task; SHA ghi trong báo cáo sau commit, tránh commit phụ chỉ để ghi SHA của chính nó.
@@ -51,10 +51,10 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** `docs(connection): finalize detailed refactor plan and phased tasks`.
 - **Kết thúc:** Commit + push; báo SHA, baseline pass/fail/not-run. Plan hiện tại chưa có SHA/task hoàn thành.
 
-### [ ] T00a — Cập nhật main và giữ quality gates
+### [x] T00a — Cập nhật main và giữ quality gates
 
-- **Files:** Merge delta `origin/main` (đã kiểm tra `4eaa333`), gồm backend parent pom và tooling testing frontend; không sửa feature frontend trong task này.
-- **Thực hiện:** Sau T00 commit docs, fetch/ghi SHA lại, mô phỏng merge; tích hợp main bằng merge commit giữ shared history. Giữ JaCoCo 0.8.12, 80% LINE/BRANCH và `haltOnFailure=true` mặc định. Không force push hay hạ ngưỡng.
+- **Files:** Merge delta `origin/main` (`6755121` khi thực thi), gồm backend parent pom, frontend-auth và tooling; chỉ nhập upstream, không triển khai feature frontend riêng.
+- **Thực hiện:** Tích hợp main bằng merge commit giữ shared history. Giữ JaCoCo 0.8.12, 80% LINE/BRANCH và mặc định false từ upstream; chạy strict verify bằng `-Djacoco.haltOnFailure=true` để báo gap. Resolve trùng version: giữ Connection V1.09 nguyên checksum; seed main mới nhập đổi tên sang V1.10, giữ nội dung. DB đã dùng seed main V1.09 cần đối chiếu lineage trước rollout, không tự repair. Không force push hay hạ ngưỡng.
 - **Acceptance:** Main SHA được ghi và là ancestor của HEAD mới; Connection hiện có không mất; không overwrite docs Discovery. Delta tooling từ main được giữ nguyên.
 - **Verification:** Diff merge + `mvnw.cmd -pl modules/connection -am test -B -ntp`; affected verify và baseline full `verify` có report gate/failed modules riêng. Không coi `test` đồng nghĩa coverage check pass.
 - **Phụ thuộc / scope:** T00; integration prerequisite, không refactor code.
@@ -389,6 +389,13 @@ Task kế tiếp: <ID, dependency đã đủ hay còn thiếu>
 Lượt review cuối đã fetch remote thành công, đọc committed source và dirty diff ở checkout Discovery, mô phỏng merge bằng merge-tree; kết quả/SHA tại plan 0.4–0.5. Đã sửa hai tài liệu và chuyển vào namespace `tasks/connection/`. Chưa chạy baseline Maven/PostgreSQL trên base tích hợp, chưa merge code, chưa commit/push. Không tick task triển khai trước.
 
 Theo yêu cầu workspace cập nhật, đã chuyển hai tài liệu này từ folder EduFit-connection sang **EduFit/tasks/connection/** và gom docs/flow/SVG Connection hiện có vào **EduFit/docs/connection/**. Chưa switch branch hoặc sửa code; checkout cũ không bị xóa. Các task sau chỉ thực hiện tại folder EduFit trên feat/connection sau bước chuẩn bị an toàn của T00.
+
+### T00a — 11/10/2026
+
+- T00 commit/push: `1fcad8f13ffee85aa64ec6075fcf512bd128fd04`.
+- Merge main `6755121` vào Connection; conflict Flyway test và duplicate version được giải quyết, seed nhập từ main thành V1.10 với nội dung nguyên vẹn. Connection V1.09 không đổi checksum.
+- Clean full verify: 133 tests, 0 fail/error/skip; migration bổ sung: 4 tests gồm clean/upgrade/manifest, đều pass. Strict verify fail tại Shared LINE 75%/BRANCH 71%; ghi baseline, không sửa module ngoài scope hoặc hạ ngưỡng.
+- Xem báo cáo Phase 0 cho lệnh/log/giới hạn lịch sử database. Chưa refactor Phase 1.
 
 ## 6. Task con bắt buộc — mỗi dòng là một commit và push
 
