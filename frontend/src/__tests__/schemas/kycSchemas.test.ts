@@ -52,9 +52,9 @@ describe("KYC Zod Schemas & File Validation Tests", () => {
   });
 
   describe("kycReviewSchema", () => {
-    it("chấp nhận phê duyệt hồ sơ (VERIFIED)", () => {
+    it("chấp nhận phê duyệt hồ sơ (APPROVED)", () => {
       const result = kycReviewSchema.safeParse({
-        decision: "VERIFIED",
+        decision: "APPROVED",
       });
       expect(result.success).toBe(true);
     });

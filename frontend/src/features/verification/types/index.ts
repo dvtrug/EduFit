@@ -11,10 +11,10 @@ export type KycReviewInput = z.infer<typeof kycReviewSchema>;
 
 export type {
   VerificationStatus,
-  CredentialItem,
+  CredentialResponse,
+  CredentialFileResponse,
   VerificationRequestDetail,
   SubmitVerificationPayload,
   PendingQueueItem,
   PendingQueueResponse,
-  ReviewKycPayload,
 } from "@/services/verification";

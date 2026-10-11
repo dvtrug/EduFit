@@ -16,7 +16,7 @@ export const credentialUploadSchema = z.object({
     .trim()
     .min(2, "Tên trường / đơn vị cấp bằng tối thiểu 2 ký tự"),
   graduationYear: z
-    .number({ invalid_type_error: "Năm tốt nghiệp phải là số" })
+    .number()
     .int("Năm tốt nghiệp phải là số nguyên")
     .min(1970, "Năm tốt nghiệp không thể trước 1970")
     .max(new Date().getFullYear() + 10, "Năm tốt nghiệp không hợp lệ"),
@@ -29,7 +29,7 @@ export const credentialUploadSchema = z.object({
 
 export const kycReviewSchema = z
   .object({
-    decision: z.enum(["VERIFIED", "REJECTED"]),
+    decision: z.enum(["APPROVED", "REJECTED"]),
     rejectionReason: z.string().trim().optional(),
   })
   .refine(
