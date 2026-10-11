@@ -1,7 +1,7 @@
 # AI + Discovery backend — checklist
 
 Nguồn: [plan.md](plan.md). Ngày khảo sát 2026-10-11; base `feat/discovery@4cc8767`.
-Cập nhật 2026-10-12: B00 và Phase 1 (B02–B04) hoàn tất. Các phase sau chưa triển khai; B01 chỉ có phần AI contract trong Phase 1.
+Cập nhật 2026-10-12: B00, Phase 1 (B02–B04) và Phase 2 (B05–B07) hoàn tất. Phase 3 trở đi chưa triển khai; B01 tổng thể vẫn pending.
 
 ## Khảo sát và contract
 
@@ -23,8 +23,8 @@ Cập nhật 2026-10-12: B00 và Phase 1 (B02–B04) hoàn tất. Các phase sau
 
 - [x] B05: AI log REQUIRES_NEW và lỗi commit được kiểm chứng/cô lập.
 - [x] B06: Quota reservation atomic, rolling 24h, concurrency/stale reservation tests.
-- [ ] B07: Matching dùng quota mới; deadline qua fake HTTP; fallback không đổi ranking.
-- [ ] Checkpoint C: PostgreSQL tests pass, không skip.
+- [x] B07: Matching dùng quota mới; deadline qua fake HTTP; fallback không đổi ranking.
+- [x] Checkpoint C: PostgreSQL tests pass, không skip.
 
 ## Đầu vào matching
 
@@ -82,3 +82,26 @@ Cập nhật 2026-10-12: B00 và Phase 1 (B02–B04) hoàn tất. Các phase sau
 - Nhánh `feat/discovery-ai`; mỗi task hoàn tất được commit và push riêng theo yêu cầu. Không thay đổi frontend/main; chưa gọi Gemini live.
 - B06 persistence slice: V1.12 + AiMatchQuota API; **3 Flyway tests + 9 app architecture checks pass, không skip**. [Schema red](b06-schema-red.log): 3 failures vì chưa có V1.12; [schema green](b06-schema-green.log): clean migration, legacy upgrade, quota backfill và rerun no-op pass. Schema/API được commit riêng trước implementation/wiring; B06 tổng thể chưa đánh dấu xong ở slice này.
 - B06 implementation hoàn tất: [quota red](b06-quota-red.log) 13 cases fail với empty-admission scaffold; [quota green](b06-quota-green.log) 13 quota + 7 logger + 9 app architecture checks pass (AI config/architecture cũng pass); [quota final](b06-quota-final.log) **15 quota cases, 0 fail/error/skip**, gồm bổ sung deferred commit và terminal-store failure. PostgreSQL thật, barrier đồng thời, Clock kiểm soát mốc 24h, actor riêng, outer rollback/restart và stale lease. Lệnh: `mvn -B -ntp -pl app -am '-Dtest=AiQuotaPostgresTest' '-Dsurefire.failIfNoSpecifiedTests=false' test`. Caller vẫn dùng đường cũ cho đến B07; không nhận B06 riêng là runtime quota đã được enforce.
+- B07 hoàn tất: [red](b07-red.log) 8 cases chưa pass (6 failures liên quan admission/outcome, 2 errors gồm async cleanup làm deadlock fixture); đã thêm await worker shutdown trong cleanup. [green](b07-green.log): **8 HTTP/PostgreSQL matching + 8 logger tests pass**, gateway/deadline unit 8 và Discovery explanation/controller 20 cũng pass. Không bật failure-ignore. Lần 10/11, gọi gateway trực tiếp, concurrent matching trong lúc HTTP còn treo, delayed mặc định 15s, trickle 600ms, I/O và HTTP 500 được kiểm chứng; toàn MatchScore/thứ tự giữ nguyên khi fallback.
+- Final module regression: **280 tests, 0 fail/error/skip, BUILD SUCCESS**. Shared 22, AI 63, IAM 32, Profile 44, Connection 13, Discovery 106. [Log](phase2-module-regression.log). Lệnh: `mvn -B -ntp -pl platform/ai,modules/discovery,modules/connection -am test`.
+- Final app regression: **82 selected tests đều pass ở kết quả cuối**, gồm architecture 9, logger 8, quota 15, matching HTTP/DB 8, CurrentUser 2, Flyway 3, DiscoveryRead 22, MatchingWorkflow 9, exception handler 6. [Lượt rộng](phase2-app-regression.log) ban đầu có 6 failures trong DiscoveryRead do assertion cũ đòi gateway không được gọi; 60 tests ngoài class đó đã pass. Đã cập nhật offline fixture trả non-model response và xác nhận gateway được gọi cho Top 1 (provider vẫn mock); [rerun cả 22 DiscoveryRead](phase2-read-regression-final.log) pass 0 fail/error/skip. Không coi lượt rộng ban đầu là BUILD SUCCESS. Các test ngoài class lỗi không bị thay đổi nên không chạy lặp lại.
+- App command: `mvn -B -ntp -pl app -am '-Dtest=AiLogPostgresTest,AiQuotaPostgresTest,AiMatchingPostgresTest,Architecture*Test,FlywayMigrationIT,DiscoveryReadPostgresTest,MatchingWorkflowPostgresTest,GlobalExceptionHandlerTest,SpringSecurityCurrentUserTest' '-Dsurefire.failIfNoSpecifiedTests=false' test`; rerun dùng `-Dtest=DiscoveryReadPostgresTest`. Cả hai dùng JDK 21, Docker PostgreSQL thật. Không cộng thêm XML FlywayMigrationScriptTest cũ ngoài selector vào số 82.
+- **362 test cases khác nhau đã pass** (280 module + 82 app); các lượt TDD/regression trùng nhau không cộng thêm.
+- Coverage unit + app integration: AI **296/318 lines = 93,08%; 111/132 branches = 84,09%**. Discovery **338/360 lines = 93,89%; 169/196 branches = 86,22%**. Gate 80% bật `jacoco.haltOnFailure=true` pass ở cả hai module, không exclude class. [Coverage log](phase2-coverage.log). Unit-only execution data không chứa các nhánh PostgreSQL chạy ở app; đã dùng [merge helper](Phase2MergeCoverage.java) + JaCoCo ExecFileLoader ghép ba file exec thật, giữ bản unit gốc ở target/jacoco-unit-phase2.exec rồi chạy report/check trên file ghép. Xem reproduction dưới đây.
+- Đã rà diff/API boundaries, SQL parameterization, trạng thái terminal/expiry và secret patterns; không phát hiện key thật. Whitespace và docs links được kiểm tra trước commit. Không sửa frontend/main, không gọi Gemini thật, không cold-start Compose/full-filter HTTP E2E. Full reactor verify vẫn chưa được nhận pass (baseline coverage Shared đã ghi ở Phase 1); B14 giữ pending.
+
+### Reproduce coverage Phase 2
+
+Chạy hai nhóm test ở trên trước. Từ backend, Java 21; JaCoCo 0.8.12 core JAR được Maven tải trong lượt test:
+
+```powershell
+$jacocoCore = Join-Path $env:USERPROFILE '.m2/repository/org/jacoco/org.jacoco.core/0.8.12/org.jacoco.core-0.8.12.jar'
+Copy-Item platform/ai/target/jacoco.exec platform/ai/target/jacoco-unit-phase2.exec
+Copy-Item modules/discovery/target/jacoco.exec modules/discovery/target/jacoco-unit-phase2.exec
+java -cp $jacocoCore ../tasks/ai-discovery/Phase2MergeCoverage.java target/phase2-merged.exec platform/ai/target/jacoco.exec modules/discovery/target/jacoco.exec app/target/jacoco.exec
+Copy-Item target/phase2-merged.exec platform/ai/target/jacoco.exec
+Copy-Item target/phase2-merged.exec modules/discovery/target/jacoco.exec
+mvn -B -ntp -pl platform/ai,modules/discovery '-Djacoco.haltOnFailure=true' jacoco:report jacoco:check@check-coverage-gate
+```
+
+`jacoco:check` đọc dataFile mặc định của module (không dùng property override của report), nên bước copy là có chủ đích. Đây là evidence coverage kết hợp unit + PostgreSQL integration, không phải tuyên bố unit-only hoặc toàn reactor verify đã đạt gate. Báo cáo local nằm trong target/site/jacoco, không commit build outputs.

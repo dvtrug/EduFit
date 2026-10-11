@@ -44,7 +44,7 @@ Discovery không dò chuỗi văn bản hoặc kiểm tra tên provider để qu
 
 Stub nhận diện explanation trước bio vì prompt matching cũng chứa “gia sư”. Sample stub không bịa kinh nghiệm, lịch hoặc rating; Discovery thay sample bằng rule-based facts. Stub vẫn đi qua gateway, log SUCCESS và cách tính quota hiện có để test workflow nhất quán. SUCCESS ở chế độ stub không chứng minh model thật đã chạy; live smoke phải xác nhận cấu hình provider và request thật.
 
-Quota hiện vẫn 10 attempts/rolling 24h theo actor, count-then-call; Phase 2 mới xử lý reservation atomic, logger commit failure và DB failure isolation. Thay đổi Phase 1 không giải quyết các race này.
+Tại thời điểm Phase 1, quota còn count-then-call. [Phase 2](ai-discovery-phase2-contract.md) thay bằng reservation atomic bắt buộc trong gateway và xử lý logger commit failure/DB failure isolation. Phase 1 riêng lẻ không giải quyết các race này; đọc contract Phase 2 cho runtime hiện tại.
 
 Backend chưa frontend-ready chỉ nhờ Phase 1: còn goal/slots APIs, Parent goal selection, full-filter CSRF/CORS/session, HTTP validation và cross-module E2E trong kế hoạch. AI bio UC1.7 chưa có consumer HTTP hoàn chỉnh.
 

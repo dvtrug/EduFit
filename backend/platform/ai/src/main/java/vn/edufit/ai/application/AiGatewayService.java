@@ -57,6 +57,7 @@ public class AiGatewayService implements AiGateway, AiUsageQuery {
   private final AiRequestLogRepository logRepository;
   private final ExecutorService providerExecutor;
   private final Duration timeout;
+  private final AiMatchQuotaService matchQuota;
 
   public AiGatewayService(
       LlmProvider llmProvider,
@@ -64,7 +65,8 @@ public class AiGatewayService implements AiGateway, AiUsageQuery {
       AiRequestLogger requestLogger,
       AiRequestLogRepository logRepository,
       @Qualifier("aiProviderExecutor") ExecutorService providerExecutor,
-      AiProperties properties) {
+      AiProperties properties,
+      AiMatchQuotaService matchQuota) {
     this.llmProvider = Objects.requireNonNull(llmProvider, "llmProvider không được phép null");
     this.outputSanitizer =
         Objects.requireNonNull(outputSanitizer, "outputSanitizer không được phép null");
@@ -74,6 +76,7 @@ public class AiGatewayService implements AiGateway, AiUsageQuery {
         Objects.requireNonNull(logRepository, "logRepository không được phép null");
     this.providerExecutor = Objects.requireNonNull(providerExecutor, "providerExecutor");
     this.timeout = properties.timeout();
+    this.matchQuota = Objects.requireNonNull(matchQuota, "matchQuota");
   }
 
   @Override
@@ -82,7 +85,15 @@ public class AiGatewayService implements AiGateway, AiUsageQuery {
 
     UUID userId = request.userId();
     String featureName = request.feature().name();
+    // Admission is enforced here, including direct gateway callers. Denials are not attempts.
+    UUID reservation =
+        request.feature() == AiFeature.MATCH_EXPLANATION
+            ? matchQuota
+                .tryReserve(userId)
+                .orElseThrow(() -> new AiUnavailableException("Matching AI quota exhausted"))
+            : null;
     long startTime = System.currentTimeMillis();
+    String outcome = "ERROR";
 
     log.debug("Bắt đầu xử lý AI request [user: {}, feature: {}]", userId, featureName);
 
@@ -94,8 +105,7 @@ public class AiGatewayService implements AiGateway, AiUsageQuery {
       String sanitizedText = outputSanitizer.sanitize(rawResult.text());
       int latency = (int) (System.currentTimeMillis() - startTime);
 
-      // 3. Ghi nhận nhật ký thành công vào CSDL với transaction độc lập (FR-05)
-      requestLogger.log(userId, featureName, "SUCCESS", latency);
+      outcome = "SUCCESS";
 
       log.info(
           "Hoàn tất AI request thành công [user: {}, feature: {}, latency: {}ms]",
@@ -109,7 +119,7 @@ public class AiGatewayService implements AiGateway, AiUsageQuery {
     } catch (AiTimeoutException ex) {
       // Cuộc gọi bị quá thời gian 15 giây (NFR-10)
       int latency = (int) (System.currentTimeMillis() - startTime);
-      requestLogger.log(userId, featureName, "TIMEOUT", latency);
+      outcome = "TIMEOUT";
       log.warn(
           "AI request bị TIMEOUT sau {}ms [user: {}, feature: {}]", latency, userId, featureName);
       throw ex;
@@ -117,7 +127,6 @@ public class AiGatewayService implements AiGateway, AiUsageQuery {
     } catch (Exception ex) {
       // Các lỗi kết nối mạng, lỗi 5xx từ nhà cung cấp hoặc dữ liệu không hợp lệ
       int latency = (int) (System.currentTimeMillis() - startTime);
-      requestLogger.log(userId, featureName, "ERROR", latency);
       log.error(
           "AI request gặp ERROR sau {}ms [user: {}, feature: {}, type: {}]",
           latency,
@@ -129,6 +138,10 @@ public class AiGatewayService implements AiGateway, AiUsageQuery {
         throw aue;
       }
       throw new AiUnavailableException("Dịch vụ AI hiện không khả dụng");
+    } finally {
+      int latency = (int) (System.currentTimeMillis() - startTime);
+      if (reservation != null) matchQuota.finish(reservation, outcome);
+      requestLogger.log(userId, featureName, outcome, latency);
     }
   }
 

@@ -1,0 +1,48 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+Merged 3 JaCoCo execution-data files into target/phase2-merged.exec
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] EduFit :: Platform :: AI Gateway                                   [jar]
+[INFO] EduFit :: Module :: Discovery                                      [jar]
+[INFO]
+[INFO] ----------------------------< vn.edufit:ai >----------------------------
+[INFO] Building EduFit :: Platform :: AI Gateway 1.0-SNAPSHOT             [1/2]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:report (default-cli) @ ai ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\ai\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Platform :: AI Gateway' with 17 classes
+[INFO]
+[INFO] --- jacoco:0.8.12:check (check-coverage-gate) @ ai ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\ai\target\jacoco.exec
+[INFO] Analyzed bundle 'ai' with 17 classes
+[INFO] All coverage checks have been met.
+[INFO]
+[INFO] ------------------------< vn.edufit:discovery >-------------------------
+[INFO] Building EduFit :: Module :: Discovery 1.0-SNAPSHOT                [2/2]
+[INFO]   from C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\discovery\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:report (default-cli) @ discovery ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\discovery\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: Discovery' with 24 classes
+[INFO]
+[INFO] --- jacoco:0.8.12:check (check-coverage-gate) @ discovery ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\discovery\target\jacoco.exec
+[INFO] Analyzed bundle 'discovery' with 24 classes
+[INFO] All coverage checks have been met.
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for EduFit :: Platform :: AI Gateway 1.0-SNAPSHOT:
+[INFO]
+[INFO] EduFit :: Platform :: AI Gateway ................... SUCCESS [  1.965 s]
+[INFO] EduFit :: Module :: Discovery ...................... SUCCESS [  1.199 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  4.555 s
+[INFO] Finished at: 2026-10-11T18:23:35Z
+[INFO] ------------------------------------------------------------------------

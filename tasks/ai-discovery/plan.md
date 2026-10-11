@@ -1,7 +1,7 @@
 # AI + Discovery: đánh giá hiện trạng và kế hoạch backend sẵn sàng tích hợp
 
 Ngày kiểm tra: 2026-10-11 (Asia/Ho_Chi_Minh). Base: `feat/discovery`, commit `4cc8767`.
-Trạng thái cập nhật 2026-10-12: **Phase 1 (B02–B04) đã triển khai; Phase 2 đang thực hiện** trên `feat/discovery-ai`, tạo từ main mới nhất lúc chuyển nhánh (`24dc2f1`). Các mục khảo sát bên dưới ghi hiện trạng trước thay đổi; kết quả thực thi mới ở mục 9 và checklist. Chỉ backend, cấu hình, test và tài liệu; không sửa frontend. Theo yêu cầu người dùng, hoàn tất/kiểm tra mỗi task rồi commit và push lên `feat/discovery-ai` trước task tiếp theo.
+Trạng thái cập nhật 2026-10-12: **Phase 1 (B02–B04) và Phase 2 (B05–B07) hoàn tất** trên `feat/discovery-ai`, tạo từ main mới nhất lúc chuyển nhánh (`24dc2f1`). Các mục khảo sát bên dưới ghi hiện trạng trước thay đổi; kết quả thực thi mới ở mục 9/10 và checklist. Chỉ backend, cấu hình, test và tài liệu; không sửa frontend. Theo yêu cầu người dùng, hoàn tất/kiểm tra mỗi task rồi commit và push lên `feat/discovery-ai` trước task tiếp theo.
 Checklist thực thi: [todo.md](todo.md). Kế hoạch Discovery cũ tại `../plan.md` và `../todo.md` được giữ nguyên như lịch sử.
 
 ## 1. Kết luận: đã có AI, nhưng chưa phải chỉ thêm API key là xong
@@ -311,3 +311,11 @@ Theo yêu cầu thực hiện Phase 1, đã hoàn thành B02–B04. B01 mới ch
 - Gateway truyền provenance. Stub không bịa facts; Discovery dùng breakdown thực và `aiGenerated=false` với stub/blank response. Ranking/scorer và quota hiện tại không đổi.
 - Contract tests dùng HTTP server loopback thật, không gọi Google. Có TDD red/green logs; `phase1-stub-red.log` chủ động dùng test-failure-ignore để thu cả hai module nên phải đọc failure counts, không suy từ BUILD SUCCESS.
 - Kết quả và giới hạn coverage ở [checklist](todo.md). Chưa live Gemini, chưa cold-start Compose hoặc full-filter security E2E; Phase 2 trở đi còn nguyên. Không sửa frontend, không commit/push/merge.
+
+## 10. Thực thi Phase 2 — 2026-10-12
+
+- B05: bắt lỗi audit ở ngoài toàn REQUIRES_NEW acquisition/flush/commit; không tạo ERROR audit thứ hai. Usage read legacy cũng tách transaction. PostgreSQL deferred-trigger và outer-rollback tests pass; commit/push `0953ad6`.
+- B06 chia persistence và implementation: V1.12 backfill attempts cũ, quota port (`2888e16`), rồi actor-row locking/lease/Clock (`722d847`). 15 quota PostgreSQL cases pass; không giữ actor lock khi gọi HTTP. Migration cũ giữ nguyên checksum.
+- B07: gateway bắt buộc reserve MATCH_EXPLANATION; Discovery bỏ count-then-call. Một terminal outcome/attempt; request bị deny không gọi provider. Default 15s/trickle/I/O/500 và matching concurrency được kiểm chứng bằng Gemini adapter + HTTP loopback + PostgreSQL, score/ranking giữ nguyên.
+- Final evidence: 280 module + 82 app cases pass, không skip; AI/Discovery coverage ghép unit/integration đạt gate 80%. Một lượt rộng có 6 assertions DiscoveryRead cũ fail; sau sửa fixture, cả class 22 tests pass. Logs, lệnh, số coverage và giới hạn đầy đủ ở [checklist](todo.md), semantics ở [Phase 2 contract](../../docs/ai-discovery-phase2-contract.md).
+- Phase 3+ và B01 tổng thể vẫn pending; không tuyên bố frontend-ready, live Gemini, full-filter security hoặc whole-reactor verify. Không sửa frontend/main, không merge.

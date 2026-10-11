@@ -5,6 +5,12 @@ Tables preserve the original successful T12 measurement. Later regression runs
 rerun the same fixtures and can produce different latency/plan timings; Surefire
 reports are overwritten on each run, not a permanent copy of this snapshot.
 
+Phase 2 AI update (2026-10-12): the read/performance fixture mocks AiGateway and
+returns non-model output. Top 1 now calls that gateway; real quota admission is
+tested separately in AiMatchingPostgresTest. The timings/query counts below do
+not include reservation/outcome/audit transactions or provider latency; they are
+not a latency guarantee for the complete Phase 2 matching request.
+
 ## Scope and Reproduction
 
 Run on 2026-10-10, branch `feat/discovery`, T12. Test source:

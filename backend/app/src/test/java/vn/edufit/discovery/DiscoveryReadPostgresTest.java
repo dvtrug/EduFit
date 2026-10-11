@@ -37,7 +37,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.*;
 import vn.edufit.ai.api.AiGateway;
-import vn.edufit.ai.api.AiUsageQuery;
 import vn.edufit.connection.api.ConnectionFacade;
 import vn.edufit.discovery.application.service.*;
 import vn.edufit.discovery.domain.model.*;
@@ -87,6 +86,7 @@ class DiscoveryReadPostgresTest {
     mvc = MockMvcBuilders.standaloneSetup(new DiscoveryController(queries, matching, provider))
         .setControllerAdvice(new GlobalExceptionHandler()).build();
     reset(ai);
+    when(ai.complete(any())).thenReturn(new vn.edufit.ai.api.AiResponse("Offline fixture", 0, null, false));
     clearSql();
   }
 
@@ -117,7 +117,7 @@ class DiscoveryReadPostgresTest {
     assertEquals(5, matching.match(actor, GOAL, 5).size());
     assertEquals(8, queryCount(), "Goal/student/slots, catalog, bounded candidates/subjects/slots, insert log");
     assertDetached();
-    verifyNoInteractions(ai);
+    verify(ai).complete(any()); // Gateway owns admission; this fixture performs no model call.
   }
 
   @Test
@@ -236,7 +236,7 @@ class DiscoveryReadPostgresTest {
         () -> profile.findVerifiedCandidatesBySubject(new TutorCandidateCriteria(1, "ONLINE", "Hanoi")));
     var candidates = profile.findVerifiedCandidatesBySubject(new TutorCandidateCriteria(1, "ONLINE", "Hanoi"));
     measure("scorer-only", count, 0, () -> rank(candidates));
-    verifyNoInteractions(ai);
+    verify(ai, times(35)).complete(any()); // Five warm-ups plus thirty matching samples.
     if (count == 240) {
       explain("search", "select t.* from tutor_profile t where t.status='VERIFIED' order by t.price_per_session desc limit 10");
       explain("candidate", """
@@ -360,7 +360,6 @@ class DiscoveryReadPostgresTest {
     @Bean JpaTransactionManager transactionManager(EntityManagerFactory factory) { return new JpaTransactionManager(factory); }
     @Bean ConnectionFacade connection() { return mock(ConnectionFacade.class); }
     @Bean AiGateway ai() { return mock(AiGateway.class); }
-    @Bean AiUsageQuery usage() { return (user, feature, since) -> 10L; }
     @Bean CurrentUser actor() {
       var user = mock(CurrentUser.class);
       when(user.getUserId()).thenReturn(STUDENT_USER);

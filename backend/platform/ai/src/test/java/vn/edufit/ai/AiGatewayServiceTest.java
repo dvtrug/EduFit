@@ -24,6 +24,7 @@ import vn.edufit.ai.api.AiResponse;
 import vn.edufit.ai.api.AiTimeoutException;
 import vn.edufit.ai.api.AiUnavailableException;
 import vn.edufit.ai.application.AiGatewayService;
+import vn.edufit.ai.application.AiMatchQuotaService;
 import vn.edufit.ai.application.AiRequestLogger;
 import vn.edufit.ai.application.OutputSanitizer;
 import vn.edufit.ai.infra.client.LlmProvider;
@@ -38,6 +39,7 @@ class AiGatewayServiceTest {
   @Mock private AiRequestLogger requestLogger;
 
   @Mock private AiRequestLogRepository logRepository;
+  @Mock private AiMatchQuotaService matchQuota;
 
   private final OutputSanitizer outputSanitizer = new OutputSanitizer();
 
@@ -54,7 +56,8 @@ class AiGatewayServiceTest {
             requestLogger,
             logRepository,
             executor,
-            new vn.edufit.ai.infra.config.AiProperties(null, null, null));
+            new vn.edufit.ai.infra.config.AiProperties(null, null, null),
+            matchQuota);
   }
 
   @AfterEach
@@ -85,6 +88,7 @@ class AiGatewayServiceTest {
   @Test
   @DisplayName("Khi cuộc gọi bị quá 15 giây (NFR-10), ném AiTimeoutException và ghi log TIMEOUT")
   void shouldHandleTimeoutException() {
+    when(matchQuota.tryReserve(any())).thenReturn(java.util.Optional.of(UUID.randomUUID()));
     UUID userId = UUID.randomUUID();
     AiRequest request = AiRequest.of(userId, AiFeature.MATCH_EXPLANATION, "System", "Match prompt");
 
@@ -97,6 +101,21 @@ class AiGatewayServiceTest {
 
     // Xác nhận đã ghi log TIMEOUT vào CSDL (FR-05)
     verify(requestLogger).log(eq(userId), eq("MATCH_EXPLANATION"), eq("TIMEOUT"), anyInt());
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+  void deniedOrUnavailableQuotaNeverCallsProviderOrWritesAnAttemptLog(boolean unavailable) {
+    if (unavailable)
+      when(matchQuota.tryReserve(any())).thenThrow(new AiUnavailableException("Store unavailable"));
+    else when(matchQuota.tryReserve(any())).thenReturn(java.util.Optional.empty());
+    assertThatThrownBy(
+            () ->
+                gatewayService.complete(
+                    AiRequest.of(
+                        UUID.randomUUID(), AiFeature.MATCH_EXPLANATION, "System", "Prompt")))
+        .isInstanceOf(AiUnavailableException.class);
+    org.mockito.Mockito.verifyNoInteractions(llmProvider, requestLogger);
   }
 
   @Test

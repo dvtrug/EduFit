@@ -1,6 +1,6 @@
 # AI + Discovery — Phase 2
 
-Nhánh thực thi: `feat/discovery-ai`, base `origin/main@24dc2f1`. Phạm vi B05–B07 trong [plan](../tasks/ai-discovery/plan.md); frontend và main không thay đổi. Tiếp nối [Phase 1](ai-discovery-backend-contract.md).
+Hoàn tất 2026-10-12. Nhánh thực thi: `feat/discovery-ai`, base `origin/main@24dc2f1`. Phạm vi B05–B07 trong [plan](../tasks/ai-discovery/plan.md); frontend và main không thay đổi. Tiếp nối [Phase 1](ai-discovery-backend-contract.md).
 
 ## B05 — Audit failure isolation
 
@@ -31,3 +31,13 @@ UTC Clock được inject (`aiQuotaClock`); timestamp chuẩn microsecond của 
 Reservation lỗi tại insert/commit -> rollback, safe AiUnavailableException, không cho phép gọi provider. Finish bị lỗi DB -> cảnh báo kỹ thuật và false; reservation vẫn tồn tại/đếm quota, lease sẽ hết hạn. PostgreSQL lock timeout 2s, statement timeout 3s và transaction timeout 5s giới hạn contention; thời gian lấy connection từ pool do cấu hình pool quản lý. Chưa coi đây là deadline tuyệt đối của HTTP request.
 
 `AiQuotaPostgresTest` kiểm tra race khi đang có 9 lượt, race khởi tạo gate với 12 callers, exact 24h, actor Student/Parent riêng, outer rollback/service restart, lease expiry/late result, lỗi insert/deferred commit và store unavailable. B07 mới bỏ precheck Discovery và bắt buộc reserve trong gateway.
+
+## B07 — Gateway admission và deadline
+
+`AiGatewayService.complete` bắt buộc reserve trước mọi MATCH_EXPLANATION call, kể cả caller gọi thẳng Java gateway. Quota exhausted/unavailable -> safe AiUnavailableException trước provider, không có terminal audit mới cho request bị từ chối. Discovery chỉ gửi AiRequest với actor đã được matching xác thực; không giữ precheck AiUsageQuery hoặc đường complete bỏ qua quota. TUTOR_BIO không nhận BR-25. AiUsageQuery vẫn là thống kê log hoàn tất, không dùng để quyết định matching admission.
+
+Mỗi attempt được nhận có một outcome SUCCESS/ERROR/TIMEOUT. Finally ghi terminal reservation rồi audit qua các transaction độc lập; lỗi một store không hoàn quota hoặc tạo ERROR audit thứ hai. Nếu toàn backend crash trước finish, reservation vẫn đếm và lease hết hạn. Khi DB audit lỗi nhưng quota store còn hoạt động, lần gọi vẫn có kết quả và lượt vẫn bị tiêu. Các store này không phải transaction phân tán với HTTP; không bảo đảm có audit row nếu DB không ghi được.
+
+Deadline provider mặc định 15s bắt đầu sau admission và giới hạn toàn Future chờ HTTP, gồm response trickle. Không phải cam kết tổng HTTP matching <=15s: quota acquisition, outer matching transaction, pool và ghi outcome/audit có overhead riêng. Hủy worker best-effort; kết quả muộn không được thread gọi lấy để thay TIMEOUT hoặc ghi log thêm. Production quota clock/default lease và gateway timeout lấy cùng AiProperties.
+
+`AiMatchingPostgresTest` dùng scorer/ranking và matching transaction thật, repositories/audit/quota thật, Gemini REST adapter tới HTTP server loopback. ProfileFacade được mock để cấp hai tutor/goal fixture; không nhận đây là full-filter/session hoặc toàn luồng Profile HTTP. Test so sánh toàn MatchScore/thứ tự trước/sau hết quota, lần 10/11, gateway direct-call, concurrent matching khi HTTP chưa trả, quota-store unavailable, delayed 15s, trickle 600ms, I/O và HTTP 500. Không gọi Google hoặc cần key thật.

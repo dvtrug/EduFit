@@ -84,7 +84,6 @@ class DiscoveryControllerTest {
   @ValueSource(strings = {"SUCCESS", "TIMEOUT", "UNAVAILABLE", "QUOTA"})
   void aiFailuresAndQuotaStillReturnSuccessfulMatchingHttpResponse(String outcome) throws Exception {
     var gateway = org.mockito.Mockito.mock(vn.edufit.ai.api.AiGateway.class);
-    var usage = org.mockito.Mockito.mock(vn.edufit.ai.api.AiUsageQuery.class);
     UUID userId = UUID.randomUUID(), goalId = UUID.randomUUID();
     when(currentUserProvider.getIfAvailable()).thenReturn(currentUser);
     when(currentUser.getUserId()).thenReturn(userId);
@@ -92,15 +91,13 @@ class DiscoveryControllerTest {
     when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(new LearningGoalDiscoveryDto(
         goalId, UUID.randomUUID(), userId, 1, 2, "ONLINE", "Hanoi", 0L, 300000L, "ACTIVE", profile.availabilitySlots())));
     when(profileFacade.findVerifiedCandidatesBySubject(any())).thenReturn(List.of(profile));
-    when(usage.countRequestsSince(eq(userId), eq(vn.edufit.ai.api.AiFeature.MATCH_EXPLANATION), any()))
-        .thenReturn(outcome.equals("QUOTA") ? 10L : 9L);
     if (outcome.equals("SUCCESS")) {
       when(gateway.complete(any())).thenReturn(new vn.edufit.ai.api.AiResponse("Grounded AI", 1, 1));
-    } else if (!outcome.equals("QUOTA")) {
+    } else {
       when(gateway.complete(any())).thenThrow(outcome.equals("TIMEOUT")
           ? new vn.edufit.ai.api.AiTimeoutException("Deadline") : new vn.edufit.ai.api.AiUnavailableException("Offline"));
     }
-    mvc(new MatchExplanationService(gateway, usage))
+    mvc(new MatchExplanationService(gateway))
         .perform(post("/api/v1/discovery/match").contentType(MediaType.APPLICATION_JSON)
             .content("{\"goalId\":\"" + goalId + "\"}"))
         .andExpect(status().isOk())
@@ -109,8 +106,7 @@ class DiscoveryControllerTest {
         .andExpect(jsonPath("$.data[0].aiGenerated").value(outcome.equals("SUCCESS")))
         .andExpect(jsonPath("$.data[0].explanation").isNotEmpty());
     verify(logRepository).save(any());
-    if (outcome.equals("QUOTA")) verifyNoInteractions(gateway);
-    else verify(gateway).complete(any());
+    verify(gateway).complete(any());
   }
 
   @Test

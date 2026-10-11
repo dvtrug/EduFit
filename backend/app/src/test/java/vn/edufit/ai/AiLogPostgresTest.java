@@ -154,13 +154,13 @@ class AiLogPostgresTest {
   }
 
   @Test
-  void unavailableUsageStoreDoesNotPoisonOuterTransaction() {
-    jdbc.execute("alter table ai_request_log rename to unavailable_ai_log");
+  void unavailableQuotaStoreDoesNotPoisonOuterTransaction() {
+    jdbc.execute("alter table ai_match_reservation rename to unavailable_reservation");
     try {
       new TransactionTemplate(manager)
           .executeWithoutResult(
               tx -> {
-                var explanations = new MatchExplanationService(gateway, gateway);
+                var explanations = new MatchExplanationService(gateway);
                 var result = explanations.explainTopMatch(actor, score(), tutor());
                 assertThat(result.aiGenerated()).isFalse();
                 assertThat(result.text()).isEqualTo(explanations.ruleBased(score()));
@@ -168,6 +168,24 @@ class AiLogPostgresTest {
                 jdbc.update("update account set full_name='Usage fallback' where user_id=?", actor);
               });
       assertThat(provider.calls).hasValue(0);
+    } finally {
+      jdbc.execute("alter table unavailable_reservation rename to ai_match_reservation");
+    }
+  }
+
+  @Test
+  void legacyAuditReadFailureStillHasAnIsolatedTransaction() {
+    jdbc.execute("alter table ai_request_log rename to unavailable_ai_log");
+    try {
+      new TransactionTemplate(manager)
+          .executeWithoutResult(
+              tx -> {
+                assertThatThrownBy(
+                        () -> gateway.countRequestsSince(actor, AiFeature.TUTOR_BIO, Instant.EPOCH))
+                    .isInstanceOf(RuntimeException.class);
+                assertThat(tx.isRollbackOnly()).isFalse();
+                jdbc.update("update account set full_name='Audit fallback' where user_id=?", actor);
+              });
     } finally {
       jdbc.execute("alter table unavailable_ai_log rename to ai_request_log");
     }
@@ -228,7 +246,13 @@ class AiLogPostgresTest {
   @Configuration
   @EnableTransactionManagement(proxyTargetClass = true)
   @EnableJpaRepositories("vn.edufit.ai.infra.persistence")
-  @Import({AiGatewayService.class, AiRequestLogger.class, OutputSanitizer.class})
+  @Import({
+    AiGatewayService.class,
+    AiRequestLogger.class,
+    OutputSanitizer.class,
+    AiMatchQuotaService.class,
+    vn.edufit.ai.infra.persistence.AiMatchReservationRepository.class
+  })
   static class Config {
     @Bean
     DataSource dataSource() {
@@ -262,6 +286,16 @@ class AiLogPostgresTest {
     @Bean
     AiProperties properties() {
       return new AiProperties("stub", Duration.ofSeconds(15), null);
+    }
+
+    @Bean
+    java.time.Clock aiQuotaClock() {
+      return java.time.Clock.systemUTC();
+    }
+
+    @Bean
+    JdbcTemplate jdbcTemplate(DataSource source) {
+      return new JdbcTemplate(source);
     }
 
     @Bean(destroyMethod = "shutdownNow")

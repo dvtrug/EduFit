@@ -156,8 +156,9 @@ round do implementation tổng hợp giá trị chưa round trước. Ví dụ p
 }
 ```
 
-AI không tính điểm/xếp hạng. Top 1 kiểm tra quota MATCH_EXPLANATION 10 lần/rolling
-24h theo actor; hết quota, lỗi usage/gateway hoặc timeout dùng fallback, vẫn 200
+AI không tính điểm/xếp hạng. Top 1 gọi gateway; gateway bắt buộc reserve quota
+MATCH_EXPLANATION 10 attempts/rolling 24h theo actor bằng transaction atomic.
+Hết quota, lỗi quota store/gateway hoặc timeout dùng fallback, vẫn 200
 **nếu phần DB/matching còn lại thành công**. Không có eligible candidate trả
 `data: []`, không gọi AI nhưng vẫn ghi log/event. Ít hơn topN tutor thì trả ít hơn,
 không padding. Top N chỉ đúng trong candidate set bounded mặc định 200, không
@@ -167,6 +168,11 @@ Từ Phase 1 AI (2026-10-12), offline `AI_PROVIDER=stub` trả explanation theo 
 và `aiGenerated=false`. Flag true đòi kết quả model-backed hợp lệ; response rỗng,
 bị chặn hoặc bị cắt cũng dùng fallback. HTTP fields/routes không đổi. Cấu hình,
 provenance và lỗi provider xem [AI provider contract](ai-discovery-backend-contract.md).
+
+Phase 2: reservation commit trước HTTP, không giữ actor lock khi chờ AI. Attempt
+error/timeout/stale vẫn tính quota; bị từ chối không gọi provider hoặc ghi attempt
+log mới. Audit/terminal update lỗi không xóa reservation và không làm mất kết quả.
+Xem [quota, transaction và deadline contract](ai-discovery-phase2-contract.md).
 
 ## Lỗi đã định nghĩa trong code
 

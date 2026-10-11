@@ -24,7 +24,7 @@ Discovery phục vụ tìm kiếm gia sư đã xác minh, xem hồ sơ công kha
 | `application/service/DiscoveryQueryService` | Tìm kiếm và xem chi tiết qua Profile facade. |
 | `application/service/DiscoveryFacadeImpl` | Cửa vào nội bộ dùng chung matching service; trả public summary, không phụ thuộc web DTO. |
 | `application/service/TutorMatchingService` | Kiểm tra quyền/goal, chuyển DTO thành candidate, xếp hạng, ghi log. |
-| `application/service/MatchExplanationService` | Kiểm tra quota AI, gọi gateway hoặc dùng câu giải thích theo quy tắc. |
+| `application/service/MatchExplanationService` | Gọi gateway (gateway enforce quota atomic) hoặc dùng câu giải thích theo quy tắc. |
 | `application/dto/TutorMatchResult` | Kết quả nội bộ gồm score, Profile read model, explanation và cờ AI; controller/facade map sang DTO riêng. |
 | `domain/model`, `domain/policy/MatchScorer`, `domain/policy/MatchWeights` | Thuật toán 5 yếu tố Java thuần, không phụ thuộc Spring/JPA. |
 | `infra/persistence/entity/MatchingRunLogEntity`, `infra/persistence/repository/MatchingRunLogRepository` | Entity và repository của lượt match. |
@@ -117,9 +117,9 @@ AiResponse. Stub luôn false; MatchExplanationService dùng ruleBased(score) và
 text và phân loại timeout cả khi đọc body. [AI provider contract](ai-discovery-backend-contract.md)
 ghi cấu hình, schema/exception và giới hạn kiểm chứng; công thức ranking không đổi.
 
-Chỉ kết quả đầu tiên gọi AI (`MATCH_EXPLANATION`); kiểm tra quota 10 yêu cầu trong 24 giờ gần nhất theo actor qua `AiUsageQuery` (Parent dùng quota của Parent). Các kết quả còn lại dùng giải thích theo điểm; không có candidate thì không gọi AI. Prompt chỉ gửi mode, học phí và 5 điểm thành phần/tổng, không gửi tên, email, điện thoại hay bio. AI lỗi, timeout, lỗi tra cứu usage hoặc hết quota đều trả fallback với `aiGenerated=false`, HTTP matching vẫn 200 nếu phần DB/matching còn lại thành công. Quota hiện là count-then-call, chưa phải cơ chế đặt chỗ quota nguyên tử cho request đồng thời.
+Chỉ kết quả đầu tiên gọi gateway (`MATCH_EXPLANATION`); gateway bắt buộc commit reservation 10 attempts/rolling 24h theo actor qua `AiMatchQuota` (Parent dùng quota của Parent). Discovery không còn count-then-call qua AiUsageQuery. Transaction quota khóa dòng actor rồi kết thúc trước HTTP, bảo vệ cả caller gọi thẳng gateway. Các trạng thái SUCCESS/ERROR/TIMEOUT/RESERVED/EXPIRED đều tính theo thời điểm reserve; stale lease không hoàn lượt. Các kết quả còn lại dùng giải thích theo điểm; không có candidate thì không gọi AI. Prompt chỉ gửi mode, học phí và 5 điểm thành phần/tổng, không gửi tên, email, điện thoại hay bio. AI lỗi, timeout, lỗi quota store hoặc hết quota đều trả fallback với `aiGenerated=false`, HTTP matching vẫn 200 nếu phần DB/matching còn lại thành công. [Phase 2 contract](ai-discovery-phase2-contract.md) ghi chi tiết migration/backfill, lease và failure isolation.
 
-AI Gateway giới hạn thời gian chờ provider bằng `edufit.ai.timeout` (cấu hình ứng dụng/mặc định 15s), ngoài connect/read socket timeout. Provider chạy trên executor virtual thread do Spring quản lý; quá hạn hủy future và ném `AiTimeoutException`, chỉ ghi TIMEOUT một lần ở thread gọi. Hủy là best-effort: provider phải hỗ trợ interrupt hoặc tự kết thúc theo socket timeout; deadline không giới hạn thời gian DB ghi AI audit. Test runtime dùng provider giả chậm với timeout 100ms, không gọi LLM thật.
+AI Gateway giới hạn thời gian chờ provider bằng `edufit.ai.timeout` (cấu hình ứng dụng/mặc định 15s), ngoài connect/read socket timeout. Provider chạy trên executor virtual thread do Spring quản lý; quá hạn hủy future và ném `AiTimeoutException`, chỉ ghi terminal outcome một lần ở thread gọi. Hủy là best-effort: provider phải hỗ trợ interrupt hoặc tự kết thúc theo socket timeout; deadline không giới hạn quota/pool/DB ghi AI audit hoặc toàn HTTP request. AiRequestLogger bắt cả acquisition/flush/commit failure bên ngoài REQUIRES_NEW; audit lỗi không thử ghi ERROR thứ hai và outer rollback không xóa log đã commit. Test Phase 2 dùng HTTP loopback delayed 15s/trickle/I/O với Gemini adapter và PostgreSQL thật, không gọi LLM thật.
 
 ### Transaction, log và event
 
