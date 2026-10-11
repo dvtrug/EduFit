@@ -14,6 +14,13 @@ import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import vn.edufit.connection.application.service.LinkInvitationService;
+import vn.edufit.connection.application.service.ParentStudentLinkService;
+import vn.edufit.shared.auth.CurrentUser;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -34,14 +41,73 @@ import vn.edufit.shared.audit.AuditSink;
 import vn.edufit.shared.notification.NotificationSink;
 
 @Testcontainers(disabledWithoutDocker = true)
-@SpringJUnitConfig(ConnectionLockPostgresTest.Config.class)
+@SpringJUnitConfig(ConnectionTransactionPostgresTest.Config.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-class ConnectionLockPostgresTest {
+class ConnectionTransactionPostgresTest {
   @Container static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine");
+  @Autowired LinkInvitationService invitations;
+  @Autowired ParentStudentLinkService links;
+  @Autowired DataSource source;
+  @Autowired IamFacade iam;
+  @Autowired AuditSink audit;
+  @Autowired NotificationSink notifications;
   @Autowired ConnectionLock lock;
   @Autowired InvitationQuotaService quota;
   @Autowired JpaTransactionManager transactionManager;
   @jakarta.persistence.PersistenceContext EntityManager em;
+
+  @BeforeEach void resetCollaborators() { reset(iam, audit, notifications); }
+
+  private CurrentUser actor(UUID id, String role) {
+    CurrentUser actor = mock(CurrentUser.class);
+    lenient().when(actor.getUserId()).thenReturn(id);
+    when(actor.hasRole(anyString())).thenAnswer(i -> role.equals(i.getArgument(0)));
+    return actor;
+  }
+
+  private UUID account(String role) {
+    UUID id = UUID.randomUUID();
+    new JdbcTemplate(source).update("insert into account(user_id,email,password_hash,full_name,role) values (?,?,?,?,?)",
+        id, id + "@test.invalid", "test-only", "Transaction fixture", role);
+    return id;
+  }
+
+  @Test void invitationEntryPointCommitsQuotaInItsOwnTransaction() {
+    UUID parent = account("PARENT");
+    when(iam.findUserSummaryByEmail("missing@test.invalid")).thenAnswer(call -> {
+      assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
+      return Optional.empty();
+    });
+    assertTrue(invitations.invite(actor(parent, "PARENT"), "missing@test.invalid"));
+    assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
+    assertEquals(1, new JdbcTemplate(source).queryForObject(
+        "select attempts from connection_invite_quota where user_id = ?", Integer.class, parent));
+    verifyNoInteractions(notifications);
+  }
+
+  @Test void revokeRollsBackOnAuditFailureThenCommitsOnSuccess() {
+    var jdbc = new JdbcTemplate(source);
+    UUID parent = account("PARENT"), studentUser = account("STUDENT"), admin = account("ADMIN");
+    UUID student = UUID.randomUUID(), link = UUID.randomUUID();
+    jdbc.update("insert into student_profile(student_id,user_id) values (?,?)", student, studentUser);
+    jdbc.update("insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at) values (?,?,?,now())", link, parent, student);
+    doAnswer(call -> {
+      assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
+      throw new IllegalStateException("injected audit failure");
+    }).when(audit).record(admin, "LINK_REVOKED", "PARENT_STUDENT_LINK", link, "reason");
+    assertThrows(IllegalStateException.class, () -> links.revokeLink(actor(admin, "ADMIN"), link, "reason"));
+    assertEquals("CONFIRMED", jdbc.queryForObject("select status from parent_student_link where link_id = ?", String.class, link));
+    verifyNoInteractions(notifications);
+    reset(audit);
+    doAnswer(call -> {
+      assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
+      return null;
+    }).when(notifications).notify(eq(parent), eq(student), eq("LINK_REVOKED"), anyString(), anyString(), eq("PARENT_STUDENT_LINK"), eq(link));
+    links.revokeLink(actor(admin, "ADMIN"), link, "reason");
+    assertEquals("REVOKED", jdbc.queryForObject("select status from parent_student_link where link_id = ?", String.class, link));
+    verify(audit).record(admin, "LINK_REVOKED", "PARENT_STUDENT_LINK", link, "reason");
+    verify(notifications).notify(eq(parent), eq(student), eq("LINK_REVOKED"), anyString(), anyString(), eq("PARENT_STUDENT_LINK"), eq(link));
+  }
 
   @Test void adaptersRequireAnExistingTransaction() {
     assertThrows(IllegalTransactionStateException.class, () -> lock.lockStudent(UUID.randomUUID()));

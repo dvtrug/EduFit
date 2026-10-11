@@ -22,6 +22,8 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import vn.edufit.connection.application.ConnectionService;
+import vn.edufit.connection.application.service.LinkInvitationService;
+import vn.edufit.connection.application.service.ParentStudentLinkService;
 import vn.edufit.connection.application.dto.*;
 import vn.edufit.profile.api.dto.ConnectionGoalDto;
 import vn.edufit.iam.api.AccountRole;
@@ -34,6 +36,8 @@ import vn.edufit.shared.auth.CurrentUser;
 
 class ConnectionControllerTest {
   private final ConnectionService service = mock(ConnectionService.class);
+  private final LinkInvitationService invitationService = mock(LinkInvitationService.class);
+  private final ParentStudentLinkService linkService = mock(ParentStudentLinkService.class);
   private final ProfileFacade profile = mock(ProfileFacade.class);
   private final IamFacade iam = mock(IamFacade.class);
   private final CurrentUser actor = mock(CurrentUser.class);
@@ -45,7 +49,7 @@ class ConnectionControllerTest {
   void setup() {
     @SuppressWarnings("unchecked") ObjectProvider<CurrentUser> users = mock(ObjectProvider.class);
     when(users.getObject()).thenReturn(actor);
-    mvc = MockMvcBuilders.standaloneSetup(new ConnectionController(service, users, profile, iam)).build();
+    mvc = MockMvcBuilders.standaloneSetup(new ConnectionController(service, invitationService, linkService, users, profile, iam)).build();
   }
 
   @ParameterizedTest
@@ -57,7 +61,7 @@ class ConnectionControllerTest {
     mvc.perform(post(BASE + url).contentType(MediaType.APPLICATION_JSON).content(body))
         .andExpect(status().isBadRequest())
         .andExpect(result -> assertInstanceOf(MethodArgumentNotValidException.class, result.getResolvedException()));
-    verifyNoInteractions(service);
+    verifyNoInteractions(service, invitationService, linkService);
   }
 
   private static final UUID UUID_ID = UUID.fromString(ID);
@@ -82,38 +86,38 @@ class ConnectionControllerTest {
   }
 
   @Test void inviteKeepsGenericNullEnvelope() throws Exception {
-    when(service.invite(actor, "sample@example.test")).thenReturn(true);
+    when(invitationService.invite(actor, "sample@example.test")).thenReturn(true);
     data(mvc.perform(post(BASE + "/parent-student/invite").contentType(MediaType.APPLICATION_JSON)
         .content("{\"targetEmail\":\"sample@example.test\"}")), "null");
   }
 
   @Test void invitationsKeepExactArrayShape() throws Exception {
-    when(service.invitations(actor)).thenReturn(List.of(new InvitationResult(UUID_ID, UUID_ID, UUID_ID, "PENDING", NOW, EXPIRES)));
+    when(invitationService.invitations(actor)).thenReturn(List.of(new InvitationResult(UUID_ID, UUID_ID, UUID_ID, "PENDING", NOW, EXPIRES)));
     data(mvc.perform(get(BASE + "/parent-student/invitations")),
         "[{\"invitationId\":\"%s\",\"inviterUserId\":\"%s\",\"invitedUserId\":\"%s\",\"status\":\"PENDING\",\"createdAt\":\"2026-10-11T03:00:00Z\",\"expiresAt\":\"2026-10-18T03:00:00Z\"}]".formatted(ID, ID, ID));
   }
 
   @ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
   void invitationResponseKeepsAcceptAndDeclineShapes(boolean accept) throws Exception {
-    when(service.respondInvitation(actor, UUID_ID, accept)).thenReturn(accept ? new ParentStudentLinkResult(UUID_ID, UUID_ID, UUID_ID, "CONFIRMED", NOW) : null);
+    when(invitationService.respondInvitation(actor, UUID_ID, accept)).thenReturn(accept ? new ParentStudentLinkResult(UUID_ID, UUID_ID, UUID_ID, "CONFIRMED", NOW) : null);
     data(mvc.perform(post(BASE + "/parent-student/respond").contentType(MediaType.APPLICATION_JSON)
         .content("{\"invitationId\":\"%s\",\"accept\":%s}".formatted(ID, accept))), accept ? LINK : "null");
-    verify(service).respondInvitation(actor, UUID_ID, accept);
+    verify(invitationService).respondInvitation(actor, UUID_ID, accept);
   }
 
   @Test void withdrawKeepsNullEnvelope() throws Exception {
     data(mvc.perform(post(BASE + "/parent-student/invitations/" + ID + "/withdraw")), "null");
-    verify(service).withdrawInvitation(actor, UUID_ID);
+    verify(invitationService).withdrawInvitation(actor, UUID_ID);
   }
 
   @Test void linksKeepExactArrayShape() throws Exception {
-    when(service.links(actor)).thenReturn(List.of(new ParentStudentLinkResult(UUID_ID, UUID_ID, UUID_ID, "CONFIRMED", NOW)));
+    when(linkService.links(actor)).thenReturn(List.of(new ParentStudentLinkResult(UUID_ID, UUID_ID, UUID_ID, "CONFIRMED", NOW)));
     data(mvc.perform(get(BASE + "/parent-student/links")), "[" + LINK + "]");
   }
 
   @Test void revokeKeepsOptionalBodyAndNullEnvelope() throws Exception {
     data(mvc.perform(delete(BASE + "/parent-student/links/" + ID)), "null");
-    verify(service).revokeLink(actor, UUID_ID, null);
+    verify(linkService).revokeLink(actor, UUID_ID, null);
   }
 
   @Test void createRequestKeepsShapeAndInputs() throws Exception {

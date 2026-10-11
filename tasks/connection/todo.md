@@ -125,7 +125,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** `refactor(connection): isolate transactional locking and invitation quota`.
 - **Kết thúc:** Commit + push + lock order evidence.
 
-### [ ] T06 — Tách invitation/link use cases khỏi service lớn
+### [x] T06 — Tách invitation/link use cases khỏi service lớn
 
 - **Files:** `LinkInvitationService`, `ParentStudentLinkService`, controller wiring, service cũ và tests tương ứng.
 - **Thực hiện:** Move invite/respond/withdraw/list links/revoke vào đúng service; authorization giữ cùng entry point; liên kết query qua DTO đã có. Không đồng thời đổi business rules.

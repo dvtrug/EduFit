@@ -6,6 +6,8 @@ import java.util.UUID;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.bind.annotation.*;
 import vn.edufit.connection.application.ConnectionService;
+import vn.edufit.connection.application.service.LinkInvitationService;
+import vn.edufit.connection.application.service.ParentStudentLinkService;
 import vn.edufit.connection.application.dto.*;
 import vn.edufit.connection.web.request.*;
 import vn.edufit.connection.web.response.*;
@@ -23,13 +25,17 @@ import vn.edufit.shared.response.ApiResponse;
 @RequestMapping("/api/v1/connections")
 public class ConnectionController {
   private final ConnectionService service;
+  private final LinkInvitationService invitationService;
+  private final ParentStudentLinkService linkService;
   private final ObjectProvider<CurrentUser> users;
   private final ProfileFacade profile;
   private final IamFacade iam;
 
-  public ConnectionController(ConnectionService service, ObjectProvider<CurrentUser> users,
+  public ConnectionController(ConnectionService service, LinkInvitationService invitationService, ParentStudentLinkService linkService, ObjectProvider<CurrentUser> users,
       ProfileFacade profile, IamFacade iam) {
     this.service = service;
+    this.invitationService = invitationService;
+    this.linkService = linkService;
     this.users = users;
     this.profile = profile;
     this.iam = iam;
@@ -39,7 +45,7 @@ public class ConnectionController {
 
   @PostMapping("/parent-student/invite")
   public ApiResponse<Void> invite(@Valid @RequestBody InviteBody body) {
-    if (!service.invite(user(), body.targetEmail()))
+    if (!invitationService.invite(user(), body.targetEmail()))
       throw new ResourceConflictException(ErrorCode.RATE_LIMIT_EXCEEDED,
           "Đã đạt giới hạn 10 lời mời trong một giờ");
     return ApiResponse.ok("Nếu tài khoản hợp lệ, lời mời sẽ được gửi");
@@ -47,29 +53,29 @@ public class ConnectionController {
 
   @GetMapping("/parent-student/invitations")
   public ApiResponse<List<InvitationResponse>> invitations() {
-    return ApiResponse.success(service.invitations(user()).stream().map(InvitationResponse::of).toList());
+    return ApiResponse.success(invitationService.invitations(user()).stream().map(InvitationResponse::of).toList());
   }
 
   @PostMapping("/parent-student/respond")
   public ApiResponse<LinkResponse> respond(@Valid @RequestBody RespondBody body) {
-    ParentStudentLinkResult link = service.respondInvitation(user(), body.invitationId(), body.accept());
+    ParentStudentLinkResult link = invitationService.respondInvitation(user(), body.invitationId(), body.accept());
     return ApiResponse.success(link == null ? null : LinkResponse.of(link));
   }
 
   @PostMapping("/parent-student/invitations/{id}/withdraw")
   public ApiResponse<Void> withdraw(@PathVariable UUID id) {
-    service.withdrawInvitation(user(), id);
+    invitationService.withdrawInvitation(user(), id);
     return ApiResponse.ok();
   }
 
   @GetMapping("/parent-student/links")
   public ApiResponse<List<LinkResponse>> links() {
-    return ApiResponse.success(service.links(user()).stream().map(LinkResponse::of).toList());
+    return ApiResponse.success(linkService.links(user()).stream().map(LinkResponse::of).toList());
   }
 
   @DeleteMapping("/parent-student/links/{id}")
   public ApiResponse<Void> revoke(@PathVariable UUID id, @RequestBody(required = false) RevokeBody body) {
-    service.revokeLink(user(), id, body == null ? null : body.reason());
+    linkService.revokeLink(user(), id, body == null ? null : body.reason());
     return ApiResponse.ok();
   }
 

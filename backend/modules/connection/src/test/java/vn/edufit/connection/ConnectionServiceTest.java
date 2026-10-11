@@ -15,6 +15,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import vn.edufit.connection.application.ConnectionService;
+import vn.edufit.connection.application.service.LinkInvitationService;
+import vn.edufit.connection.application.service.ParentStudentLinkService;
 import vn.edufit.connection.application.port.ConnectionLock;
 import vn.edufit.connection.application.service.InvitationQuotaService;
 import vn.edufit.connection.application.service.ConnectionFacadeImpl;
@@ -42,10 +44,13 @@ class ConnectionServiceTest {
   @Mock NotificationSink notifications;
   @Mock ConnectionInviteQuotaRepository quotas;
   ConnectionService service;
+  LinkInvitationService invitationService;
+  ParentStudentLinkService linkService;
 
   @BeforeEach void setup() {
-    service = new ConnectionService(invitations, links, requests, classes, iam, profile,
-        lock, audit, notifications, new InvitationQuotaService(quotas, lock), new ConnectionFacadeImpl(links, classes));
+    service = new ConnectionService(requests, classes, profile, lock, notifications, new ConnectionFacadeImpl(links, classes));
+    invitationService = new LinkInvitationService(invitations, links, iam, profile, lock, new InvitationQuotaService(quotas, lock), notifications);
+    linkService = new ParentStudentLinkService(links, profile, lock, audit, notifications);
   }
 
   private CurrentUser actor(UUID id, String role) {
@@ -58,7 +63,7 @@ class ConnectionServiceTest {
   @Test void unknownEmailDoesNotRevealAccountAndDoesNotWrite() {
     CurrentUser parent = actor(UUID.randomUUID(), "PARENT");
     when(iam.findUserSummaryByEmail("missing@example.com")).thenReturn(Optional.empty());
-    assertDoesNotThrow(() -> service.invite(parent, "missing@example.com"));
+    assertDoesNotThrow(() -> invitationService.invite(parent, "missing@example.com"));
     verify(invitations, never()).save(any());
   }
 
@@ -67,7 +72,7 @@ class ConnectionServiceTest {
     LinkInvitation invitation = new LinkInvitation(UUID.randomUUID(), UUID.randomUUID(), Instant.now());
     when(invitations.findById(id)).thenReturn(Optional.of(invitation));
     assertThrows(ForbiddenOperationException.class,
-        () -> service.respondInvitation(actor(student, "STUDENT"), id, true));
+        () -> invitationService.respondInvitation(actor(student, "STUDENT"), id, true));
     verify(links, never()).save(any());
   }
 
@@ -77,7 +82,7 @@ class ConnectionServiceTest {
     when(invitations.findById(id)).thenReturn(Optional.of(invitation));
     when(invitations.lockById(id)).thenReturn(Optional.of(invitation));
     assertThrows(ResourceConflictException.class,
-        () -> service.respondInvitation(actor(student, "STUDENT"), id, true));
+        () -> invitationService.respondInvitation(actor(student, "STUDENT"), id, true));
     assertEquals("EXPIRED", invitation.getStatus());
     verify(links, never()).save(any());
   }
@@ -88,8 +93,8 @@ class ConnectionServiceTest {
     when(links.findById(id)).thenReturn(Optional.of(link));
     when(links.lockById(id)).thenReturn(Optional.of(link));
     CurrentUser admin = actor(UUID.randomUUID(), "ADMIN");
-    assertThrows(InvalidOperationException.class, () -> service.revokeLink(admin, id, " "));
-    service.revokeLink(admin, id, "violation");
+    assertThrows(InvalidOperationException.class, () -> linkService.revokeLink(admin, id, " "));
+    linkService.revokeLink(admin, id, "violation");
     assertEquals("REVOKED", link.getStatus());
     verify(audit).record(eq(admin.getUserId()), eq("LINK_REVOKED"), anyString(), eq(id), eq("violation"));
     when(links.existsByParentUserIdAndStudentIdAndStatus(parent, student, "CONFIRMED")).thenReturn(false);
@@ -121,7 +126,7 @@ class ConnectionServiceTest {
     ConnectionInviteQuota quota = new ConnectionInviteQuota(id, Instant.now());
     for (int i = 0; i < 10; i++) assertTrue(quota.consume(Instant.now()));
     when(quotas.findById(id)).thenReturn(Optional.of(quota));
-    assertFalse(service.invite(actor(id, "PARENT"), "nobody@example.com"));
+    assertFalse(invitationService.invite(actor(id, "PARENT"), "nobody@example.com"));
     verifyNoInteractions(iam);
   }
 
@@ -155,7 +160,7 @@ class ConnectionServiceTest {
     when(profile.findStudentByUserId(studentUser)).thenReturn(Optional.of(new StudentSummaryDto(student, studentUser, 1, null, true)));
     when(iam.findUserSummaryById(parent)).thenReturn(Optional.of(new UserSummaryView(parent, "parent@example.test", "Parent", AccountRole.PARENT, AccountStatus.ACTIVE)));
     when(links.save(any())).thenAnswer(i -> i.getArgument(0));
-    assertNotNull(service.respondInvitation(actor(studentUser, "STUDENT"), id, true));
+    assertNotNull(invitationService.respondInvitation(actor(studentUser, "STUDENT"), id, true));
     var order = inOrder(lock, invitations, links);
     order.verify(lock).lockStudent(student);
     order.verify(lock).lockInvitationPair(parent, studentUser);

@@ -28,3 +28,10 @@ Workspace: `C:/Users/ASUS/Desktop/EduFit/EduFit`, branch `feat/connection`; base
 - Accept invitation resolve Student scope trước khóa, student -> pair -> row; reload/revalidate scope sau khóa. Nếu profile mất/đổi thì không tạo link trong scope chưa khóa. Decline/withdraw chỉ pair -> row; request/revoke student -> row. Không có pair -> student path.
 - RED missing adapter/service types (`t05-red.log`). GREEN 42 unit/HTTP tests pass (`t05-verify.log`), gồm key namespaces/direction, no transaction guard, quota10/11/reset ±1ns và service lock order.
 - PostgreSQL fixture lúc đầu bị ambiguity EntityManager field, đã chuyển field sang PersistenceContext. Focused reactor verify (`t05-postgres-verify.log`):2 tests pass không skip; proxy lock/quota ngoài transaction bị từ chối; hai transactions opposite pair có SQLSTATE55P03 lock timeout thật, transaction kết thúc thì lấy lại lock được. Tổng verification44 tests pass qua hai lần chạy; không gọi lần đầu full command là pass.
+
+## T06 — Invitation / parent link services
+
+- T05 commit/push `71a08ab`. Tách LinkInvitationService và ParentStudentLinkService; controller gọi các bean độc lập, service cũ chỉ giữ request. So sánh source xác nhận cả 6 operation bodies và transaction annotations giống T05; giữ noRollbackFor hiện hữu đến Phase2.
+- Reactor verify selector `Connection*Test,MatchingWorkflowPostgresTest,ArchitectureTest,ArchitectureBoundaryTest`: **57 tests**, 0 failure/error/skip, BUILD SUCCESS (`t06-verify.log`). HTTP17 và 9 use-case regressions vẫn pass; Discovery workflow PostgreSQL9 và architecture9 pass.
+- Đổi tên PostgreSQL fixture thành ConnectionTransactionPostgresTest, tổng4 tests: quota commit qua invitation entry point thực; revoke rollback khi audit lỗi rồi commit khi retry thành công; assertions sink nằm trong transaction thật; giữ2 lock tests của T05. Context component scan wire các constructor/service thật.
+- Review: dependency qua facade/port, DTO boundary giữ nguyên, không SQL/schema/security/Discovery production changes. Quota → pair và student → pair → row giữ nguyên. Không kết luận strict coverage pass từ default verify.
