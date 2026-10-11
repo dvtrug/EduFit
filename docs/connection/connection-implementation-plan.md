@@ -1,13 +1,15 @@
 # Plan hoàn thiện Connection backend
 
+> Tài liệu lịch sử trước đợt refactor mới. Plan hiện hành: [plan refactor chi tiết](../../tasks/connection/plan.md) và [task theo phase](../../tasks/connection/todo.md). Thực thi tại folder `EduFit` trên nhánh `feat/connection`.
+
 **Nhánh:** `feat/connection`, tạo từ `origin/main` tại `f077e55` (2026-10-08). **Phạm vi:** backend UC3.1–UC3.5 và các public contract cần cho Discovery/Scheduling; frontend làm theo roadmap riêng.
 
 ## Nguồn và hiện trạng
 
-- [SRS](SRS%20Edufit.docx), Group 3 và BR-26–38: nguồn cho hành vi nghiệp vụ, quyền và trường hợp biên.
-- [SADS](software-architecture-design-specification.md), mục 4.3–4.4: REST API và luồng Parent → Student → Tutor → Class.
-- [Sprint plan](master_sprint_plan_and_ai_learning_framework.md), Sprint 3; [test specification](in-development-testing-specification.md), mục 7.2.
-- [ADR-002](ADR-002-multi-module-architecture.md), [module guide](backend-module-structure-guide.md), [schema](edufit-schema.dbml), Flyway `V1.04__create_connection_and_class_tables.sql`.
+- [SRS](../SRS%20Edufit.docx), Group 3 và BR-26–38: nguồn cho hành vi nghiệp vụ, quyền và trường hợp biên.
+- [SADS](../software-architecture-design-specification.md), mục 4.3–4.4: REST API và luồng Parent → Student → Tutor → Class.
+- [Sprint plan](../master_sprint_plan_and_ai_learning_framework.md), Sprint 3; [test specification](../in-development-testing-specification.md), mục 7.2.
+- [ADR-002](../ADR-002-multi-module-architecture.md), [module guide](../backend-module-structure-guide.md), [schema](../edufit-schema.dbml), Flyway `V1.04__create_connection_and_class_tables.sql`.
 - `modules/connection` hiện chỉ có `pom.xml`. Bốn bảng `link_invitation`, `parent_student_link`, `connection_request`, `class` đã có migration. IAM facade chỉ tìm tài khoản theo ID; Profile facade chỉ có vài truy vấn student/tutor, chưa có DTO goal phù hợp để Connection xác thực BR-33. `notification` và `platform/audit` cũng mới có `pom.xml`.
 
 ## Thứ tự thực hiện

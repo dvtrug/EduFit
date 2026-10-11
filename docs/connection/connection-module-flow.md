@@ -1,6 +1,6 @@
 # Connection backend
 
-Module `backend/modules/connection` triển khai UC3.1-3.5. Đọc cùng [SRS](SRS%20Edufit.docx) (BR-26-38), [SADS](software-architecture-design-specification.md) và [ADR-002](ADR-002-multi-module-architecture.md). `ConnectionService` giữ quy tắc nghiệp vụ; controller chỉ nhận/trả DTO; JPA giữ trạng thái trong bốn bảng `link_invitation`, `parent_student_link`, `connection_request`, `class`.
+Module `backend/modules/connection` triển khai UC3.1-3.5. Đọc cùng [SRS](../SRS%20Edufit.docx) (BR-26-38), [SADS](../software-architecture-design-specification.md) và [ADR-002](../ADR-002-multi-module-architecture.md). `ConnectionService` giữ quy tắc nghiệp vụ; controller chỉ nhận/trả DTO; JPA giữ trạng thái trong bốn bảng `link_invitation`, `parent_student_link`, `connection_request`, `class`.
 
 ![Luồng Connection](assets/connection-flow.svg)
 
@@ -20,6 +20,6 @@ Module `backend/modules/connection` triển khai UC3.1-3.5. Đọc cùng [SRS](S
 
 ## Đồng thời và dữ liệu
 
-Migration [V1.04](../backend/app/src/main/resources/db/migration/connection/V1.04__create_connection_and_class_tables.sql) đã có partial unique index cho invitation/request PENDING và class ACTIVE. [V1.09](../backend/app/src/main/resources/db/migration/connection/V1.09__allow_relink_after_revocation.sql) thêm optimistic version, unique chỉ trên link CONFIRMED và bảng quota. Service dùng PostgreSQL transaction advisory lock theo cặp người dùng hoặc Student ID; thao tác ghi trạng thái khóa hàng bằng `PESSIMISTIC_WRITE`. Audit/notification cùng transaction nên rollback cùng nghiệp vụ.
+Migration [V1.04](../../backend/app/src/main/resources/db/migration/connection/V1.04__create_connection_and_class_tables.sql) đã có partial unique index cho invitation/request PENDING và class ACTIVE. [V1.09](../../backend/app/src/main/resources/db/migration/connection/V1.09__allow_relink_after_revocation.sql) thêm optimistic version, unique chỉ trên link CONFIRMED và bảng quota. Service dùng PostgreSQL transaction advisory lock theo cặp người dùng hoặc Student ID; thao tác ghi trạng thái khóa hàng bằng `PESSIMISTIC_WRITE`. Audit/notification cùng transaction nên rollback cùng nghiệp vụ.
 
 Lưu ý: nhánh này bắt đầu từ `main`, chưa chứa thay đổi Discovery đang ở `feat/discovery`; khi hợp nhất hai nhánh phải dùng `ConnectionFacade` cho quyền Parent xem Discovery. Test PostgreSQL thật cho race/migration cần chạy khi Docker hoặc DB kiểm thử sẵn sàng. Hiện chưa có job dọn EXPIRED nền; trạng thái được chuẩn hóa khi có truy cập.
