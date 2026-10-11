@@ -2,6 +2,7 @@ package vn.edufit.connection.infra.persistence.entity;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import vn.edufit.connection.application.policy.ConnectionTransitions;
 import java.util.UUID;
 
 @Entity
@@ -25,20 +26,25 @@ public class LinkInvitation {
     invitedUserId = invited;
     status = "PENDING";
     createdAt = now;
-    expiresAt = now.plus(java.time.Duration.ofDays(14));
+    expiresAt = now.plus(ConnectionTransitions.INVITATION_TTL);
   }
 
   public void expire(Instant now) {
-    if ("PENDING".equals(status) && !expiresAt.isAfter(now)) status = "EXPIRED";
+    if ("PENDING".equals(status) && ConnectionTransitions.isDue(expiresAt, now)) status = "EXPIRED";
   }
 
-  public void accept(Instant now) { status = "ACCEPTED"; respondedAt = now; }
+  public void accept(Instant now) {
+    ConnectionTransitions.requirePending(status, expiresAt, now);
+    status = "ACCEPTED"; respondedAt = now; }
   public void decline(Instant now) {
+    ConnectionTransitions.requirePending(status, expiresAt, now);
     status = "DECLINED";
     respondedAt = now;
-    reinviteAfter = now.plus(java.time.Duration.ofDays(7));
+    reinviteAfter = now.plus(ConnectionTransitions.DECLINE_COOLDOWN);
   }
-  public void withdraw(Instant now) { status = "WITHDRAWN"; respondedAt = now; }
+  public void withdraw(Instant now) {
+    ConnectionTransitions.requirePending(status, expiresAt, now);
+    status = "WITHDRAWN"; respondedAt = now; }
 
   public UUID getId() { return id; }
   public UUID getInviterUserId() { return inviterUserId; }

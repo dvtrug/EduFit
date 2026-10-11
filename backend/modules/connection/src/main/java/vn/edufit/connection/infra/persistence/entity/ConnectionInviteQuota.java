@@ -2,6 +2,7 @@ package vn.edufit.connection.infra.persistence.entity;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import vn.edufit.connection.application.policy.ConnectionTransitions;
 import java.util.UUID;
 
 @Entity
@@ -19,11 +20,11 @@ public class ConnectionInviteQuota {
   }
 
   public boolean consume(Instant now) {
-    if (!windowStartedAt.plusSeconds(3600).isAfter(now)) {
+    if (!windowStartedAt.plus(ConnectionTransitions.QUOTA_WINDOW).isAfter(now)) {
       windowStartedAt = now;
       attempts = 0;
     }
-    if (attempts >= 10) return false;
+    if (attempts >= ConnectionTransitions.INVITATIONS_PER_WINDOW) return false;
     attempts++;
     return true;
   }

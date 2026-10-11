@@ -430,7 +430,7 @@ Các nhóm bên dưới **thay thế commit cha**, không còn là gợi ý “n
 | Task thực thi | Files / thay đổi có thể review riêng | Acceptance và verification riêng | Phụ thuộc | Commit message |
 | --- | --- | --- | --- | --- |
 | [x] T08a | Clock injection vào services, config/context tests | Dùng Clock IAM hiện có, chỉ một candidate; quota/time fixed-clock tests pass | T07 | `refactor(connection): reuse shared clock for deterministic time` |
-| [ ] T08b | Invitation/link mutator guards, policy và parameterized tests | Terminal reject, deadline/cooldown đúng biên; focused link/invite regression | T08a | `fix(connection): guard invitation and link transitions` |
+| [x] T08b | Invitation/link mutator guards, policy và parameterized tests | Terminal reject, deadline/cooldown đúng biên; focused link/invite regression | T08a | `fix(connection): guard invitation and link transitions` |
 | [ ] T08c | Request mutator guard/policy và tests | Request terminal/action matrix và expiry boundary pass | T08b | `fix(connection): guard request transitions` |
 | [ ] T10a | Public event records + contract tests | Payload Java/public IDs, no PII, compile all callers | T09 | `feat(connection): define public transition event records` |
 | [ ] T10b | Notification listener/wiring/pom + transactional tests | BEFORE_COMMIT failure rollback, no outside-transaction execution, graph acyclic | T10a | `feat(notification): consume connection transitions transactionally` |

@@ -2,6 +2,7 @@ package vn.edufit.connection.infra.persistence.entity;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import vn.edufit.connection.application.policy.ConnectionTransitions;
 import java.util.UUID;
 
 @Entity
@@ -26,6 +27,7 @@ public class ParentStudentLink {
     confirmedAt = now;
   }
   public void revoke(UUID actor, String reason, Instant now) {
+    ConnectionTransitions.requireState(status, "CONFIRMED");
     status = "REVOKED";
     revokedBy = actor;
     revokeReason = reason;

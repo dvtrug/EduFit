@@ -2,6 +2,7 @@ package vn.edufit.connection.application.service;
 
 import java.time.Instant;
 import java.time.Clock;
+import vn.edufit.connection.application.policy.ConnectionTransitions;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -78,7 +79,7 @@ public class LinkInvitationService {
     invitations.flush();
     if (history.stream().anyMatch(i -> "PENDING".equals(i.getStatus()))) return true;
     if (history.stream().anyMatch(i -> i.getInviterUserId().equals(a) && "DECLINED".equals(i.getStatus())
-        && i.getReinviteAfter() != null && i.getReinviteAfter().isAfter(now))) return true;
+        && ConnectionTransitions.cooldownActive(i.getReinviteAfter(), now))) return true;
     UUID parent = actor.hasRole("PARENT") ? a : b;
     UUID studentUser = actor.hasRole("STUDENT") ? a : b;
     Optional<StudentSummaryDto> student = profile.findStudentByUserId(studentUser);
