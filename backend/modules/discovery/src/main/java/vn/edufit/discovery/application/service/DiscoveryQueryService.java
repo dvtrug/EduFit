@@ -27,9 +27,7 @@ public class DiscoveryQueryService {
 
   @Transactional(readOnly = true)
   public Page<TutorDiscoveryProfileDto> searchTutors(TutorSearchCriteria criteria, Pageable pageable) {
-    TutorSearchCriteria safeCriteria = criteria != null
-        ? criteria
-        : new TutorSearchCriteria(null, null, null, null, null, null, null);
+    TutorSearchCriteria safeCriteria = criteria != null ? criteria : new TutorSearchCriteria(null, null, null, null, null, null, null);
     var tutors = profileFacade.searchTutors(safeCriteria, pageable);
     Map<UUID, TutorDiscoveryProfileDto> details = profileFacade
         .findVerifiedTutorDetails(tutors.getContent().stream().map(item -> item.tutorId()).toList())
