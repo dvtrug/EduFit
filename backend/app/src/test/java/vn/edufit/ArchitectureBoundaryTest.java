@@ -62,7 +62,7 @@ public class ArchitectureBoundaryTest {
         "vn.edufit.discovery.application.service.DiscoveryFacadeImpl",
         "vn.edufit.discovery.api.DiscoveryFacade",
         "vn.edufit.discovery.web.DiscoveryController",
-        "vn.edufit.connection.application.ConnectionService",
+        "vn.edufit.connection.application.service.ConnectionFacadeImpl",
         "vn.edufit.profile.application.service.ProfileFacadeImpl"}) {
       assertTrue(imported.contain(name), "Architecture import must include " + name);
     }

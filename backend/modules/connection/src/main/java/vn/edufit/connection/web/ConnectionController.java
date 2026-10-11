@@ -5,18 +5,14 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.bind.annotation.*;
-import vn.edufit.connection.application.ConnectionService;
+import vn.edufit.connection.application.service.ConnectionRequestService;
+import vn.edufit.connection.application.service.ConnectionQueryService;
 import vn.edufit.connection.application.service.LinkInvitationService;
 import vn.edufit.connection.application.service.ParentStudentLinkService;
 import vn.edufit.connection.application.dto.*;
 import vn.edufit.connection.web.request.*;
 import vn.edufit.connection.web.response.*;
-import vn.edufit.iam.api.AccountRole;
-import vn.edufit.iam.api.IamFacade;
-import vn.edufit.profile.api.ProfileFacade;
-import vn.edufit.profile.api.dto.ConnectionGoalDto;
 import vn.edufit.shared.auth.CurrentUser;
-import vn.edufit.shared.exception.EntityNotFoundException;
 import vn.edufit.shared.exception.ResourceConflictException;
 import vn.edufit.shared.exception.ErrorCode;
 import vn.edufit.shared.response.ApiResponse;
@@ -24,21 +20,19 @@ import vn.edufit.shared.response.ApiResponse;
 @RestController
 @RequestMapping("/api/v1/connections")
 public class ConnectionController {
-  private final ConnectionService service;
+  private final ConnectionRequestService service;
   private final LinkInvitationService invitationService;
   private final ParentStudentLinkService linkService;
   private final ObjectProvider<CurrentUser> users;
-  private final ProfileFacade profile;
-  private final IamFacade iam;
+  private final ConnectionQueryService queries;
 
-  public ConnectionController(ConnectionService service, LinkInvitationService invitationService, ParentStudentLinkService linkService, ObjectProvider<CurrentUser> users,
-      ProfileFacade profile, IamFacade iam) {
+  public ConnectionController(ConnectionRequestService service, LinkInvitationService invitationService,
+      ParentStudentLinkService linkService, ConnectionQueryService queries, ObjectProvider<CurrentUser> users) {
     this.service = service;
     this.invitationService = invitationService;
     this.linkService = linkService;
     this.users = users;
-    this.profile = profile;
-    this.iam = iam;
+    this.queries = queries;
   }
 
   private CurrentUser user() { return users.getObject(); }
@@ -53,7 +47,7 @@ public class ConnectionController {
 
   @GetMapping("/parent-student/invitations")
   public ApiResponse<List<InvitationResponse>> invitations() {
-    return ApiResponse.success(invitationService.invitations(user()).stream().map(InvitationResponse::of).toList());
+    return ApiResponse.success(queries.invitations(user()).stream().map(InvitationResponse::of).toList());
   }
 
   @PostMapping("/parent-student/respond")
@@ -70,7 +64,7 @@ public class ConnectionController {
 
   @GetMapping("/parent-student/links")
   public ApiResponse<List<LinkResponse>> links() {
-    return ApiResponse.success(linkService.links(user()).stream().map(LinkResponse::of).toList());
+    return ApiResponse.success(queries.links(user()).stream().map(LinkResponse::of).toList());
   }
 
   @DeleteMapping("/parent-student/links/{id}")
@@ -88,17 +82,9 @@ public class ConnectionController {
   @GetMapping("/requests")
   public ApiResponse<?> requests(@RequestParam(required = false) UUID studentId) {
     CurrentUser actor = user();
-    List<ConnectionRequestResult> result = service.requests(actor, studentId);
-    if (actor.hasRole("TUTOR")) return ApiResponse.success(result.stream().map(r -> {
-      ConnectionGoalDto goal = profile.findGoalForConnection(r.goalId())
-          .orElseThrow(() -> EntityNotFoundException.of("LearningGoal", r.goalId()));
-      String senderRole = iam.findUserSummaryById(r.sentByUserId())
-          .map(u -> u.role() == AccountRole.PARENT ? "PARENT" : "STUDENT").orElse("STUDENT");
-      return new TutorInboxResponse(r.requestId(), goal.goalType(), goal.subjectId(),
-          goal.educationLevelId(), r.desiredSlots(), r.message(), senderRole,
-          r.status(), r.expiresAt());
-    }).toList());
-    return ApiResponse.success(result.stream().map(RequestResponse::of).toList());
+    if (actor.hasRole("TUTOR")) return ApiResponse.success(queries.tutorInbox(actor).stream()
+        .map(TutorInboxResponse::of).toList());
+    return ApiResponse.success(queries.requests(actor, studentId).stream().map(RequestResponse::of).toList());
   }
 
   @PostMapping("/requests/{id}/cancel")

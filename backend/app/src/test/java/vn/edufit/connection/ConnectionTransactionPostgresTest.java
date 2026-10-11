@@ -18,6 +18,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import vn.edufit.connection.application.service.LinkInvitationService;
+import vn.edufit.connection.application.service.ConnectionRequestService;
+import vn.edufit.connection.application.service.ConnectionQueryService;
+import vn.edufit.profile.api.dto.ConnectionGoalDto;
+import vn.edufit.profile.api.dto.TutorSummaryDto;
+import java.time.Instant;
 import vn.edufit.connection.application.service.ParentStudentLinkService;
 import vn.edufit.shared.auth.CurrentUser;
 import java.util.Optional;
@@ -45,6 +50,9 @@ import vn.edufit.shared.notification.NotificationSink;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class ConnectionTransactionPostgresTest {
   @Container static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine");
+  @Autowired ConnectionRequestService requests;
+  @Autowired ConnectionQueryService queries;
+  @Autowired ProfileFacade profile;
   @Autowired LinkInvitationService invitations;
   @Autowired ParentStudentLinkService links;
   @Autowired DataSource source;
@@ -56,7 +64,7 @@ class ConnectionTransactionPostgresTest {
   @Autowired JpaTransactionManager transactionManager;
   @jakarta.persistence.PersistenceContext EntityManager em;
 
-  @BeforeEach void resetCollaborators() { reset(iam, audit, notifications); }
+  @BeforeEach void resetCollaborators() { reset(iam, profile, audit, notifications); }
 
   private CurrentUser actor(UUID id, String role) {
     CurrentUser actor = mock(CurrentUser.class);
@@ -107,6 +115,46 @@ class ConnectionTransactionPostgresTest {
     assertEquals("REVOKED", jdbc.queryForObject("select status from parent_student_link where link_id = ?", String.class, link));
     verify(audit).record(admin, "LINK_REVOKED", "PARENT_STUDENT_LINK", link, "reason");
     verify(notifications).notify(eq(parent), eq(student), eq("LINK_REVOKED"), anyString(), anyString(), eq("PARENT_STUDENT_LINK"), eq(link));
+  }
+
+  @Test void acceptCreatesClassAtomicallyAndQueryHydratesInsideTransaction() {
+    var jdbc = new JdbcTemplate(source);
+    UUID studentUser = account("STUDENT"), tutorUser = account("TUTOR");
+    UUID student = UUID.randomUUID(), tutor = UUID.randomUUID(), goal = UUID.randomUUID(), request = UUID.randomUUID();
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", student, studentUser);
+    jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'Tutor','ONLINE',100000,'VERIFIED')", tutor, tutorUser);
+    jdbc.update("insert into learning_goal(goal_id,student_id,subject_id,current_level,desired_level,goal_type,deadline,mode,budget_max) values (?,?,1,1,2,'EXAM_PREPARATION',current_date + 30,'ONLINE',100000)", goal, student);
+    jdbc.update("insert into connection_request(request_id,student_id,tutor_id,goal_id,sent_by_user_id,desired_slots,expires_at) values (?,?,?,?,?,cast(? as jsonb),now() + interval '7 days')",
+        request, student, tutor, goal, studentUser, "[\"Tue 19:00\"]");
+    when(profile.getTutorIdByUserId(tutorUser)).thenReturn(tutor);
+    when(profile.findTutorById(tutor)).thenReturn(Optional.of(new TutorSummaryDto(tutor,
+        tutorUser, "Tutor", null, null, null, null, null, null, null, "VERIFIED", Instant.now(), null, 0)));
+    when(profile.findGoalForConnection(goal)).thenAnswer(call -> {
+      assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
+      return Optional.of(new ConnectionGoalDto(goal, student, studentUser, 1, 4, "EXAM_PREPARATION", null, "ACTIVE"));
+    });
+    when(profile.tutorTeaches(tutor, 1, 4)).thenReturn(true);
+    var actor = actor(tutorUser, "TUTOR");
+    var inbox = queries.tutorInbox(actor);
+    assertEquals(1, inbox.size());
+    assertEquals(java.util.List.of("Tue 19:00"), inbox.getFirst().desiredSlots());
+    assertEquals("STUDENT", inbox.getFirst().senderRole());
+    doThrow(new IllegalStateException("injected notification failure")).when(notifications)
+        .notify(eq(studentUser), eq(student), eq("CONNECTION_ACCEPTED"), anyString(), anyString(), eq("CLASS"), any(UUID.class));
+    assertThrows(IllegalStateException.class, () -> requests.respondRequest(actor, request, true, null));
+    assertEquals("PENDING", jdbc.queryForObject("select status from connection_request where request_id = ?", String.class, request));
+    assertEquals(0, jdbc.queryForObject("select count(*) from class where connection_request_id = ?", Integer.class, request));
+    reset(notifications);
+    doAnswer(call -> {
+      assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
+      return null;
+    }).when(notifications).notify(eq(studentUser), eq(student), eq("CONNECTION_ACCEPTED"), anyString(), anyString(), eq("CLASS"), any(UUID.class));
+    var created = requests.respondRequest(actor, request, true, null);
+    assertNotNull(created.classId());
+    assertEquals("ACCEPTED", jdbc.queryForObject("select status from connection_request where request_id = ?", String.class, request));
+    assertEquals("ACTIVE", jdbc.queryForObject("select status from class where class_id = ?", String.class, created.classId()));
+    assertEquals(1, jdbc.queryForObject("select count(*) from class where connection_request_id = ?", Integer.class, request));
+    verify(notifications).notify(eq(studentUser), eq(student), eq("CONNECTION_ACCEPTED"), anyString(), anyString(), eq("CLASS"), eq(created.classId()));
   }
 
   @Test void adaptersRequireAnExistingTransaction() {

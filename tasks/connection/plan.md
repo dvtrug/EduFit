@@ -1,6 +1,6 @@
 # Kế Hoạch Triển Khai & Tái Cấu Trúc Kiến Trúc Chi Tiết: Phân Hệ Backend Connection & Engagement (EduFit)
 
-- **Trạng thái:** Phase 0 hoàn tất trên `feat/connection`; chưa bắt đầu refactor Phase 1. Kết quả tại [báo cáo Phase 0](../../docs/connection/phase0-validation.md).
+- **Trạng thái:** Phase 0 và các task cấu trúc Phase 1 (T02–T07) hoàn tất trên `feat/connection` tại EduFit. Clean verify 348 tests pass; strict coverage gate chưa đạt (Shared baseline, Connection còn gap). Xem [Phase 0](../../docs/connection/phase0-validation.md) và [Phase 1](../../docs/connection/phase1-validation.md). Chưa bắt đầu Phase 2.
 - **Ngày đối chiếu:** 11/10/2026.
 - **Workspace thực thi duy nhất:** `C:/Users/ASUS/Desktop/EduFit/EduFit`. Mọi code, test, docs và task Connection thực hiện tại đây trên nhánh `feat/connection`, theo yêu cầu cập nhật của người dùng.
 - **Baseline đã audit trước đó:** `feat/connection` tại `43e7461` — `feat(connection): implement parent links and tutor requests`. Checkout `EduFit-connection` chỉ là nơi đọc baseline trong lượt audit cũ, không còn là workspace thực thi.
@@ -19,6 +19,8 @@ Tài liệu Discovery được dùng làm mẫu độ sâu, cấu trúc và quy 
 **Trước khi bắt đầu code:** T00 phải bảo toàn 3 thay đổi Discovery đang dở bằng checkpoint/snapshot riêng thuộc Discovery, không stage chúng vào Connection. Nhánh `feat/connection` hiện đang gắn với checkout cũ `EduFit-connection`; phải giải phóng attachment nhánh ở checkout đó sau khi kiểm tra sạch/bảo toàn dữ liệu, rồi mới switch folder `EduFit` sang `feat/connection`. Không dùng `--ignore-other-worktrees`, không để cùng branch được sửa ở hai folder, không xóa folder/worktree trong lượt chuyển tài liệu này. T00a/T00b tích hợp base sau khi branch đã được chuẩn bị tại folder `EduFit`.
 
 **Cập nhật Phase 0:** Đã bảo toàn WIP và switch EduFit sang `feat/connection`; checkout cũ detached. T00a tích hợp main `6755121` ở `e587174`, T00b tích hợp Discovery `dd9068e` ở `12c1e9b`, đã push riêng từng task. Resolve 6 conflicts và trùng Flyway version: giữ Connection V1.09, seed main sang V1.10 nguyên nội dung. Clean full verify301 tests pass, PostgreSQL không skip; strict coverage fail baseline Shared75%/71%, không hạ ngưỡng. [Báo cáo thực thi](../../docs/connection/phase0-validation.md) ghi evidence/giới hạn DB lineage; mục0.4–0.5 bên dưới là snapshot audit trước thực thi. [HTTP contract T01](../../docs/connection/connection-api-contract.md) chốt quyết định cho các task sau; runtime mới chưa được triển khai.
+
+**Cập nhật Phase 1:** T02–T07 tách persistence/facade/DTO/lock/quota/invitation/link/request/query, xóa service cũ. Controller không còn IAM/Profile/persistence dependency; 10 routes/JSON shapes giữ nguyên. Student → pair → row và transaction atomicity được kiểm chứng trên PostgreSQL thật. Full clean verify 348 tests pass không skip; strict verify dùng execution data của full run vẫn fail Shared75.73%/71.43%; Connection report75.12%/47.73% chưa đạt 80%. Đây là hoàn tất phạm vi cấu trúc, không chứng nhận strict quality gate hoặc các contract đích của phase sau. [Evidence và giới hạn](../../docs/connection/phase1-validation.md).
 
 ## 0. Ghi chú tái cấu trúc từ nhánh hiện tại (Refactor Delta & Audit Notes)
 

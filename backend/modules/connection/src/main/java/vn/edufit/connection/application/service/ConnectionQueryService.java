@@ -1,0 +1,102 @@
+package vn.edufit.connection.application.service;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import vn.edufit.connection.api.ConnectionFacade;
+import vn.edufit.connection.application.dto.InvitationResult;
+import vn.edufit.connection.application.dto.ParentStudentLinkResult;
+import vn.edufit.connection.application.dto.ConnectionRequestResult;
+import vn.edufit.connection.application.dto.TutorInboxResult;
+import vn.edufit.connection.infra.persistence.entity.LinkInvitation;
+import vn.edufit.connection.infra.persistence.entity.ConnectionRequest;
+import vn.edufit.connection.infra.persistence.repository.LinkInvitationRepository;
+import vn.edufit.connection.infra.persistence.repository.ParentStudentLinkRepository;
+import vn.edufit.connection.infra.persistence.repository.ConnectionRequestRepository;
+import vn.edufit.iam.api.AccountRole;
+import vn.edufit.iam.api.IamFacade;
+import vn.edufit.profile.api.ProfileFacade;
+import vn.edufit.profile.api.dto.ConnectionGoalDto;
+import vn.edufit.shared.auth.CurrentUser;
+import vn.edufit.shared.exception.ForbiddenOperationException;
+import vn.edufit.shared.exception.InvalidOperationException;
+import vn.edufit.shared.exception.EntityNotFoundException;
+
+@Service
+public class ConnectionQueryService {
+  private final LinkInvitationRepository invitations;
+  private final ParentStudentLinkRepository links;
+  private final ConnectionRequestRepository requests;
+  private final ProfileFacade profile;
+  private final IamFacade iam;
+  private final ConnectionFacade facade;
+
+  public ConnectionQueryService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
+      ConnectionRequestRepository requests, ProfileFacade profile, IamFacade iam, ConnectionFacade facade) {
+    this.invitations = invitations;
+    this.links = links;
+    this.requests = requests;
+    this.profile = profile;
+    this.iam = iam;
+    this.facade = facade;
+  }
+
+  private static void requireRole(CurrentUser actor, String... roles) {
+    for (String role : roles) if (actor.hasRole(role)) return;
+    throw new ForbiddenOperationException("Không có quyền thực hiện thao tác này");
+  }
+
+  private void requireStudentAccess(CurrentUser actor, UUID studentId) {
+    if (actor.hasRole("STUDENT") && profile.findStudentById(studentId)
+        .map(s -> s.userId().equals(actor.getUserId())).orElse(false)) return;
+    if (actor.hasRole("PARENT") && facade.hasConfirmedParentLink(actor.getUserId(), studentId)) return;
+    throw new ForbiddenOperationException("Không có quyền với học sinh này");
+  }
+
+  @Transactional
+  public List<InvitationResult> invitations(CurrentUser actor) {
+    requireRole(actor, "PARENT", "STUDENT");
+    List<LinkInvitation> result = invitations.findByInviterUserIdOrInvitedUserIdOrderByCreatedAtDesc(
+        actor.getUserId(), actor.getUserId());
+    result.forEach(i -> i.expire(Instant.now()));
+    return result.stream().map(InvitationResult::from).toList();
+  }
+
+  @Transactional(readOnly = true)
+  public List<ParentStudentLinkResult> links(CurrentUser actor) {
+    requireRole(actor, "PARENT", "STUDENT");
+    if (actor.hasRole("PARENT")) return links.findByParentUserIdAndStatus(actor.getUserId(), "CONFIRMED").stream().map(ParentStudentLinkResult::from).toList();
+    UUID studentId = profile.getStudentIdByUserId(actor.getUserId());
+    return links.findByStudentIdAndStatus(studentId, "CONFIRMED").stream().map(ParentStudentLinkResult::from).toList();
+  }
+
+  @Transactional
+  public List<ConnectionRequestResult> requests(CurrentUser actor, UUID studentId) {
+    requireRole(actor, "STUDENT", "PARENT");
+    UUID scope = actor.hasRole("STUDENT") ? profile.getStudentIdByUserId(actor.getUserId()) : studentId;
+    if (scope == null) throw new InvalidOperationException("Cần chỉ định học sinh");
+    requireStudentAccess(actor, scope);
+    List<ConnectionRequest> result = requests.findByStudentIdOrderByCreatedAtDesc(scope);
+    result.forEach(r -> r.expire(Instant.now()));
+    return result.stream().map(ConnectionRequestResult::from).toList();
+  }
+
+  @Transactional
+  public List<TutorInboxResult> tutorInbox(CurrentUser actor) {
+    requireRole(actor, "TUTOR");
+    UUID tutorId = profile.getTutorIdByUserId(actor.getUserId());
+    List<ConnectionRequest> result = requests.findByTutorIdOrderByCreatedAtDesc(tutorId);
+    result.forEach(r -> r.expire(Instant.now()));
+    return result.stream().map(r -> {
+      ConnectionGoalDto goal = profile.findGoalForConnection(r.getGoalId())
+          .orElseThrow(() -> EntityNotFoundException.of("LearningGoal", r.getGoalId()));
+      String senderRole = iam.findUserSummaryById(r.getSentByUserId())
+          .map(u -> u.role() == AccountRole.PARENT ? "PARENT" : "STUDENT").orElse("STUDENT");
+      return new TutorInboxResult(r.getId(), goal.goalType(), goal.subjectId(),
+          goal.educationLevelId(), r.getDesiredSlots(), r.getMessage(), senderRole,
+          r.getStatus(), r.getExpiresAt());
+    }).toList();
+  }
+}

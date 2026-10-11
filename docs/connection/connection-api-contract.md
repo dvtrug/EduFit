@@ -4,6 +4,8 @@ Ngày chốt: 11/10/2026. Scope UC3.1–UC3.5; [plan](../../tasks/connection/pla
 
 Nguồn đối chiếu: `docs/SRS Edufit.docx` (UC3.1–3.5, BR-26–38), ConnectionController/ConnectionService, ProfileFacade/ConnectionGoalDto, IAM UserSummaryView, ApiResponse/ApiError/FieldErrorItem, GlobalExceptionHandler và SecurityConfig/application.yml trên base tích hợp. Tài liệu nguồn là bằng chứng nghiệp vụ, không tự mở rộng quyền thực thi.
 
+**Cập nhật cấu trúc Phase 1:** implementation đã tách thành facade/invitation/link/request/query/quota services, persistence packages và application/HTTP DTO riêng. `accept` dùng Boolean + NotNull; 10 routes và JSON shapes được giữ. Những mục “đích” còn lại của T01 vẫn chưa triển khai; xem [báo cáo Phase 1](phase1-validation.md).
+
 ## 1. Quy ước chung và quyền
 
 - Prefix: `/api/v1/connections`. JSON UTF-8, Content-Type `application/json` cho body. Tất cả success hiện tại là **200**, kể cả tạo request/link/class; giữ để không đổi client.

@@ -1,19 +1,21 @@
 package vn.edufit.connection.application.service;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.edufit.connection.application.dto.*;
+
 import vn.edufit.connection.application.port.ConnectionLock;
-import vn.edufit.connection.infra.persistence.entity.*;
-import vn.edufit.connection.infra.persistence.repository.*;
+import vn.edufit.connection.infra.persistence.entity.ParentStudentLink;
+import vn.edufit.connection.infra.persistence.repository.ParentStudentLinkRepository;
 import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.audit.AuditSink;
 import vn.edufit.shared.notification.NotificationSink;
-import vn.edufit.shared.exception.*;
+import vn.edufit.shared.exception.ForbiddenOperationException;
+import vn.edufit.shared.exception.ResourceConflictException;
+import vn.edufit.shared.exception.EntityNotFoundException;
+import vn.edufit.shared.exception.InvalidOperationException;
 
 @Service
 public class ParentStudentLinkService {
@@ -37,13 +39,7 @@ public class ParentStudentLinkService {
     throw new ForbiddenOperationException("Không có quyền thực hiện thao tác này");
   }
 
-  @Transactional(readOnly = true)
-  public List<ParentStudentLinkResult> links(CurrentUser actor) {
-    requireRole(actor, "PARENT", "STUDENT");
-    if (actor.hasRole("PARENT")) return links.findByParentUserIdAndStatus(actor.getUserId(), "CONFIRMED").stream().map(ParentStudentLinkResult::from).toList();
-    UUID studentId = profile.getStudentIdByUserId(actor.getUserId());
-    return links.findByStudentIdAndStatus(studentId, "CONFIRMED").stream().map(ParentStudentLinkResult::from).toList();
-  }
+
 
   @Transactional
   public void revokeLink(CurrentUser actor, UUID id, String reason) {

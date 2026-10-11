@@ -6,10 +6,12 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.edufit.connection.application.dto.*;
+import vn.edufit.connection.application.dto.ParentStudentLinkResult;
 import vn.edufit.connection.application.port.ConnectionLock;
-import vn.edufit.connection.infra.persistence.entity.*;
-import vn.edufit.connection.infra.persistence.repository.*;
+import vn.edufit.connection.infra.persistence.entity.LinkInvitation;
+import vn.edufit.connection.infra.persistence.entity.ParentStudentLink;
+import vn.edufit.connection.infra.persistence.repository.LinkInvitationRepository;
+import vn.edufit.connection.infra.persistence.repository.ParentStudentLinkRepository;
 import vn.edufit.iam.api.AccountRole;
 import vn.edufit.iam.api.AccountStatus;
 import vn.edufit.iam.api.IamFacade;
@@ -18,7 +20,10 @@ import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.notification.NotificationSink;
-import vn.edufit.shared.exception.*;
+import vn.edufit.shared.exception.ForbiddenOperationException;
+import vn.edufit.shared.exception.ResourceConflictException;
+import vn.edufit.shared.exception.EntityNotFoundException;
+import vn.edufit.shared.exception.InvalidOperationException;
 
 @Service
 public class LinkInvitationService {
@@ -82,14 +87,7 @@ public class LinkInvitationService {
     return true;
   }
 
-  @Transactional
-  public List<InvitationResult> invitations(CurrentUser actor) {
-    requireRole(actor, "PARENT", "STUDENT");
-    List<LinkInvitation> result = invitations.findByInviterUserIdOrInvitedUserIdOrderByCreatedAtDesc(
-        actor.getUserId(), actor.getUserId());
-    result.forEach(i -> i.expire(Instant.now()));
-    return result.stream().map(InvitationResult::from).toList();
-  }
+
 
   @Transactional(noRollbackFor = ResourceConflictException.class)
   public ParentStudentLinkResult respondInvitation(CurrentUser actor, UUID id, boolean accept) {

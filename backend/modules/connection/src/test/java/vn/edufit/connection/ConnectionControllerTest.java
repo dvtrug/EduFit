@@ -7,8 +7,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -21,25 +19,19 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import vn.edufit.connection.application.ConnectionService;
+import vn.edufit.connection.application.service.ConnectionRequestService;
+import vn.edufit.connection.application.service.ConnectionQueryService;
 import vn.edufit.connection.application.service.LinkInvitationService;
 import vn.edufit.connection.application.service.ParentStudentLinkService;
 import vn.edufit.connection.application.dto.*;
-import vn.edufit.profile.api.dto.ConnectionGoalDto;
-import vn.edufit.iam.api.AccountRole;
-import vn.edufit.iam.api.AccountStatus;
-import vn.edufit.iam.api.dto.UserSummaryView;
 import vn.edufit.connection.web.ConnectionController;
-import vn.edufit.iam.api.IamFacade;
-import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.shared.auth.CurrentUser;
 
 class ConnectionControllerTest {
-  private final ConnectionService service = mock(ConnectionService.class);
+  private final ConnectionRequestService service = mock(ConnectionRequestService.class);
   private final LinkInvitationService invitationService = mock(LinkInvitationService.class);
   private final ParentStudentLinkService linkService = mock(ParentStudentLinkService.class);
-  private final ProfileFacade profile = mock(ProfileFacade.class);
-  private final IamFacade iam = mock(IamFacade.class);
+  private final ConnectionQueryService queries = mock(ConnectionQueryService.class);
   private final CurrentUser actor = mock(CurrentUser.class);
   private MockMvc mvc;
   private static final String ID = "10000000-0000-0000-0000-000000000001";
@@ -49,7 +41,7 @@ class ConnectionControllerTest {
   void setup() {
     @SuppressWarnings("unchecked") ObjectProvider<CurrentUser> users = mock(ObjectProvider.class);
     when(users.getObject()).thenReturn(actor);
-    mvc = MockMvcBuilders.standaloneSetup(new ConnectionController(service, invitationService, linkService, users, profile, iam)).build();
+    mvc = MockMvcBuilders.standaloneSetup(new ConnectionController(service, invitationService, linkService, queries, users)).build();
   }
 
   @ParameterizedTest
@@ -61,7 +53,7 @@ class ConnectionControllerTest {
     mvc.perform(post(BASE + url).contentType(MediaType.APPLICATION_JSON).content(body))
         .andExpect(status().isBadRequest())
         .andExpect(result -> assertInstanceOf(MethodArgumentNotValidException.class, result.getResolvedException()));
-    verifyNoInteractions(service, invitationService, linkService);
+    verifyNoInteractions(service, invitationService, linkService, queries);
   }
 
   private static final UUID UUID_ID = UUID.fromString(ID);
@@ -92,7 +84,7 @@ class ConnectionControllerTest {
   }
 
   @Test void invitationsKeepExactArrayShape() throws Exception {
-    when(invitationService.invitations(actor)).thenReturn(List.of(new InvitationResult(UUID_ID, UUID_ID, UUID_ID, "PENDING", NOW, EXPIRES)));
+    when(queries.invitations(actor)).thenReturn(List.of(new InvitationResult(UUID_ID, UUID_ID, UUID_ID, "PENDING", NOW, EXPIRES)));
     data(mvc.perform(get(BASE + "/parent-student/invitations")),
         "[{\"invitationId\":\"%s\",\"inviterUserId\":\"%s\",\"invitedUserId\":\"%s\",\"status\":\"PENDING\",\"createdAt\":\"2026-10-11T03:00:00Z\",\"expiresAt\":\"2026-10-18T03:00:00Z\"}]".formatted(ID, ID, ID));
   }
@@ -111,7 +103,7 @@ class ConnectionControllerTest {
   }
 
   @Test void linksKeepExactArrayShape() throws Exception {
-    when(linkService.links(actor)).thenReturn(List.of(new ParentStudentLinkResult(UUID_ID, UUID_ID, UUID_ID, "CONFIRMED", NOW)));
+    when(queries.links(actor)).thenReturn(List.of(new ParentStudentLinkResult(UUID_ID, UUID_ID, UUID_ID, "CONFIRMED", NOW)));
     data(mvc.perform(get(BASE + "/parent-student/links")), "[" + LINK + "]");
   }
 
@@ -127,16 +119,15 @@ class ConnectionControllerTest {
   }
 
   @Test void learnerListDoesNotLeakInternalFields() throws Exception {
-    when(service.requests(actor, UUID_ID)).thenReturn(List.of(requestResult()));
+    when(queries.requests(actor, UUID_ID)).thenReturn(List.of(requestResult()));
     data(mvc.perform(get(BASE + "/requests").param("studentId", ID)), "[" + REQUEST + "]");
-    verifyNoInteractions(profile, iam);
+    verify(queries).requests(actor, UUID_ID);
   }
 
   @Test void tutorInboxKeepsPrivacyWhitelistAndLegacySlots() throws Exception {
     when(actor.hasRole("TUTOR")).thenReturn(true);
-    when(service.requests(actor, null)).thenReturn(List.of(requestResult()));
-    when(profile.findGoalForConnection(UUID_ID)).thenReturn(Optional.of(new ConnectionGoalDto(UUID_ID, UUID_ID, UUID_ID, 1, 4, "EXAM", null, "ACTIVE")));
-    when(iam.findUserSummaryById(UUID_ID)).thenReturn(Optional.of(new UserSummaryView(UUID_ID, "hidden@example.test", "Hidden Parent", AccountRole.PARENT, AccountStatus.ACTIVE)));
+    when(queries.tutorInbox(actor)).thenReturn(List.of(new TutorInboxResult(UUID_ID, "EXAM", 1, 4,
+        List.of("Tue 19:00"), null, "PARENT", "PENDING", EXPIRES)));
     data(mvc.perform(get(BASE + "/requests")), "[{\"requestId\":\"%s\",\"goalType\":\"EXAM\",\"subjectId\":1,\"educationLevelId\":4,\"desiredSlots\":[\"Tue 19:00\"],\"message\":null,\"senderRole\":\"PARENT\",\"status\":\"PENDING\",\"expiresAt\":\"2026-10-18T03:00:00Z\"}]".formatted(ID));
   }
 

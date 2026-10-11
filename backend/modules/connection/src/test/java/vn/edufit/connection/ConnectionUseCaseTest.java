@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import vn.edufit.connection.application.ConnectionService;
+import vn.edufit.connection.application.service.ConnectionRequestService;
 import vn.edufit.connection.application.service.LinkInvitationService;
 import vn.edufit.connection.application.service.ParentStudentLinkService;
 import vn.edufit.connection.application.port.ConnectionLock;
@@ -32,7 +32,7 @@ import vn.edufit.shared.exception.*;
 import vn.edufit.shared.notification.NotificationSink;
 
 @ExtendWith(MockitoExtension.class)
-class ConnectionServiceTest {
+class ConnectionUseCaseTest {
   @Mock LinkInvitationRepository invitations;
   @Mock ParentStudentLinkRepository links;
   @Mock ConnectionRequestRepository requests;
@@ -43,12 +43,12 @@ class ConnectionServiceTest {
   @Mock AuditSink audit;
   @Mock NotificationSink notifications;
   @Mock ConnectionInviteQuotaRepository quotas;
-  ConnectionService service;
+  ConnectionRequestService service;
   LinkInvitationService invitationService;
   ParentStudentLinkService linkService;
 
   @BeforeEach void setup() {
-    service = new ConnectionService(requests, classes, profile, lock, notifications, new ConnectionFacadeImpl(links, classes));
+    service = new ConnectionRequestService(requests, classes, profile, lock, notifications, new ConnectionFacadeImpl(links, classes));
     invitationService = new LinkInvitationService(invitations, links, iam, profile, lock, new InvitationQuotaService(quotas, lock), notifications);
     linkService = new ParentStudentLinkService(links, profile, lock, audit, notifications);
   }

@@ -1,6 +1,6 @@
 # Connection: Task Chi Tiết Theo Phase & Commit/Push
 
-**Trạng thái:** Phase 0 hoàn tất trên `feat/connection` tại folder EduFit; chưa bắt đầu Phase 1. Kết quả từng task ghi tại Execution Notes và [báo cáo Phase 0](../../docs/connection/phase0-validation.md). [Contract T01](../../docs/connection/connection-api-contract.md) phân biệt baseline và đích chưa triển khai.
+**Trạng thái:** Phase 0 và Phase 1 (T02–T07) hoàn tất phạm vi cấu trúc trên `feat/connection` tại folder EduFit. Clean verify 348 tests pass không skip; strict coverage chưa đạt, ghi riêng trong [báo cáo Phase 1](../../docs/connection/phase1-validation.md). Chưa bắt đầu Phase 2. [Contract T01](../../docs/connection/connection-api-contract.md) phân biệt runtime hiện tại và đích của phase sau.
 
 **Plan chi tiết:** [plan.md](plan.md), đặc biệt mục 0.4–0.6 chứa SHA, conflict thật và coupling tests. Mẫu workflow: Discovery `tasks/plan.md` và `tasks/todo.md`; Connection lưu riêng tại `tasks/connection/` để không ghi đè chúng. Scope backend Connection UC3.1–3.5 và integration contracts, không triển khai frontend.
 
@@ -135,7 +135,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** `refactor(connection): split invitation and parent link use cases`.
 - **Kết thúc:** Commit + push + suite evidence.
 
-### [ ] T07 — Tách request/query use cases, chuyển hết caller
+### [x] T07 — Tách request/query use cases, chuyển hết caller
 
 - **Files:** `ConnectionRequestService`, `ConnectionQueryService`, controller, service cũ, tests và `app/.../ArchitectureBoundaryTest.java` expected class assertion.
 - **Thực hiện:** Move create/list/cancel/respond request; service query sở hữu metadata mapping thay controller. Xóa `ConnectionService` sau scan sạch; đổi expected class trong Discovery `ArchitectureBoundaryTest` sang FacadeImpl cùng commit, giữ Discovery layer assertions khác; direct sinks giữ đến task event migration.
@@ -145,7 +145,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** `refactor(connection): split request and scoped query services`.
 - **Kết thúc:** Commit + push + scan caller.
 
-**Checkpoint 1:** structure chuẩn, DTO boundary đúng, facade compatible, 10 routes regression pass, lock adapter cùng transaction.
+**Checkpoint 1 — cấu trúc hoàn tất:** DTO boundary/facade compatible, 10 routes regression pass, lock adapter cùng transaction. Clean full verify 348 tests pass (0 fail/error/skip); strict coverage gate FAIL, chưa chứng nhận80%. Evidence, counters và giới hạn: [Phase 1 validation](../../docs/connection/phase1-validation.md).
 
 ## Phase 2 — Guard, clock, transaction và event foundation
 
@@ -409,6 +409,13 @@ Theo yêu cầu workspace cập nhật, đã chuyển hai tài liệu này từ 
 - Contract chốt10routes/schema/errors, required accept, consent/cooldown, WITHDRAWN system closure, deadline/privacy, page/Admin lookup. Slots v1 + compatibility/strict rollout gate giữ legacy reader; chưa inventory DB thật, không tự bật strict.
 - Bổ sung yêu cầu SRS inviter name/role vào T18c; CSV48giờ cũ sửa tại T20; main CSRF bypass được ghi baseline và scope fix riêng Connection tại T21. Không sửa runtime các hành vi mới trong T01.
 - Fixtures JSON/link docs được kiểm tra; review diff/docs namespace, không mất tasks/plan.md/tasks/todo.md của Discovery. Phase 1 vẫn chưa bắt đầu.
+
+### Phase 1 — 11/10/2026
+
+- T02 `e08e96c`, T03 `09d62da`, T04 `c558b9e`, T05 `71a08ab`, T06 `0b6e81c` đã commit/push riêng lên feat/connection. T07 dùng commit `refactor(connection): split request and scoped query services`, chứa cập nhật checkpoint này.
+- T07 xóa service cũ; chuyển hết caller và expected architecture class trong cùng task. Discovery production code và tasks/plan.md/tasks/todo.md giữ nguyên; không thay migration/API facade.
+- Clean reactor verify 348 tests pass, Connection 55 + App 57, PostgreSQL không skip. Strict verify tái sử dụng execution data full run vẫn FAIL tại Shared baseline; Connection75.12% lines /47.73% branches còn gap (baseline warning41%/22%). Không hạ ngưỡng; quality gate strict vẫn chưa đạt.
+- Main/Discovery refs không đổi, stash WIP Discovery nguyên vẹn. Chi tiết từng task/logs/review/giới hạn ở [báo cáo Phase 1](../../docs/connection/phase1-validation.md). Dừng trước T08a.
 
 ## 6. Task con bắt buộc — mỗi dòng là một commit và push
 

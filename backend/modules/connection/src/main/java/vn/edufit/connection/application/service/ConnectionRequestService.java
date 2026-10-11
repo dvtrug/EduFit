@@ -1,4 +1,4 @@
-package vn.edufit.connection.application;
+package vn.edufit.connection.application.service;
 
 import java.time.Instant;
 import java.util.List;
@@ -6,19 +6,25 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edufit.connection.api.ConnectionFacade;
-import vn.edufit.connection.application.dto.*;
+import vn.edufit.connection.application.dto.ConnectionRequestResult;
+import vn.edufit.connection.application.dto.ClassResult;
 import vn.edufit.connection.application.port.ConnectionLock;
-import vn.edufit.connection.infra.persistence.entity.*;
-import vn.edufit.connection.infra.persistence.repository.*;
+import vn.edufit.connection.infra.persistence.entity.ConnectionRequest;
+import vn.edufit.connection.infra.persistence.entity.TutoringClass;
+import vn.edufit.connection.infra.persistence.repository.ConnectionRequestRepository;
+import vn.edufit.connection.infra.persistence.repository.TutoringClassRepository;
 import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.profile.api.dto.ConnectionGoalDto;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
 import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.notification.NotificationSink;
-import vn.edufit.shared.exception.*;
+import vn.edufit.shared.exception.ForbiddenOperationException;
+import vn.edufit.shared.exception.ResourceConflictException;
+import vn.edufit.shared.exception.EntityNotFoundException;
+import vn.edufit.shared.exception.InvalidOperationException;
 
 @Service
-public class ConnectionService {
+public class ConnectionRequestService {
   private final ConnectionRequestRepository requests;
   private final TutoringClassRepository classes;
   private final ProfileFacade profile;
@@ -26,7 +32,8 @@ public class ConnectionService {
   private final NotificationSink notifications;
   private final ConnectionFacade facade;
 
-  public ConnectionService(ConnectionRequestRepository requests, TutoringClassRepository classes, ProfileFacade profile, ConnectionLock lock, NotificationSink notifications, ConnectionFacade facade) {
+  public ConnectionRequestService(ConnectionRequestRepository requests, TutoringClassRepository classes,
+      ProfileFacade profile, ConnectionLock lock, NotificationSink notifications, ConnectionFacade facade) {
     this.requests = requests;
     this.classes = classes;
     this.profile = profile;
@@ -85,22 +92,7 @@ public class ConnectionService {
     return ConnectionRequestResult.from(created);
   }
 
-  @Transactional
-  public List<ConnectionRequestResult> requests(CurrentUser actor, UUID studentId) {
-    if (actor.hasRole("TUTOR")) {
-      UUID tutorId = profile.getTutorIdByUserId(actor.getUserId());
-      List<ConnectionRequest> result = requests.findByTutorIdOrderByCreatedAtDesc(tutorId);
-      result.forEach(r -> r.expire(Instant.now()));
-      return result.stream().map(ConnectionRequestResult::from).toList();
-    }
-    requireRole(actor, "STUDENT", "PARENT");
-    UUID scope = actor.hasRole("STUDENT") ? profile.getStudentIdByUserId(actor.getUserId()) : studentId;
-    if (scope == null) throw new InvalidOperationException("Cần chỉ định học sinh");
-    requireStudentAccess(actor, scope);
-    List<ConnectionRequest> result = requests.findByStudentIdOrderByCreatedAtDesc(scope);
-    result.forEach(r -> r.expire(Instant.now()));
-    return result.stream().map(ConnectionRequestResult::from).toList();
-  }
+
 
   @Transactional(noRollbackFor = ResourceConflictException.class)
   public void cancelRequest(CurrentUser actor, UUID id) {
