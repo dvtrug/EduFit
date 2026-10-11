@@ -22,7 +22,7 @@ Cập nhật 2026-10-12: B00 và Phase 1 (B02–B04) hoàn tất. Các phase sau
 ## Quota và failure isolation
 
 - [x] B05: AI log REQUIRES_NEW và lỗi commit được kiểm chứng/cô lập.
-- [ ] B06: Quota reservation atomic, rolling 24h, concurrency/stale reservation tests.
+- [x] B06: Quota reservation atomic, rolling 24h, concurrency/stale reservation tests.
 - [ ] B07: Matching dùng quota mới; deadline qua fake HTTP; fallback không đổi ranking.
 - [ ] Checkpoint C: PostgreSQL tests pass, không skip.
 
@@ -81,3 +81,4 @@ Cập nhật 2026-10-12: B00 và Phase 1 (B02–B04) hoàn tất. Các phase sau
 - Lệnh B05 từ backend/JDK 21: `mvn -B -ntp -pl app -am '-Dtest=AiLogPostgresTest,Ai*Test,GeminiLlmProviderTest,StubLlmProviderTest' '-Dsurefire.failIfNoSpecifiedTests=false' test`.
 - Nhánh `feat/discovery-ai`; mỗi task hoàn tất được commit và push riêng theo yêu cầu. Không thay đổi frontend/main; chưa gọi Gemini live.
 - B06 persistence slice: V1.12 + AiMatchQuota API; **3 Flyway tests + 9 app architecture checks pass, không skip**. [Schema red](b06-schema-red.log): 3 failures vì chưa có V1.12; [schema green](b06-schema-green.log): clean migration, legacy upgrade, quota backfill và rerun no-op pass. Schema/API được commit riêng trước implementation/wiring; B06 tổng thể chưa đánh dấu xong ở slice này.
+- B06 implementation hoàn tất: [quota red](b06-quota-red.log) 13 cases fail với empty-admission scaffold; [quota green](b06-quota-green.log) 13 quota + 7 logger + 9 app architecture checks pass (AI config/architecture cũng pass); [quota final](b06-quota-final.log) **15 quota cases, 0 fail/error/skip**, gồm bổ sung deferred commit và terminal-store failure. PostgreSQL thật, barrier đồng thời, Clock kiểm soát mốc 24h, actor riêng, outer rollback/restart và stale lease. Lệnh: `mvn -B -ntp -pl app -am '-Dtest=AiQuotaPostgresTest' '-Dsurefire.failIfNoSpecifiedTests=false' test`. Caller vẫn dùng đường cũ cho đến B07; không nhận B06 riêng là runtime quota đã được enforce.

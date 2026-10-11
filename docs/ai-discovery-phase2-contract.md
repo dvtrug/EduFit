@@ -21,3 +21,13 @@ Migration mới `V1.12` tạo `ai_match_quota_actor` (khóa theo actor) và `ai_
 Upgrade backfill mọi log MATCH_EXPLANATION cũ thành reservation terminal, giữ log ID/time/status. Audit log giữ nguyên; quota sẽ chỉ count reservation, không cộng hai bảng. Student/Parent dùng actor user ID riêng. Lease expiry không hoàn lại quota; mọi reservation vẫn tính trong rolling 24h. Migration cũ không bị sửa.
 
 Java port `AiMatchQuota.tryReserve(actorUserId)` trả ID nếu commit reservation thành công, empty nếu hết quota; store lỗi phải throw AiUnavailableException. Không dùng precheck count rồi call. Commit persistence contract mới chỉ chuẩn bị schema/API; B06 implementation và B07 wiring mới kích hoạt admission runtime.
+
+## B06 — Atomic reservation implementation
+
+`AiMatchQuotaService` chạy REQUIRES_NEW / READ_COMMITTED. Repository upsert actor gate, khóa dòng actor FOR UPDATE, expire lease cũ, count mọi trạng thái với `reserved_at > now - 24h`, rồi insert nếu chưa đủ 10. Quyết định chỉ được trả về sau commit. Không có HTTP trong transaction này. Actor gate được PostgreSQL khóa xuyên process; xem [PostgreSQL row locks](https://www.postgresql.org/docs/current/explicit-locking.html).
+
+UTC Clock được inject (`aiQuotaClock`); timestamp chuẩn microsecond của PostgreSQL. Mốc đúng 24h bị loại khỏi cửa sổ; lỗi/timeout/SUCCESS/EXPIRED và reservation đang chạy đều tính theo thời điểm reserve, không theo lúc kết thúc. Timestamp tương lai do clock dịch ngược được tính bảo thủ để fail-closed. Lease là provider timeout cấu hình + 30s (mặc định 45s). Lazy expiry khi actor reserve lần tiếp theo hoặc khi finish: không cần tiến trình cũ sống, không xóa dữ liệu hoặc hoàn lượt. Trạng thái terminal ghi một lần; late completion không thay EXPIRED.
+
+Reservation lỗi tại insert/commit -> rollback, safe AiUnavailableException, không cho phép gọi provider. Finish bị lỗi DB -> cảnh báo kỹ thuật và false; reservation vẫn tồn tại/đếm quota, lease sẽ hết hạn. PostgreSQL lock timeout 2s, statement timeout 3s và transaction timeout 5s giới hạn contention; thời gian lấy connection từ pool do cấu hình pool quản lý. Chưa coi đây là deadline tuyệt đối của HTTP request.
+
+`AiQuotaPostgresTest` kiểm tra race khi đang có 9 lượt, race khởi tạo gate với 12 callers, exact 24h, actor Student/Parent riêng, outer rollback/service restart, lease expiry/late result, lỗi insert/deferred commit và store unavailable. B07 mới bỏ precheck Discovery và bắt buộc reserve trong gateway.
