@@ -22,6 +22,11 @@ class Notification {
   protected Notification() {}
   Notification(UUID userId, UUID studentId, String type, String title, String text,
       String targetType, UUID targetId) {
+    this(userId, studentId, type, title, text, targetType, targetId, Instant.now());
+  }
+
+  Notification(UUID userId, UUID studentId, String type, String title, String text,
+      String targetType, UUID targetId, Instant occurredAt) {
     this.userId = userId;
     this.studentId = studentId;
     this.type = type;
@@ -29,6 +34,6 @@ class Notification {
     this.text = text;
     this.targetType = targetType;
     this.targetId = targetId;
-    createdAt = Instant.now();
+    createdAt = occurredAt;
   }
 }

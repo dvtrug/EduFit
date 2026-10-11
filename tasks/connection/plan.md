@@ -534,3 +534,10 @@ Lệnh selector dùng `failIfNoSpecifiedTests=false` chỉ để dependency modu
 - Không sửa migrations đã chạy; không mất lịch sử REVOKED, request/class/student ownership.
 - Docs đồng bộ final code, diagram đúng transaction/event, số đo có dataset và môi trường.
 - Mỗi task một commit code + tests + checklist, push xác nhận upstream đúng SHA; không tự merge main.
+
+
+## Phase 2 implementation checkpoint — 11/10/2026
+
+T08a–T08c cung cấp shared IAM Clock và guard thuần tại entity mutators. T09 dùng typed transition results; expiry conflict được map tại controller sau service proxy, failed writes rollback mặc định và outer transaction được tôn trọng. T10a định nghĩa bốn public event record chỉ chứa IDs/status/time và cause enum. T10b dựng listener BEFORE_COMMIT/writer MANDATORY cho invitation-created; chưa chuyển production publishers hay hoàn tất recipient matrix. Các dispatch khác được nối cùng publisher task tiếp theo, không gửi trùng direct sink hiện có.
+
+Chi tiết RED/GREEN, PostgreSQL flush/deferred failures, listener delay, coverage strict và giới hạn ở [Phase 2 validation](../../docs/connection/phase2-validation.md). Không tự triển khai Phase 3, không sửa Flyway SQL hoặc main/Discovery trong checkpoint này.

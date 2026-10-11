@@ -169,7 +169,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** `fix(connection): make expiry and write rollback semantics explicit`.
 - **Kết thúc:** Commit + push + transaction evidence.
 
-### [ ] T10 — Thêm public event contract và consumer nền
+### [x] T10 — Thêm public event contract và consumer nền
 
 - **Files:** 4 `api/event` records, notification listener skeleton/dispatch, notification pom, event wiring tests.
 - **Thực hiện:** Event IDs/aggregate IDs/actor/student/status/time; no PII/admin reason. Listener BEFORE_COMMIT gọi writer nội bộ cùng transaction; chỉ đăng ký xử lý các type đã chuyển publisher ở tasks sau, không nhân đôi sinks cũ.
@@ -433,7 +433,7 @@ Các nhóm bên dưới **thay thế commit cha**, không còn là gợi ý “n
 | [x] T08b | Invitation/link mutator guards, policy và parameterized tests | Terminal reject, deadline/cooldown đúng biên; focused link/invite regression | T08a | `fix(connection): guard invitation and link transitions` |
 | [x] T08c | Request mutator guard/policy và tests | Request terminal/action matrix và expiry boundary pass | T08b | `fix(connection): guard request transitions` |
 | [x] T10a | Public event records + contract tests | Payload Java/public IDs, no PII, compile all callers | T09 | `feat(connection): define public transition event records` |
-| [ ] T10b | Notification listener/wiring/pom + transactional tests | BEFORE_COMMIT failure rollback, no outside-transaction execution, graph acyclic | T10a | `feat(notification): consume connection transitions transactionally` |
+| [x] T10b | Notification listener/wiring/pom + transactional tests | BEFORE_COMMIT failure rollback, no outside-transaction execution, graph acyclic | T10a | `feat(notification): consume connection transitions transactionally` |
 | [ ] T11a | Invitation service/repository + tests | Two-way consent, ACTIVE/DEACTIVATED, generic response, known-history cooldown, closure | T10b | `fix(connection): enforce invitation consent and privacy` |
 | [ ] T11b | Invitation event publishers + notification listener/tests | Create/accept/decline events + notifications đúng một lần; rollback atomic | T11a | `refactor(connection): publish invitation transition events` |
 | [ ] T12a | Structured audit input + adapter/entity + migration/tests | Old sink API vẫn hoạt động; snapshot đủ accounts/reason; Flyway count/fixtures update, clean+upgrade pass | T11b | `feat(audit): persist structured connection revocation snapshots` |
@@ -458,3 +458,9 @@ Dependency của task cha kế tiếp dùng **task con cuối nhóm**: T09 sau T
 ### Phase 2 execution
 
 - T08a: shared Clock and deterministic boundary/context tests; evidence in [Phase 2 validation](../../docs/connection/phase2-validation.md).
+
+- T08b/T08c: terminal/action matrices và deadline/cooldown guards đã verify và push riêng.
+- T09: typed conflicts, expiry commit trước HTTP409 và default rollback cho required write failures; PostgreSQL flush/deferred/outer-transaction evidence đã pass.
+- T10a/T10b: event records và listener BEFORE_COMMIT/writer MANDATORY nền đã verify. Chưa chuyển production publishers hoặc hoàn tất recipient matrix; việc này đi cùng các task Phase3/expiry.
+- Checkpoint2 functional: `clean verify` toàn reactor 437 tests pass, zero failure/error/skip. Strict coverage tái sử dụng full-run execution data vẫn FAIL tại Shared (LINE78/103=75.73%, BRANCH20/28=71.43%). Connection LINE385/486=79.22%, BRANCH99/194=51.03%; Notification LINE17/23=73.91%, BRANCH3/4=75.00%, cũng dưới ngưỡng80%. Không hạ gate và không tuyên bố strict pass. Chi tiết [Phase2 validation](../../docs/connection/phase2-validation.md).
+- Dừng sau T10b; Phase3/T11a chưa bắt đầu. Main/Discovery refs, hai task files Discovery và các stash cũ giữ nguyên; WIP riêng của người dùng không đưa vào commit.

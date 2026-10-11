@@ -13,10 +13,15 @@
   <packaging>jar</packaging>
   <name>EduFit :: Module :: Notification</name>
   <dependencies>
-    <!-- Chỉ dùng Shared Kernel, không phụ thuộc vào bất kỳ module nghiệp vụ nào khác -->
+    <!-- Shared kernel and public Connection event API; dependency remains one-way. -->
     <dependency>
       <groupId>vn.edufit</groupId>
       <artifactId>shared</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>vn.edufit</groupId>
+      <artifactId>connection</artifactId>
     </dependency>
 
     <!-- Spring Starters -->

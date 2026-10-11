@@ -17,7 +17,7 @@ Trạng thái bàn giao T15 ngày 2026-10-10 trên `feat/discovery`. Đọc theo
 - [Authentication contract](authentication-contract.md): thiết kế xác thực; đối chiếu code SecurityConfig khi tích hợp runtime.
 - [Connection module flow](connection/connection-module-flow.md): liên kết Parent/Student và connection workflow.
 - [Connection refactor plan](../tasks/connection/plan.md) và [tasks](../tasks/connection/todo.md): thực thi trên feat/connection, commit/push từng task.
-- [Connection HTTP contract](connection/connection-api-contract.md) và [Phase 0 validation](connection/phase0-validation.md) / [Phase 1 validation](connection/phase1-validation.md): baseline tích hợp, quyết định cho refactor và kết quả kiểm chứng.
+- [Connection HTTP contract](connection/connection-api-contract.md) và [Phase 0 validation](connection/phase0-validation.md) / [Phase 1 validation](connection/phase1-validation.md) / [Phase 2 validation](connection/phase2-validation.md): baseline tích hợp, quyết định cho refactor và kết quả kiểm chứng.
 - [Connection Flyway fix](connection/flyway-fix-validation.md): manifest tương thích main, backup/clone/local validation và phạm vi DB hỗ trợ.
 - [Project overview](PROJECT_OVERVIEW.md): bối cảnh dự án; phần kế hoạch/lịch sử không phải chứng nhận hoàn thành của mọi module.
 
