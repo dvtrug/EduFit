@@ -275,7 +275,7 @@ export function TutorOnboardingWizard() {
 
       showToast("Hoàn tất thiết lập hồ sơ gia sư! Hồ sơ đã được gửi để duyệt KYC.", "success");
       await refreshUser?.();
-      router.push("/dashboard");
+      router.push("/tutor/dashboard");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Có lỗi xảy ra khi lưu hồ sơ gia sư";
       showToast(message, "error");
@@ -317,7 +317,7 @@ export function TutorOnboardingWizard() {
             <span>Đã lưu nháp lúc {lastSaved}</span>
           </div>
           <Link
-            href="/dashboard"
+            href="/tutor/dashboard"
             className="text-xs text-neutral-500 hover:text-neutral-900 transition-colors"
           >
             Bỏ qua để vào sau

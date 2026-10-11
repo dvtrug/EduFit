@@ -323,7 +323,7 @@ export default function HomePage() {
 
               <div>
                 <Link
-                  href="/dashboard"
+                  href="/student/dashboard"
                   className="inline-flex items-center gap-2 px-6 py-3.5 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-full transition shadow-sm active:scale-95"
                 >
                   Khám phá gia sư

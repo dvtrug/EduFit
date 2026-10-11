@@ -47,35 +47,35 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "TỔNG QUAN",
         items: [
-          { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-          { label: "Tiến độ học tập", href: "/dashboard/progress", icon: TrendingUp },
+          { label: "Dashboard", href: "/student/dashboard", icon: LayoutDashboard },
+          { label: "Tiến độ học tập", href: "/student/progress", icon: TrendingUp },
         ],
       },
       {
         title: "TÌM KIẾM",
         items: [
-          { label: "Tìm gia sư", href: "/dashboard/tutors", icon: Search },
-          { label: "Gợi ý AI Match", href: "/dashboard/tutors?tab=matches", icon: Sparkles, badge: "AI" },
-          { label: "Yêu cầu kết nối", href: "/dashboard/tutors?tab=requests", icon: UserCheck },
+          { label: "Tìm gia sư", href: "/student/tutors", icon: Search },
+          { label: "Gợi ý AI Match", href: "/student/tutors?tab=matches", icon: Sparkles, badge: "AI" },
+          { label: "Yêu cầu kết nối", href: "/student/tutors?tab=requests", icon: UserCheck },
         ],
       },
       {
         title: "HỌC TẬP",
         items: [
-          { label: "Lớp của tôi", href: "/dashboard/classes", icon: BookOpen },
-          { label: "Lịch học tuần", href: "/dashboard/schedule", icon: Calendar },
+          { label: "Lớp của tôi", href: "/student/classes", icon: BookOpen },
+          { label: "Lịch học tuần", href: "/student/schedule", icon: Calendar },
         ],
       },
       {
         title: "TÀI CHÍNH",
         items: [
-          { label: "Học phí & Thanh toán", href: "/dashboard/payments", icon: CreditCard },
+          { label: "Học phí & Thanh toán", href: "/student/payments", icon: CreditCard },
         ],
       },
       {
         title: "CÀI ĐẶT",
         items: [
-          { label: "Hồ sơ học tập", href: "/dashboard/profile", icon: Settings },
+          { label: "Hồ sơ học tập", href: "/student/profile", icon: Settings },
         ],
       },
     ],
@@ -86,28 +86,28 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "TỔNG QUAN",
         items: [
-          { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-          { label: "Xác minh bằng cấp", href: "/dashboard/verification", icon: FileCheck2, badge: "KYC" },
+          { label: "Dashboard", href: "/tutor/dashboard", icon: LayoutDashboard },
+          { label: "Xác minh bằng cấp", href: "/tutor/verification", icon: FileCheck2, badge: "KYC" },
         ],
       },
       {
         title: "GIẢNG DẠY",
         items: [
-          { label: "Lịch dạy", href: "/dashboard/schedule", icon: Calendar },
-          { label: "Lớp học 1-1", href: "/dashboard/classes", icon: BookOpen },
-          { label: "Yêu cầu học viên", href: "/dashboard/requests", icon: UserCheck },
+          { label: "Lịch dạy", href: "/tutor/schedule", icon: Calendar },
+          { label: "Lớp học 1-1", href: "/tutor/classes", icon: BookOpen },
+          { label: "Yêu cầu học viên", href: "/tutor/requests", icon: UserCheck },
         ],
       },
       {
         title: "THU NHẬP",
         items: [
-          { label: "Báo cáo thu nhập", href: "/dashboard/earnings", icon: DollarSign },
+          { label: "Báo cáo thu nhập", href: "/tutor/earnings", icon: DollarSign },
         ],
       },
       {
         title: "CÀI ĐẶT",
         items: [
-          { label: "Hồ sơ & Môn dạy", href: "/dashboard/profile", icon: Settings },
+          { label: "Hồ sơ & Môn dạy", href: "/tutor/profile", icon: Settings },
         ],
       },
     ],
@@ -118,22 +118,28 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "TỔNG QUAN",
         items: [
-          { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-          { label: "Liên kết con em", href: "/dashboard/children", icon: HeartHandshake, badge: "2" },
+          { label: "Dashboard", href: "/parent/dashboard", icon: LayoutDashboard },
+          { label: "Liên kết con em", href: "/parent/children", icon: HeartHandshake, badge: "2" },
         ],
       },
       {
         title: "THEO DÕI",
         items: [
-          { label: "Tiến độ học tập", href: "/dashboard/progress", icon: BarChart3 },
-          { label: "Lịch học gia đình", href: "/dashboard/schedule", icon: Calendar },
-          { label: "Gia sư đồng hành", href: "/dashboard/tutors", icon: GraduationCap },
+          { label: "Tiến độ học tập", href: "/parent/progress", icon: BarChart3 },
+          { label: "Lịch học gia đình", href: "/parent/schedule", icon: Calendar },
+          { label: "Gia sư đồng hành", href: "/parent/tutors", icon: GraduationCap },
         ],
       },
       {
         title: "TÀI CHÍNH",
         items: [
-          { label: "Gói học & Thanh toán", href: "/dashboard/billing", icon: CreditCard },
+          { label: "Gói học & Thanh toán", href: "/parent/billing", icon: CreditCard },
+        ],
+      },
+      {
+        title: "CÀI ĐẶT",
+        items: [
+          { label: "Hồ sơ phụ huynh", href: "/parent/profile", icon: Settings },
         ],
       },
     ],
@@ -144,23 +150,23 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "HỆ THỐNG",
         items: [
-          { label: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
-          { label: "Duyệt bằng cấp KYC", href: "/dashboard/kyc-queue", icon: ShieldCheck, badge: "5" },
+          { label: "Tổng quan", href: "/admin/dashboard", icon: LayoutDashboard },
+          { label: "Duyệt bằng cấp KYC", href: "/admin/verification-queue", icon: ShieldCheck, badge: "5" },
         ],
       },
       {
         title: "QUẢN LÝ NGƯỜI DÙNG",
         items: [
-          { label: "Học sinh & Phụ huynh", href: "/dashboard/learners", icon: Users },
-          { label: "Gia sư", href: "/dashboard/tutors-management", icon: GraduationCap },
-          { label: "Khiếu nại & Tranh chấp", href: "/dashboard/disputes", icon: AlertTriangle, badge: "2" },
+          { label: "Học sinh & Phụ huynh", href: "/admin/learners", icon: Users },
+          { label: "Gia sư", href: "/admin/tutors-management", icon: GraduationCap },
+          { label: "Khiếu nại & Tranh chấp", href: "/admin/disputes", icon: AlertTriangle, badge: "2" },
         ],
       },
       {
         title: "CẤU HÌNH",
         items: [
-          { label: "Danh mục môn học", href: "/dashboard/catalogs", icon: BookOpen },
-          { label: "Cài đặt hệ thống", href: "/dashboard/settings", icon: Settings },
+          { label: "Danh mục môn học", href: "/admin/catalogs", icon: BookOpen },
+          { label: "Cài đặt hệ thống", href: "/admin/settings", icon: Settings },
         ],
       },
     ],
@@ -182,10 +188,12 @@ export function Sidebar({
   role = "STUDENT",
   collapsed,
   onToggleCollapse,
-  currentPath = "/dashboard",
+  currentPath,
   user,
 }: SidebarProps) {
   const currentConfig = ROLE_NAV_CONFIG[role] || ROLE_NAV_CONFIG.STUDENT;
+  const roleBase = role.toLowerCase();
+  const effectiveCurrentPath = currentPath || `/${roleBase}/dashboard`;
 
   return (
     <aside
@@ -196,7 +204,7 @@ export function Sidebar({
       <div className="p-4 flex flex-col gap-5 overflow-y-auto overflow-x-hidden">
         {/* Logo EduFit chuẩn thương hiệu */}
         <div className="h-12 px-1 flex items-center">
-          <EduFitLogo href="/dashboard#dashboard-top" showText={!collapsed} roleBadge={currentConfig.roleTitle} />
+          <EduFitLogo href={`/${roleBase}/dashboard#dashboard-top`} showText={!collapsed} roleBadge={currentConfig.roleTitle} />
         </div>
 
         {/* Navigation Sections */}
@@ -213,7 +221,7 @@ export function Sidebar({
               </span>
               {section.items.map((item, itemIdx) => {
                 const Icon = item.icon;
-                const isActive = currentPath === item.href;
+                const isActive = effectiveCurrentPath === item.href;
 
                 return (
                   <Link
