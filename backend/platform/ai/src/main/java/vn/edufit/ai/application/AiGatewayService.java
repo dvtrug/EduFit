@@ -1,10 +1,16 @@
 package vn.edufit.ai.application;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import vn.edufit.ai.api.AiFeature;
 import vn.edufit.ai.api.AiGateway;
@@ -14,6 +20,7 @@ import vn.edufit.ai.api.AiTimeoutException;
 import vn.edufit.ai.api.AiUnavailableException;
 import vn.edufit.ai.api.AiUsageQuery;
 import vn.edufit.ai.infra.client.LlmProvider;
+import vn.edufit.ai.infra.config.AiProperties;
 import vn.edufit.ai.infra.persistence.AiRequestLogRepository;
 
 /**
@@ -45,17 +52,23 @@ public class AiGatewayService implements AiGateway, AiUsageQuery {
   private final OutputSanitizer outputSanitizer;
   private final AiRequestLogger requestLogger;
   private final AiRequestLogRepository logRepository;
+  private final ExecutorService providerExecutor;
+  private final Duration timeout;
 
   public AiGatewayService(
       LlmProvider llmProvider,
       OutputSanitizer outputSanitizer,
       AiRequestLogger requestLogger,
-      AiRequestLogRepository logRepository
+      AiRequestLogRepository logRepository,
+      @Qualifier("aiProviderExecutor") ExecutorService providerExecutor,
+      AiProperties properties
   ) {
     this.llmProvider = Objects.requireNonNull(llmProvider, "llmProvider không được phép null");
     this.outputSanitizer = Objects.requireNonNull(outputSanitizer, "outputSanitizer không được phép null");
     this.requestLogger = Objects.requireNonNull(requestLogger, "requestLogger không được phép null");
     this.logRepository = Objects.requireNonNull(logRepository, "logRepository không được phép null");
+    this.providerExecutor = Objects.requireNonNull(providerExecutor, "providerExecutor");
+    this.timeout = properties.timeout();
   }
 
   @Override
@@ -69,12 +82,8 @@ public class AiGatewayService implements AiGateway, AiUsageQuery {
     log.debug("Bắt đầu xử lý AI request [user: {}, feature: {}]", userId, featureName);
 
     try {
-      // 1. Gửi yêu cầu tới LlmProvider (Gemini hoặc Stub). Timeout 15s được cấu hình ở tầng Socket (NFR-10).
-      LlmProvider.LlmResult rawResult = llmProvider.call(
-          request.systemPrompt(),
-          request.userPrompt(),
-          request.temperature()
-      );
+      // Bound the entire provider wait, not just individual socket connect/read operations.
+      LlmProvider.LlmResult rawResult = callProvider(request);
 
       // 2. Làm sạch và kiểm duyệt chuỗi văn bản đầu ra
       String sanitizedText = outputSanitizer.sanitize(rawResult.text());
@@ -104,6 +113,26 @@ public class AiGatewayService implements AiGateway, AiUsageQuery {
         throw aue;
       }
       throw new AiUnavailableException("Dịch vụ AI hiện không khả dụng: " + ex.getMessage(), ex);
+    }
+  }
+
+  private LlmProvider.LlmResult callProvider(AiRequest request) {
+    var call = providerExecutor.submit(() -> llmProvider.call(
+        request.systemPrompt(), request.userPrompt(), request.temperature()));
+    try {
+      return call.get(timeout.toNanos(), TimeUnit.NANOSECONDS);
+    } catch (TimeoutException ex) {
+      call.cancel(true);
+      throw new AiTimeoutException("AI provider exceeded " + timeout, ex);
+    } catch (InterruptedException ex) {
+      call.cancel(true);
+      Thread.currentThread().interrupt();
+      throw new AiUnavailableException("AI provider wait interrupted", ex);
+    } catch (ExecutionException ex) {
+      if (ex.getCause() instanceof RuntimeException cause) {
+        throw cause;
+      }
+      throw new AiUnavailableException("AI provider failed", ex.getCause());
     }
   }
 

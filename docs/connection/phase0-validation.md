@@ -41,7 +41,8 @@ T00 đã commit/push `1fcad8f13ffee85aa64ec6075fcf512bd128fd04`. Merge nguồn m
 - Clean full reactor: `./mvnw.cmd clean verify -B -ntp -Dtest=*,FlywayMigrationIT -Dsurefire.failIfNoSpecifiedTests=false -Djavax.net.ssl.trustStoreType=Windows-ROOT`. BUILD SUCCESS, 133 tests, 0 failure/error/skip, 2:03 phút. Log `t00a-verify.log` trong thư mục evidence ignored.
 - Sau thêm upgrade assertion: `./mvnw.cmd -pl app -am test -B -ntp -Dtest=FlywayMigrationIT,FlywayMigrationScriptTest -Dsurefire.failIfNoSpecifiedTests=false -Djavax.net.ssl.trustStoreType=Windows-ROOT`. 4 tests pass, không skip: clean PostgreSQL 17, upgrade target 1.09 -> 1.10, validate, rerun no-op, manifest/unique versions. Log `t00a-migration-upgrade.log`.
 - Strict: `./mvnw.cmd verify -B -ntp -Djacoco.haltOnFailure=true -Djavax.net.ssl.trustStoreType=Windows-ROOT`. FAIL ở Shared, LINE 75%/BRANCH 71%; các module sau không được strict-verify. Đây là baseline, không đổi code Shared. Log `t00a-strict-verify.log`.
-- Default verify còn warnings: AI 34%/14%, Storage BRANCH 64%, IAM 54%/49%, Profile 71%/53%, Connection 41%/22%, App 26%/41% (LINE/BRANCH). Modules không có execution data bị JaCoCo skip, không coi là coverage đạt.
+- Default verify còn warnings: AI 34%/14%, Storage BRANCH 64%, IAM 54%/49%, Profile 67%/58%, Connection 41%/22%, App 26%/41% (LINE/BRANCH). Modules không có execution data bị JaCoCo skip, không coi là coverage đạt.
+- `git diff --cached --check` ở T00a có whitespace warnings nhập nguyên từ main (`docs/refactor/auth_refactor_plan.md`, EOF `frontend/src/lib/api.ts`). Các file resolution/Connection không có warning; không trộn sửa format upstream vào task integration.
 
 ### Migration lineage phải kiểm tra trước rollout
 
@@ -49,6 +50,27 @@ SQL seed chuyển V1.09 -> V1.10 có Git blob `9e3b3d94df95e90b5814d521a49fe5a59
 
 Clean DB và Connection-history V1.09 đã được kiểm chứng. Database đã chạy **seed main V1.09** có history khác: không thể dùng thẳng manifest Connection này mà tự động validate. Trước dùng nhánh Connection trên DB đó phải đối chiếu script/checksum/history, backup và lập migration reconciliation riêng; không dùng `repair`, đổi history hoặc clean DB thật trong Phase 0. Không có database người dùng nào bị thay đổi; chỉ Testcontainers cô lập.
 
-## T00b / T01
+## T00b — Tích hợp Discovery
+
+T00a đã commit/push `e5871742bdcee9a024db29b8191f4fe9ab6a27b7`. Nguồn Discovery `dd9068e0a14b0e480d1823eab37bc82041166fe5`.
+
+Base main mới làm xuất hiện 6 conflicts thay vì 3 trong audit ban đầu:
+
+1. SecurityConfig: union role matchers của main và public GET tutor search/detail của Discovery; authentication fallback giữ nguyên.
+2. FlywayMigrationIT: giữ manifest 10 file, 4 demo accounts và upgrade assertion T00a.
+3. FlywayMigrationScriptTest: giữ Connection V1.09, seed V1.10 và kiểm tra version duy nhất.
+4. ConnectionServiceTest: giữ 8 tests ban đầu + 5 invocations confirmed-link authorization của Discovery.
+5. ProfileFacadeImpl: giữ constructor 8 arguments/candidate cap/catalog/bounded queries của Discovery; giữ `findGoalForConnection` và `tutorTeaches` của Connection.
+6. ProfileFacadeImplTest: giữ tests/mocks và constructor Discovery, bỏ imports trùng do merge.
+
+`tasks/plan.md` và `tasks/todo.md` giữ nguyên bytes từ Discovery. README docs chỉ đổi link flow Connection vào namespace mới. Ba file WIP được stash riêng vẫn bằng source committed Discovery, không đưa dirty formatting vào nhánh Connection.
+
+Lưu ý baseline SecurityConfig main miễn CSRF toàn `/api/v1/**`, trong khi Discovery cũ chỉ miễn auth. T00b giữ chính sách upstream để integration không âm thầm đổi auth; T01 ghi rõ delta và task khôi phục bảo vệ riêng Connection trước checkpoint security.
+
+Verification: clean full reactor cùng lệnh T00a, log `t00b-verify.log`: **301 tests**, failures/errors/skipped đều0, BUILD SUCCESS, 3:58 phút. Shared22, AI12, Storage6, IAM32, Profile44, Verification16, Connection13, Discovery104, App52. PostgreSQL: MatchingWorkflow9, DiscoveryRead22, MatchingCandidates6, FlywayMigrationIT2 (clean+upgrade) đều pass không skip; Flyway script2, ArchitectureBoundary6, Architecture3 pass. Các suite App đã chạy qua selector `*,FlywayMigrationIT`, không dựa assumption `*IT` mặc định.
+
+Strict full verify `-Djacoco.haltOnFailure=true` vẫn fail tại Shared75%/71%, các module sau chưa strict pass; `t00b-strict-verify.log`. T00b `git diff --cached --check` sạch. Các failures coverage của T00a không được gọi là regression do resolution.
+
+## T01
 
 Chưa hoàn tất; evidence tiếp tục cập nhật trong task tương ứng.

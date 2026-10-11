@@ -56,6 +56,17 @@ class ConnectionServiceTest {
     return user;
   }
 
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"CONFIRMED", "PENDING", "DECLINED", "REVOKED", "NONE"})
+  void matchingAuthorizationQueriesOnlyConfirmedLinks(String status) {
+    UUID parent = UUID.randomUUID(), student = UUID.randomUUID();
+    when(links.existsByParentUserIdAndStudentIdAndStatus(parent, student, "CONFIRMED"))
+        .thenReturn("CONFIRMED".equals(status));
+    assertEquals("CONFIRMED".equals(status), service.hasConfirmedParentLink(parent, student));
+    verify(links).existsByParentUserIdAndStudentIdAndStatus(parent, student, "CONFIRMED");
+    verifyNoMoreInteractions(links);
+  }
+
   @Test void unknownEmailDoesNotRevealAccountAndDoesNotWrite() {
     CurrentUser parent = actor(UUID.randomUUID(), "PARENT");
     when(iam.findUserSummaryByEmail("missing@example.com")).thenReturn(Optional.empty());

@@ -750,8 +750,10 @@ flowchart TD
     app --> platform_audit
 
     discovery -. "Gọi facade" .-> profile
-    discovery -. "Gọi facade" .-> review
-    discovery -. "Gọi facade" .-> scheduling
+    discovery -. "Confirmed Parent link facade" .-> connection
+    discovery -. "AI explanation / quota API" .-> platform_ai
+    discovery -. "Dự kiến UC2.5, chưa có consumer" .-> review
+    discovery -. "Dự kiến UC2.5, chưa có consumer" .-> scheduling
     
     scheduling -. "Gọi facade" .-> connection
     scheduling -. "Gọi facade" .-> profile
@@ -869,11 +871,13 @@ Tất cả các API REST trong hệ thống đều tuân thủ chặt chẽ Resp
 
 ##### 4. Module Discovery (`/api/v1/discovery`)
 
+Hợp đồng hiện thực sau refactor: [Discovery API contract](discovery-api-contract.md), [flow/code và diagram](discovery-module-flow.md), [bằng chứng hiệu năng](discovery-performance-report.md). Các tên field/mã lỗi dưới đây đã đồng bộ với implementation T15; NFR là mục tiêu, không suy ra đã đạt production từ số đo local.
+
 | Endpoint | Method | Phân quyền | Mô tả chức năng | Query / Request Body | Response Data | Mã lỗi |
 |---|---|---|---|---|---|---|
-| `/api/v1/discovery/tutors` | `GET` | Public / Learner | Tìm kiếm & lọc hồ sơ gia sư | Query: `subjectId, levelId, area, mode, minPrice, maxPrice, minRating, page, size` | `Page<{ tutorId, displayName, headline, area, pricePerSession, ratingAvg, reviewCount, verified }>` | `400 INVALID_FILTER` |
-| `/api/v1/discovery/tutors/{tutorId}` | `GET` | Public / Learner | Xem chi tiết hồ sơ & lịch rảnh | *None* | `{ tutorId, displayName, headline, bio, teachingMethod, ratingAvg, slots: [...], subjects: [...] }` | `404 TUTOR_NOT_FOUND` |
-| `/api/v1/discovery/match` | `POST` | Role STUDENT/PARENT | Chạy thuật toán gợi ý gia sư tối ưu | `{ goalId, topN: 5 }` | `[ { tutorId, matchScore, explanation, tutorInfo } ]` | `404 GOAL_NOT_FOUND` |
+| `/api/v1/discovery/tutors` | `GET` | Public | Tìm kiếm gia sư VERIFIED | Query: `subjectId, levelId, area, mode, minPrice, maxPrice, minRating, keyword, dayOfWeek, availableFrom, availableTo, page, size, sortBy, sortDirection` | `Page<TutorDiscoveryCardResponse>` gồm subjects, shortBio và teachingMode | `400 VALIDATION_FAILED / INVALID_OPERATION` |
+| `/api/v1/discovery/tutors/{tutorId}` | `GET` | Public | Chi tiết gia sư VERIFIED & lịch rảnh | UUID tutorId | `TutorDetailResponse` gồm bio, teachingMethod, subjects và `availabilitySlots` | `404 RESOURCE_NOT_FOUND` |
+| `/api/v1/discovery/match` | `POST` | STUDENT sở hữu goal / PARENT có link CONFIRMED; session + CSRF | Xếp hạng trong bounded candidate set, không cam kết global Top N | `{ goalId, topN: 5 }`, topN 1..10 | `[ { tutorId, matchScore, scoreBreakdown, explanation, aiGenerated, tutorInfo } ]`; breakdown 5 yếu tố 0..100 | `400 VALIDATION_FAILED / INVALID_OPERATION`, `401 UNAUTHORIZED`, `403 FORBIDDEN`, `404 RESOURCE_NOT_FOUND` |
 
 ##### 5. Module Connection (`/api/v1/connections`)
 

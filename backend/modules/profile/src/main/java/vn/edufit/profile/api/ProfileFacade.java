@@ -1,9 +1,17 @@
 package vn.edufit.profile.api;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
+import vn.edufit.profile.api.dto.EducationLevelOrderDto;
+import vn.edufit.profile.api.dto.TutorCandidateCriteria;
+import vn.edufit.profile.api.dto.LearningGoalDiscoveryDto;
+import vn.edufit.profile.api.dto.TutorDiscoveryProfileDto;
+import vn.edufit.profile.api.dto.TutorSearchCriteria;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
 import vn.edufit.profile.api.dto.ConnectionGoalDto;
 
@@ -15,6 +23,27 @@ public interface ProfileFacade {
   Optional<TutorSummaryDto> findTutorByUserId(UUID userId);
 
   Optional<TutorSummaryDto> findTutorById(UUID tutorId);
+
+  Page<TutorSummaryDto> searchTutors(TutorSearchCriteria criteria, Pageable pageable);
+
+  Optional<TutorDiscoveryProfileDto> findVerifiedTutorDetail(UUID tutorId);
+
+  List<TutorDiscoveryProfileDto> findVerifiedTutorDetails(List<UUID> tutorIds);
+
+  /**
+   * Returns a bounded, fully hydrated candidate set ordered by rating, review count,
+   * registration time and tutor ID. This preselection does not guarantee a global Top N.
+   */
+  List<TutorDiscoveryProfileDto> findVerifiedCandidatesBySubject(TutorCandidateCriteria criteria);
+
+  /**
+   * Returns the complete level catalog in business order, including retired levels so
+   * deactivation does not make previously non-adjacent levels adjacent.
+   * Missing or duplicate sort orders are rejected as ambiguous catalog data.
+   */
+  List<EducationLevelOrderDto> findEducationLevelsForMatching();
+
+  Optional<LearningGoalDiscoveryDto> findLearningGoalForDiscovery(UUID goalId);
 
   UUID getTutorIdByUserId(UUID userId);
 

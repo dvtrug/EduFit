@@ -61,9 +61,9 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** `chore(connection): integrate main testing quality gates` (merge commit).
 - **Kết thúc:** Commit + push + local/remote SHA, baseline coverage report; baseline gate fail phải được ghi trước task sau.
 
-### [ ] T00b — Tích hợp Discovery và xử lý ba conflict đã xác định
+### [x] T00b — Tích hợp Discovery và xử lý conflicts trên base main mới
 
-- **Files:** Merge delta `origin/feat/discovery` (`dd9068e` tại lần review), đặc biệt ConnectionServiceTest, ProfileFacadeImpl, ProfileFacadeImplTest; giữ `tasks/plan.md`/`tasks/todo.md` của Discovery.
+- **Files:** Merge delta `origin/feat/discovery` (`dd9068e`), 6 conflicts thực tế gồm 3 file Connection/Profile và SecurityConfig/2 Flyway tests; giữ `tasks/plan.md`/`tasks/todo.md` của Discovery.
 - **Thực hiện:** Mô phỏng lại trên base T00a. Resolve theo plan 0.4: union Connection tests với parameterized confirmed-link test; giữ Discovery Profile constructor/bounded candidate/catalog/search và Connection goal/expertise methods; hợp nhất tests. Không dùng ours/theirs hàng loạt. Không copy 3 dirty files từ checkout Discovery.
 - **Acceptance:** Cả hai public API surface cùng tồn tại; không phục hồi full-scan API; Discovery docs giữ nguyên, Connection docs dưới namespace riêng; dependency graph không cycle.
 - **Verification:** Reactor compile/tests Connection/Profile/Discovery tới app; chạy tường minh `MatchingWorkflowPostgresTest`, `DiscoveryReadPostgresTest`, `FlywayMigrationIT` và architecture tests. Đọc test reports để xác nhận PostgreSQL không skip. Baseline full verify + JaCoCo failures phân biệt với regression do resolution.
@@ -396,6 +396,12 @@ Theo yêu cầu workspace cập nhật, đã chuyển hai tài liệu này từ 
 - Merge main `6755121` vào Connection; conflict Flyway test và duplicate version được giải quyết, seed nhập từ main thành V1.10 với nội dung nguyên vẹn. Connection V1.09 không đổi checksum.
 - Clean full verify: 133 tests, 0 fail/error/skip; migration bổ sung: 4 tests gồm clean/upgrade/manifest, đều pass. Strict verify fail tại Shared LINE 75%/BRANCH 71%; ghi baseline, không sửa module ngoài scope hoặc hạ ngưỡng.
 - Xem báo cáo Phase 0 cho lệnh/log/giới hạn lịch sử database. Chưa refactor Phase 1.
+
+### T00b — 11/10/2026
+
+- T00a commit/push `e5871742bdcee9a024db29b8191f4fe9ab6a27b7`; tích hợp Discovery `dd9068e` và resolve đủ 6 file theo báo cáo Phase 0.
+- Clean full verify **301 tests**, 0 failure/error/skip, 3:58 phút. Connection13, Profile44, Discovery104, App52; PostgreSQL matching workflow9/read22/candidates6/Flyway2 đều không skip. Architecture boundary6 + architecture3 pass.
+- Strict coverage vẫn fail tại Shared75%/71%, baseline không đổi. Giữ upstream config, không sửa ngoài scope. `git diff --cached --check` sạch. Docs task/plan Discovery giữ nguyên bytes; main/Discovery refs và stash WIP giữ nguyên.
 
 ## 6. Task con bắt buộc — mỗi dòng là một commit và push
 
