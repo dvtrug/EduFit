@@ -85,7 +85,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 
 ## Phase 1 — Chuẩn hóa cấu trúc và ranh giới
 
-### [ ] T02 — Di chuyển persistence về entity/repository
+### [x] T02 — Di chuyển persistence về entity/repository
 
 - **Files:** 5 entities, 5 repositories và imports caller/tests; một mechanical move duy nhất.
 - **Thực hiện:** Move vào `infra/persistence/entity` và `repository`; giữ tên Java/mapping/table/column/status; không rename entity vô ích. Không thêm migration.

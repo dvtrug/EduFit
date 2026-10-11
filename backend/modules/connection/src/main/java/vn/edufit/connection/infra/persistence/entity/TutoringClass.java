@@ -1,4 +1,4 @@
-package vn.edufit.connection.infra.persistence;
+package vn.edufit.connection.infra.persistence.entity;
 
 import jakarta.persistence.*;
 import java.time.Instant;

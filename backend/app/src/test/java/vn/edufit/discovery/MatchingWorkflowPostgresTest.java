@@ -205,7 +205,7 @@ class MatchingWorkflowPostgresTest {
 
   @Configuration
   @EnableTransactionManagement
-  @EnableJpaRepositories(basePackages = {"vn.edufit.discovery.infra.persistence.repository", "vn.edufit.connection.infra.persistence"})
+  @EnableJpaRepositories(basePackages = {"vn.edufit.discovery.infra.persistence.repository", "vn.edufit.connection.infra.persistence.repository"})
   @Import({TutorMatchingService.class, DiscoveryFacadeImpl.class, DiscoveryQueryService.class, ConnectionService.class})
   static class Config {
     @Bean DataSource dataSource() {
@@ -216,7 +216,7 @@ class MatchingWorkflowPostgresTest {
     @Bean LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource source) {
       var factory = new LocalContainerEntityManagerFactoryBean();
       factory.setDataSource(source);
-      factory.setPackagesToScan("vn.edufit.discovery.infra.persistence.entity", "vn.edufit.connection.infra.persistence");
+      factory.setPackagesToScan("vn.edufit.discovery.infra.persistence.entity", "vn.edufit.connection.infra.persistence.entity");
       factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
       factory.setJpaPropertyMap(Map.of("hibernate.hbm2ddl.auto", "validate"));
       return factory;
