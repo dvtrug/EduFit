@@ -63,7 +63,7 @@ Base main mới làm xuất hiện 6 conflicts thay vì 3 trong audit ban đầu
 5. ProfileFacadeImpl: giữ constructor 8 arguments/candidate cap/catalog/bounded queries của Discovery; giữ `findGoalForConnection` và `tutorTeaches` của Connection.
 6. ProfileFacadeImplTest: giữ tests/mocks và constructor Discovery, bỏ imports trùng do merge.
 
-`tasks/plan.md` và `tasks/todo.md` giữ nguyên bytes từ Discovery. README docs chỉ đổi link flow Connection vào namespace mới. Ba file WIP được stash riêng vẫn bằng source committed Discovery, không đưa dirty formatting vào nhánh Connection.
+`tasks/plan.md` và `tasks/todo.md` giữ nguyên bytes từ Discovery. README docs chỉ đổi link flow Connection vào namespace mới ở T00b. Ba đường dẫn code từng có WIP hiện khớp source committed Discovery; thay đổi đang dở vẫn nằm nguyên trong stash riêng, không đưa dirty formatting vào nhánh Connection.
 
 Lưu ý baseline SecurityConfig main miễn CSRF toàn `/api/v1/**`, trong khi Discovery cũ chỉ miễn auth. T00b giữ chính sách upstream để integration không âm thầm đổi auth; T01 ghi rõ delta và task khôi phục bảo vệ riêng Connection trước checkpoint security.
 
@@ -71,6 +71,12 @@ Verification: clean full reactor cùng lệnh T00a, log `t00b-verify.log`: **301
 
 Strict full verify `-Djacoco.haltOnFailure=true` vẫn fail tại Shared75%/71%, các module sau chưa strict pass; `t00b-strict-verify.log`. T00b `git diff --cached --check` sạch. Các failures coverage của T00a không được gọi là regression do resolution.
 
-## T01
+## T01 — Chốt contract, chưa refactor runtime
 
-Chưa hoàn tất; evidence tiếp tục cập nhật trong task tương ứng.
+T00b đã commit/push `12c1e9b025cb049790a9db2d8021c187ab59dbf6`; main và Discovery đều là ancestors của Connection. [Contract](connection-api-contract.md) ghi đủ 10 routes cũ, schemas/role scopes/error envelope, mandatory accept, slot grammar/legacy rollout, consent/cooldown, system closure, inbox deadline/privacy và routes page/Admin mới. T18c/T20/T21 được cập nhật cho các thiếu sót tìm thấy khi đối chiếu SRS/main mới.
+
+Source inventory slots chỉ là fixture `Mon 18:00`/`Tue 19:00`; không có Connection API writer trong frontend hiện tại. Chưa inventory DB thật; strict parser activation và client CSRF token là điều kiện rollout ghi rõ, không tự bật tại Phase 0.
+
+Verification T01: parse thành công 8 fixtures JSON; không có broken links trong 7 tài liệu kiểm tra, route/schema so code/SRS và review diff; `git diff --check` sạch. Task chỉ đổi docs, không chạy lại backend suite không cần thiết sau khi 301 tests T00b pass. Kiểm tra cuối: main local vẫn `f077e55`, Discovery local vẫn `dd9068e`; stash Discovery WIP vẫn tồn tại. Không merge/push feature vào các nhánh nguồn.
+
+Phase 0 hoàn tất với baseline coverage gap và DB lineage limitation nêu trên. Chưa bắt đầu Phase 1; contract mới là đích, không phải tuyên bố runtime đã đáp ứng.

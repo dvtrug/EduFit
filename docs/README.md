@@ -16,6 +16,8 @@ Trạng thái bàn giao T15 ngày 2026-10-10 trên `feat/discovery`. Đọc theo
 - [Backend module structure guide](backend-module-structure-guide.md): vai trò api/web/application/domain/infra.
 - [Authentication contract](authentication-contract.md): thiết kế xác thực; đối chiếu code SecurityConfig khi tích hợp runtime.
 - [Connection module flow](connection/connection-module-flow.md): liên kết Parent/Student và connection workflow.
+- [Connection refactor plan](../tasks/connection/plan.md) và [tasks](../tasks/connection/todo.md): thực thi trên feat/connection, commit/push từng task.
+- [Connection HTTP contract](connection/connection-api-contract.md) và [Phase 0 validation](connection/phase0-validation.md): baseline tích hợp, quyết định cho refactor và kết quả kiểm chứng.
 - [Project overview](PROJECT_OVERVIEW.md): bối cảnh dự án; phần kế hoạch/lịch sử không phải chứng nhận hoàn thành của mọi module.
 
 Tài liệu Discovery hiện tại mô tả code, không coi prototype/roadmap hoặc ảnh cũ là

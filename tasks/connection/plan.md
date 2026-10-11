@@ -1,6 +1,6 @@
 # Kế Hoạch Triển Khai & Tái Cấu Trúc Kiến Trúc Chi Tiết: Phân Hệ Backend Connection & Engagement (EduFit)
 
-- **Trạng thái:** Đang thực hiện Phase 0 trên `feat/connection`; chưa bắt đầu refactor Phase 1. Kết quả tại [báo cáo Phase 0](../../docs/connection/phase0-validation.md).
+- **Trạng thái:** Phase 0 hoàn tất trên `feat/connection`; chưa bắt đầu refactor Phase 1. Kết quả tại [báo cáo Phase 0](../../docs/connection/phase0-validation.md).
 - **Ngày đối chiếu:** 11/10/2026.
 - **Workspace thực thi duy nhất:** `C:/Users/ASUS/Desktop/EduFit/EduFit`. Mọi code, test, docs và task Connection thực hiện tại đây trên nhánh `feat/connection`, theo yêu cầu cập nhật của người dùng.
 - **Baseline đã audit trước đó:** `feat/connection` tại `43e7461` — `feat(connection): implement parent links and tutor requests`. Checkout `EduFit-connection` chỉ là nơi đọc baseline trong lượt audit cũ, không còn là workspace thực thi.
@@ -18,7 +18,7 @@ Tài liệu Discovery được dùng làm mẫu độ sâu, cấu trúc và quy 
 
 **Trước khi bắt đầu code:** T00 phải bảo toàn 3 thay đổi Discovery đang dở bằng checkpoint/snapshot riêng thuộc Discovery, không stage chúng vào Connection. Nhánh `feat/connection` hiện đang gắn với checkout cũ `EduFit-connection`; phải giải phóng attachment nhánh ở checkout đó sau khi kiểm tra sạch/bảo toàn dữ liệu, rồi mới switch folder `EduFit` sang `feat/connection`. Không dùng `--ignore-other-worktrees`, không để cùng branch được sửa ở hai folder, không xóa folder/worktree trong lượt chuyển tài liệu này. T00a/T00b tích hợp base sau khi branch đã được chuẩn bị tại folder `EduFit`.
 
-**Cập nhật thực thi T00:** Bước bảo toàn/switch trên đã hoàn tất; folder EduFit đang ở `feat/connection`, checkout cũ detached. Fetch mới đưa main lên `6755121` (PR14): có conflict Flyway script test và upstream mặc định `jacoco.haltOnFailure=false`. Mục 0.4–0.5 giữ evidence snapshot lúc audit trước; áp dụng SHA/kết quả mới tại report Phase 0 khi thực thi T00a. Giữ cấu hình upstream, đồng thời chạy strict verify với `-Djacoco.haltOnFailure=true` để báo coverage gap; không hạ ngưỡng hay tuyên bố default success là gate pass.
+**Cập nhật Phase 0:** Đã bảo toàn WIP và switch EduFit sang `feat/connection`; checkout cũ detached. T00a tích hợp main `6755121` ở `e587174`, T00b tích hợp Discovery `dd9068e` ở `12c1e9b`, đã push riêng từng task. Resolve 6 conflicts và trùng Flyway version: giữ Connection V1.09, seed main sang V1.10 nguyên nội dung. Clean full verify301 tests pass, PostgreSQL không skip; strict coverage fail baseline Shared75%/71%, không hạ ngưỡng. [Báo cáo thực thi](../../docs/connection/phase0-validation.md) ghi evidence/giới hạn DB lineage; mục0.4–0.5 bên dưới là snapshot audit trước thực thi. [HTTP contract T01](../../docs/connection/connection-api-contract.md) chốt quyết định cho các task sau; runtime mới chưa được triển khai.
 
 ## 0. Ghi chú tái cấu trúc từ nhánh hiện tại (Refactor Delta & Audit Notes)
 
@@ -42,6 +42,8 @@ V1.09 **đã** thay unique toàn bộ cặp Parent–Student bằng partial uniq
 | Create/cancel request chưa báo Student khi Parent thao tác; cancel chưa báo Tutor | Thiếu FR-12; revoke bởi Admin hiện chỉ báo Parent, thiếu Student | T13–T17 |
 | Gọi `NotificationSink` trực tiếp; không có public transition events | Thiếu contract event của module theo ADR; chuyển từng use case, không gửi trùng | T10–T17 |
 | Inbox thiếu `deadline` dù `ConnectionGoalDto` đã có | Thiếu dữ liệu goal trong BR-37; bổ sung field theo cách tương thích | T18 |
+| Invitation HTTP thiếu tên/vai trò inviter và cooldown history | UC3.2 cần consent có thông tin; UC3.1 E2 cần thời điểm mời lại đã biết, không account enumeration | T01, T18c |
+| Main mới miễn CSRF toàn `/api/v1/**` | Khác Discovery cũ/authentication contract; khôi phục CSRF riêng write routes Connection và test token thật, không đổi policy API khác | T01, T21 |
 | Slot chỉ kiểm tra chuỗi không rỗng/≤100 ký tự; reason reject chưa chặn >300 | Chưa kiểm tra lịch thực sự; phải chốt định dạng và tương thích dữ liệu cũ | T01, T13 |
 | Accept request kiểm tra goal ACTIVE/chuyên môn nhưng không so lại goal.studentId với request.studentId | Thiếu invariant tại thời điểm accept; thêm test dữ liệu thay đổi/bất nhất | T14 |
 | `AuditSink` chỉ lưu actor/action/target/reason, chưa có snapshot hai tài khoản | FR-15 cần cả hai account/time/reason; giữ bằng dữ liệu audit có cấu trúc | T12 |
@@ -221,11 +223,13 @@ Admin revoke audit lưu actor/time/linkId, parentUserId, studentId, studentUserI
 
 ### 2.6. Query, privacy và slot validation
 
-Inbox Tutor chỉ có request ID/status/expiry, goal type/subject/level/**deadline**, desired slots, message, senderRole; không trả contact, email, parent profile hoặc goals khác. Metadata lấy bằng batch facade theo tập goal IDs/sender IDs; Profile/IAM tự query bảng sở hữu. Xử lý goal/account thiếu bằng contract rõ (record an toàn có metadata unavailable hoặc lỗi dữ liệu được kiểm soát), không để một lookup thiếu ném exception giữa stream mà lộ dữ liệu còn lại.
+Inbox Tutor chỉ có request ID/status/expiry, goal type/subject/level/**deadline**, desired slots, message, senderRole; không trả contact, email, parent profile hoặc goals khác. Metadata lấy bằng batch facade theo tập goal IDs/sender IDs; Profile/IAM tự query bảng sở hữu. T01 chốt thiếu metadata bắt buộc trả controlled409 toàn response, không drop item/giả role; deadline null hợp lệ không phải thiếu metadata.
 
-Routes list hiện có vẫn trả list để giữ client. Đề xuất thêm routes `/parent-student/invitations/page`, `/parent-student/links/page`, `/requests/page` với response phân trang ổn định `(createdAt DESC, id DESC)`; mặc định 20/max 100. Không lặng lẽ cắt list cũ hoặc đổi list thành Page. Route Admin lookup mới chỉ phục vụ UC3.3, bắt buộc ADMIN và lọc email server-side, response tối thiểu; hợp đồng chốt T01.
+Routes list hiện có vẫn trả list để giữ client. T01 chốt thêm routes `/parent-student/invitations/page`, `/parent-student/links/page`, `/requests/page` với custom data `{items,page,size,totalElements,totalPages}`; mặc định20/max100. Invitation/request sort createdAt DESC rồi ID DESC; links sort confirmedAt DESC rồi linkId DESC. Không truncate list cũ hoặc đổi list thành Page. Admin lookup GET `/admin/parent-student/links?email=...` dưới prefix Connection chỉ trả CONFIRMED LinkResponse page, guard ADMIN tường minh; lookup email hai phía qua IAM, không lộ reason/email.
 
-`desiredSlots: List<String>` là contract hiện tại. Chưa có grammar chuẩn trong source đã đọc. T01 phải chốt định dạng chính thức và inventory dữ liệu cũ; đề xuất định dạng `MONDAY 18:00-19:00`, day hợp lệ, start < end, interval nửa mở, không trùng; không kiểm tra availability scheduling như đặt lịch thật. Không siết parser khiến dữ liệu legacy không đọc được: giữ reader cũ, áp dụng writer version/normalizer theo quyết định tương thích đã duyệt. Nếu đổi sang object JSON thì phải có API/migration task riêng, không tự làm trong T13.
+Invitation output T18c thêm nullable inviterName/inviterRole/reinviteAfter bằng batch IAM trên tập đã scope; POST invite vẫn generic. Missing required inbox metadata trả controlled409 toàn response, không drop item/giả role. T01 grammar slots: `MONDAY 18:00-19:00`, weekly Asia/Ho_Chi_Minh, không duplicate/overlap/overnight. Reader giữ nguyên legacy strings; T13a có legacy-compatible mặc định và strict-v1 chỉ bật sau inventory persisted data/clients. Source inventory chưa thay cho kiểm tra DB thật; không tự đoán end time.
+
+`desiredSlots: List<String>` giữ nguyên shape. T01 đã chốt `MONDAY 18:00-19:00`, day hợp lệ, start < end, interval nửa mở, không trùng/overlap; không kiểm tra availability Scheduling như đặt lịch thật. T13a giữ legacy reader và validation mode theo contract. Chưa có inventory DB/client ngoài repo nên strict writer chưa được bật mặc định. Nếu đổi sang object JSON phải có API/migration task riêng, không tự làm trong T13.
 
 ## 3. Bản đồ tích hợp đa phân hệ & workflows
 
@@ -352,14 +356,14 @@ File ngoài Connection được tác động có giới hạn:
 - `app/src/test`: PostgreSQL/Flyway/transaction/race/security integration; architecture rule đúng package.
 - `app/.../db/migration`: chỉ file version mới nếu cần, chọn version sau khi kiểm tra base Discovery và migration toàn reactor.
 
-## 5. Những điểm cần review trong bản plan
+## 5. Quyết định đã chốt ở T01
 
-Đây là đề xuất để người dùng review; không chặn việc hoàn thiện hai tài liệu. Khi triển khai, T01 phải ghi quyết định cuối trước task phụ thuộc.
+Các quyết định dưới đây được chi tiết hóa trong [HTTP contract](../../docs/connection/connection-api-contract.md), là đích cho task sau Phase 0; người dùng có thể review trước khi triển khai.
 
 1. Giữ kiến trúc service + JPA theo ADR thay vì tạo domain riêng.
 2. Notification chuyển sang event listener BEFORE_COMMIT để vừa theo ADR vừa giữ atomic DB writes; không dùng AFTER_COMMIT cho dữ liệu bắt buộc.
 3. Giữ routes/field cũ, bổ sung deadline và routes page/Admin lookup; không đổi response envelope ngầm.
-4. Grammar slots và hỗ trợ legacy phải chốt sau inventory; chưa coi chuỗi bất kỳ là lịch hợp lệ.
+4. Grammar slots v1 và legacy-compatible reader/writer đã chốt; chỉ bật strict sau inventory DB/client, không coi chuỗi legacy bất kỳ là interval hợp lệ.
 5. Cooldown chỉ tiết lộ thông tin đã nằm trong lịch sử của actor; email lạ/sai role/inactive/self vẫn phản hồi generic cùng shape.
 6. Parent mất link không làm mất quyền Student với request cũ; notification Parent phải được scope lại theo link hiện tại.
 
@@ -368,12 +372,12 @@ File ngoài Connection được tác động có giới hạn:
 | Điểm | Bằng chứng hiện tại | Hướng xử lý đề xuất / task |
 | --- | --- | --- |
 | Mâu thuẫn module guide/ADR về domain | ADR Decision 3a chỉ định Connection KHÔNG domain | Theo ADR; đồng bộ docs ở T25 |
-| Plan cũ nói test TTL 48 giờ | Test spec hiện đã ghi 14 ngày; SRS/code cùng 14 ngày | Không lặp lại mâu thuẫn cũ; T00 xác nhận trên base thực thi |
-| Slots strings chưa có grammar | DTO/schema List<String>/JSONB, test có `Tue 19:00` | T01 inventory và chốt writer/parser legacy; T13 phụ thuộc quyết định này |
-| Existing CONFIRMED link khi accept invitation cũ | SRS yêu cầu đóng invitation, schema không có CLOSED | Đề xuất WITHDRAWN + system-closure event reason; chốt T01 |
+| Plan cũ nói test TTL 48 giờ | Prose test spec14ngày nhưng CSV minh họa còn47/49giờ; SRS/code14ngày | T01 chốt14ngày; T20 sửa CSV oracle/status/error codes, không sao chép ví dụ sai |
+| Slots strings chưa có grammar | Source inventory có `Mon 18:00`, `Tue 19:00`; chưa inventory DB thật | T01 chốt grammar intervalv1/rollout/legacy reader ở contract; T13a triển khai, strict activation phải có data/client evidence |
+| Existing CONFIRMED link khi accept invitation cũ | SRS yêu cầu đóng invitation, schema không có CLOSED | T01 chốt WITHDRAWN + event reason SYSTEM_ALREADY_LINKED,409 sau transition commit; T11a/b triển khai |
 | Một lớp nhiều goal | SRS còn mở, schema class chỉ một goal | Giữ một goal/class; không mở multi-goal trong refactor |
 | Notification read API có lọc link sau revoke chưa? | Checkout đã có writer, chưa có bằng chứng E2E UC6.3 | T15 xác minh; nếu thiếu, ghi dependency cụ thể và chưa tick quyền E2E |
-| Base tích hợp Discovery mới nhất | Đã fetch và mô phỏng: 3 file conflict với `dd9068e` | T00a cập nhật main, T00b resolve Discovery trước T01; T24 chỉ kiểm chứng cuối |
+| Base tích hợp Discovery mới nhất | T00a/T00b đã tích hợp main6755121/Discoverydd9068e,6conflicts resolve;301tests pass | T24 chỉ kiểm chứng cuối; không merge lại nguồn cũ, không push ngược main/Discovery |
 
 ## 7. Đề xuất mã nguồn và thay đổi chi tiết (Proposed Changes)
 

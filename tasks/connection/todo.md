@@ -1,6 +1,6 @@
 # Connection: Task Chi Tiết Theo Phase & Commit/Push
 
-**Trạng thái:** Đang thực hiện Phase 0 trên `feat/connection` tại folder EduFit. Kết quả từng task ghi tại Execution Notes và [báo cáo Phase 0](../../docs/connection/phase0-validation.md).
+**Trạng thái:** Phase 0 hoàn tất trên `feat/connection` tại folder EduFit; chưa bắt đầu Phase 1. Kết quả từng task ghi tại Execution Notes và [báo cáo Phase 0](../../docs/connection/phase0-validation.md). [Contract T01](../../docs/connection/connection-api-contract.md) phân biệt baseline và đích chưa triển khai.
 
 **Plan chi tiết:** [plan.md](plan.md), đặc biệt mục 0.4–0.6 chứa SHA, conflict thật và coupling tests. Mẫu workflow: Discovery `tasks/plan.md` và `tasks/todo.md`; Connection lưu riêng tại `tasks/connection/` để không ghi đè chúng. Scope backend Connection UC3.1–3.5 và integration contracts, không triển khai frontend.
 
@@ -71,7 +71,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** `chore(connection): integrate discovery and preserve shared profile contracts` (merge commit).
 - **Kết thúc:** Commit + push + SHA base/merge/remote, conflict resolution và baseline evidence trước T01.
 
-### [ ] T01 — Chốt HTTP contract và quyết định còn mở
+### [x] T01 — Chốt HTTP contract và quyết định còn mở
 
 - **Files:** `docs/connection/connection-api-contract.md` (mới), `tasks/connection/plan.md`, `tasks/connection/todo.md`; đọc controller/shared handler/security.
 - **Thực hiện:** Ghi 10 routes cũ, request/response theo role, JSON/error/status codes; actor từ context. Chốt boolean accept bắt buộc, reason/message limits, deadline inbox, generic invite và cooldown known-history. Inventory legacy slots, chốt grammar/writer version/reader compatibility. Chốt WITHDRAWN system closure, routes page và ADMIN lookup.
@@ -264,7 +264,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 ### [ ] T18 — Batch hydrate inbox và bổ sung deadline
 
 - **Files:** Profile/IAM public batch APIs + implementations/repositories, query service/output, inbox HTTP mapper/tests.
-- **Thực hiện:** Batch goals/senders theo IDs một trang hoặc tập list; bỏ lookup per-item/controller; deadline từ ConnectionGoalDto. Safe missing metadata contract theo T01; BR-37 whitelist fields.
+- **Thực hiện:** Batch goals/senders theo IDs một trang hoặc tập list; bỏ lookup per-item/controller; deadline từ ConnectionGoalDto. Invitation cũng batch inviterName/inviterRole/reinviteAfter cho lịch sử đã scope để đáp ứng consent UC3.2/cooldown UC3.1; POST invite vẫn generic. Safe missing metadata theo T01 (controlled409, không giả role/drop item); BR-37 whitelist fields.
 - **Acceptance:** Inbox chỉ thuộc Tutor hiện tại, không contact/Parent profile/goal khác; field cũ giữ, deadline bổ sung; query metadata không tăng theo N.
 - **Verification:** JSON privacy + batch interaction tests; PostgreSQL query counts 1/20/100, OSIV false; Profile/IAM regression. Bắt buộc T18a/T18b/T18c riêng commit/push. Giữ mọi Profile constructor caller, gồm `MatchingCandidatesPostgresTest`, cùng commit khi constructor thay đổi; không đổi enum IAM ngoài ACTIVE/DEACTIVATED.
 - **Phụ thuộc / scope:** T17; M mỗi slice.
@@ -287,8 +287,8 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 
 ### [ ] T20 — Hoàn thiện ma trận unit/service tests
 
-- **Files:** parameterized state/authorization/time/input tests và resources tại module Connection.
-- **Thực hiện:** Bù các ô còn thiếu sau focused tests; giữ đủ 8 scenarios cũ; tests chia theo service. Cover IDs account/profile, parent multiple students, inactive accounts, cooldown/quota boundaries và event recipients.
+- **Files:** parameterized state/authorization/time/input tests và resources tại module Connection; sửa CSV minh họa Connection trong `docs/in-development-testing-specification.md` theo oracle đã chốt.
+- **Thực hiện:** Bù các ô còn thiếu sau focused tests; giữ đủ 8 scenarios cũ; tests chia theo service. Cover IDs account/profile, parent multiple students, inactive accounts, cooldown/quota boundaries và event recipients. Thay CSV47/49giờ/states/error codes sai bằng TTL14ngày/statuses/shared error codes thật; không tạo enums từ ví dụ cũ.
 - **Acceptance:** Mọi transition terminal/role/owner có negative case; mọi bug đã sửa có regression; không test chỉ phản chiếu cách implementation được viết.
 - **Verification:** `mvn -pl modules/connection -am test`, đọc report counts/skip; review matrix -> test name.
 - **Phụ thuộc / scope:** T19; M.
@@ -297,12 +297,12 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 
 ### [ ] T21 — REST với security filter thật và error contract
 
-- **Files:** controller/security integration tests tại app, JSON fixtures, config tests.
-- **Thực hiện:** 10 routes cũ + routes mới; unauthenticated/wrong role/wrong owner/DEACTIVATED; malformed/nullable validation, envelope/conflict 409/rate limit 429. Assert whitelist privacy và no PII trong errors.
-- **Acceptance:** Security không chỉ mocked CurrentUser; accept missing không thành decline; error code/status nhất quán với T01; không đổi CORS/CSRF/session policy ngoài scope.
+- **Files:** controller/security integration tests tại app, JSON fixtures, SecurityConfig và GlobalExceptionHandler cùng regression tests nếu cần mapping400.
+- **Thực hiện:** 10 routes cũ + routes mới; unauthenticated/wrong role/wrong owner/DEACTIVATED; malformed/nullable validation, envelope/conflict409/rate limit429. Thu hẹp exemption CSRF **riêng prefix Connection** đang bị main miễn toàn `/api/v1/**`; client gửi token hiện có, thiếu/sai token403, hợp lệ đi tới nghiệp vụ. Giữ exemption API khác/CORS/session. Mapping malformed JSON/UUID thành400, regression shared handler callers. Assert whitelist privacy/no PII và scoped Admin lookup.
+- **Acceptance:** Filter thật, không chỉ mocked CurrentUser; accept missing không thành decline; error code/status đúng T01; Connection writes có CSRF protection và các API khác giữ policy baseline. Ghi rõ điều kiện client token trước rollout.
 - **Verification:** Chạy tests qua filter chain; kiểm tra actual report. Controller direct invocation không tính là HTTP/filter coverage.
 - **Phụ thuộc / scope:** T20; M.
-- **Commit:** `test(connection): verify secured REST contracts and privacy`.
+- **Commit:** `fix(connection): enforce secured REST contracts and privacy`.
 - **Kết thúc:** Commit + push + route coverage/evidence.
 
 ### [ ] T22 — PostgreSQL migration, atomicity và concurrency matrix
@@ -403,6 +403,13 @@ Theo yêu cầu workspace cập nhật, đã chuyển hai tài liệu này từ 
 - Clean full verify **301 tests**, 0 failure/error/skip, 3:58 phút. Connection13, Profile44, Discovery104, App52; PostgreSQL matching workflow9/read22/candidates6/Flyway2 đều không skip. Architecture boundary6 + architecture3 pass.
 - Strict coverage vẫn fail tại Shared75%/71%, baseline không đổi. Giữ upstream config, không sửa ngoài scope. `git diff --cached --check` sạch. Docs task/plan Discovery giữ nguyên bytes; main/Discovery refs và stash WIP giữ nguyên.
 
+### T01 — 11/10/2026
+
+- T00b commit/push `12c1e9b025cb049790a9db2d8021c187ab59dbf6`; main/Discovery đã là ancestors của Connection, nguồn không bị push ngược.
+- Contract chốt10routes/schema/errors, required accept, consent/cooldown, WITHDRAWN system closure, deadline/privacy, page/Admin lookup. Slots v1 + compatibility/strict rollout gate giữ legacy reader; chưa inventory DB thật, không tự bật strict.
+- Bổ sung yêu cầu SRS inviter name/role vào T18c; CSV48giờ cũ sửa tại T20; main CSRF bypass được ghi baseline và scope fix riêng Connection tại T21. Không sửa runtime các hành vi mới trong T01.
+- Fixtures JSON/link docs được kiểm tra; review diff/docs namespace, không mất tasks/plan.md/tasks/todo.md của Discovery. Phase 1 vẫn chưa bắt đầu.
+
 ## 6. Task con bắt buộc — mỗi dòng là một commit và push
 
 Các nhóm bên dưới **thay thế commit cha**, không còn là gợi ý “nếu lớn thì tách”. Mỗi task con kế thừa acceptance/verification/end-of-task của nhóm cha, đồng thời phải đáp ứng điều kiện riêng dưới đây; thêm focused tests cùng commit. Files là phạm vi chính, imports/fixtures liên quan phải sửa để reactor vẫn build.
@@ -419,12 +426,12 @@ Các nhóm bên dưới **thay thế commit cha**, không còn là gợi ý “n
 | [ ] T12a | Structured audit input + adapter/entity + migration/tests | Old sink API vẫn hoạt động; snapshot đủ accounts/reason; Flyway count/fixtures update, clean+upgrade pass | T11b | `feat(audit): persist structured connection revocation snapshots` |
 | [ ] T12b | Link revoke service + DB/authorization tests | Student/Admin đúng quyền; audit failure rollback link; không cascade delete | T12a | `fix(connection): record revocation and audit atomically` |
 | [ ] T12c | Revoke event + listener/tests | Admin notify cả hai, Student notify Parent; reason không lộ, rollback pass | T12b | `fix(notification): complete link revocation recipients` |
-| [ ] T13a | Slot validator + request validation DTO/tests | Grammar đã chốt T01, legacy read an toàn; message/slot biên pass | T12c, T01 | `fix(connection): validate connection request slots and message` |
+| [ ] T13a | Slot validator + rollout config + request validation DTO/tests | GrammarT01; tests legacy-compatible/strict-v1, legacy read nguyên vẹn; strict chỉ bật sau data/client inventory; message/slot biên pass | T12c, T01 | `fix(connection): validate connection request slots and message` |
 | [ ] T13b | Create/cancel request rules/repository + tests | Owner/goal/tutor/limits/ACTIVE class/cancel guard pass; no unauthorized write | T13a | `fix(connection): enforce request creation and cancellation rules` |
 | [ ] T13c | Request create/cancel events + listener/tests | Tutor/Student notification đúng ma trận, không duplicate direct sink | T13b | `fix(notification): notify request creation and cancellation parties` |
 | [ ] T18a | Profile public batch goal method + implementation/repo/tests | Additive API, giữ bounded candidates/catalog; sửa constructor fixtures cùng commit nếu cần; Profile tests | T17 | `feat(profile): expose batch goal metadata for connection` |
 | [ ] T18b | IAM public batch summaries + implementation/repo/tests | Additive API; không đổi auth/enum; IDs chỉ trả summary cần thiết; IAM regression | T18a | `feat(iam): expose batch sender summaries for connection` |
-| [ ] T18c | Connection query/inbox DTO/mapper + query/JSON tests | Batch wiring, deadline, BR-37 whitelist, counts 1/20/100 và OSIV pass | T18b | `perf(connection): batch tutor inbox metadata and include deadline` |
+| [ ] T18c | Connection query/inbox/invitation DTO/mapper + query/JSON tests | Batch deadline + inviterName/role/reinviteAfter, generic POST/privacy; missing metadata409; counts1/20/100 và OSIV pass | T18b | `perf(connection): batch scoped inbox and invitation metadata` |
 | [ ] T19a | Paged history repo/service/routes + tests/index nếu cần | List cũ giữ shape; page stable/default20/max100; migration test update nếu có | T18c | `feat(connection): add compatible scoped history paging` |
 | [ ] T19b | Admin lookup query/route/DTO + security tests | Chỉ ADMIN, tối thiểu dữ liệu, lookup theo email hai phía, no public enumeration | T19a | `feat(connection): add authorized admin link lookup` |
 | [ ] T22a | PostgreSQL Flyway clean/upgrade tests/support | Migrations/checksums/data history/JSONB/constraints pass, no skip | T21 | `test(connection): verify migration upgrades and retained history` |
@@ -433,4 +440,4 @@ Các nhóm bên dưới **thay thế commit cha**, không còn là gợi ý “n
 
 Dependency của task cha kế tiếp dùng **task con cuối nhóm**: T09 sau T08c; T11a sau T10b; T14 sau T13c; T20 sau T19b; T23 sau T22c. T14–T17 và các task chưa chia vẫn mỗi task một commit/push. Không tạo thêm commit tổng kết cha.
 
-**Quality gate áp dụng mọi task code:** focused tests + affected-module `verify` với JaCoCo mặc định; checkpoint chạy full reactor verify. Failure từ module baseline ngoài scope phải báo module/counter/report riêng, không hạ ngưỡng hoặc đánh dấu full suite pass. Lệnh chỉ chạy `test` không chứng minh gate ở phase `verify`.
+**Quality gate áp dụng mọi task code:** focused tests + affected-module `verify`; checkpoint chạy full reactor verify và strict `-Djacoco.haltOnFailure=true`. Upstream default false chỉ cung cấp report/warnings, không chứng minh coverage gate pass. Failure từ baseline ngoài scope phải báo module/counter/report riêng, không hạ ngưỡng hoặc đánh dấu strict suite pass. Lệnh chỉ chạy `test` không chứng minh gate ở phase `verify`.
