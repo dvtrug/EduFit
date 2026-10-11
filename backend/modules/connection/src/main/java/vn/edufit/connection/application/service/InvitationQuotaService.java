@@ -1,6 +1,7 @@
 package vn.edufit.connection.application.service;
 
 import java.time.Instant;
+import java.time.Clock;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -11,10 +12,12 @@ import vn.edufit.connection.infra.persistence.repository.ConnectionInviteQuotaRe
 
 @Service
 public class InvitationQuotaService {
+  private final Clock clock;
   private final ConnectionInviteQuotaRepository quotas;
   private final ConnectionLock lock;
 
-  public InvitationQuotaService(ConnectionInviteQuotaRepository quotas, ConnectionLock lock) {
+  public InvitationQuotaService(ConnectionInviteQuotaRepository quotas, ConnectionLock lock, Clock clock) {
+    this.clock = clock;
     this.quotas = quotas;
     this.lock = lock;
   }
@@ -25,7 +28,7 @@ public class InvitationQuotaService {
   @Transactional(propagation = Propagation.MANDATORY)
   public Consumption consume(UUID userId) {
     lock.lockInvitationQuota(userId);
-    Instant now = Instant.now();
+    Instant now = clock.instant();
     ConnectionInviteQuota quota = quotas.findById(userId).orElseGet(() -> new ConnectionInviteQuota(userId, now));
     if (!quota.consume(now)) return new Consumption(false, now);
     quotas.save(quota);

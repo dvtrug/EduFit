@@ -1,6 +1,7 @@
 package vn.edufit.connection.application.service;
 
 import java.time.Instant;
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,6 +28,7 @@ import vn.edufit.shared.exception.InvalidOperationException;
 
 @Service
 public class LinkInvitationService {
+  private final Clock clock;
   private final LinkInvitationRepository invitations;
   private final ParentStudentLinkRepository links;
   private final IamFacade iam;
@@ -37,7 +39,8 @@ public class LinkInvitationService {
 
   public LinkInvitationService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
       IamFacade iam, ProfileFacade profile, ConnectionLock lock, InvitationQuotaService quotaService,
-      NotificationSink notifications) {
+      NotificationSink notifications, Clock clock) {
+    this.clock = clock;
     this.invitations = invitations;
     this.links = links;
     this.iam = iam;
@@ -100,7 +103,7 @@ public class LinkInvitationService {
     studentScope.ifPresent(student -> lock.lockStudent(student.studentId()));
     lock.lockInvitationPair(a, b);
     LinkInvitation invitation = invitations.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
-    Instant now = Instant.now();
+    Instant now = clock.instant();
     invitation.expire(now);
     pending(invitation.getStatus());
     if (!accept) {
@@ -138,9 +141,10 @@ public class LinkInvitationService {
         .orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
     if (!invitation.getInviterUserId().equals(actor.getUserId()))
       throw new ForbiddenOperationException("Không phải người gửi lời mời");
-    invitation.expire(Instant.now());
+    Instant now = clock.instant();
+    invitation.expire(now);
     pending(invitation.getStatus());
-    invitation.withdraw(Instant.now());
+    invitation.withdraw(now);
   }
 
 }

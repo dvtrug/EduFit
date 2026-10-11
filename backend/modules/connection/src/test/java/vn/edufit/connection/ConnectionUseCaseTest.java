@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.time.Instant;
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -48,9 +49,9 @@ class ConnectionUseCaseTest {
   ParentStudentLinkService linkService;
 
   @BeforeEach void setup() {
-    service = new ConnectionRequestService(requests, classes, profile, lock, notifications, new ConnectionFacadeImpl(links, classes));
-    invitationService = new LinkInvitationService(invitations, links, iam, profile, lock, new InvitationQuotaService(quotas, lock), notifications);
-    linkService = new ParentStudentLinkService(links, profile, lock, audit, notifications);
+    service = new ConnectionRequestService(requests, classes, profile, lock, notifications, new ConnectionFacadeImpl(links, classes), Clock.systemUTC());
+    invitationService = new LinkInvitationService(invitations, links, iam, profile, lock, new InvitationQuotaService(quotas, lock, Clock.systemUTC()), notifications, Clock.systemUTC());
+    linkService = new ParentStudentLinkService(links, profile, lock, audit, notifications, Clock.systemUTC());
   }
 
   private CurrentUser actor(UUID id, String role) {

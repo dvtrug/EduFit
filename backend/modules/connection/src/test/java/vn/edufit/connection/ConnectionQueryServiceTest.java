@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.time.Instant;
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,7 +38,7 @@ class ConnectionQueryServiceTest {
   ConnectionQueryService service;
 
   @BeforeEach void setup() {
-    service = new ConnectionQueryService(invitations, links, requests, profile, iam, facade);
+    service = new ConnectionQueryService(invitations, links, requests, profile, iam, facade, Clock.systemUTC());
   }
 
   private CurrentUser actor(UUID id, String role) {
@@ -45,6 +46,21 @@ class ConnectionQueryServiceTest {
     lenient().when(actor.getUserId()).thenReturn(id);
     when(actor.hasRole(anyString())).thenAnswer(i -> role.equals(i.getArgument(0)));
     return actor;
+  }
+
+  @ParameterizedTest @ValueSource(longs = {-1, 0, 1})
+  void invitationExpiryUsesInjectedClockAtDeadline(long offset) {
+    Instant deadline = Instant.parse("2026-10-25T00:00:00Z");
+    UUID user = UUID.randomUUID();
+    var invitation = new LinkInvitation(user, UUID.randomUUID(), deadline.minusSeconds(14 * 86400));
+    Clock clock = mock(Clock.class);
+    when(clock.instant()).thenReturn(deadline.plusNanos(offset));
+    service = new ConnectionQueryService(invitations, links, requests, profile, iam, facade, clock);
+    when(invitations.findByInviterUserIdOrInvitedUserIdOrderByCreatedAtDesc(user, user))
+        .thenReturn(List.of(invitation));
+    service.invitations(actor(user, "PARENT"));
+    assertEquals(offset < 0 ? "PENDING" : "EXPIRED", invitation.getStatus());
+    verify(clock, times(1)).instant();
   }
 
   @Test void studentListIgnoresForeignScopeAndReturnsOnlyOwnedStudent() {

@@ -1,6 +1,7 @@
 package vn.edufit.connection.application.service;
 
 import java.time.Instant;
+import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import vn.edufit.shared.exception.EntityNotFoundException;
 
 @Service
 public class ConnectionQueryService {
+  private final Clock clock;
   private final LinkInvitationRepository invitations;
   private final ParentStudentLinkRepository links;
   private final ConnectionRequestRepository requests;
@@ -34,7 +36,8 @@ public class ConnectionQueryService {
   private final ConnectionFacade facade;
 
   public ConnectionQueryService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
-      ConnectionRequestRepository requests, ProfileFacade profile, IamFacade iam, ConnectionFacade facade) {
+      ConnectionRequestRepository requests, ProfileFacade profile, IamFacade iam, ConnectionFacade facade, Clock clock) {
+    this.clock = clock;
     this.invitations = invitations;
     this.links = links;
     this.requests = requests;
@@ -60,7 +63,8 @@ public class ConnectionQueryService {
     requireRole(actor, "PARENT", "STUDENT");
     List<LinkInvitation> result = invitations.findByInviterUserIdOrInvitedUserIdOrderByCreatedAtDesc(
         actor.getUserId(), actor.getUserId());
-    result.forEach(i -> i.expire(Instant.now()));
+    Instant now = clock.instant();
+    result.forEach(i -> i.expire(now));
     return result.stream().map(InvitationResult::from).toList();
   }
 
@@ -79,7 +83,8 @@ public class ConnectionQueryService {
     if (scope == null) throw new InvalidOperationException("Cần chỉ định học sinh");
     requireStudentAccess(actor, scope);
     List<ConnectionRequest> result = requests.findByStudentIdOrderByCreatedAtDesc(scope);
-    result.forEach(r -> r.expire(Instant.now()));
+    Instant now = clock.instant();
+    result.forEach(r -> r.expire(now));
     return result.stream().map(ConnectionRequestResult::from).toList();
   }
 
@@ -88,7 +93,8 @@ public class ConnectionQueryService {
     requireRole(actor, "TUTOR");
     UUID tutorId = profile.getTutorIdByUserId(actor.getUserId());
     List<ConnectionRequest> result = requests.findByTutorIdOrderByCreatedAtDesc(tutorId);
-    result.forEach(r -> r.expire(Instant.now()));
+    Instant now = clock.instant();
+    result.forEach(r -> r.expire(now));
     return result.stream().map(r -> {
       ConnectionGoalDto goal = profile.findGoalForConnection(r.getGoalId())
           .orElseThrow(() -> EntityNotFoundException.of("LearningGoal", r.getGoalId()));

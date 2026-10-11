@@ -1,6 +1,7 @@
 package vn.edufit.connection.application.service;
 
 import java.time.Instant;
+import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import vn.edufit.shared.exception.InvalidOperationException;
 
 @Service
 public class ConnectionRequestService {
+  private final Clock clock;
   private final ConnectionRequestRepository requests;
   private final TutoringClassRepository classes;
   private final ProfileFacade profile;
@@ -33,7 +35,8 @@ public class ConnectionRequestService {
   private final ConnectionFacade facade;
 
   public ConnectionRequestService(ConnectionRequestRepository requests, TutoringClassRepository classes,
-      ProfileFacade profile, ConnectionLock lock, NotificationSink notifications, ConnectionFacade facade) {
+      ProfileFacade profile, ConnectionLock lock, NotificationSink notifications, ConnectionFacade facade, Clock clock) {
+    this.clock = clock;
     this.requests = requests;
     this.classes = classes;
     this.profile = profile;
@@ -76,7 +79,7 @@ public class ConnectionRequestService {
     if (!"VERIFIED".equals(tutor.status()) || !profile.tutorTeaches(tutorId,
         goal.subjectId(), goal.educationLevelId()))
       throw new InvalidOperationException("Gia sư không phù hợp mục tiêu");
-    Instant now = Instant.now();
+    Instant now = clock.instant();
     requests.findByStudentIdAndStatus(goal.studentId(), "PENDING").forEach(r -> r.expire(now));
     requests.flush();
     if (requests.existsByStudentIdAndTutorIdAndStatus(goal.studentId(), tutorId, "PENDING"))
@@ -101,9 +104,10 @@ public class ConnectionRequestService {
     lock.lockStudent(initial.getStudentId());
     ConnectionRequest request = requests.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
     requireStudentAccess(actor, request.getStudentId());
-    request.expire(Instant.now());
+    Instant now = clock.instant();
+    request.expire(now);
     pending(request.getStatus());
-    request.cancel(Instant.now());
+    request.cancel(now);
   }
 
   @Transactional(noRollbackFor = ResourceConflictException.class)
@@ -114,7 +118,7 @@ public class ConnectionRequestService {
     if (!initial.getTutorId().equals(tutorId)) throw new ForbiddenOperationException("Không phải gia sư nhận yêu cầu");
     lock.lockStudent(initial.getStudentId());
     ConnectionRequest request = requests.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
-    Instant now = Instant.now();
+    Instant now = clock.instant();
     request.expire(now);
     pending(request.getStatus());
     if (!accept) {

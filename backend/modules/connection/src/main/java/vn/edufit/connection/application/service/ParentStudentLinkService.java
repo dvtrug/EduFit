@@ -1,6 +1,7 @@
 package vn.edufit.connection.application.service;
 
 import java.time.Instant;
+import java.time.Clock;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ import vn.edufit.shared.exception.InvalidOperationException;
 
 @Service
 public class ParentStudentLinkService {
+  private final Clock clock;
   private final ParentStudentLinkRepository links;
   private final ProfileFacade profile;
   private final ConnectionLock lock;
@@ -26,7 +28,8 @@ public class ParentStudentLinkService {
   private final NotificationSink notifications;
 
   public ParentStudentLinkService(ParentStudentLinkRepository links, ProfileFacade profile,
-      ConnectionLock lock, AuditSink audit, NotificationSink notifications) {
+      ConnectionLock lock, AuditSink audit, NotificationSink notifications, Clock clock) {
+    this.clock = clock;
     this.links = links;
     this.profile = profile;
     this.lock = lock;
@@ -53,7 +56,7 @@ public class ParentStudentLinkService {
     if (!actor.hasRole("ADMIN") && !profile.findStudentById(link.getStudentId())
         .map(s -> s.userId().equals(actor.getUserId())).orElse(false))
       throw new ForbiddenOperationException("Không phải học sinh sở hữu liên kết");
-    link.revoke(actor.getUserId(), reason, Instant.now());
+    link.revoke(actor.getUserId(), reason, clock.instant());
     audit.record(actor.getUserId(), "LINK_REVOKED", "PARENT_STUDENT_LINK", id, reason);
     notifications.notify(link.getParentUserId(), link.getStudentId(), "LINK_REVOKED",
         "Liên kết đã thu hồi", "Quyền truy cập hồ sơ học sinh đã kết thúc", "PARENT_STUDENT_LINK", id);

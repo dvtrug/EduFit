@@ -429,7 +429,7 @@ Các nhóm bên dưới **thay thế commit cha**, không còn là gợi ý “n
 
 | Task thực thi | Files / thay đổi có thể review riêng | Acceptance và verification riêng | Phụ thuộc | Commit message |
 | --- | --- | --- | --- | --- |
-| [ ] T08a | Clock injection vào services, config/context tests | Dùng Clock IAM hiện có, chỉ một candidate; quota/time fixed-clock tests pass | T07 | `refactor(connection): reuse shared clock for deterministic time` |
+| [x] T08a | Clock injection vào services, config/context tests | Dùng Clock IAM hiện có, chỉ một candidate; quota/time fixed-clock tests pass | T07 | `refactor(connection): reuse shared clock for deterministic time` |
 | [ ] T08b | Invitation/link mutator guards, policy và parameterized tests | Terminal reject, deadline/cooldown đúng biên; focused link/invite regression | T08a | `fix(connection): guard invitation and link transitions` |
 | [ ] T08c | Request mutator guard/policy và tests | Request terminal/action matrix và expiry boundary pass | T08b | `fix(connection): guard request transitions` |
 | [ ] T10a | Public event records + contract tests | Payload Java/public IDs, no PII, compile all callers | T09 | `feat(connection): define public transition event records` |
@@ -454,3 +454,7 @@ Các nhóm bên dưới **thay thế commit cha**, không còn là gợi ý “n
 Dependency của task cha kế tiếp dùng **task con cuối nhóm**: T09 sau T08c; T11a sau T10b; T14 sau T13c; T20 sau T19b; T23 sau T22c. T14–T17 và các task chưa chia vẫn mỗi task một commit/push. Không tạo thêm commit tổng kết cha.
 
 **Quality gate áp dụng mọi task code:** focused tests + affected-module `verify`; checkpoint chạy full reactor verify và strict `-Djacoco.haltOnFailure=true`. Upstream default false chỉ cung cấp report/warnings, không chứng minh coverage gate pass. Failure từ baseline ngoài scope phải báo module/counter/report riêng, không hạ ngưỡng hoặc đánh dấu strict suite pass. Lệnh chỉ chạy `test` không chứng minh gate ở phase `verify`.
+
+### Phase 2 execution
+
+- T08a: shared Clock and deterministic boundary/context tests; evidence in [Phase 2 validation](../../docs/connection/phase2-validation.md).
