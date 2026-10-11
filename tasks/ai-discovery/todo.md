@@ -21,7 +21,7 @@ Cập nhật 2026-10-12: B00 và Phase 1 (B02–B04) hoàn tất. Các phase sau
 
 ## Quota và failure isolation
 
-- [ ] B05: AI log REQUIRES_NEW và lỗi commit được kiểm chứng/cô lập.
+- [x] B05: AI log REQUIRES_NEW và lỗi commit được kiểm chứng/cô lập.
 - [ ] B06: Quota reservation atomic, rolling 24h, concurrency/stale reservation tests.
 - [ ] B07: Matching dùng quota mới; deadline qua fake HTTP; fallback không đổi ranking.
 - [ ] Checkpoint C: PostgreSQL tests pass, không skip.
@@ -74,3 +74,9 @@ Cập nhật 2026-10-12: B00 và Phase 1 (B02–B04) hoàn tất. Các phase sau
   - `mvn -B -ntp -pl platform/ai '-Djacoco.haltOnFailure=true' jacoco:check@check-coverage-gate` (tương tự `-pl modules/discovery`).
 - `git diff --check` và `docker compose --env-file .env.example config --quiet` pass. Không có diff frontend; docs Discovery và index đã đồng bộ. Đã rà diff Java/config và error/provenance paths.
 - **Chưa gọi Gemini thật**, chưa cold-start Compose, chưa full-filter session/CSRF/CORS E2E. Test adapter chạy HTTP loopback; Testcontainers dùng PostgreSQL thật. Phase 2 quota/log isolation và các phase HTTP còn pending. Không commit/push/merge.
+
+## Evidence Phase 2
+
+- B05 hoàn tất: `AiLogPostgresTest` **7 tests, 0 fail/error/skip**; selected AI regression pass trong cùng reactor. [Red](b05-red.log): 2 failures + 1 error chứng minh lỗi commit/constraint/usage transaction; [green](b05-green.log): BUILD SUCCESS. Deferred trigger gây lỗi thật tại commit, sequence chứng minh chỉ một insert attempt; outer rollback giữ log; usage store lỗi trả fallback không gọi provider và outer transaction vẫn commit được. [Contract](../../docs/ai-discovery-phase2-contract.md).
+- Lệnh B05 từ backend/JDK 21: `mvn -B -ntp -pl app -am '-Dtest=AiLogPostgresTest,Ai*Test,GeminiLlmProviderTest,StubLlmProviderTest' '-Dsurefire.failIfNoSpecifiedTests=false' test`.
+- Nhánh `feat/discovery-ai`; mỗi task hoàn tất được commit và push riêng theo yêu cầu. Không thay đổi frontend/main; chưa gọi Gemini live.

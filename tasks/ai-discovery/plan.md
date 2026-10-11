@@ -1,7 +1,7 @@
 # AI + Discovery: đánh giá hiện trạng và kế hoạch backend sẵn sàng tích hợp
 
 Ngày kiểm tra: 2026-10-11 (Asia/Ho_Chi_Minh). Base: `feat/discovery`, commit `4cc8767`.
-Trạng thái cập nhật 2026-10-12: **Phase 1 (B02–B04) đã triển khai**. Các mục khảo sát bên dưới ghi hiện trạng trước thay đổi; kết quả thực thi mới ở mục 9 và checklist. Chỉ backend, cấu hình, test và tài liệu; không sửa frontend.
+Trạng thái cập nhật 2026-10-12: **Phase 1 (B02–B04) đã triển khai; Phase 2 đang thực hiện** trên `feat/discovery-ai`, tạo từ main mới nhất lúc chuyển nhánh (`24dc2f1`). Các mục khảo sát bên dưới ghi hiện trạng trước thay đổi; kết quả thực thi mới ở mục 9 và checklist. Chỉ backend, cấu hình, test và tài liệu; không sửa frontend. Theo yêu cầu người dùng, hoàn tất/kiểm tra mỗi task rồi commit và push lên `feat/discovery-ai` trước task tiếp theo.
 Checklist thực thi: [todo.md](todo.md). Kế hoạch Discovery cũ tại `../plan.md` và `../todo.md` được giữ nguyên như lịch sử.
 
 ## 1. Kết luận: đã có AI, nhưng chưa phải chỉ thêm API key là xong

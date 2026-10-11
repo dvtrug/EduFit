@@ -3,6 +3,7 @@
 ## Discovery
 
 - [AI provider contract — Phase 1](ai-discovery-backend-contract.md): cấu hình Gemini/stub, provenance, HTTP provider errors và cách nạp environment.
+- [AI + Discovery — Phase 2](ai-discovery-phase2-contract.md): audit transaction isolation, quota và provider deadline.
 
 Trạng thái bàn giao T15 ngày 2026-10-10 trên `feat/discovery`. Đọc theo thứ tự:
 
