@@ -38,7 +38,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import vn.edufit.connection.application.ConnectionService;
+import vn.edufit.connection.application.service.ConnectionFacadeImpl;
 import vn.edufit.discovery.api.DiscoveryFacade;
 import vn.edufit.discovery.api.event.MatchingExecutedEvent;
 import vn.edufit.discovery.application.service.*;
@@ -206,7 +206,7 @@ class MatchingWorkflowPostgresTest {
   @Configuration
   @EnableTransactionManagement
   @EnableJpaRepositories(basePackages = {"vn.edufit.discovery.infra.persistence.repository", "vn.edufit.connection.infra.persistence.repository"})
-  @Import({TutorMatchingService.class, DiscoveryFacadeImpl.class, DiscoveryQueryService.class, ConnectionService.class})
+  @Import({TutorMatchingService.class, DiscoveryFacadeImpl.class, DiscoveryQueryService.class, ConnectionFacadeImpl.class})
   static class Config {
     @Bean DataSource dataSource() {
       var source = new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());

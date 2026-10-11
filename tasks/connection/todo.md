@@ -95,7 +95,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** `refactor(connection): normalize persistence packages`.
 - **Kết thúc:** Commit + push + mapping/test evidence.
 
-### [ ] T03 — Tách implementation của public facade
+### [x] T03 — Tách implementation của public facade
 
 - **Files:** `api/ConnectionFacade.java` (giữ), `application/service/ConnectionFacadeImpl.java`, `ConnectionService.java`, facade tests, `app/.../discovery/MatchingWorkflowPostgresTest.java`.
 - **Thực hiện:** Chuyển hai public read methods sang bean duy nhất; giữ interface signatures/nested `ActiveClassView`. Service nội bộ không gọi self-invocation facade. Đổi import/@Import trong `MatchingWorkflowPostgresTest` sang FacadeImpl cùng task, cập nhật fixture cần thiết và assertions unit cũ gọi facade mới.

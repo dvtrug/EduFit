@@ -24,11 +24,12 @@ import vn.edufit.shared.notification.NotificationSink;
 import vn.edufit.shared.exception.*;
 
 @Service
-public class ConnectionService implements ConnectionFacade {
+public class ConnectionService {
   private final LinkInvitationRepository invitations;
   private final ParentStudentLinkRepository links;
   private final ConnectionRequestRepository requests;
   private final TutoringClassRepository classes;
+  private final ConnectionFacade facade;
   private final IamFacade iam;
   private final ProfileFacade profile;
   private final EntityManager entityManager;
@@ -39,7 +40,8 @@ public class ConnectionService implements ConnectionFacade {
   public ConnectionService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
       ConnectionRequestRepository requests, TutoringClassRepository classes, IamFacade iam,
       ProfileFacade profile, EntityManager entityManager, AuditSink audit,
-      NotificationSink notifications, ConnectionInviteQuotaRepository quotas) {
+      NotificationSink notifications, ConnectionInviteQuotaRepository quotas, ConnectionFacade facade) {
+    this.facade = facade;
     this.invitations = invitations;
     this.links = links;
     this.requests = requests;
@@ -190,23 +192,10 @@ public class ConnectionService implements ConnectionFacade {
         "Liên kết đã thu hồi", "Quyền truy cập hồ sơ học sinh đã kết thúc", "PARENT_STUDENT_LINK", id);
   }
 
-  @Override
-  @Transactional(readOnly = true)
-  public boolean hasConfirmedParentLink(UUID parentUserId, UUID studentId) {
-    return links.existsByParentUserIdAndStudentIdAndStatus(parentUserId, studentId, "CONFIRMED");
-  }
-
-  @Override
-  @Transactional(readOnly = true)
-  public Optional<ActiveClassView> findActiveClass(UUID studentId, UUID tutorId) {
-    return classes.findByStudentIdAndTutorIdAndStatus(studentId, tutorId, "ACTIVE")
-        .map(c -> new ActiveClassView(c.getId(), c.getStudentId(), c.getTutorId(), c.getGoalId()));
-  }
-
   private void requireStudentAccess(CurrentUser actor, UUID studentId) {
     if (actor.hasRole("STUDENT") && profile.findStudentById(studentId)
         .map(s -> s.userId().equals(actor.getUserId())).orElse(false)) return;
-    if (actor.hasRole("PARENT") && hasConfirmedParentLink(actor.getUserId(), studentId)) return;
+    if (actor.hasRole("PARENT") && facade.hasConfirmedParentLink(actor.getUserId(), studentId)) return;
     throw new ForbiddenOperationException("Không có quyền với học sinh này");
   }
 

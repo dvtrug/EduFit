@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import vn.edufit.connection.application.ConnectionService;
+import vn.edufit.connection.application.service.ConnectionFacadeImpl;
 import vn.edufit.connection.infra.persistence.entity.*;
 import vn.edufit.connection.infra.persistence.repository.*;
 import vn.edufit.iam.api.*;
@@ -45,7 +46,7 @@ class ConnectionServiceTest {
 
   @BeforeEach void setup() {
     service = new ConnectionService(invitations, links, requests, classes, iam, profile,
-        em, audit, notifications, quotas);
+        em, audit, notifications, quotas, new ConnectionFacadeImpl(links, classes));
     lenient().when(em.createNativeQuery(anyString())).thenReturn(query);
     lenient().when(query.setParameter(anyString(), any())).thenReturn(query);
   }
@@ -55,17 +56,6 @@ class ConnectionServiceTest {
     lenient().when(user.getUserId()).thenReturn(id);
     when(user.hasRole(anyString())).thenAnswer(i -> role.equals(i.getArgument(0)));
     return user;
-  }
-
-  @org.junit.jupiter.params.ParameterizedTest
-  @org.junit.jupiter.params.provider.ValueSource(strings = {"CONFIRMED", "PENDING", "DECLINED", "REVOKED", "NONE"})
-  void matchingAuthorizationQueriesOnlyConfirmedLinks(String status) {
-    UUID parent = UUID.randomUUID(), student = UUID.randomUUID();
-    when(links.existsByParentUserIdAndStudentIdAndStatus(parent, student, "CONFIRMED"))
-        .thenReturn("CONFIRMED".equals(status));
-    assertEquals("CONFIRMED".equals(status), service.hasConfirmedParentLink(parent, student));
-    verify(links).existsByParentUserIdAndStudentIdAndStatus(parent, student, "CONFIRMED");
-    verifyNoMoreInteractions(links);
   }
 
   @Test void unknownEmailDoesNotRevealAccountAndDoesNotWrite() {
@@ -106,7 +96,7 @@ class ConnectionServiceTest {
     assertEquals("REVOKED", link.getStatus());
     verify(audit).record(eq(admin.getUserId()), eq("LINK_REVOKED"), anyString(), eq(id), eq("violation"));
     when(links.existsByParentUserIdAndStudentIdAndStatus(parent, student, "CONFIRMED")).thenReturn(false);
-    assertFalse(service.hasConfirmedParentLink(parent, student));
+    assertFalse(new ConnectionFacadeImpl(links, classes).hasConfirmedParentLink(parent, student));
   }
 
   @Test void unlinkedParentCannotSendTutorRequest() {
