@@ -2,6 +2,7 @@ package vn.edufit.connection.application.service;
 
 import java.time.Instant;
 import java.time.Clock;
+import vn.edufit.connection.application.dto.TransitionResult;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -20,7 +21,6 @@ import vn.edufit.profile.api.dto.TutorSummaryDto;
 import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.notification.NotificationSink;
 import vn.edufit.shared.exception.ForbiddenOperationException;
-import vn.edufit.shared.exception.ResourceConflictException;
 import vn.edufit.shared.exception.EntityNotFoundException;
 import vn.edufit.shared.exception.InvalidOperationException;
 
@@ -50,10 +50,6 @@ public class ConnectionRequestService {
     throw new ForbiddenOperationException("Không có quyền thực hiện thao tác này");
   }
 
-  private static void pending(String status) {
-    if (!"PENDING".equals(status)) throw new ResourceConflictException("Không còn ở trạng thái chờ xử lý");
-  }
-
   private void requireStudentAccess(CurrentUser actor, UUID studentId) {
     if (actor.hasRole("STUDENT") && profile.findStudentById(studentId)
         .map(s -> s.userId().equals(actor.getUserId())).orElse(false)) return;
@@ -61,8 +57,8 @@ public class ConnectionRequestService {
     throw new ForbiddenOperationException("Không có quyền với học sinh này");
   }
 
-  @Transactional(noRollbackFor = ResourceConflictException.class)
-  public ConnectionRequestResult request(CurrentUser actor, UUID goalId, UUID tutorId,
+  @Transactional
+  public TransitionResult<ConnectionRequestResult> request(CurrentUser actor, UUID goalId, UUID tutorId,
       List<String> desiredSlots, String message) {
     requireRole(actor, "STUDENT", "PARENT");
     ConnectionGoalDto goal = profile.findGoalForConnection(goalId)
@@ -83,22 +79,20 @@ public class ConnectionRequestService {
     requests.findByStudentIdAndStatus(goal.studentId(), "PENDING").forEach(r -> r.expire(now));
     requests.flush();
     if (requests.existsByStudentIdAndTutorIdAndStatus(goal.studentId(), tutorId, "PENDING"))
-      throw new ResourceConflictException("Đã có yêu cầu chờ gia sư này");
+      return TransitionResult.conflict("PENDING", "Đã có yêu cầu chờ gia sư này");
     if (requests.findByStudentIdAndStatus(goal.studentId(), "PENDING").size() >= 5)
-      throw new ResourceConflictException("Đã đạt giới hạn 5 yêu cầu chờ");
+      return TransitionResult.conflict("PENDING", "Đã đạt giới hạn 5 yêu cầu chờ");
     if (classes.existsByStudentIdAndTutorIdAndStatus(goal.studentId(), tutorId, "ACTIVE"))
-      throw new ResourceConflictException("Đã có lớp đang hoạt động");
+      return TransitionResult.conflict("ACTIVE", "Đã có lớp đang hoạt động");
     ConnectionRequest created = requests.save(new ConnectionRequest(goal.studentId(), tutorId, goalId,
         actor.getUserId(), desiredSlots, message, now));
     notifications.notify(tutor.userId(), goal.studentId(), "CONNECTION_REQUESTED",
         "Yêu cầu kết nối mới", "Bạn có yêu cầu dạy học mới", "CONNECTION_REQUEST", created.getId());
-    return ConnectionRequestResult.from(created);
+    return TransitionResult.success(ConnectionRequestResult.from(created));
   }
 
-
-
-  @Transactional(noRollbackFor = ResourceConflictException.class)
-  public void cancelRequest(CurrentUser actor, UUID id) {
+  @Transactional
+  public TransitionResult<Void> cancelRequest(CurrentUser actor, UUID id) {
     requireRole(actor, "STUDENT", "PARENT");
     ConnectionRequest initial = requests.findById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
     lock.lockStudent(initial.getStudentId());
@@ -106,12 +100,14 @@ public class ConnectionRequestService {
     requireStudentAccess(actor, request.getStudentId());
     Instant now = clock.instant();
     request.expire(now);
-    pending(request.getStatus());
+    if (!"PENDING".equals(request.getStatus()))
+      return TransitionResult.conflict(request.getStatus(), "Không còn ở trạng thái chờ xử lý");
     request.cancel(now);
+    return TransitionResult.success(null);
   }
 
-  @Transactional(noRollbackFor = ResourceConflictException.class)
-  public ClassResult respondRequest(CurrentUser actor, UUID id, boolean accept, String reason) {
+  @Transactional
+  public TransitionResult<ClassResult> respondRequest(CurrentUser actor, UUID id, boolean accept, String reason) {
     requireRole(actor, "TUTOR");
     ConnectionRequest initial = requests.findById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
     UUID tutorId = profile.getTutorIdByUserId(actor.getUserId());
@@ -120,15 +116,16 @@ public class ConnectionRequestService {
     ConnectionRequest request = requests.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
     Instant now = clock.instant();
     request.expire(now);
-    pending(request.getStatus());
+    if (!"PENDING".equals(request.getStatus()))
+      return TransitionResult.conflict(request.getStatus(), "Không còn ở trạng thái chờ xử lý");
     if (!accept) {
       request.reject(reason, now);
       notifications.notify(request.getSentByUserId(), request.getStudentId(), "CONNECTION_REJECTED",
           "Yêu cầu đã bị từ chối", "Gia sư đã từ chối yêu cầu", "CONNECTION_REQUEST", id);
-      return null;
+      return TransitionResult.success(null);
     }
     if (classes.existsByStudentIdAndTutorIdAndStatus(request.getStudentId(), tutorId, "ACTIVE"))
-      throw new ResourceConflictException("Đã có lớp đang hoạt động");
+      return TransitionResult.conflict("ACTIVE", "Đã có lớp đang hoạt động");
     if (!"VERIFIED".equals(profile.findTutorById(tutorId).map(TutorSummaryDto::status).orElse(null)))
       throw new InvalidOperationException("Gia sư chưa được xác minh");
     ConnectionGoalDto goal = profile.findGoalForConnection(request.getGoalId())
@@ -141,6 +138,6 @@ public class ConnectionRequestService {
     TutoringClass created = classes.save(new TutoringClass(request, now));
     notifications.notify(request.getSentByUserId(), request.getStudentId(), "CONNECTION_ACCEPTED",
         "Yêu cầu đã được chấp nhận", "Gia sư đã chấp nhận yêu cầu", "CLASS", created.getId());
-    return ClassResult.from(created);
+    return TransitionResult.success(ClassResult.from(created));
   }
 }

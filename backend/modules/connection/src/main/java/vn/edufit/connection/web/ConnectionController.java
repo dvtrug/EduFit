@@ -35,6 +35,14 @@ public class ConnectionController {
     this.queries = queries;
   }
 
+  // Map only after the service proxy returns (and its owned transaction has completed).
+  private static <T> T value(TransitionResult<T> result) {
+    return switch (result) {
+      case TransitionResult.Success<T> success -> success.value();
+      case TransitionResult.Conflict<T> conflict -> throw new ResourceConflictException(conflict.message());
+    };
+  }
+
   private CurrentUser user() { return users.getObject(); }
 
   @PostMapping("/parent-student/invite")
@@ -52,13 +60,13 @@ public class ConnectionController {
 
   @PostMapping("/parent-student/respond")
   public ApiResponse<LinkResponse> respond(@Valid @RequestBody RespondBody body) {
-    ParentStudentLinkResult link = invitationService.respondInvitation(user(), body.invitationId(), body.accept());
+    ParentStudentLinkResult link = value(invitationService.respondInvitation(user(), body.invitationId(), body.accept()));
     return ApiResponse.success(link == null ? null : LinkResponse.of(link));
   }
 
   @PostMapping("/parent-student/invitations/{id}/withdraw")
   public ApiResponse<Void> withdraw(@PathVariable UUID id) {
-    invitationService.withdrawInvitation(user(), id);
+    value(invitationService.withdrawInvitation(user(), id));
     return ApiResponse.ok();
   }
 
@@ -75,8 +83,8 @@ public class ConnectionController {
 
   @PostMapping("/requests")
   public ApiResponse<RequestResponse> request(@Valid @RequestBody CreateRequestBody body) {
-    return ApiResponse.success(RequestResponse.of(service.request(user(), body.goalId(), body.tutorId(),
-        body.desiredSlots(), body.message())));
+    return ApiResponse.success(RequestResponse.of(value(service.request(user(), body.goalId(), body.tutorId(),
+        body.desiredSlots(), body.message()))));
   }
 
   @GetMapping("/requests")
@@ -89,14 +97,14 @@ public class ConnectionController {
 
   @PostMapping("/requests/{id}/cancel")
   public ApiResponse<Void> cancel(@PathVariable UUID id) {
-    service.cancelRequest(user(), id);
+    value(service.cancelRequest(user(), id));
     return ApiResponse.ok();
   }
 
   @PostMapping("/requests/{id}/respond")
   public ApiResponse<ClassResponse> respondRequest(@PathVariable UUID id,
       @Valid @RequestBody RequestRespondBody body) {
-    ClassResult c = service.respondRequest(user(), id, body.accept(), body.reason());
+    ClassResult c = value(service.respondRequest(user(), id, body.accept(), body.reason()));
     return ApiResponse.success(c == null ? null : ClassResponse.of(c));
   }
 }

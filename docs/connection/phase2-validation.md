@@ -23,3 +23,13 @@ No changes to main/Discovery refs or their task documents. Existing user changes
 - Request TTL remains 7 days. Accept/reject/cancel require PENDING and time strictly before expiry; terminal retries leave state, reason and respondedAt unchanged. Expire remains idempotent.
 - RED: 18/24 state/deadline cases failed (`phase2-red-request.log`). GREEN: affected Connection reactor verify, 113 tests, zero failures/errors/skips (`phase2-T08c.log`). Tests include every terminal/action combination and -1ns/equality/+1ns for each pending action.
 - Review: same central policy as invitations, no schema/new status and no service authorization change.
+
+## T09 — explicit transaction results
+
+- Replace broad `noRollbackFor=ResourceConflictException` on invitation/request writes with sealed Success/Conflict results for expected business conflicts. Controller unwraps after the service proxy returns. Failed required writes throw normally and roll back.
+- Request creation also returns typed duplicate/quota/active-class conflicts after expiring stale requests. No DB exception is caught inside a write transaction, no REQUIRES_NEW bypasses caller rollback.
+- RED PostgreSQL regression proved previous code committed ACCEPTED when notification threw ResourceConflictException (`phase2-red-rollback.log`: expected PENDING, actual ACCEPTED).
+- HTTP constraint/optimistic-lock mapping is scoped to Connection only; raw Hibernate constraint failures from flush and Spring-translated failures from commit are mapped outside the service transaction, without exposing SQL.
+- PostgreSQL checks: invitation/request expiry persists despite HTTP409; outer rollback restores PENDING; create conflict persists stale expiry; notification conflict rolls back invitation+link and request+class; outer accept rollback leaves no class; forced class flush and deferred-commit constraint errors roll back and allow a later retry.
+- Initial verification exposed raw Hibernate flush errors reaching global500; scoped mapping was corrected, not swallowed in the transaction (`phase2-T09.log`). Final affected reactor verify: 113 Connection + 13 PostgreSQL + 9 architecture tests, zero failures/errors/skips (`phase2-T09-final.log`).
+- Review: public facade and ten routes keep existing success shapes; currentStatus remains internal. Returning Success inside an outer transaction is not a promise of committed data.

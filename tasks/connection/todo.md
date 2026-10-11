@@ -159,7 +159,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** Không tạo commit cha; dùng ba commit của T08a–T08c.
 - **Kết thúc:** Commit + push + state matrix result.
 
-### [ ] T09 — Thay noRollbackFor rộng bằng kết quả transition rõ ràng
+### [x] T09 — Thay noRollbackFor rộng bằng kết quả transition rõ ràng
 
 - **Files:** transition result DTO, invitation/request services, controller mapper, transaction tests tại app.
 - **Thực hiện:** Expire thành công trả typed conflict result; HTTP map sau service transaction. Write failures rollback mặc định; constraint errors map ngoài transaction. Không catch DB exception rồi tiếp tục ghi.

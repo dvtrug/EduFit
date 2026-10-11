@@ -82,8 +82,8 @@ class ConnectionUseCaseTest {
     LinkInvitation invitation = new LinkInvitation(parent, student, Instant.now().minusSeconds(15 * 86400));
     when(invitations.findById(id)).thenReturn(Optional.of(invitation));
     when(invitations.lockById(id)).thenReturn(Optional.of(invitation));
-    assertThrows(ResourceConflictException.class,
-        () -> invitationService.respondInvitation(actor(student, "STUDENT"), id, true));
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Conflict.class,
+        invitationService.respondInvitation(actor(student, "STUDENT"), id, true));
     assertEquals("EXPIRED", invitation.getStatus());
     verify(links, never()).save(any());
   }

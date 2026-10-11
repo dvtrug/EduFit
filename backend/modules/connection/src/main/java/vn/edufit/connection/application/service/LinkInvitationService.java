@@ -2,6 +2,7 @@ package vn.edufit.connection.application.service;
 
 import java.time.Instant;
 import java.time.Clock;
+import vn.edufit.connection.application.dto.TransitionResult;
 import vn.edufit.connection.application.policy.ConnectionTransitions;
 import java.util.List;
 import java.util.Optional;
@@ -23,7 +24,6 @@ import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.notification.NotificationSink;
 import vn.edufit.shared.exception.ForbiddenOperationException;
-import vn.edufit.shared.exception.ResourceConflictException;
 import vn.edufit.shared.exception.EntityNotFoundException;
 import vn.edufit.shared.exception.InvalidOperationException;
 
@@ -54,10 +54,6 @@ public class LinkInvitationService {
   private static void requireRole(CurrentUser actor, String... roles) {
     for (String role : roles) if (actor.hasRole(role)) return;
     throw new ForbiddenOperationException("Không có quyền thực hiện thao tác này");
-  }
-
-  private static void pending(String status) {
-    if (!"PENDING".equals(status)) throw new ResourceConflictException("Không còn ở trạng thái chờ xử lý");
   }
 
   @Transactional
@@ -91,10 +87,8 @@ public class LinkInvitationService {
     return true;
   }
 
-
-
-  @Transactional(noRollbackFor = ResourceConflictException.class)
-  public ParentStudentLinkResult respondInvitation(CurrentUser actor, UUID id, boolean accept) {
+  @Transactional
+  public TransitionResult<ParentStudentLinkResult> respondInvitation(CurrentUser actor, UUID id, boolean accept) {
     requireRole(actor, "PARENT", "STUDENT");
     LinkInvitation initial = invitations.findById(id).orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
     UUID a = initial.getInviterUserId(), b = initial.getInvitedUserId();
@@ -106,12 +100,13 @@ public class LinkInvitationService {
     LinkInvitation invitation = invitations.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
     Instant now = clock.instant();
     invitation.expire(now);
-    pending(invitation.getStatus());
+    if (!"PENDING".equals(invitation.getStatus()))
+      return TransitionResult.conflict(invitation.getStatus(), "Không còn ở trạng thái chờ xử lý");
     if (!accept) {
       invitation.decline(now);
       notifications.notify(a, null, "LINK_DECLINED", "Lời mời đã bị từ chối",
           "Người nhận đã từ chối lời mời", "LINK_INVITATION", id);
-      return null;
+      return TransitionResult.success(null);
     }
     UserSummaryView inviter = iam.findUserSummaryById(a)
         .orElseThrow(() -> new InvalidOperationException("Tài khoản gửi không còn hợp lệ"));
@@ -123,16 +118,16 @@ public class LinkInvitationService {
         .filter(current -> studentScope.map(before -> before.studentId().equals(current.studentId())).orElse(false))
         .orElseThrow(() -> new InvalidOperationException("Hồ sơ học sinh không còn hợp lệ"));
     if (links.existsByParentUserIdAndStudentIdAndStatus(parent, student.studentId(), "CONFIRMED"))
-      throw new ResourceConflictException("Liên kết đã tồn tại");
+      return TransitionResult.conflict("CONFIRMED", "Liên kết đã tồn tại");
     invitation.accept(now);
     ParentStudentLink link = links.save(new ParentStudentLink(parent, student.studentId(), now));
     notifications.notify(a, student.studentId(), "LINK_CONFIRMED", "Liên kết đã xác nhận",
         "Người nhận đã chấp nhận lời mời", "PARENT_STUDENT_LINK", link.getId());
-    return ParentStudentLinkResult.from(link);
+    return TransitionResult.success(ParentStudentLinkResult.from(link));
   }
 
-  @Transactional(noRollbackFor = ResourceConflictException.class)
-  public void withdrawInvitation(CurrentUser actor, UUID id) {
+  @Transactional
+  public TransitionResult<Void> withdrawInvitation(CurrentUser actor, UUID id) {
     requireRole(actor, "PARENT", "STUDENT");
     LinkInvitation initial = invitations.findById(id)
         .orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
@@ -144,8 +139,10 @@ public class LinkInvitationService {
       throw new ForbiddenOperationException("Không phải người gửi lời mời");
     Instant now = clock.instant();
     invitation.expire(now);
-    pending(invitation.getStatus());
+    if (!"PENDING".equals(invitation.getStatus()))
+      return TransitionResult.conflict(invitation.getStatus(), "Không còn ở trạng thái chờ xử lý");
     invitation.withdraw(now);
+    return TransitionResult.success(null);
   }
 
 }

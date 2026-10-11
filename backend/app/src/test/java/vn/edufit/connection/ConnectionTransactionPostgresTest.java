@@ -149,12 +149,164 @@ class ConnectionTransactionPostgresTest {
       assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
       return null;
     }).when(notifications).notify(eq(studentUser), eq(student), eq("CONNECTION_ACCEPTED"), anyString(), anyString(), eq("CLASS"), any(UUID.class));
-    var created = requests.respondRequest(actor, request, true, null);
+    var result = requests.respondRequest(actor, request, true, null);
+    var created = ((vn.edufit.connection.application.dto.TransitionResult.Success<vn.edufit.connection.application.dto.ClassResult>) result).value();
     assertNotNull(created.classId());
     assertEquals("ACCEPTED", jdbc.queryForObject("select status from connection_request where request_id = ?", String.class, request));
     assertEquals("ACTIVE", jdbc.queryForObject("select status from class where class_id = ?", String.class, created.classId()));
     assertEquals(1, jdbc.queryForObject("select count(*) from class where connection_request_id = ?", Integer.class, request));
     verify(notifications).notify(eq(studentUser), eq(student), eq("CONNECTION_ACCEPTED"), anyString(), anyString(), eq("CLASS"), eq(created.classId()));
+  }
+
+  private record RequestFixture(UUID request, UUID student, UUID tutor, UUID goal, UUID studentUser, UUID tutorUser) {}
+
+  private RequestFixture pendingRequest() {
+    var jdbc = new JdbcTemplate(source);
+    UUID studentUser = account("STUDENT"), tutorUser = account("TUTOR");
+    UUID student = UUID.randomUUID(), tutor = UUID.randomUUID(), goal = UUID.randomUUID(), request = UUID.randomUUID();
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", student, studentUser);
+    jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'Tutor','ONLINE',100000,'VERIFIED')", tutor, tutorUser);
+    jdbc.update("insert into learning_goal(goal_id,student_id,subject_id,current_level,desired_level,goal_type,deadline,mode,budget_max) values (?,?,1,1,2,'EXAM_PREPARATION',current_date + 30,'ONLINE',100000)", goal, student);
+    jdbc.update("insert into connection_request(request_id,student_id,tutor_id,goal_id,sent_by_user_id,desired_slots,expires_at) values (?,?,?,?,?,cast(? as jsonb),now() + interval '7 days')",
+        request, student, tutor, goal, studentUser, "[]");
+    lenient().when(profile.getTutorIdByUserId(tutorUser)).thenReturn(tutor);
+    lenient().when(profile.findTutorById(tutor)).thenReturn(Optional.of(new TutorSummaryDto(tutor,
+        tutorUser, "Tutor", null, null, null, null, null, null, null, "VERIFIED", Instant.now(), null, 0)));
+    lenient().when(profile.findGoalForConnection(goal)).thenReturn(Optional.of(
+        new ConnectionGoalDto(goal, student, studentUser, 1, 4, "EXAM_PREPARATION", null, "ACTIVE")));
+    lenient().when(profile.tutorTeaches(tutor, 1, 4)).thenReturn(true);
+    return new RequestFixture(request, student, tutor, goal, studentUser, tutorUser);
+  }
+
+  @Test void conflictExceptionFromRequiredWriteRollsBackAcceptedRequestAndClass() {
+    var fixture = pendingRequest();
+    doThrow(new vn.edufit.shared.exception.ResourceConflictException("injected writer conflict"))
+        .when(notifications).notify(any(), any(), anyString(), anyString(), anyString(), anyString(), any());
+    assertThrows(vn.edufit.shared.exception.ResourceConflictException.class, () ->
+        requests.respondRequest(actor(fixture.tutorUser(), "TUTOR"), fixture.request(), true, null));
+    var jdbc = new JdbcTemplate(source);
+    assertEquals("PENDING", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
+    assertEquals(0, jdbc.queryForObject("select count(*) from class where connection_request_id=?", Integer.class, fixture.request()));
+  }
+
+  private org.springframework.test.web.servlet.MockMvc http(CurrentUser actor) {
+    @SuppressWarnings("unchecked") org.springframework.beans.factory.ObjectProvider<CurrentUser> users = mock(org.springframework.beans.factory.ObjectProvider.class);
+    when(users.getObject()).thenReturn(actor);
+    return org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup(
+        new vn.edufit.connection.web.ConnectionController(requests, invitations, links, queries, users))
+        .setControllerAdvice(new vn.edufit.connection.web.ConnectionWriteExceptionHandler(),
+            new vn.edufit.web.advice.GlobalExceptionHandler()).build();
+  }
+
+  @Test void expiredInvitationCommitsBeforeHttpConflictAndOuterRollbackIsRespected() throws Exception {
+    var jdbc = new JdbcTemplate(source);
+    UUID parent = account("PARENT"), studentUser = account("STUDENT"), invitation = UUID.randomUUID();
+    jdbc.update("insert into link_invitation(invitation_id,inviter_user_id,invited_user_id,expires_at) values (?,?,?,now()-interval '1 day')", invitation, parent, studentUser);
+    var actor = actor(parent, "PARENT");
+    new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+      var result = invitations.withdrawInvitation(actor, invitation);
+      assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Conflict.class, result);
+      assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
+      status.setRollbackOnly();
+    });
+    assertEquals("PENDING", jdbc.queryForObject("select status from link_invitation where invitation_id=?", String.class, invitation));
+    http(actor).perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(
+        "/api/v1/connections/parent-student/invitations/" + invitation + "/withdraw"))
+        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isConflict())
+        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.code").value("CONFLICT_DETECTED"));
+    assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
+    assertEquals("EXPIRED", jdbc.queryForObject("select status from link_invitation where invitation_id=?", String.class, invitation));
+    verifyNoInteractions(notifications);
+  }
+
+  @Test void expiredRequestCommitsBeforeHttpConflictAndOuterRollbackIsRespected() throws Exception {
+    var fixture = pendingRequest(); var jdbc = new JdbcTemplate(source);
+    jdbc.update("update connection_request set expires_at=now()-interval '1 day' where request_id=?", fixture.request());
+    var actor = actor(fixture.tutorUser(), "TUTOR");
+    new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+      assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Conflict.class,
+          requests.respondRequest(actor, fixture.request(), true, null));
+      status.setRollbackOnly();
+    });
+    assertEquals("PENDING", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
+    http(actor).perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(
+        "/api/v1/connections/requests/" + fixture.request() + "/respond")
+        .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content("{\"accept\":true}"))
+        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isConflict());
+    assertEquals("EXPIRED", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
+    assertEquals(0, jdbc.queryForObject("select count(*) from class where connection_request_id=?", Integer.class, fixture.request()));
+    verifyNoInteractions(notifications);
+  }
+
+  @Test void createConflictCommitsOldRequestExpiry() {
+    var expired = pendingRequest(); var other = pendingRequest(); var jdbc = new JdbcTemplate(source);
+    jdbc.update("update connection_request set expires_at=now()-interval '1 day' where request_id=?", expired.request());
+    jdbc.update("insert into connection_request(request_id,student_id,tutor_id,goal_id,sent_by_user_id,desired_slots,expires_at) values (?,?,?,?,?,cast(? as jsonb),now()+interval '7 days')",
+        UUID.randomUUID(), expired.student(), other.tutor(), expired.goal(), expired.studentUser(), "[]");
+    when(profile.findStudentById(expired.student())).thenReturn(Optional.of(new vn.edufit.profile.api.dto.StudentSummaryDto(
+        expired.student(), expired.studentUser(), 4, null, true)));
+    var result = requests.request(actor(expired.studentUser(), "STUDENT"), expired.goal(), other.tutor(), java.util.List.of("Tue 19:00"), null);
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Conflict.class, result);
+    assertEquals("EXPIRED", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, expired.request()));
+    verifyNoInteractions(notifications);
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"flush", "deferred"})
+  void databaseClassFailureRollsBackAcceptedRequestAndMapsAfterTransaction(String phase) throws Exception {
+    var fixture = pendingRequest(); var jdbc = new JdbcTemplate(source);
+    jdbc.execute("create function connection_test_fail_class() returns trigger language plpgsql as $$ begin raise exception 'injected class constraint' using errcode='23514'; end; $$");
+    String trigger = phase.equals("deferred")
+        ? "create constraint trigger connection_test_class_failure after insert on class deferrable initially deferred for each row execute function connection_test_fail_class()"
+        : "create trigger connection_test_class_failure before insert on class for each row execute function connection_test_fail_class()";
+    jdbc.execute(trigger);
+    if (phase.equals("flush")) doAnswer(call -> { em.flush(); return null; }).when(notifications)
+        .notify(any(), any(), anyString(), anyString(), anyString(), anyString(), any());
+    try {
+      http(actor(fixture.tutorUser(), "TUTOR")).perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(
+          "/api/v1/connections/requests/" + fixture.request() + "/respond")
+          .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content("{\"accept\":true}"))
+          .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isConflict())
+          .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.message").value("Dữ liệu kết nối đã thay đổi hoặc không còn hợp lệ"));
+      assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
+      assertEquals("PENDING", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
+      assertEquals(0, jdbc.queryForObject("select count(*) from class where connection_request_id=?", Integer.class, fixture.request()));
+    } finally {
+      jdbc.execute("drop trigger connection_test_class_failure on class");
+      jdbc.execute("drop function connection_test_fail_class()");
+    }
+    reset(notifications);
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class,
+        requests.respondRequest(actor(fixture.tutorUser(), "TUTOR"), fixture.request(), true, null));
+    assertEquals(1, jdbc.queryForObject("select count(*) from class where connection_request_id=?", Integer.class, fixture.request()));
+  }
+
+  @Test void acceptedRequestStillRollsBackWithOuterTransaction() {
+    var fixture = pendingRequest();
+    new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+      assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class,
+          requests.respondRequest(actor(fixture.tutorUser(), "TUTOR"), fixture.request(), true, null));
+      status.setRollbackOnly();
+    });
+    var jdbc = new JdbcTemplate(source);
+    assertEquals("PENDING", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
+    assertEquals(0, jdbc.queryForObject("select count(*) from class where connection_request_id=?", Integer.class, fixture.request()));
+  }
+
+  @Test void invitationAndLinkRollbackTogetherWhenNotificationWriteFails() {
+    var jdbc = new JdbcTemplate(source);
+    UUID parent = account("PARENT"), studentUser = account("STUDENT"), student = UUID.randomUUID(), invitation = UUID.randomUUID();
+    jdbc.update("insert into student_profile(student_id,user_id) values (?,?)", student, studentUser);
+    jdbc.update("insert into link_invitation(invitation_id,inviter_user_id,invited_user_id,expires_at) values (?,?,?,now()+interval '14 days')", invitation, parent, studentUser);
+    when(profile.findStudentByUserId(studentUser)).thenReturn(Optional.of(new vn.edufit.profile.api.dto.StudentSummaryDto(student, studentUser, 4, null, true)));
+    when(iam.findUserSummaryById(parent)).thenReturn(Optional.of(new vn.edufit.iam.api.dto.UserSummaryView(
+        parent, "parent@test.invalid", "Parent", vn.edufit.iam.api.AccountRole.PARENT, vn.edufit.iam.api.AccountStatus.ACTIVE)));
+    doThrow(new vn.edufit.shared.exception.ResourceConflictException("injected notification write conflict"))
+        .when(notifications).notify(any(), any(), anyString(), anyString(), anyString(), anyString(), any());
+    assertThrows(vn.edufit.shared.exception.ResourceConflictException.class,
+        () -> invitations.respondInvitation(actor(studentUser, "STUDENT"), invitation, true));
+    assertEquals("PENDING", jdbc.queryForObject("select status from link_invitation where invitation_id=?", String.class, invitation));
+    assertEquals(0, jdbc.queryForObject("select count(*) from parent_student_link where student_id=? and parent_user_id=?", Integer.class, student, parent));
   }
 
   @Test void adaptersRequireAnExistingTransaction() {

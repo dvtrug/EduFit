@@ -91,13 +91,14 @@ class ConnectionControllerTest {
 
   @ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
   void invitationResponseKeepsAcceptAndDeclineShapes(boolean accept) throws Exception {
-    when(invitationService.respondInvitation(actor, UUID_ID, accept)).thenReturn(accept ? new ParentStudentLinkResult(UUID_ID, UUID_ID, UUID_ID, "CONFIRMED", NOW) : null);
+    when(invitationService.respondInvitation(actor, UUID_ID, accept)).thenReturn(TransitionResult.success(accept ? new ParentStudentLinkResult(UUID_ID, UUID_ID, UUID_ID, "CONFIRMED", NOW) : null));
     data(mvc.perform(post(BASE + "/parent-student/respond").contentType(MediaType.APPLICATION_JSON)
         .content("{\"invitationId\":\"%s\",\"accept\":%s}".formatted(ID, accept))), accept ? LINK : "null");
     verify(invitationService).respondInvitation(actor, UUID_ID, accept);
   }
 
   @Test void withdrawKeepsNullEnvelope() throws Exception {
+    when(invitationService.withdrawInvitation(actor, UUID_ID)).thenReturn(TransitionResult.success(null));
     data(mvc.perform(post(BASE + "/parent-student/invitations/" + ID + "/withdraw")), "null");
     verify(invitationService).withdrawInvitation(actor, UUID_ID);
   }
@@ -113,7 +114,7 @@ class ConnectionControllerTest {
   }
 
   @Test void createRequestKeepsShapeAndInputs() throws Exception {
-    when(service.request(actor, UUID_ID, UUID_ID, List.of("Tue 19:00"), "hello")).thenReturn(requestResult());
+    when(service.request(actor, UUID_ID, UUID_ID, List.of("Tue 19:00"), "hello")).thenReturn(TransitionResult.success(requestResult()));
     data(mvc.perform(post(BASE + "/requests").contentType(MediaType.APPLICATION_JSON)
         .content("{\"goalId\":\"%s\",\"tutorId\":\"%s\",\"desiredSlots\":[\"Tue 19:00\"],\"message\":\"hello\"}".formatted(ID, ID))), REQUEST);
   }
@@ -132,13 +133,14 @@ class ConnectionControllerTest {
   }
 
   @Test void cancelKeepsNullEnvelope() throws Exception {
+    when(service.cancelRequest(actor, UUID_ID)).thenReturn(TransitionResult.success(null));
     data(mvc.perform(post(BASE + "/requests/" + ID + "/cancel")), "null");
     verify(service).cancelRequest(actor, UUID_ID);
   }
 
   @ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
   void tutorResponseKeepsClassOrNull(boolean accept) throws Exception {
-    when(service.respondRequest(actor, UUID_ID, accept, "reason")).thenReturn(accept ? new ClassResult(UUID_ID, UUID_ID, UUID_ID, UUID_ID) : null);
+    when(service.respondRequest(actor, UUID_ID, accept, "reason")).thenReturn(TransitionResult.success(accept ? new ClassResult(UUID_ID, UUID_ID, UUID_ID, UUID_ID) : null));
     data(mvc.perform(post(BASE + "/requests/" + ID + "/respond").contentType(MediaType.APPLICATION_JSON)
         .content("{\"accept\":%s,\"reason\":\"reason\"}".formatted(accept))), accept ? CLASS : "null");
     verify(service).respondRequest(actor, UUID_ID, accept, "reason");
