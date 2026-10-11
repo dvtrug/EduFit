@@ -2,6 +2,8 @@
 
 Workspace: `C:/Users/ASUS/Desktop/EduFit/EduFit`, branch `feat/connection`; base `cd75bae`. Chỉ commit/push Connection, không đổi refs main/Discovery. Evidence logs: `.codex-doc-review/connection-phase1/` (ignored). JDK21, Maven wrapper, Windows-ROOT trust store, PostgreSQL17 Testcontainers.
 
+**Sau checkpoint:** [Hotfix Flyway](flyway-fix-validation.md) thay đổi manifest để hỗ trợ DB local main đã seed V1.09. Các kết quả Phase1 dưới đây là snapshot trước hotfix.
+
 ## T02 — Normalize persistence packages
 
 - Chuyển 5 entities/5 repositories sang `infra/persistence/entity` và `repository`; giữ nguyên cả 10 class bodies sau khi loại package/import, xác minh bằng so sánh source với HEAD trước task. Không thay SQL/checksum/schema.

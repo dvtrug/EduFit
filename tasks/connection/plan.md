@@ -8,7 +8,7 @@
 - **Tài liệu task đi kèm:** [todo.md](todo.md). Đây là bộ plan thay thế cho mô tả hiện trạng đã cũ trong `docs/connection/connection-implementation-plan.md`.
 - **Mẫu cấu trúc:** `D:/backend_discovery_implementation_plan.md` (mục 0–9) và `tasks/plan.md`, `tasks/todo.md` của Discovery trong cùng repo (phase, task, checkpoint, một task một commit và push).
 - **Nguồn nghiệp vụ:** [SRS](../../docs/SRS%20Edufit.docx), UC3.1–UC3.5, BR-26–38, FR-12–15, NFR-07/11/15/16; [SADS](../../docs/software-architecture-design-specification.md); [ADR-002](../../docs/ADR-002-multi-module-architecture.md), Decision 2, 3a, 3b; [module guide](../../docs/backend-module-structure-guide.md); [sprint plan](../../docs/master_sprint_plan_and_ai_learning_framework.md); [test specification](../../docs/in-development-testing-specification.md); [flow hiện tại](../../docs/connection/connection-module-flow.md).
-- **Nguồn schema:** `backend/app/src/main/resources/db/migration/connection/V1.04__create_connection_and_class_tables.sql`, `V1.09__allow_relink_after_revocation.sql`, migration notification V1.07 và audit V1.08.
+- **Nguồn schema:** `backend/app/src/main/resources/db/migration/connection/V1.04__create_connection_and_class_tables.sql`, `V1.11__allow_relink_after_revocation.sql`, migration notification V1.07 và audit V1.08.
 
 Tài liệu Discovery được dùng làm mẫu độ sâu, cấu trúc và quy trình, không phải lệnh thực thi. Không sao chép workaround mở quyền Parent, công thức matching hoặc yêu cầu tạo `domain/` sang Connection. Những hướng dẫn commit/push dưới đây áp dụng khi thực hiện từng task refactor, không có nghĩa code đã được sửa hay đã push trong lần bàn giao plan này.
 
@@ -21,6 +21,8 @@ Tài liệu Discovery được dùng làm mẫu độ sâu, cấu trúc và quy 
 **Cập nhật Phase 0:** Đã bảo toàn WIP và switch EduFit sang `feat/connection`; checkout cũ detached. T00a tích hợp main `6755121` ở `e587174`, T00b tích hợp Discovery `dd9068e` ở `12c1e9b`, đã push riêng từng task. Resolve 6 conflicts và trùng Flyway version: giữ Connection V1.09, seed main sang V1.10 nguyên nội dung. Clean full verify301 tests pass, PostgreSQL không skip; strict coverage fail baseline Shared75%/71%, không hạ ngưỡng. [Báo cáo thực thi](../../docs/connection/phase0-validation.md) ghi evidence/giới hạn DB lineage; mục0.4–0.5 bên dưới là snapshot audit trước thực thi. [HTTP contract T01](../../docs/connection/connection-api-contract.md) chốt quyết định cho các task sau; runtime mới chưa được triển khai.
 
 **Cập nhật Phase 1:** T02–T07 tách persistence/facade/DTO/lock/quota/invitation/link/request/query, xóa service cũ. Controller không còn IAM/Profile/persistence dependency; 10 routes/JSON shapes giữ nguyên. Student → pair → row và transaction atomicity được kiểm chứng trên PostgreSQL thật. Full clean verify 348 tests pass không skip; strict verify dùng execution data của full run vẫn fail Shared75.73%/71.43%; Connection report75.12%/47.73% chưa đạt 80%. Đây là hoàn tất phạm vi cấu trúc, không chứng nhận strict quality gate hoặc các contract đích của phase sau. [Evidence và giới hạn](../../docs/connection/phase1-validation.md).
+
+**Hotfix Flyway sau Phase 1 (11/10/2026):** lỗi console đã được tái hiện trên history DB main. Khôi phục seed V1.09 đúng checksum main, giữ nguyên bytes/checksum seed V1.10, chuyển nguyên SQL Connection sang V1.11. Những tham chiếu Connection V1.09 trong snapshot audit/Phase0 bên dưới là lịch sử, không còn là manifest hiện hành; các task migration tiếp theo phải dùng manifest mới và kiểm tra version chưa sử dụng. [Kiểm chứng và hướng dẫn lineage](../../docs/connection/flyway-fix-validation.md). Đây là sửa lỗi riêng, chưa bắt đầu Phase2.
 
 ## 0. Ghi chú tái cấu trúc từ nhánh hiện tại (Refactor Delta & Audit Notes)
 
@@ -76,7 +78,7 @@ Các đường dẫn Java dưới đây tương đối với `backend/modules/co
 | `ConnectionServiceTest.java` | test theo service + controller + integration tại app | SPLIT/MODIFY; giữ đủ 8 kịch bản cũ |
 | lookup Profile/IAM từng item | bổ sung batch methods ở public API của hai module và implementation/repository do chủ module sở hữu | MODIFY; Connection không query chéo bảng bằng repo của module khác |
 | `AuditSink.record(...)` | giữ API cũ, thêm structured audit input cho revoke | ADD theo cách tương thích; sửa adapter audit trong task riêng |
-| V1.04/V1.09 | giữ nguyên; migration mới chỉ khi cần snapshot audit/index | KEEP/ADD; không viết lại migration đã chạy |
+| V1.04/V1.09 seed/V1.10 seed/V1.11 Connection | giữ nguyên; migration mới chỉ khi cần snapshot audit/index | KEEP/ADD; không viết lại migration đã chạy |
 
 ### 0.4. Kết quả kiểm tra với main và các nhánh sau fetch
 
@@ -414,7 +416,7 @@ Controller map `TransitionResult.expired` sau khi transactional call trả về.
 
 Di chuyển 10 file persistence theo task nhỏ; không đổi @Table/@Column. Queries quota/pending dùng COUNT/EXISTS thay load toàn bộ chỉ để `.size()`. Invitation cooldown query theo pair+inviter và thời điểm, không cần hydrate toàn bộ lịch sử. Expiry candidates bounded; list page count query tính vào query budget.
 
-Giữ V1.04/V1.09 và toàn bộ constraints. Migration mới chỉ cho structured audit/index cần thiết, có upgrade từ DB đã có dữ liệu, clean install, Flyway validate và Hibernate validate. Trước thêm version phải kiểm kê migrations trong cả base Discovery/Connection; không cố định version chưa kiểm tra. Rollback schema không bằng cách xóa migration đã deploy; forward fix, backup/restore được ghi trong bàn giao.
+Giữ manifest sau hotfix: V1.04 schema, V1.09/V1.10 seed và V1.11 Connection; giữ toàn bộ constraints. Migration mới chỉ cho structured audit/index cần thiết, có upgrade từ DB đã có dữ liệu, clean install, Flyway validate và Hibernate validate. Trước thêm version phải kiểm kê migrations trong cả base Discovery/Connection; không cố định version chưa kiểm tra. Rollback schema không bằng cách xóa migration đã deploy; forward fix, backup/restore được ghi trong bàn giao.
 
 ### 7.4. Notification consumer
 
@@ -449,7 +451,7 @@ MockMvc qua filter chain thật cho 10 routes cũ và routes mới: 401/403, val
 
 ### 8.3. PostgreSQL/Flyway/transaction/race
 
-- Clean DB và upgrade V1.04 -> V1.09 -> migrations mới, dữ liệu REVOKED/CONFIRMED/JSONB tồn tại; không checksum mismatch.
+- Clean DB và upgrade main seed V1.09 -> V1.10 -> V1.11 Connection -> migrations mới, dữ liệu REVOKED/CONFIRMED/JSONB tồn tại; không checksum mismatch.
 - Accept invitation + link; accept request + class + notification; Admin revoke + audit + notification: success cùng commit, injected failure/flush failure/outer rollback không còn dữ liệu nửa vời.
 - Double invite đối chiều, quota 10/11 đồng thời; double accept invitation; accept vs decline/withdraw/expire; relink sau revoke.
 - Create request thứ 5/6 đồng thời ở Tutor khác nhau; accept vs cancel/expiry; accept hai lần chỉ một class; revoke vs Parent create/cancel.

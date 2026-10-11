@@ -417,6 +417,12 @@ Theo yêu cầu workspace cập nhật, đã chuyển hai tài liệu này từ 
 - Clean reactor verify 348 tests pass, Connection 55 + App 57, PostgreSQL không skip. Strict verify tái sử dụng execution data full run vẫn FAIL tại Shared baseline; Connection75.12% lines /47.73% branches còn gap (baseline warning41%/22%). Không hạ ngưỡng; quality gate strict vẫn chưa đạt.
 - Main/Discovery refs không đổi, stash WIP Discovery nguyên vẹn. Chi tiết từng task/logs/review/giới hạn ở [báo cáo Phase 1](../../docs/connection/phase1-validation.md). Dừng trước T08a.
 
+### Hotfix Flyway — 11/10/2026 (ngoài Phase2)
+
+- [x] F01 — Khôi phục seed main V1.09 đúng checksum, giữ nguyên V1.10, chuyển SQL Connection sang V1.11; cập nhật manifest và regression DB main. Commit/push `e616f4b`, affected clean verify75 tests pass không skip.
+- [x] F02 — Backup/clone DB local, kiểm chứng fingerprints31 bảng cũ, migrate/validate/rerun local và khởi động backend Hibernate validate thành công. Đồng bộ flow/manifest và ghi [báo cáo hotfix](../../docs/connection/flyway-fix-validation.md); commit docs riêng sau F01.
+- Các tham chiếu Connection V1.09 trong execution notes Phase0/Phase1 là lịch sử trước hotfix; manifest hiện hành là V1.09 seed, V1.10 seed, V1.11 Connection. DB lineage cũ Connection V1.09 cần đối soát riêng như báo cáo, không auto repair. Chưa bắt đầu T08a.
+
 ## 6. Task con bắt buộc — mỗi dòng là một commit và push
 
 Các nhóm bên dưới **thay thế commit cha**, không còn là gợi ý “nếu lớn thì tách”. Mỗi task con kế thừa acceptance/verification/end-of-task của nhóm cha, đồng thời phải đáp ứng điều kiện riêng dưới đây; thêm focused tests cùng commit. Files là phạm vi chính, imports/fixtures liên quan phải sửa để reactor vẫn build.
