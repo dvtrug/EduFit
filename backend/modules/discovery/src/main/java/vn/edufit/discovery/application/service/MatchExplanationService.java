@@ -26,19 +26,19 @@ public class MatchExplanationService {
     this.aiUsageQuery = aiUsageQuery;
   }
 
-  public Explanation explainTopMatch(UUID userId, MatchScore score, TutorDiscoveryProfileDto tutor) {
+  public Explanation explainTopMatch(
+      UUID userId, MatchScore score, TutorDiscoveryProfileDto tutor) {
     String fallback = ruleBased(score);
     try {
-      long requests = aiUsageQuery.countRequestsSince(
-          userId,
-          AiFeature.MATCH_EXPLANATION,
-          Instant.now().minus(1, ChronoUnit.DAYS)
-      );
+      long requests =
+          aiUsageQuery.countRequestsSince(
+              userId, AiFeature.MATCH_EXPLANATION, Instant.now().minus(1, ChronoUnit.DAYS));
       if (requests >= DAILY_LIMIT) {
         return new Explanation(fallback, false);
       }
 
-      String prompt = """
+      String prompt =
+          """
           Hãy giải thích ngắn gọn bằng tiếng Việt, tối đa 2 câu, vì sao gia sư phù hợp.
           Chỉ được dùng các dữ kiện sau, không suy đoán thêm:
           - Hình thức dạy: %s
@@ -49,33 +49,44 @@ public class MatchExplanationService {
           - Điểm đánh giá: %s/100
           - Điểm ngân sách: %s/100
           - Điểm tổng: %s/100
-          """.formatted(
-          tutor.tutor().teachingMode(),
-          tutor.tutor().pricePerSession(),
-          score.subjectFit(),
-          score.levelFit(),
-          score.scheduleFit(),
-          score.ratingFit(),
-          score.budgetFit(),
-          score.total()
-      );
-      String text = aiGateway.complete(AiRequest.of(
-          userId,
-          AiFeature.MATCH_EXPLANATION,
-          "Bạn là trợ lý giải thích kết quả ghép đôi minh bạch của EduFit.",
-          prompt
-      )).text();
-      return new Explanation(text, true);
+          """
+              .formatted(
+                  tutor.tutor().teachingMode(),
+                  tutor.tutor().pricePerSession(),
+                  score.subjectFit(),
+                  score.levelFit(),
+                  score.scheduleFit(),
+                  score.ratingFit(),
+                  score.budgetFit(),
+                  score.total());
+      var response =
+          aiGateway.complete(
+              AiRequest.of(
+                  userId,
+                  AiFeature.MATCH_EXPLANATION,
+                  "Bạn là trợ lý giải thích kết quả ghép đôi minh bạch của EduFit.",
+                  prompt));
+      if (!response.generatedByModel() || response.text().isBlank()) {
+        return new Explanation(fallback, false);
+      }
+      return new Explanation(response.text(), true);
     } catch (RuntimeException ex) {
-      log.warn("Không thể tạo giải thích AI cho matching, dùng bản theo quy tắc: {}", ex.getMessage());
+      log.warn(
+          "Không thể tạo giải thích AI cho matching, dùng bản theo quy tắc [type: {}]",
+          ex.getClass().getSimpleName());
       return new Explanation(fallback, false);
     }
   }
 
   public String ruleBased(MatchScore score) {
     return "Phù hợp môn %s%%, cấp học %s%%, lịch %s%%, đánh giá %s%% và ngân sách %s%%; có %d khung giờ giao nhau."
-        .formatted(score.subjectFit(), score.levelFit(), score.scheduleFit(), score.ratingFit(),
-            score.budgetFit(), score.overlappingSlots());
+        .formatted(
+            score.subjectFit(),
+            score.levelFit(),
+            score.scheduleFit(),
+            score.ratingFit(),
+            score.budgetFit(),
+            score.overlappingSlots());
   }
 
   public record Explanation(String text, boolean aiGenerated) {}

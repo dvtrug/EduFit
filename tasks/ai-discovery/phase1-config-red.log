@@ -1,0 +1,295 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] EduFit :: Parent                                                   [pom]
+[INFO] EduFit :: Platform (Aggregator)                                    [pom]
+[INFO] EduFit :: Platform :: Shared Kernel                                [jar]
+[INFO] EduFit :: Platform :: AI Gateway                                   [jar]
+[INFO]
+[INFO] ----------------------< vn.edufit:edufit-parent >-----------------------
+[INFO] Building EduFit :: Parent 1.0-SNAPSHOT                             [1/4]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ edufit-parent ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\target\\jacoco.exec
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ edufit-parent ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] -------------------------< vn.edufit:platform >-------------------------
+[INFO] Building EduFit :: Platform (Aggregator) 1.0-SNAPSHOT              [2/4]
+[INFO]   from platform\pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ platform ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\target\\jacoco.exec
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ platform ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] --------------------------< vn.edufit:shared >--------------------------
+[INFO] Building EduFit :: Platform :: Shared Kernel 1.0-SNAPSHOT          [3/4]
+[INFO]   from platform\shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ shared ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\shared\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\shared\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\shared\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ shared ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ shared ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\shared\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Platform :: Shared Kernel' with 11 classes
+[INFO]
+[INFO] ----------------------------< vn.edufit:ai >----------------------------
+[INFO] Building EduFit :: Platform :: AI Gateway 1.0-SNAPSHOT             [4/4]
+[INFO]   from platform\ai\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ ai ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\ai\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ ai ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\ai\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ ai ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ ai ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\ai\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ ai ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 5 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ ai ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+[INFO] Running vn.edufit.ai.AiConfigurationTest
+[ERROR] Tests run: 8, Failures: 7, Errors: 0, Skipped: 0, Time elapsed: 4.743 s <<< FAILURE! -- in vn.edufit.ai.AiConfigurationTest
+[ERROR] vn.edufit.ai.AiConfigurationTest.invalidModelDoesNotLeakItsValueInBindingFailure -- Time elapsed: 4.154 s <<< FAILURE!
+java.lang.AssertionError:
+
+Expecting:
+ <Started application [AnnotationConfigApplicationContext@7ab34619 id = 'org.springframework.context.annotation.AnnotationConfigApplicationContext@7ab34619', applicationName = '', beanDefinitionCount = 15]>
+to have failed
+but context started successfully
+	at vn.edufit.ai.AiConfigurationTest.lambda$invalidModelDoesNotLeakItsValueInBindingFailure$5(AiConfigurationTest.java:72)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.accept(AbstractApplicationContextRunner.java:457)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.consumeAssertableContext(AbstractApplicationContextRunner.java:371)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.lambda$run$1(AbstractApplicationContextRunner.java:349)
+	at org.springframework.boot.test.util.TestPropertyValues.lambda$applyToSystemProperties$0(TestPropertyValues.java:176)
+	at org.springframework.boot.test.util.TestPropertyValues.applyToSystemProperties(TestPropertyValues.java:190)
+	at org.springframework.boot.test.util.TestPropertyValues.applyToSystemProperties(TestPropertyValues.java:175)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.lambda$run$0(AbstractApplicationContextRunner.java:349)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.withContextClassLoader(AbstractApplicationContextRunner.java:377)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.run(AbstractApplicationContextRunner.java:348)
+	at vn.edufit.ai.AiConfigurationTest.invalidModelDoesNotLeakItsValueInBindingFailure(AiConfigurationTest.java:71)
+
+[ERROR] vn.edufit.ai.AiConfigurationTest.keyAloneDoesNotEnableGeminiOrExposeSecretInProperties -- Time elapsed: 0.083 s <<< FAILURE!
+java.lang.AssertionError:
+
+Expecting actual:
+  "AiProperties[provider=stub, timeout=PT15S, gemini=GeminiProperties[apiKey=configuration-secret, model=gemini-1.5-flash, baseUrl=https://generativelanguage.googleapis.com]]"
+not to contain:
+  "configuration-secret"
+
+	at vn.edufit.ai.AiConfigurationTest.lambda$keyAloneDoesNotEnableGeminiOrExposeSecretInProperties$1(AiConfigurationTest.java:34)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.accept(AbstractApplicationContextRunner.java:457)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.consumeAssertableContext(AbstractApplicationContextRunner.java:371)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.lambda$run$1(AbstractApplicationContextRunner.java:349)
+	at org.springframework.boot.test.util.TestPropertyValues.lambda$applyToSystemProperties$0(TestPropertyValues.java:176)
+	at org.springframework.boot.test.util.TestPropertyValues.applyToSystemProperties(TestPropertyValues.java:190)
+	at org.springframework.boot.test.util.TestPropertyValues.applyToSystemProperties(TestPropertyValues.java:175)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.lambda$run$0(AbstractApplicationContextRunner.java:349)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.withContextClassLoader(AbstractApplicationContextRunner.java:377)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.run(AbstractApplicationContextRunner.java:348)
+	at vn.edufit.ai.AiConfigurationTest.keyAloneDoesNotEnableGeminiOrExposeSecretInProperties(AiConfigurationTest.java:31)
+
+[ERROR] vn.edufit.ai.AiConfigurationTest.geminiWithoutKeyFailsAtStartupWithSafeMessage -- Time elapsed: 0.051 s <<< FAILURE!
+java.lang.AssertionError:
+
+Expecting:
+ <Started application [AnnotationConfigApplicationContext@68b3de47 id = 'org.springframework.context.annotation.AnnotationConfigApplicationContext@68b3de47', applicationName = '', beanDefinitionCount = 15]>
+to have failed
+but context started successfully
+	at vn.edufit.ai.AiConfigurationTest.lambda$geminiWithoutKeyFailsAtStartupWithSafeMessage$3(AiConfigurationTest.java:54)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.accept(AbstractApplicationContextRunner.java:457)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.consumeAssertableContext(AbstractApplicationContextRunner.java:371)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.lambda$run$1(AbstractApplicationContextRunner.java:349)
+	at org.springframework.boot.test.util.TestPropertyValues.lambda$applyToSystemProperties$0(TestPropertyValues.java:176)
+	at org.springframework.boot.test.util.TestPropertyValues.applyToSystemProperties(TestPropertyValues.java:190)
+	at org.springframework.boot.test.util.TestPropertyValues.applyToSystemProperties(TestPropertyValues.java:175)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.lambda$run$0(AbstractApplicationContextRunner.java:349)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.withContextClassLoader(AbstractApplicationContextRunner.java:377)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.run(AbstractApplicationContextRunner.java:348)
+	at vn.edufit.ai.AiConfigurationTest.geminiWithoutKeyFailsAtStartupWithSafeMessage(AiConfigurationTest.java:53)
+
+[ERROR] vn.edufit.ai.AiConfigurationTest.defaultsToOfflineWithoutKey -- Time elapsed: 0.057 s <<< FAILURE!
+org.opentest4j.AssertionFailedError:
+
+expected: "gemini-3.5-flash-lite"
+ but was: "gemini-1.5-flash"
+	at vn.edufit.ai.AiConfigurationTest.lambda$defaultsToOfflineWithoutKey$0(AiConfigurationTest.java:25)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.accept(AbstractApplicationContextRunner.java:457)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.consumeAssertableContext(AbstractApplicationContextRunner.java:371)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.lambda$run$1(AbstractApplicationContextRunner.java:349)
+	at org.springframework.boot.test.util.TestPropertyValues.lambda$applyToSystemProperties$0(TestPropertyValues.java:176)
+	at org.springframework.boot.test.util.TestPropertyValues.applyToSystemProperties(TestPropertyValues.java:190)
+	at org.springframework.boot.test.util.TestPropertyValues.applyToSystemProperties(TestPropertyValues.java:175)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.lambda$run$0(AbstractApplicationContextRunner.java:349)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.withContextClassLoader(AbstractApplicationContextRunner.java:377)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.run(AbstractApplicationContextRunner.java:348)
+	at vn.edufit.ai.AiConfigurationTest.defaultsToOfflineWithoutKey(AiConfigurationTest.java:22)
+
+[ERROR] vn.edufit.ai.AiConfigurationTest.invalidProviderFailsBeforeAnyNetworkRequest(String)[1] -- Time elapsed: 0.048 s <<< FAILURE!
+java.lang.AssertionError:
+
+Expecting:
+ <Started application [AnnotationConfigApplicationContext@3d763ae5 id = 'org.springframework.context.annotation.AnnotationConfigApplicationContext@3d763ae5', applicationName = '', beanDefinitionCount = 14]>
+to have failed
+but context started successfully
+	at vn.edufit.ai.AiConfigurationTest.lambda$invalidProviderFailsBeforeAnyNetworkRequest$4(AiConfigurationTest.java:63)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.accept(AbstractApplicationContextRunner.java:457)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.consumeAssertableContext(AbstractApplicationContextRunner.java:371)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.lambda$run$1(AbstractApplicationContextRunner.java:349)
+	at org.springframework.boot.test.util.TestPropertyValues.lambda$applyToSystemProperties$0(TestPropertyValues.java:176)
+	at org.springframework.boot.test.util.TestPropertyValues.applyToSystemProperties(TestPropertyValues.java:190)
+	at org.springframework.boot.test.util.TestPropertyValues.applyToSystemProperties(TestPropertyValues.java:175)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.lambda$run$0(AbstractApplicationContextRunner.java:349)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.withContextClassLoader(AbstractApplicationContextRunner.java:377)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.run(AbstractApplicationContextRunner.java:348)
+	at vn.edufit.ai.AiConfigurationTest.invalidProviderFailsBeforeAnyNetworkRequest(AiConfigurationTest.java:62)
+
+[ERROR] vn.edufit.ai.AiConfigurationTest.invalidProviderFailsBeforeAnyNetworkRequest(String)[2] -- Time elapsed: 0.033 s <<< FAILURE!
+java.lang.AssertionError:
+
+Expecting:
+ <Started application [AnnotationConfigApplicationContext@526f8cb0 id = 'org.springframework.context.annotation.AnnotationConfigApplicationContext@526f8cb0', applicationName = '', beanDefinitionCount = 14]>
+to have failed
+but context started successfully
+	at vn.edufit.ai.AiConfigurationTest.lambda$invalidProviderFailsBeforeAnyNetworkRequest$4(AiConfigurationTest.java:63)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.accept(AbstractApplicationContextRunner.java:457)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.consumeAssertableContext(AbstractApplicationContextRunner.java:371)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.lambda$run$1(AbstractApplicationContextRunner.java:349)
+	at org.springframework.boot.test.util.TestPropertyValues.lambda$applyToSystemProperties$0(TestPropertyValues.java:176)
+	at org.springframework.boot.test.util.TestPropertyValues.applyToSystemProperties(TestPropertyValues.java:190)
+	at org.springframework.boot.test.util.TestPropertyValues.applyToSystemProperties(TestPropertyValues.java:175)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.lambda$run$0(AbstractApplicationContextRunner.java:349)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.withContextClassLoader(AbstractApplicationContextRunner.java:377)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.run(AbstractApplicationContextRunner.java:348)
+	at vn.edufit.ai.AiConfigurationTest.invalidProviderFailsBeforeAnyNetworkRequest(AiConfigurationTest.java:62)
+
+[ERROR] vn.edufit.ai.AiConfigurationTest.invalidProviderFailsBeforeAnyNetworkRequest(String)[3] -- Time elapsed: 0.035 s <<< FAILURE!
+java.lang.AssertionError:
+
+Expecting:
+ <Started application [AnnotationConfigApplicationContext@121f9c52 id = 'org.springframework.context.annotation.AnnotationConfigApplicationContext@121f9c52', applicationName = '', beanDefinitionCount = 15]>
+to have failed
+but context started successfully
+	at vn.edufit.ai.AiConfigurationTest.lambda$invalidProviderFailsBeforeAnyNetworkRequest$4(AiConfigurationTest.java:63)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.accept(AbstractApplicationContextRunner.java:457)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.consumeAssertableContext(AbstractApplicationContextRunner.java:371)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.lambda$run$1(AbstractApplicationContextRunner.java:349)
+	at org.springframework.boot.test.util.TestPropertyValues.lambda$applyToSystemProperties$0(TestPropertyValues.java:176)
+	at org.springframework.boot.test.util.TestPropertyValues.applyToSystemProperties(TestPropertyValues.java:190)
+	at org.springframework.boot.test.util.TestPropertyValues.applyToSystemProperties(TestPropertyValues.java:175)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.lambda$run$0(AbstractApplicationContextRunner.java:349)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.withContextClassLoader(AbstractApplicationContextRunner.java:377)
+	at org.springframework.boot.test.context.runner.AbstractApplicationContextRunner.run(AbstractApplicationContextRunner.java:348)
+	at vn.edufit.ai.AiConfigurationTest.invalidProviderFailsBeforeAnyNetworkRequest(AiConfigurationTest.java:62)
+
+[INFO]
+[INFO] Results:
+[INFO]
+[ERROR] Failures:
+[ERROR]   AiConfigurationTest.defaultsToOfflineWithoutKey:22->lambda$defaultsToOfflineWithoutKey$0:25
+expected: "gemini-3.5-flash-lite"
+ but was: "gemini-1.5-flash"
+[ERROR]   AiConfigurationTest.geminiWithoutKeyFailsAtStartupWithSafeMessage:53->lambda$geminiWithoutKeyFailsAtStartupWithSafeMessage$3:54
+Expecting:
+ <Started application [AnnotationConfigApplicationContext@68b3de47 id = 'org.springframework.context.annotation.AnnotationConfigApplicationContext@68b3de47', applicationName = '', beanDefinitionCount = 15]>
+to have failed
+but context started successfully
+[ERROR]   AiConfigurationTest.invalidModelDoesNotLeakItsValueInBindingFailure:71->lambda$invalidModelDoesNotLeakItsValueInBindingFailure$5:72
+Expecting:
+ <Started application [AnnotationConfigApplicationContext@7ab34619 id = 'org.springframework.context.annotation.AnnotationConfigApplicationContext@7ab34619', applicationName = '', beanDefinitionCount = 15]>
+to have failed
+but context started successfully
+[ERROR]   AiConfigurationTest.invalidProviderFailsBeforeAnyNetworkRequest:62->lambda$invalidProviderFailsBeforeAnyNetworkRequest$4:63
+Expecting:
+ <Started application [AnnotationConfigApplicationContext@3d763ae5 id = 'org.springframework.context.annotation.AnnotationConfigApplicationContext@3d763ae5', applicationName = '', beanDefinitionCount = 14]>
+to have failed
+but context started successfully
+[ERROR]   AiConfigurationTest.invalidProviderFailsBeforeAnyNetworkRequest:62->lambda$invalidProviderFailsBeforeAnyNetworkRequest$4:63
+Expecting:
+ <Started application [AnnotationConfigApplicationContext@526f8cb0 id = 'org.springframework.context.annotation.AnnotationConfigApplicationContext@526f8cb0', applicationName = '', beanDefinitionCount = 14]>
+to have failed
+but context started successfully
+[ERROR]   AiConfigurationTest.invalidProviderFailsBeforeAnyNetworkRequest:62->lambda$invalidProviderFailsBeforeAnyNetworkRequest$4:63
+Expecting:
+ <Started application [AnnotationConfigApplicationContext@121f9c52 id = 'org.springframework.context.annotation.AnnotationConfigApplicationContext@121f9c52', applicationName = '', beanDefinitionCount = 15]>
+to have failed
+but context started successfully
+[ERROR]   AiConfigurationTest.keyAloneDoesNotEnableGeminiOrExposeSecretInProperties:31->lambda$keyAloneDoesNotEnableGeminiOrExposeSecretInProperties$1:34
+Expecting actual:
+  "AiProperties[provider=stub, timeout=PT15S, gemini=GeminiProperties[apiKey=configuration-secret, model=gemini-1.5-flash, baseUrl=https://generativelanguage.googleapis.com]]"
+not to contain:
+  "configuration-secret"
+
+[INFO]
+[ERROR] Tests run: 8, Failures: 7, Errors: 0, Skipped: 0
+[INFO]
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for EduFit :: Parent 1.0-SNAPSHOT:
+[INFO]
+[INFO] EduFit :: Parent ................................... SUCCESS [  1.034 s]
+[INFO] EduFit :: Platform (Aggregator) .................... SUCCESS [  0.039 s]
+[INFO] EduFit :: Platform :: Shared Kernel ................ SUCCESS [  2.358 s]
+[INFO] EduFit :: Platform :: AI Gateway ................... FAILURE [ 14.678 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  18.785 s
+[INFO] Finished at: 2026-10-11T17:15:18Z
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.0:test (default-test) on project ai: There are test failures.
+[ERROR]
+[ERROR] Please refer to C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\ai\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR]
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR]
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR]
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :ai

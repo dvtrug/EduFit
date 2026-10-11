@@ -111,6 +111,12 @@ Goal: subject 1, cấp 3 trong catalog `[80, 3, 2]`, budgetMax 300000, thứ Hai
 
 ### AI, quota và deadline
 
+Phase 1 AI ngày 2026-10-12: gateway truyền metadata `generatedByModel` qua public
+AiResponse. Stub luôn false; MatchExplanationService dùng ruleBased(score) và
+`aiGenerated=false` cho stub/rỗng. Gemini dùng header key, chỉ chấp nhận completed
+text và phân loại timeout cả khi đọc body. [AI provider contract](ai-discovery-backend-contract.md)
+ghi cấu hình, schema/exception và giới hạn kiểm chứng; công thức ranking không đổi.
+
 Chỉ kết quả đầu tiên gọi AI (`MATCH_EXPLANATION`); kiểm tra quota 10 yêu cầu trong 24 giờ gần nhất theo actor qua `AiUsageQuery` (Parent dùng quota của Parent). Các kết quả còn lại dùng giải thích theo điểm; không có candidate thì không gọi AI. Prompt chỉ gửi mode, học phí và 5 điểm thành phần/tổng, không gửi tên, email, điện thoại hay bio. AI lỗi, timeout, lỗi tra cứu usage hoặc hết quota đều trả fallback với `aiGenerated=false`, HTTP matching vẫn 200 nếu phần DB/matching còn lại thành công. Quota hiện là count-then-call, chưa phải cơ chế đặt chỗ quota nguyên tử cho request đồng thời.
 
 AI Gateway giới hạn thời gian chờ provider bằng `edufit.ai.timeout` (cấu hình ứng dụng/mặc định 15s), ngoài connect/read socket timeout. Provider chạy trên executor virtual thread do Spring quản lý; quá hạn hủy future và ném `AiTimeoutException`, chỉ ghi TIMEOUT một lần ở thread gọi. Hủy là best-effort: provider phải hỗ trợ interrupt hoặc tự kết thúc theo socket timeout; deadline không giới hạn thời gian DB ghi AI audit. Test runtime dùng provider giả chậm với timeout 100ms, không gọi LLM thật.

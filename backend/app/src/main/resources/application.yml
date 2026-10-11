@@ -72,7 +72,7 @@ edufit:
     timeout: 15s                 # NFR-10: khống chế timeout 15 giây
     gemini:
       api-key: ${GEMINI_API_KEY:}
-      model: ${GEMINI_MODEL:gemini-1.5-flash}
+      model: ${GEMINI_MODEL:gemini-3.5-flash-lite}
       base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
 
 # 6. Cấu hình Swagger / OpenAPI Documentation

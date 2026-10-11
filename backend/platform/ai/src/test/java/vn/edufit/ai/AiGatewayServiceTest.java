@@ -5,15 +5,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,14 +33,11 @@ import vn.edufit.ai.infra.persistence.AiRequestLogRepository;
 @DisplayName("Kiểm thử đơn vị cho AiGatewayService")
 class AiGatewayServiceTest {
 
-  @Mock
-  private LlmProvider llmProvider;
+  @Mock private LlmProvider llmProvider;
 
-  @Mock
-  private AiRequestLogger requestLogger;
+  @Mock private AiRequestLogger requestLogger;
 
-  @Mock
-  private AiRequestLogRepository logRepository;
+  @Mock private AiRequestLogRepository logRepository;
 
   private final OutputSanitizer outputSanitizer = new OutputSanitizer();
 
@@ -51,8 +47,14 @@ class AiGatewayServiceTest {
   @BeforeEach
   void setUp() {
     executor = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor();
-    gatewayService = new AiGatewayService(llmProvider, outputSanitizer, requestLogger, logRepository,
-        executor, new vn.edufit.ai.infra.config.AiProperties(null, null, null));
+    gatewayService =
+        new AiGatewayService(
+            llmProvider,
+            outputSanitizer,
+            requestLogger,
+            logRepository,
+            executor,
+            new vn.edufit.ai.infra.config.AiProperties(null, null, null));
   }
 
   @AfterEach
@@ -108,7 +110,8 @@ class AiGatewayServiceTest {
 
     assertThatThrownBy(() -> gatewayService.complete(request))
         .isInstanceOf(AiUnavailableException.class)
-        .hasMessageContaining("Mất kết nối mạng");
+        .hasMessageNotContaining("Mất kết nối mạng")
+        .hasNoCause();
 
     // Xác nhận đã ghi log ERROR vào CSDL (FR-05)
     verify(requestLogger).log(eq(userId), eq("TUTOR_BIO"), eq("ERROR"), anyInt());

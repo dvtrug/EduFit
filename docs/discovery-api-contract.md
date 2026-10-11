@@ -163,6 +163,11 @@ AI không tính điểm/xếp hạng. Top 1 kiểm tra quota MATCH_EXPLANATION 1
 không padding. Top N chỉ đúng trong candidate set bounded mặc định 200, không
 cam kết global best. Xem [báo cáo cap](discovery-performance-report.md).
 
+Từ Phase 1 AI (2026-10-12), offline `AI_PROVIDER=stub` trả explanation theo điểm thực
+và `aiGenerated=false`. Flag true đòi kết quả model-backed hợp lệ; response rỗng,
+bị chặn hoặc bị cắt cũng dùng fallback. HTTP fields/routes không đổi. Cấu hình,
+provenance và lỗi provider xem [AI provider contract](ai-discovery-backend-contract.md).
+
 ## Lỗi đã định nghĩa trong code
 
 | HTTP / code | Tình huống |

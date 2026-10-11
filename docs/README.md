@@ -2,6 +2,8 @@
 
 ## Discovery
 
+- [AI provider contract — Phase 1](ai-discovery-backend-contract.md): cấu hình Gemini/stub, provenance, HTTP provider errors và cách nạp environment.
+
 Trạng thái bàn giao T15 ngày 2026-10-10 trên `feat/discovery`. Đọc theo thứ tự:
 
 1. [Discovery API contract](discovery-api-contract.md): ba HTTP endpoints, query/body/response/errors, quyền, Java facade và event.
