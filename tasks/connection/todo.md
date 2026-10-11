@@ -115,7 +115,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** `refactor(connection): separate application and HTTP DTOs`.
 - **Kết thúc:** Commit + push + liệt kê field contract được giữ/bổ sung có chủ đích.
 
-### [ ] T05 — Tách lock và quota adapter
+### [x] T05 — Tách lock và quota adapter
 
 - **Files:** `ConnectionLock`, `PostgresConnectionLock`, `InvitationQuotaService`, service wiring, lock/quota tests.
 - **Thực hiện:** Native SQL chuyển vào adapter; quota ở service nhỏ; giữ connection/transaction. Ghi thứ tự student -> pair -> row cho accept invitation, quota -> pair cho invite; sửa mọi path ngược thứ tự.

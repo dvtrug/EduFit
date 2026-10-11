@@ -1,6 +1,5 @@
 package vn.edufit.connection.application;
 
-import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -9,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edufit.connection.api.ConnectionFacade;
 import vn.edufit.connection.application.dto.*;
+import vn.edufit.connection.application.port.ConnectionLock;
+import vn.edufit.connection.application.service.InvitationQuotaService;
 import vn.edufit.connection.infra.persistence.entity.*;
 import vn.edufit.connection.infra.persistence.repository.*;
 import vn.edufit.iam.api.AccountRole;
@@ -33,15 +34,15 @@ public class ConnectionService {
   private final ConnectionFacade facade;
   private final IamFacade iam;
   private final ProfileFacade profile;
-  private final EntityManager entityManager;
+  private final ConnectionLock lock;
   private final AuditSink audit;
   private final NotificationSink notifications;
-  private final ConnectionInviteQuotaRepository quotas;
+  private final InvitationQuotaService quotaService;
 
   public ConnectionService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
       ConnectionRequestRepository requests, TutoringClassRepository classes, IamFacade iam,
-      ProfileFacade profile, EntityManager entityManager, AuditSink audit,
-      NotificationSink notifications, ConnectionInviteQuotaRepository quotas, ConnectionFacade facade) {
+      ProfileFacade profile, ConnectionLock lock, AuditSink audit,
+      NotificationSink notifications, InvitationQuotaService quotaService, ConnectionFacade facade) {
     this.facade = facade;
     this.invitations = invitations;
     this.links = links;
@@ -49,16 +50,10 @@ public class ConnectionService {
     this.classes = classes;
     this.iam = iam;
     this.profile = profile;
-    this.entityManager = entityManager;
+    this.lock = lock;
     this.audit = audit;
     this.notifications = notifications;
-    this.quotas = quotas;
-  }
-
-  // A transaction-scoped lock serializes checks that span multiple rows and modules.
-  private void lock(String key) {
-    entityManager.createNativeQuery("select pg_advisory_xact_lock(hashtextextended(cast(:key as text), 0))")
-        .setParameter("key", "connection:" + key).getSingleResult();
+    this.quotaService = quotaService;
   }
 
   private static void requireRole(CurrentUser actor, String... roles) {
@@ -73,12 +68,9 @@ public class ConnectionService {
   @Transactional
   public boolean invite(CurrentUser actor, String targetEmail) {
     requireRole(actor, "PARENT", "STUDENT");
-    lock("invite-quota:" + actor.getUserId());
-    Instant now = Instant.now();
-    ConnectionInviteQuota quota = quotas.findById(actor.getUserId())
-        .orElseGet(() -> new ConnectionInviteQuota(actor.getUserId(), now));
-    if (!quota.consume(now)) return false;
-    quotas.save(quota);
+    var consumption = quotaService.consume(actor.getUserId());
+    if (!consumption.allowed()) return false;
+    Instant now = consumption.checkedAt();
     AccountRole opposite = actor.hasRole("PARENT") ? AccountRole.STUDENT : AccountRole.PARENT;
     Optional<UserSummaryView> target = iam.findUserSummaryByEmail(targetEmail)
         .filter(u -> u.status() == AccountStatus.ACTIVE && u.role() == opposite
@@ -86,8 +78,7 @@ public class ConnectionService {
     // Unknown and ineligible addresses intentionally have the same public result.
     if (target.isEmpty()) return true;
     UUID a = actor.getUserId(), b = target.get().id();
-    String pair = a.compareTo(b) < 0 ? a + ":" + b : b + ":" + a;
-    lock("invite:" + pair);
+    lock.lockInvitationPair(a, b);
     List<LinkInvitation> history = invitations.findPair(a, b);
     history.forEach(i -> i.expire(now));
     invitations.flush();
@@ -120,8 +111,10 @@ public class ConnectionService {
     LinkInvitation initial = invitations.findById(id).orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
     UUID a = initial.getInviterUserId(), b = initial.getInvitedUserId();
     if (!b.equals(actor.getUserId())) throw new ForbiddenOperationException("Không phải người nhận lời mời");
-    String pair = a.compareTo(b) < 0 ? a + ":" + b : b + ":" + a;
-    lock("invite:" + pair);
+    UUID studentUser = actor.hasRole("STUDENT") ? b : a;
+    Optional<StudentSummaryDto> studentScope = accept ? profile.findStudentByUserId(studentUser) : Optional.empty();
+    studentScope.ifPresent(student -> lock.lockStudent(student.studentId()));
+    lock.lockInvitationPair(a, b);
     LinkInvitation invitation = invitations.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
     Instant now = Instant.now();
     invitation.expire(now);
@@ -138,8 +131,8 @@ public class ConnectionService {
     if (inviter.status() != AccountStatus.ACTIVE || inviter.role() != expected)
       throw new InvalidOperationException("Tài khoản gửi không còn hợp lệ");
     UUID parent = actor.hasRole("PARENT") ? b : a;
-    UUID studentUser = actor.hasRole("STUDENT") ? b : a;
     StudentSummaryDto student = profile.findStudentByUserId(studentUser)
+        .filter(current -> studentScope.map(before -> before.studentId().equals(current.studentId())).orElse(false))
         .orElseThrow(() -> new InvalidOperationException("Hồ sơ học sinh không còn hợp lệ"));
     if (links.existsByParentUserIdAndStudentIdAndStatus(parent, student.studentId(), "CONFIRMED"))
       throw new ResourceConflictException("Liên kết đã tồn tại");
@@ -156,8 +149,7 @@ public class ConnectionService {
     LinkInvitation initial = invitations.findById(id)
         .orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
     UUID a = initial.getInviterUserId(), b = initial.getInvitedUserId();
-    String pair = a.compareTo(b) < 0 ? a + ":" + b : b + ":" + a;
-    lock("invite:" + pair);
+    lock.lockInvitationPair(a, b);
     LinkInvitation invitation = invitations.lockById(id)
         .orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
     if (!invitation.getInviterUserId().equals(actor.getUserId()))
@@ -179,7 +171,7 @@ public class ConnectionService {
   public void revokeLink(CurrentUser actor, UUID id, String reason) {
     requireRole(actor, "STUDENT", "ADMIN");
     ParentStudentLink initial = links.findById(id).orElseThrow(() -> EntityNotFoundException.of("Link", id));
-    lock("student:" + initial.getStudentId());
+    lock.lockStudent(initial.getStudentId());
     ParentStudentLink link = links.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Link", id));
     if (!"CONFIRMED".equals(link.getStatus())) throw new ResourceConflictException("Liên kết đã bị thu hồi");
     if (actor.hasRole("ADMIN") && (reason == null || reason.isBlank()))
@@ -206,7 +198,7 @@ public class ConnectionService {
     requireRole(actor, "STUDENT", "PARENT");
     ConnectionGoalDto goal = profile.findGoalForConnection(goalId)
         .orElseThrow(() -> EntityNotFoundException.of("LearningGoal", goalId));
-    lock("student:" + goal.studentId());
+    lock.lockStudent(goal.studentId());
     requireStudentAccess(actor, goal.studentId());
     if (!"ACTIVE".equals(goal.status())) throw new InvalidOperationException("Mục tiêu không còn hoạt động");
     if (message != null && message.length() > 500) throw new InvalidOperationException("Lời nhắn tối đa 500 ký tự");
@@ -255,7 +247,7 @@ public class ConnectionService {
   public void cancelRequest(CurrentUser actor, UUID id) {
     requireRole(actor, "STUDENT", "PARENT");
     ConnectionRequest initial = requests.findById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
-    lock("student:" + initial.getStudentId());
+    lock.lockStudent(initial.getStudentId());
     ConnectionRequest request = requests.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
     requireStudentAccess(actor, request.getStudentId());
     request.expire(Instant.now());
@@ -269,7 +261,7 @@ public class ConnectionService {
     ConnectionRequest initial = requests.findById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
     UUID tutorId = profile.getTutorIdByUserId(actor.getUserId());
     if (!initial.getTutorId().equals(tutorId)) throw new ForbiddenOperationException("Không phải gia sư nhận yêu cầu");
-    lock("student:" + initial.getStudentId());
+    lock.lockStudent(initial.getStudentId());
     ConnectionRequest request = requests.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
     Instant now = Instant.now();
     request.expire(now);

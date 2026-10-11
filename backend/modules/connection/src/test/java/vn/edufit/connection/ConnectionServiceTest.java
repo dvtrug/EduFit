@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +15,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import vn.edufit.connection.application.ConnectionService;
+import vn.edufit.connection.application.port.ConnectionLock;
+import vn.edufit.connection.application.service.InvitationQuotaService;
 import vn.edufit.connection.application.service.ConnectionFacadeImpl;
 import vn.edufit.connection.infra.persistence.entity.*;
 import vn.edufit.connection.infra.persistence.repository.*;
@@ -37,8 +37,7 @@ class ConnectionServiceTest {
   @Mock TutoringClassRepository classes;
   @Mock IamFacade iam;
   @Mock ProfileFacade profile;
-  @Mock EntityManager em;
-  @Mock Query query;
+  @Mock ConnectionLock lock;
   @Mock AuditSink audit;
   @Mock NotificationSink notifications;
   @Mock ConnectionInviteQuotaRepository quotas;
@@ -46,9 +45,7 @@ class ConnectionServiceTest {
 
   @BeforeEach void setup() {
     service = new ConnectionService(invitations, links, requests, classes, iam, profile,
-        em, audit, notifications, quotas, new ConnectionFacadeImpl(links, classes));
-    lenient().when(em.createNativeQuery(anyString())).thenReturn(query);
-    lenient().when(query.setParameter(anyString(), any())).thenReturn(query);
+        lock, audit, notifications, new InvitationQuotaService(quotas, lock), new ConnectionFacadeImpl(links, classes));
   }
 
   private CurrentUser actor(UUID id, String role) {
@@ -148,5 +145,21 @@ class ConnectionServiceTest {
     verify(classes, times(1)).save(any());
     verify(notifications).notify(eq(request.getSentByUserId()), eq(studentId),
         eq("CONNECTION_ACCEPTED"), anyString(), anyString(), eq("CLASS"), nullable(UUID.class));
+  }
+
+  @Test void acceptingInvitationLocksStudentBeforePairAndRow() {
+    UUID parent = UUID.randomUUID(), studentUser = UUID.randomUUID(), student = UUID.randomUUID(), id = UUID.randomUUID();
+    var invitation = new LinkInvitation(parent, studentUser, Instant.now());
+    when(invitations.findById(id)).thenReturn(Optional.of(invitation));
+    when(invitations.lockById(id)).thenReturn(Optional.of(invitation));
+    when(profile.findStudentByUserId(studentUser)).thenReturn(Optional.of(new StudentSummaryDto(student, studentUser, 1, null, true)));
+    when(iam.findUserSummaryById(parent)).thenReturn(Optional.of(new UserSummaryView(parent, "parent@example.test", "Parent", AccountRole.PARENT, AccountStatus.ACTIVE)));
+    when(links.save(any())).thenAnswer(i -> i.getArgument(0));
+    assertNotNull(service.respondInvitation(actor(studentUser, "STUDENT"), id, true));
+    var order = inOrder(lock, invitations, links);
+    order.verify(lock).lockStudent(student);
+    order.verify(lock).lockInvitationPair(parent, studentUser);
+    order.verify(invitations).lockById(id);
+    order.verify(links).save(any());
   }
 }
