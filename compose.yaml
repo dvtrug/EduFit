@@ -4,6 +4,7 @@ services:
   db:
     image: postgres:17
     environment:
+      TZ: Asia/Ho_Chi_Minh
       POSTGRES_DB: ${POSTGRES_DB:-edufit}
       POSTGRES_USER: ${POSTGRES_USER:-edufit}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-edufit-local-only}
@@ -31,7 +32,7 @@ services:
     build:
       context: ./backend
     environment:
-      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-edufit}
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-edufit}?options=-c%20timezone=Asia/Ho_Chi_Minh
       DB_USERNAME: ${POSTGRES_USER:-edufit}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-edufit-local-only}
       MAIL_HOST: mail

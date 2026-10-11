@@ -1,0 +1,198 @@
+"use client";
+
+import React, { useState } from "react";
+import { verificationService, PendingQueueItem } from "@/services/verification";
+import { useToast } from "@/shared/ui/Toast";
+import {
+  ShieldCheck,
+  CheckCircle2,
+  XCircle,
+  X,
+  FileText,
+  AlertTriangle,
+  Loader2,
+  Calendar,
+} from "lucide-react";
+
+/**
+ * =========================================================================
+ * SPRING BOOT API CONNECTION:
+ * =========================================================================
+ * Endpoint: POST /api/v1/admin/verifications/{id}/review
+ * Controller: vn.edufit.verification.web.AdminVerificationController#review
+ * Security: @PreAuthorize("hasRole('ADMIN')")
+ * Request Body: ReviewVerificationRequest { decision: 'APPROVED'|'REJECTED', rejectionReason }
+ * Business Rule: BR-06 - Từ chối bắt buộc phải có lý do giải thích
+ * =========================================================================
+ */
+
+interface ReviewKycModalProps {
+  item: PendingQueueItem | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onReviewed: () => void;
+}
+
+export function ReviewKycModal({ item, isOpen, onClose, onReviewed }: ReviewKycModalProps) {
+  const { showToast } = useToast();
+
+  const [decision, setDecision] = useState<"APPROVED" | "REJECTED">("APPROVED");
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  if (!isOpen || !item) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (decision === "REJECTED" && !rejectionReason.trim()) {
+      showToast("Vui lòng nhập lý do từ chối hồ sơ (Quy tắc BR-06)!", "error");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await verificationService.reviewVerification(
+        item.requestId,
+        decision,
+        decision === "REJECTED" ? rejectionReason.trim() : undefined
+      );
+
+      showToast(
+        decision === "APPROVED"
+          ? "Phê duyệt hồ sơ gia sư thành công!"
+          : "Đã từ chối hồ sơ kèm lý do phản hồi!",
+        "success"
+      );
+      onReviewed();
+      onClose();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Thao tác thẩm định thất bại";
+      showToast(msg, "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="w-full max-w-lg bg-white rounded-3xl border border-stone-200 shadow-2xl p-6 sm:p-7 space-y-5 animate-in zoom-in-95 duration-150">
+        {/* Modal Header */}
+        <div className="flex items-start justify-between gap-3 pb-4 border-b border-stone-100">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+              <ShieldCheck className="size-5" />
+            </div>
+            <div>
+              <h3 className="font-heading text-lg font-bold text-neutral-900">
+                Thẩm Định Hồ Sơ Xác Minh KYC
+              </h3>
+              <p className="text-xs text-neutral-500">Mã yêu cầu: {item.requestId}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-xl hover:bg-stone-100 text-neutral-400 hover:text-neutral-700 transition-colors"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        {/* Thông tin hồ sơ */}
+        <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200/80 space-y-2 text-xs">
+          <div className="flex justify-between items-center">
+            <span className="text-neutral-500">Gia sư (Tutor ID):</span>
+            <span className="font-mono font-bold text-neutral-800">{item.tutorId}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-neutral-500">Thời gian nộp:</span>
+            <span className="font-medium text-neutral-700 flex items-center gap-1">
+              <Calendar className="size-3.5 text-neutral-400" />
+              {new Date(item.submittedAt).toLocaleString("vi-VN")}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-neutral-500">Trạng thái hiện tại:</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900">
+              {item.status}
+            </span>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-neutral-700 mb-2">
+              Quyết định thẩm định (Decision):
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setDecision("APPROVED")}
+                className={`p-3 rounded-2xl border flex items-center justify-center gap-2 text-xs font-bold transition-all ${
+                  decision === "APPROVED"
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-500 ring-2 ring-emerald-500/20"
+                    : "bg-white text-neutral-600 border-stone-200 hover:border-stone-300"
+                }`}
+              >
+                <CheckCircle2 className="size-4 text-emerald-600" />
+                <span>PHÊ DUYỆT (Approve)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDecision("REJECTED")}
+                className={`p-3 rounded-2xl border flex items-center justify-center gap-2 text-xs font-bold transition-all ${
+                  decision === "REJECTED"
+                    ? "bg-rose-50 text-rose-800 border-rose-500 ring-2 ring-rose-500/20"
+                    : "bg-white text-neutral-600 border-stone-200 hover:border-stone-300"
+                }`}
+              >
+                <XCircle className="size-4 text-rose-600" />
+                <span>TỪ CHỐI (Reject)</span>
+              </button>
+            </div>
+          </div>
+
+          {decision === "REJECTED" && (
+            <div className="space-y-1.5 animate-in fade-in duration-150">
+              <label className="block text-xs font-bold text-rose-700">
+                Lý do từ chối hồ sơ (Bắt buộc theo BR-06) <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                required
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="VD: Ảnh bằng tốt nghiệp bị mờ, không nhìn rõ số hiệu văn bằng..."
+                className="w-full p-3 text-xs bg-stone-50 border border-rose-200 rounded-xl focus:bg-white focus:outline-hidden focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 text-neutral-900"
+              />
+            </div>
+          )}
+
+          <div className="pt-2 flex items-center justify-end gap-3 border-t border-stone-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2.5 rounded-xl border border-stone-200 hover:bg-stone-50 text-xs font-semibold text-neutral-700 transition-colors"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className={`px-5 py-2.5 rounded-xl text-white text-xs font-bold shadow-xs transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer ${
+                decision === "APPROVED"
+                  ? "bg-emerald-600 hover:bg-emerald-700"
+                  : "bg-rose-600 hover:bg-rose-700"
+              }`}
+            >
+              {submitting && <Loader2 className="size-4 animate-spin" />}
+              <span>{submitting ? "Đang xử lý..." : "Xác nhận quyết định"}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

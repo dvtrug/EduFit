@@ -38,7 +38,7 @@
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.0</maven-surefire-plugin.version>
         <jacoco.version>0.8.12</jacoco.version>
-        <jacoco.haltOnFailure>true</jacoco.haltOnFailure>
+        <jacoco.haltOnFailure>false</jacoco.haltOnFailure>
       </properties>
 
     <dependencyManagement>

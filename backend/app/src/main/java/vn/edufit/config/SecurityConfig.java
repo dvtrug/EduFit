@@ -52,11 +52,12 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
-        // 1. Cấu hình bảo vệ chống tấn công CSRF (dùng cookie XSRF-TOKEN cho Next.js gửi qua header X-XSRF-TOKEN)
+        // 1. Cấu hình bảo vệ chống tấn công CSRF:
+        // Bảo vệ phiên làm việc dựa trên Cookie EDUFIT_SESSION với SameSite=Lax (ADR-001 / RFC 6265bis)
         .csrf(csrf -> csrf
             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
             .ignoringRequestMatchers(
-                "/api/v1/auth/**",
+                "/api/v1/**",
                 "/v3/api-docs/**",
                 "/swagger-ui/**",
                 "/swagger-ui.html",
@@ -64,18 +65,37 @@ public class SecurityConfig {
             )
         )
 
-        // 2. Cấu hình phân quyền truy cập URL
+        // 2. Cấu hình phân quyền truy cập URL theo từng vai trò (NFR-07: Role-Based Access Control)
         .authorizeHttpRequests(auth -> auth
-            // Các đường dẫn công khai (không cần đăng nhập)
+            // 2.1. Các đường dẫn công khai (không cần đăng nhập: Xác thực, Danh mục chung, Swagger, Actuator)
             .requestMatchers(
                 "/api/v1/auth/**",
+                "/api/v1/catalogs/**",
                 "/v3/api-docs/**",
                 "/swagger-ui/**",
                 "/swagger-ui.html",
                 "/actuator/health",
                 "/error"
             ).permitAll()
-            // Mọi yêu cầu API nghiệp vụ khác đều bắt buộc phải đăng nhập
+
+            // 2.2. Phân quyền dành riêng cho Quản trị viên (ADMIN)
+            .requestMatchers(
+                "/api/v1/admin/**",
+                "/api/v1/verifications/admin/**"
+            ).hasRole("ADMIN")
+
+            // 2.3. Phân quyền dành riêng cho Gia sư (TUTOR)
+            .requestMatchers(
+                "/api/v1/verifications/tutors/**",
+                "/api/v1/profiles/tutors/me/**"
+            ).hasRole("TUTOR")
+
+            // 2.4. Phân quyền dành riêng cho Học sinh & Phụ huynh (STUDENT, PARENT)
+            .requestMatchers(
+                "/api/v1/profiles/students/me/**"
+            ).hasAnyRole("STUDENT", "PARENT", "ADMIN")
+
+            // 2.5. Mọi yêu cầu API nghiệp vụ khác đều bắt buộc phải đăng nhập
             .anyRequest().authenticated()
         )
 
