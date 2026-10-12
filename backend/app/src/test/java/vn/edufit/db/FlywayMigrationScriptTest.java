@@ -59,7 +59,7 @@ class FlywayMigrationScriptTest {
           .toList();
 
       assertFalse(sqlFiles.isEmpty(), "Phải có ít nhất một file migration SQL trong db/migration");
-      assertEquals(11, sqlFiles.size(), "Giữ seed main V1.09, seed V1.10 và Connection V1.11");
+      assertEquals(12, sqlFiles.size(), "Giữ seed main V1.09, seed V1.10, Connection V1.11 và Matching V1.12");
       assertEquals(sqlFiles.size(), sqlFiles.stream()
           .map(path -> path.getFileName().toString().split("__", 2)[0])
           .distinct().count(), "Version Flyway phải duy nhất trên tất cả module");
@@ -68,6 +68,8 @@ class FlywayMigrationScriptTest {
           "Migration cho relink, optimistic version và invite quota phải tồn tại");
       assertTrue(Files.exists(migrationRootDir.resolve("platform")
           .resolve("V1.10__seed_demo_accounts_and_catalogs.sql")), "Seed main được tích hợp ở V1.10");
+      assertTrue(Files.exists(migrationRootDir.resolve("platform")
+          .resolve("V1.12__seed_demo_matching_data.sql")), "Seed matching được tích hợp ở V1.12");
       assertEquals(-1594466614, checksum(migrationRootDir.resolve("platform/V1.09__seed_demo_accounts_and_catalogs.sql")),
           "V1.09 phải khớp history main, không thay bằng DDL Connection");
       assertEquals(-1594466614, checksum(migrationRootDir.resolve("platform/V1.10__seed_demo_accounts_and_catalogs.sql")),
