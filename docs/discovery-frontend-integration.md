@@ -25,6 +25,26 @@ Mật khẩu demo là `Password123@`; email `student.demo@edufit.vn`, `parent.de
 `tutor.demo@edufit.vn`. Nếu chạy backend bằng IDE, dừng container backend trước bằng
 `docker compose stop backend` để tránh trùng cổng 8080.
 
+### Chạy backend từ IDE
+
+Mở Docker Desktop, đợi engine sẵn sàng, rồi chạy tại thư mục gốc repository:
+
+```powershell
+docker compose up -d --wait db mail
+docker compose stop backend
+Test-NetConnection localhost -Port 5433
+```
+
+Khi database báo `Healthy` và `TcpTestSucceeded: True`, Run ứng dụng backend
+trong IDE bằng JDK 21. Cấu hình mặc định kết nối PostgreSQL tại
+`localhost:5433`; nếu đổi cổng publish `POSTGRES_PORT`, đặt `DB_PORT` tương ứng
+trong cấu hình Run của IDE (hoặc đặt `DB_URL` đầy đủ).
+
+Nếu Flyway báo `Connection to localhost:5433 refused`, PostgreSQL chưa nhận
+kết nối: kiểm tra Docker Desktop đang chạy và `docker compose ps db` báo healthy,
+rồi chạy lại lệnh bật `db mail` phía trên. Lỗi này xảy ra trước bước migration;
+không cần sửa file SQL, chạy `flyway repair` hay xóa volume database.
+
 Next.js proxy `/api/*` sang backend cổng 8080. Browser dùng cùng origin cổng 3000,
 gửi cookie `EDUFIT_SESSION`; mỗi mutation lấy token CSRF mới trước khi gửi.
 Không đặt Gemini API key trong frontend. Docker đọc `AI_PROVIDER`,
