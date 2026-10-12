@@ -32,4 +32,6 @@ Student chỉ list/ghi mục tiêu của mình. Thiếu danh tính hoặc role k
 
 Bằng chứng Phase 3 dùng MockMvc HTTP mapping/validation + Spring transaction + PostgreSQL thật; CurrentUser được kiểm soát trong fixture, không dùng đó để nhận full security filter/session/CSRF đã pass. Full-filter và malformed JSON/enum/type matrix tổng thể thuộc B11/B12.
 
+B09 đã kiểm chứng null JSON body trả nhầm 500 ở handler cũ; handler HttpMessageNotReadableException nay trả 400 VALIDATION_FAILED với thông báo cố định, không log/trả raw parser message. Đây là phần tối thiểu cần cho payload goal/slots mới; query/path type errors và toàn bộ matrix B12 vẫn pending.
+
 Nguồn: [BR-12/schema review](edufit-schema-review-changes.md), [SRS](SRS%20Edufit.docx), [Spring Data JPA locking](https://docs.spring.io/spring-data/jpa/reference/jpa/locking.html), [Spring MVC validation](https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-validation.html).

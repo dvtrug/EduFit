@@ -129,6 +129,14 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
   }
 
+  @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+  public ResponseEntity<ApiError> handleUnreadableBody(
+      org.springframework.http.converter.HttpMessageNotReadableException ex) {
+    // Parser errors can contain raw request values. Do not log or return their messages.
+    return ResponseEntity.badRequest().body(ApiError.of(
+        ErrorCode.VALIDATION_FAILED.name(), "Nội dung JSON không hợp lệ hoặc thiếu trường bắt buộc."));
+  }
+
   /**
    * Bắt lỗi vi phạm ràng buộc trên RequestParam hoặc PathVariable (@Validated) -> HTTP 400.
    */

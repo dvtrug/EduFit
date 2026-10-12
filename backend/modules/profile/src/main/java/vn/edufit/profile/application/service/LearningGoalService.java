@@ -1,6 +1,7 @@
 package vn.edufit.profile.application.service;
 
 import jakarta.validation.Validator;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -11,6 +12,7 @@ import vn.edufit.profile.api.dto.WeeklyAvailabilityDto;
 import vn.edufit.profile.infra.persistence.entity.*;
 import vn.edufit.profile.infra.persistence.repository.*;
 import vn.edufit.profile.web.request.SaveLearningGoalRequest;
+import vn.edufit.profile.web.request.SetGoalAvailabilityRequest;
 import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.exception.*;
 
@@ -94,6 +96,40 @@ public class LearningGoalService {
     StudentProfile student = owner(actor);
     LearningGoal goal = ownedForUpdate(goalId, student);
     if (goal.getStatus() != GoalStatus.ARCHIVED) goal.setStatus(GoalStatus.ARCHIVED);
+    return view(goal, student);
+  }
+
+  @Transactional
+  public LearningGoalView replaceAvailability(
+      CurrentUser actor, UUID goalId, SetGoalAvailabilityRequest input) {
+    StudentProfile student = owner(actor);
+    LearningGoal goal = ownedForUpdate(goalId, student);
+    ensureActive(goal);
+    if (input == null || !validator.validate(input).isEmpty())
+      throw new InvalidOperationException("Danh sách khung giờ không hợp lệ.");
+    var ordered =
+        input.slots().stream()
+            .sorted(
+                Comparator.comparing(SetGoalAvailabilityRequest.Slot::dayOfWeek)
+                    .thenComparing(SetGoalAvailabilityRequest.Slot::startTime))
+            .toList();
+    for (int index = 1; index < ordered.size(); index++) {
+      var previous = ordered.get(index - 1);
+      var current = ordered.get(index);
+      if (previous.dayOfWeek().equals(current.dayOfWeek())
+          && current.startTime().isBefore(previous.endTime()))
+        throw new InvalidOperationException("Khung giờ không được trùng hoặc giao nhau.");
+    }
+    // Bulk delete executes before inserts; the owner goal lock serializes replace/update/archive.
+    slots.deleteForGoal(goalId);
+    slots.saveAllAndFlush(
+        ordered.stream()
+            .map(
+                slot ->
+                    new GoalAvailabilitySlot(
+                        goalId, slot.dayOfWeek(), slot.startTime(), slot.endTime()))
+            .toList());
+    goal.touch();
     return view(goal, student);
   }
 

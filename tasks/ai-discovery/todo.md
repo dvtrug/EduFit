@@ -29,7 +29,7 @@ Cập nhật 2026-10-12: B00, Phase 1 (B02–B04) và Phase 2 (B05–B07) hoàn 
 ## Đầu vào matching
 
 - [x] B08: Student create/list/update/archive goals đúng owner và BR-12.
-- [ ] B09: Goal availability save nguyên tử; validation và readback.
+- [x] B09: Goal availability save nguyên tử; validation và readback.
 - [ ] B10: Parent chỉ đọc goals qua confirmed-link authorization; không dependency cycle.
 - [ ] Checkpoint D: tạo goal -> slots -> match qua HTTP, không cần SQL thủ công.
 
@@ -111,3 +111,6 @@ mvn -B -ntp -pl platform/ai,modules/discovery '-Djacoco.haltOnFailure=true' jaco
 - Goal/readiness contract của B01 được chốt trong [Phase 3 contract](../../docs/ai-discovery-phase3-contract.md); phần security tổng thể B01 vẫn pending cho Phase 4. B08 hoàn tất: create/list/update/archive, active subject, BR-12, budget/mode/area, owner từ session, archive idempotent và giữ matching history. Real Matching/Connection từ chối archived goal.
 - [B08 red](b08-red.log): chạy controller scaffold không có routes, 18 failures/0 errors chứng minh thiếu API. Test đã viết trước implementation; do Docker ban đầu chưa chạy, sau khi khởi động engine đã tái lập scaffold để có red HTTP thật. [Docker unavailable](phase3-docker-unavailable.log), [Docker đang khởi động](phase3-docker-starting.log) là lỗi môi trường, không tính là business red. [Fixture proxy](b08-fixture-proxy.log): 20/21 goal tests pass, một failure do test lookup concrete ConnectionService qua JDK proxy; sửa fixture sang class proxy.
 - [B08 green](b08-green.log): **21 goal HTTP/service/PostgreSQL cases + 9 app architecture checks, 0 fail/error/skip, BUILD SUCCESS**. CurrentUser kiểm soát trong fixture; chưa nhận full-filter auth/CSRF E2E đã pass. Migrations PostgreSQL thật, không skip/H2. Lệnh backend/JDK 21: `mvn -B -ntp -pl app -am '-Dtest=LearningGoalPostgresTest,Architecture*Test' '-Dsurefire.failIfNoSpecifiedTests=false' test`.
+- B09 hoàn tất: [red](b09-red.log) 18 failures/0 errors do thiếu availability route; [body error red](b09-unreadable-body-red.log) 38/39 goal cases pass, JSON null bị trả 500. Đã sửa tối thiểu HttpMessageNotReadableException -> 400 an toàn, thêm handler regression; B12 tổng thể vẫn pending.
+- [B09 green](b09-green.log): **39 goal cases + 9 app architecture + 7 handler tests = 55 app tests, 0 fail/error/skip, BUILD SUCCESS**. Replace giữ owner goal lock qua commit; concurrent second request chờ transaction thứ nhất, kết quả không trộn slots. Deferred PostgreSQL trigger gây lỗi commit sau delete/insert, old slot ID vẫn còn nguyên. Duplicate/overlap/null/day/time/minute precision/100-slot limit/empty clear/touching boundary đều kiểm tra. Create goal -> replace slots -> POST match chạy qua MockMvc với facade/repository thật, không seed SQL goal/slot; fixture vẫn seed account/profile/catalogs và CurrentUser được kiểm soát.
+- Lệnh B09 backend/JDK 21: `mvn -B -ntp -pl app -am '-Dtest=LearningGoalPostgresTest,GlobalExceptionHandlerTest,Architecture*Test' '-Dsurefire.failIfNoSpecifiedTests=false' test`.

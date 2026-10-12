@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import vn.edufit.profile.api.dto.LearningGoalView;
 import vn.edufit.profile.application.service.LearningGoalService;
 import vn.edufit.profile.web.request.SaveLearningGoalRequest;
+import vn.edufit.profile.web.request.SetGoalAvailabilityRequest;
 import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.response.ApiResponse;
 
@@ -44,6 +45,15 @@ public class LearningGoalController {
     return ResponseEntity.ok(
         ApiResponse.success(
             goals.update(actor.getIfAvailable(), goalId, input), "Cập nhật mục tiêu thành công"));
+  }
+
+  @PutMapping("/{goalId}/availability")
+  public ResponseEntity<ApiResponse<LearningGoalView>> replaceAvailability(
+      @PathVariable UUID goalId, @Valid @RequestBody SetGoalAvailabilityRequest input) {
+    return ResponseEntity.ok(
+        ApiResponse.success(
+            goals.replaceAvailability(actor.getIfAvailable(), goalId, input),
+            "Cập nhật lịch học thành công"));
   }
 
   @PostMapping("/{goalId}/archive")

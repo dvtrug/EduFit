@@ -66,7 +66,9 @@ class LearningGoalPostgresTest {
     reset(user);
     actor(accountId, "STUDENT");
     mvc =
-        MockMvcBuilders.standaloneSetup(context.getBean(LearningGoalController.class))
+        MockMvcBuilders.standaloneSetup(
+                context.getBean(LearningGoalController.class),
+                context.getBean(vn.edufit.discovery.web.DiscoveryController.class))
             .setControllerAdvice(new GlobalExceptionHandler())
             .build();
   }
@@ -232,6 +234,215 @@ class LearningGoalPostgresTest {
     assertEquals(0, jdbc.queryForObject("select count(*) from connection_request", Integer.class));
   }
 
+  @Test
+  void availabilityRoundTripEnablesMatchingWithoutSqlGoalOrSlotSeed() throws Exception {
+    UUID id = create();
+    jdbc.update("update student_profile set education_level_id=1 where student_id=?", studentId);
+    mvc.perform(
+            put(ROOT + "/" + id + "/availability")
+                .contentType("application/json")
+                .content(availability(1, "18:00", "20:00")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.readyForMatching").value(true))
+        .andExpect(jsonPath("$.data.availabilitySlots[0].dayOfWeek").value(1));
+    mvc.perform(get(ROOT))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data[0].readyForMatching").value(true));
+    mvc.perform(
+            post("/api/v1/discovery/match")
+                .contentType("application/json")
+                .content("{\"goalId\":\"" + id + "\",\"topN\":5}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data").isEmpty());
+    assertEquals(
+        1,
+        jdbc.queryForObject(
+            "select count(*) from matching_run_log where goal_id=?", Integer.class, id));
+  }
+
+  @Test
+  void availabilityTouchingBoundariesAllowedAndEmptyPayloadClearsReadiness() throws Exception {
+    UUID id = create();
+    replace(
+        id,
+        "{\"slots\":[{\"dayOfWeek\":7,\"startTime\":\"19:00\",\"endTime\":\"20:00\"},{\"dayOfWeek\":7,\"startTime\":\"18:00\",\"endTime\":\"19:00\"}]}");
+    mvc.perform(get(ROOT))
+        .andExpect(jsonPath("$.data[0].availabilitySlots[0].startTime").value("18:00:00"));
+    replace(id, "{\"slots\":[]}");
+    mvc.perform(get(ROOT))
+        .andExpect(jsonPath("$.data[0].availabilitySlots").isEmpty())
+        .andExpect(jsonPath("$.data[0].readyForMatching").value(false));
+    assertEquals(
+        0, jdbc.queryForObject("select count(*) from goal_availability_slot", Integer.class));
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "null",
+        "{}",
+        "{\"slots\":null}",
+        "{\"slots\":[null]}",
+        "{\"slots\":[{\"dayOfWeek\":0,\"startTime\":\"18:00\",\"endTime\":\"19:00\"}]}",
+        "{\"slots\":[{\"dayOfWeek\":8,\"startTime\":\"18:00\",\"endTime\":\"19:00\"}]}",
+        "{\"slots\":[{\"dayOfWeek\":1,\"startTime\":\"20:00\",\"endTime\":\"19:00\"}]}",
+        "{\"slots\":[{\"dayOfWeek\":1,\"startTime\":\"19:00\",\"endTime\":\"19:00\"}]}",
+        "{\"slots\":[{\"dayOfWeek\":1,\"startTime\":\"23:00\",\"endTime\":\"01:00\"}]}",
+        "{\"slots\":[{\"dayOfWeek\":1,\"startTime\":\"18:00:01\",\"endTime\":\"19:00\"}]}",
+        "{\"slots\":[{\"dayOfWeek\":1,\"startTime\":\"18:00\",\"endTime\":\"19:00:00.001\"}]}",
+        "{\"slots\":[{\"dayOfWeek\":1,\"startTime\":null,\"endTime\":\"19:00\"}]}"
+      })
+  void availabilityInvalidInputKeepsOldSlots(String invalid) throws Exception {
+    UUID id = create();
+    replace(id, availability(1, "18:00", "19:00"));
+    UUID oldSlot = jdbc.queryForObject("select slot_id from goal_availability_slot", UUID.class);
+    mvc.perform(
+            put(ROOT + "/" + id + "/availability").contentType("application/json").content(invalid))
+        .andExpect(status().isBadRequest());
+    assertEquals(
+        oldSlot, jdbc.queryForObject("select slot_id from goal_availability_slot", UUID.class));
+  }
+
+  @Test
+  void availabilityDuplicateOverlapAndOversizedPayloadRejectedBeforeDelete() throws Exception {
+    UUID id = create();
+    replace(id, availability(1, "18:00", "19:00"));
+    String item = "{\"dayOfWeek\":1,\"startTime\":\"18:00\",\"endTime\":\"19:00\"}";
+    for (String invalid :
+        java.util.List.of(
+            "{\"slots\":[" + item + "," + item + "]}",
+            "{\"slots\":["
+                + item
+                + ",{\"dayOfWeek\":1,\"startTime\":\"18:30\",\"endTime\":\"20:00\"}]}",
+            "{\"slots\":[" + String.join(",", java.util.Collections.nCopies(101, item)) + "]}")) {
+      mvc.perform(
+              put(ROOT + "/" + id + "/availability")
+                  .contentType("application/json")
+                  .content(invalid))
+          .andExpect(status().isBadRequest());
+    }
+    assertEquals(
+        1, jdbc.queryForObject("select count(*) from goal_availability_slot", Integer.class));
+  }
+
+  @Test
+  void availabilityCommitFailureRestoresDeletedSlots() throws Exception {
+    UUID id = create();
+    replace(id, availability(1, "18:00", "19:00"));
+    UUID old = jdbc.queryForObject("select slot_id from goal_availability_slot", UUID.class);
+    jdbc.execute(
+        "create function reject_goal_slot() returns trigger language plpgsql as $$ begin raise"
+            + " exception 'test deferred slot failure'; return new; end $$");
+    jdbc.execute(
+        "create constraint trigger reject_goal_slot after insert on goal_availability_slot"
+            + " deferrable initially deferred for each row execute function reject_goal_slot()");
+    try {
+      mvc.perform(
+              put(ROOT + "/" + id + "/availability")
+                  .contentType("application/json")
+                  .content(availability(2, "21:00", "22:00")))
+          .andExpect(status().isInternalServerError());
+      assertEquals(
+          old, jdbc.queryForObject("select slot_id from goal_availability_slot", UUID.class));
+    } finally {
+      jdbc.execute("drop trigger reject_goal_slot on goal_availability_slot");
+      jdbc.execute("drop function reject_goal_slot()");
+    }
+  }
+
+  @Test
+  void availabilityConcurrentReplacementsSerializeUntilTransactionCommit() throws Exception {
+    UUID id = create();
+    var held = new java.util.concurrent.CountDownLatch(1);
+    var release = new java.util.concurrent.CountDownLatch(1);
+    try (var executor = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor()) {
+      var first =
+          executor.submit(
+              () ->
+                  new org.springframework.transaction.support.TransactionTemplate(
+                          context.getBean(
+                              org.springframework.transaction.PlatformTransactionManager.class))
+                      .executeWithoutResult(
+                          status -> {
+                            replace(id, availability(1, "18:00", "19:00"));
+                            held.countDown();
+                            try {
+                              if (!release.await(10, java.util.concurrent.TimeUnit.SECONDS))
+                                throw new AssertionError("release timeout");
+                            } catch (InterruptedException ex) {
+                              Thread.currentThread().interrupt();
+                              throw new RuntimeException(ex);
+                            }
+                          }));
+      try {
+        assertTrue(held.await(5, java.util.concurrent.TimeUnit.SECONDS));
+        var second = executor.submit(() -> replace(id, availability(2, "20:00", "21:00")));
+        assertThrows(
+            java.util.concurrent.TimeoutException.class,
+            () -> second.get(200, java.util.concurrent.TimeUnit.MILLISECONDS));
+        release.countDown();
+        first.get(5, java.util.concurrent.TimeUnit.SECONDS);
+        second.get(5, java.util.concurrent.TimeUnit.SECONDS);
+        assertEquals(
+            2,
+            jdbc.queryForObject("select day_of_week from goal_availability_slot", Integer.class));
+        assertEquals(
+            1, jdbc.queryForObject("select count(*) from goal_availability_slot", Integer.class));
+      } finally {
+        release.countDown();
+      }
+    }
+  }
+
+  @Test
+  void availabilityRequiresOwnerAndActiveGoal() throws Exception {
+    UUID id = create();
+    actor(accountId, "PARENT");
+    mvc.perform(
+            put(ROOT + "/" + id + "/availability")
+                .contentType("application/json")
+                .content(availability(1, "18:00", "19:00")))
+        .andExpect(status().isForbidden());
+    UUID other = UUID.randomUUID();
+    account(other, "STUDENT");
+    jdbc.update("insert into student_profile(user_id) values(?)", other);
+    actor(other, "STUDENT");
+    mvc.perform(
+            put(ROOT + "/" + id + "/availability")
+                .contentType("application/json")
+                .content(availability(1, "18:00", "19:00")))
+        .andExpect(status().isNotFound());
+    actor(accountId, "STUDENT");
+    mvc.perform(post(ROOT + "/" + id + "/archive")).andExpect(status().isOk());
+    mvc.perform(
+            put(ROOT + "/" + id + "/availability")
+                .contentType("application/json")
+                .content(availability(1, "18:00", "19:00")))
+        .andExpect(status().isBadRequest());
+  }
+
+  String availability(int day, String start, String end) {
+    return "{\"slots\":[{\"dayOfWeek\":"
+        + day
+        + ",\"startTime\":\""
+        + start
+        + "\",\"endTime\":\""
+        + end
+        + "\"}]}";
+  }
+
+  void replace(UUID goal, String body) {
+    try {
+      mvc.perform(
+              put(ROOT + "/" + goal + "/availability")
+                  .contentType("application/json")
+                  .content(body))
+          .andExpect(status().isOk());
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+  }
+
   UUID create() throws Exception {
     String body =
         mvc.perform(post(ROOT).contentType("application/json").content(payload()))
@@ -278,6 +489,7 @@ class LearningGoalPostgresTest {
     vn.edufit.profile.application.service.ProfileFacadeImpl.class,
     vn.edufit.discovery.application.service.TutorMatchingService.class,
     vn.edufit.discovery.application.service.DiscoveryQueryService.class,
+    vn.edufit.discovery.web.DiscoveryController.class,
     vn.edufit.connection.application.ConnectionService.class
   })
   static class Config {
