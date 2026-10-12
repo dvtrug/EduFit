@@ -16,6 +16,50 @@ export interface UpdateStudentProfilePayload {
   area?: string;
 }
 
+export type LearningGoalType =
+  | "CONSOLIDATE"
+  | "IMPROVE_GRADES"
+  | "ADVANCED_STUDY"
+  | "EXAM_PREPARATION"
+  | "OTHER";
+
+export interface LearningGoalAvailabilitySlot {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}
+
+export interface LearningGoalData {
+  goalId: string;
+  subjectId: number;
+  subjectName: string;
+  educationLevelId: number;
+  educationLevelName: string;
+  currentLevel: number;
+  desiredLevel: number;
+  goalType: LearningGoalType;
+  deadline: string;
+  mode: "ONLINE" | "OFFLINE" | "BOTH";
+  area?: string;
+  budgetMin?: number;
+  budgetMax: number;
+  status: "ACTIVE" | "ARCHIVED";
+  availabilitySlots: LearningGoalAvailabilitySlot[];
+}
+
+export interface CreateLearningGoalPayload {
+  subjectId: number;
+  currentLevel: number;
+  desiredLevel: number;
+  goalType: LearningGoalType;
+  deadline: string;
+  mode: "ONLINE" | "OFFLINE" | "BOTH";
+  area?: string;
+  budgetMin?: number;
+  budgetMax: number;
+  availabilitySlots: LearningGoalAvailabilitySlot[];
+}
+
 export interface TutorSubjectItem {
   tutorSubjectId: string;
   subjectId: number;
@@ -63,6 +107,23 @@ export interface UpdateTutorProfilePayload {
   teachingMethod?: string;
 }
 
+export interface GenerateTutorBioPayload {
+  displayName?: string;
+  subjects?: string[];
+  educationLevels?: string[];
+  experienceYears?: number;
+  tone?: "friendly" | "professional" | "concise";
+  focusArea?: string;
+  customPrompt?: string;
+  currentBio?: string;
+}
+
+export interface GenerateTutorBioResult {
+  bio: string;
+  isAiGenerated: boolean;
+  remainingQuota: number;
+}
+
 export interface MyProfileComposite {
   userId: string;
   email: string;
@@ -94,6 +155,16 @@ export const profileService = {
   async updateStudentProfile(payload: UpdateStudentProfilePayload): Promise<StudentProfileData> {
     const res = await apiClient.put<StudentProfileData>("/api/v1/profiles/students/me", payload);
     return res.data as StudentProfileData;
+  },
+
+  async getMyLearningGoals(): Promise<LearningGoalData[]> {
+    const res = await apiClient.get<LearningGoalData[]>("/api/v1/profiles/students/me/goals");
+    return (res.data || []) as LearningGoalData[];
+  },
+
+  async createLearningGoal(payload: CreateLearningGoalPayload): Promise<LearningGoalData> {
+    const res = await apiClient.post<LearningGoalData>("/api/v1/profiles/students/me/goals", payload);
+    return res.data as LearningGoalData;
   },
 
   /**
@@ -143,5 +214,16 @@ export const profileService = {
       slots,
     });
     return res.data as TutorProfileData;
+  },
+
+  /**
+   * Sinh bản thảo tiểu sử gia sư (Bio) thông qua AI Assistant
+   */
+  async generateTutorBio(payload: GenerateTutorBioPayload): Promise<GenerateTutorBioResult> {
+    const res = await apiClient.post<GenerateTutorBioResult>(
+      "/api/v1/profiles/tutors/me/generate-bio",
+      payload
+    );
+    return res.data as GenerateTutorBioResult;
   },
 };

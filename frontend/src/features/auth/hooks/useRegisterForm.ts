@@ -13,7 +13,7 @@ export interface RegisterFormErrors extends AuthFieldErrors<RegisterInput> {
 
 export function useRegisterForm() {
   const router = useRouter();
-  const { register } = useAuth();
+  const { register, login } = useAuth();
 
   const [role, setRole] = useState<RoleType>("STUDENT");
   const [fullName, setFullName] = useState("");
@@ -93,6 +93,16 @@ export function useRegisterForm() {
       setIsSubmitting(true);
       try {
         await register(parseResult.data);
+        try {
+          await login({
+            email: parseResult.data.email,
+            password: parseResult.data.password,
+          });
+        } catch {
+          router.push("/login");
+          return true;
+        }
+
         if (role === "STUDENT") {
           router.push("/onboarding/student");
         } else if (role === "TUTOR") {

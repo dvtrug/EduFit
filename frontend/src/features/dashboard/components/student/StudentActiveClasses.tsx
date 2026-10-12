@@ -22,12 +22,12 @@ interface StudentActiveClassesProps {
 export function StudentActiveClasses({ classes = [] }: StudentActiveClassesProps) {
   if (classes.length === 0) {
     return (
-      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-stone-200/80 shadow-xs space-y-4">
+      <div className="bg-white dark:bg-stone-900 p-6 sm:p-7 rounded-3xl border border-stone-200/80 dark:border-stone-800 shadow-xs space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900">
+          <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900 dark:text-stone-100">
             Lớp học đang diễn ra
           </h3>
-          <span className="text-xs text-neutral-400 font-medium">0 lớp</span>
+          <span className="text-xs text-neutral-400 dark:text-stone-400 font-medium">0 lớp</span>
         </div>
 
         <EmptyState
@@ -38,12 +38,12 @@ export function StudentActiveClasses({ classes = [] }: StudentActiveClassesProps
           description="Khám phá mạng lưới gia sư chuyên môn cao (Toán, Tiếng Anh, Vật Lý...) đã qua xác minh năng lực và bắt đầu lộ trình học tập hiệu quả."
           action={{
             label: "Khám phá danh sách gia sư",
-            href: "/dashboard/tutors",
+            href: "/student/tutors",
             icon: Search,
           }}
           secondaryAction={{
             label: "Nhận gợi ý AI Match",
-            href: "/dashboard/tutors?tab=matches",
+            href: "/student/tutors?tab=matches",
             icon: Sparkles,
           }}
         />
@@ -57,7 +57,7 @@ export function StudentActiveClasses({ classes = [] }: StudentActiveClassesProps
         <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900">
           Lớp học đang diễn ra
         </h3>
-        <Link href="/dashboard/classes" className="text-xs text-amber-600 font-bold hover:underline">
+        <Link href="/student/classes" className="text-xs text-amber-600 font-bold hover:underline">
           Xem tất cả ({classes.length})
         </Link>
       </div>

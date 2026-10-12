@@ -23,7 +23,7 @@ export function DashboardShell({ user, role, onLogout, children }: DashboardShel
   const toggleCollapse = () => setCollapsed((prev) => !prev);
 
   return (
-    <div className="min-h-screen bg-stone-50 flex font-sans text-neutral-900 selection:bg-amber-200">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex font-sans text-neutral-900 dark:text-stone-100 selection:bg-amber-200 dark:selection:bg-amber-900/40 transition-colors duration-200">
       {/* 1. Unified Dynamic Sidebar */}
       <Sidebar
         role={role}

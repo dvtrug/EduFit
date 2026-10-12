@@ -7,6 +7,19 @@ import { profileService } from "@/services/profile";
 import { loginSchema } from "../schemas/authSchemas";
 import type { LoginInput, AuthFieldErrors, AuthUser } from "../types";
 
+export function shouldRedirectTutorToOnboarding(
+  profile: { subjects?: unknown[]; bio?: string | null; area?: string | null } | null | undefined,
+  hasOnboarded: boolean
+): boolean {
+  const hasBasicProfile = Boolean(
+    profile &&
+      ((profile.subjects && profile.subjects.length > 0) ||
+        Boolean(profile.bio) ||
+        Boolean(profile.area))
+  );
+  return !hasBasicProfile && !hasOnboarded;
+}
+
 export function useLoginForm() {
   const router = useRouter();
   const { login } = useAuth();
@@ -51,18 +64,21 @@ export function useLoginForm() {
           return;
         }
       } else if (user.role === "TUTOR") {
+        const hasOnboarded =
+          typeof window !== "undefined" &&
+          Boolean(localStorage.getItem("edufit_tutor_onboarding_completed"));
+
         try {
           const profile = await profileService.getMyTutorProfile();
-          const hasOnboarded =
-            typeof window !== "undefined" &&
-            localStorage.getItem("edufit_tutor_onboarding_completed");
-          if (!profile?.bio && !hasOnboarded) {
+          if (shouldRedirectTutorToOnboarding(profile, hasOnboarded)) {
             router.push("/onboarding/tutor");
             return;
           }
         } catch {
-          router.push("/onboarding/tutor");
-          return;
+          if (!hasOnboarded) {
+            router.push("/onboarding/tutor");
+            return;
+          }
         }
       } else if (user.role === "PARENT") {
         const hasOnboarded =
