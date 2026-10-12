@@ -83,21 +83,21 @@ export function StudentDashboardView({ user }: StudentDashboardViewProps) {
     {
       title: "Cài đặt hồ sơ học tập",
       description: "Chọn khối lớp và khu vực cư trú để hệ thống ghép cặp gia sư lân cận.",
-      href: "/dashboard/profile",
+      href: "/student/profile",
       actionText: "Thiết lập ngay",
       completed: profile?.profileComplete === true,
     },
     {
       title: "Khám phá & Chọn gia sư",
       description: "Xem hồ sơ bằng cấp, đánh giá sao hoặc nhận danh sách AI Match chuẩn xác.",
-      href: "/dashboard/tutors",
+      href: "/student/tutors",
       actionText: "Tìm gia sư",
       completed: false,
     },
     {
       title: "Gửi yêu cầu học thử 1-1",
       description: "Đăng ký buổi trao đổi đầu tiên để thống nhất lịch học và mục tiêu điểm số.",
-      href: "/dashboard/tutors",
+      href: "/student/tutors",
       actionText: "Khám phá môn học",
       completed: false,
     },
@@ -118,7 +118,7 @@ export function StudentDashboardView({ user }: StudentDashboardViewProps) {
           </p>
         </div>
         <Link
-          href="/dashboard/tutors"
+          href="/student/tutors"
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-neutral-900 font-bold text-xs rounded-xl shadow-xs transition-all hover:scale-[1.02] shrink-0"
         >
           <Search className="size-4" />

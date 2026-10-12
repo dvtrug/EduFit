@@ -36,12 +36,12 @@ export function ParentActiveTutors({ tutors = [] }: ParentActiveTutorsProps) {
           description="Khám phá mạng lưới gia sư sư phạm chuyên môn cao, đã được EduFit xác minh chứng chỉ và lý lịch rõ ràng."
           action={{
             label: "Tìm kiếm gia sư cho con",
-            href: "/dashboard/tutors",
+            href: "/parent/tutors",
             icon: Search,
           }}
           secondaryAction={{
             label: "Xem gợi ý AI Match",
-            href: "/dashboard/tutors?tab=matches",
+            href: "/parent/tutors?tab=matches",
             icon: Sparkles,
           }}
         />
@@ -55,7 +55,7 @@ export function ParentActiveTutors({ tutors = [] }: ParentActiveTutorsProps) {
         <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900">
           Gia sư trực tiếp đồng hành
         </h3>
-        <Link href="/dashboard/tutors" className="text-xs text-emerald-700 font-bold hover:underline">
+        <Link href="/parent/tutors" className="text-xs text-emerald-700 font-bold hover:underline">
           Tìm thêm gia sư
         </Link>
       </div>

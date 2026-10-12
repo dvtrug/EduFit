@@ -46,7 +46,7 @@ class FlywayMigrationIT {
 
   @Test
   @DisplayName(
-      "Nâng cấp DB main đã seed V1.09: giữ history/dữ liệu, chạy V1.10/V1.11/V1.12 và rerun no-op")
+      "Nâng cấp DB main đã seed V1.09: giữ history/dữ liệu, chạy V1.10 đến V1.13 và rerun no-op")
   void shouldUpgradeMainSeedHistoryWithoutRepair() throws Exception {
     String schema = "main_seed_upgrade";
     Flyway previous =
@@ -85,7 +85,7 @@ class FlywayMigrationIT {
             .validateOnMigrate(true)
             .baselineOnMigrate(false)
             .load();
-    assertEquals(3, upgraded.migrate().migrationsExecuted);
+    assertEquals(4, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted, "Rerun không thực thi lại migration");
     try (Connection connection =
@@ -108,7 +108,7 @@ class FlywayMigrationIT {
       }
       try (ResultSet rs = statement.executeQuery("SELECT count(*) FROM account")) {
         assertTrue(rs.next());
-        assertEquals(4, rs.getInt(1));
+        assertEquals(9, rs.getInt(1));
       }
       try (ResultSet rs =
           statement.executeQuery(
@@ -147,7 +147,7 @@ class FlywayMigrationIT {
     // 3. Kiểm chứng kết quả thực thi của Flyway
     assertTrue(result.success, "Quá trình migrate của Flyway phải thành công 100%");
     assertEquals(
-        12, result.migrationsExecuted, "Phải thực thi đúng 12 file migration V1.01 -> V1.12");
+        13, result.migrationsExecuted, "Phải thực thi đúng 13 file migration V1.01 -> V1.13");
 
     // 4. Kiểm tra trực tiếp các bảng và ràng buộc đã được tạo trong PostgreSQL
     try (Connection connection =
@@ -158,7 +158,7 @@ class FlywayMigrationIT {
       // Kiểm tra bảng account tồn tại và có thể truy vấn
       try (ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM account")) {
         assertTrue(rs.next(), "Bảng account phải tồn tại và cho phép truy vấn");
-        assertEquals(4, rs.getInt(1), "Bảng account có 4 bản ghi demo khởi tạo từ V1.10");
+        assertEquals(9, rs.getInt(1), "Bảng account có 9 bản ghi demo sau V1.13");
       }
 
       // Kiểm tra bảng email_token tồn tại và có thể truy vấn
@@ -177,13 +177,13 @@ class FlywayMigrationIT {
         assertTrue(rs.next(), "Bảng tutoring_session phải tồn tại và cho phép truy vấn");
       }
 
-      // Kiểm tra bảng flyway_schema_history ghi nhận cả 12 version ở trạng thái thành công
+      // Kiểm tra bảng flyway_schema_history ghi nhận cả 13 version ở trạng thái thành công
       try (ResultSet rs =
           statement.executeQuery(
               "SELECT COUNT(*) FROM flyway_schema_history WHERE success = true")) {
         assertTrue(rs.next());
         assertEquals(
-            12, rs.getInt(1), "Lịch sử migration phải ghi nhận đúng 12 bản ghi thành công");
+            13, rs.getInt(1), "Lịch sử migration phải ghi nhận đúng 13 bản ghi thành công");
       }
     }
   }
@@ -218,7 +218,7 @@ class FlywayMigrationIT {
             .locations("classpath:db/migration")
             .schemas(schema)
             .load();
-    assertEquals(1, upgraded.migrate().migrationsExecuted);
+    assertEquals(2, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted);
     try (var connection =
