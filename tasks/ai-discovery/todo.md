@@ -1,7 +1,7 @@
 # AI + Discovery backend — checklist
 
 Nguồn: [plan.md](plan.md). Ngày khảo sát 2026-10-11; base `feat/discovery@4cc8767`.
-Cập nhật 2026-10-12: B00–B12 và Phase 1–4 hoàn tất trên `feat/discovery-ai`. Phase 5 (B13–B14) chưa triển khai.
+Cập nhật 2026-10-12: B00–B13 và Phase 1–4 hoàn tất trên `feat/discovery-ai`. Phase 5 đang thực hiện; B14 còn lại.
 
 ## Khảo sát và contract
 
@@ -45,11 +45,13 @@ Cập nhật 2026-10-12: B00–B12 và Phase 1–4 hoàn tất trên `feat/disco
 
 ## Bàn giao
 
-- [ ] B13: Backend HTTP E2E Student/Parent/Tutor, Discovery -> Connection -> class ACTIVE.
+- [x] B13: Backend HTTP E2E Student/Parent/Tutor, Discovery -> Connection -> class ACTIVE.
 - [ ] B14: Runbook + fixture + smoke collection, live Gemini smoke opt-in bằng env key.
 - [ ] Checkpoint F: frontend-ready; chưa thay đổi file frontend.
 - [ ] Reactor verify/coverage + architecture + migration tests pass; mọi skip được giải thích.
 - [ ] `git diff --check`; docs routes/fields/errors/links khớp code.
+
+  B13 evidence: `AiDiscoveryConnectionE2ETest` **7 tests pass, 0 fail/error/skip** với full application, security filters, JDBC session, Flyway và PostgreSQL thật; Gemini fake chạy qua loopback HTTP. Luồng Student đạt profile -> goal/slots -> search/detail/match -> request -> Tutor accept -> một class ACTIVE. Luồng Parent đạt invite/accept -> goal/match/request -> revoke -> 403 và không gọi provider. HTTP 429/blocked/timeout đều fallback và Connection vẫn dùng được; empty candidates không gọi AI; adjacent level được Discovery rank nhưng Connection trả `400 INVALID_OPERATION`. Red concurrency trả `[200,500]` vì stale entity trong Hibernate persistence context; green trả `[200,409]` và đúng một class. Contract: [Phase 5 E2E](../../docs/ai-discovery-phase5-e2e.md). Live Gemini/cold-start/runbook vẫn thuộc B14; không sửa frontend.
 
 ## Evidence baseline hiện tại
 
