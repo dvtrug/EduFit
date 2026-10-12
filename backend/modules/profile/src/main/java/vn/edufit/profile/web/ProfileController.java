@@ -14,15 +14,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vn.edufit.profile.application.service.StudentProfileService;
-import vn.edufit.profile.application.service.LearningGoalService;
 import vn.edufit.profile.application.service.TutorProfileService;
 import vn.edufit.profile.web.request.AddTutorSubjectRequest;
-import vn.edufit.profile.web.request.CreateLearningGoalRequest;
 import vn.edufit.profile.web.request.SetAvailabilitySlotsRequest;
 import vn.edufit.profile.web.request.UpdateStudentProfileRequest;
 import vn.edufit.profile.web.request.UpdateTutorProfileRequest;
 import vn.edufit.profile.web.response.MyProfileResponse;
-import vn.edufit.profile.web.response.LearningGoalResponse;
 import vn.edufit.profile.web.response.StudentProfileResponse;
 import vn.edufit.profile.web.response.TutorProfileResponse;
 import vn.edufit.shared.auth.CurrentUser;
@@ -38,18 +35,15 @@ import vn.edufit.shared.response.ApiResponse;
 public class ProfileController {
 
   private final StudentProfileService studentProfileService;
-  private final LearningGoalService learningGoalService;
   private final TutorProfileService tutorProfileService;
   private final ObjectProvider<CurrentUser> currentUserProvider;
 
   public ProfileController(
       StudentProfileService studentProfileService,
-      LearningGoalService learningGoalService,
       TutorProfileService tutorProfileService,
       ObjectProvider<CurrentUser> currentUserProvider
   ) {
     this.studentProfileService = studentProfileService;
-    this.learningGoalService = learningGoalService;
     this.tutorProfileService = tutorProfileService;
     this.currentUserProvider = currentUserProvider;
   }
@@ -173,6 +167,15 @@ public class ProfileController {
     CurrentUser currentUser = getCurrentUser();
     TutorProfileResponse response = tutorProfileService.setAvailabilitySlots(currentUser, request);
     return ResponseEntity.ok(ApiResponse.success(response, "Cập nhật lịch rảnh thành công"));
+  }
+
+  @PostMapping("/tutors/me/generate-bio")
+  public ResponseEntity<ApiResponse<GenerateTutorBioResponse>> generateTutorBio(
+      @Valid @RequestBody(required = false) GenerateTutorBioRequest request
+  ) {
+    CurrentUser currentUser = getCurrentUser();
+    GenerateTutorBioResponse response = tutorBioService.generateBio(currentUser, request);
+    return ResponseEntity.ok(ApiResponse.success(response, "Tạo gợi ý tiểu sử gia sư thành công"));
   }
 
   private CurrentUser getCurrentUser() {
