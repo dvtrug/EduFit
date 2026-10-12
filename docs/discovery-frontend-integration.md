@@ -108,10 +108,15 @@ Không gửi tên, email, số điện thoại, bio hay phương pháp tự do c
 Chưa chấm semantic độ phù hợp với luyện thi/nâng điểm vì thiếu dữ liệu thành tích
 giảng dạy tương ứng; AI không được suy diễn thành tích, bằng cấp hoặc kết quả học.
 
-Mỗi lý do AI được gắn theo vị trí ứng viên trong danh sách đã xếp hạng. Thiếu mục,
-trùng chỉ số, nội dung quá dài hoặc lý do giống hệt nhau sẽ dùng lời giải thích
+Mỗi lý do AI dài 1–2 câu, tối đa 180 ký tự, chọn một góc đánh giá riêng từ nhu cầu
+người học và dữ kiện từng gia sư; không bắt mọi nhận xét liệt kê đủ bốn tiêu chí.
+Nhu cầu hiện lấy từ form mục tiêu học đã lưu, chưa có ô prompt tự do riêng.
+Mỗi lý do được gắn theo vị trí ứng viên trong danh sách đã xếp hạng. Thiếu mục,
+trùng chỉ số, nội dung quá dài hoặc cùng mẫu chỉ thay số sẽ dùng lời giải thích
 dựa trên dữ kiện riêng của ứng viên đó và trả aiGenerated=false. Provider lỗi,
 quota hết hoặc chế độ stub cũng dùng fallback; giao diện phân biệt hai nguồn rõ ràng.
+Fallback cũng tối đa 180 ký tự, tập trung vào một điểm đáng chú ý hoặc hạn chế;
+các hồ sơ tương đương có thể chung nhận xét khi chưa đủ dữ kiện để phân biệt.
 
 ```powershell
 # frontend
@@ -131,6 +136,12 @@ Migration giữ nguyên V1.09–V1.12 đã phát hành; seed frontend chuyển s
 
 Bổ sung cho thay đổi matching bốn tiêu chí:
 
+- Sau khi rút ngắn nhận xét: 61 test backend pass, gồm kiểm tra loại nhận xét
+  quá 180 ký tự, cùng mẫu chỉ thay số, matching, controller và PostgreSQL/E2E.
+- Kiểm tra riêng Gemini bằng câu tổng hợp không chứa dữ liệu cá nhân nhận HTTP 200:
+  key dùng được tại thời điểm kiểm tra. Database xác nhận tài khoản demo đủ 10 lượt
+  trong 24 giờ; đây là nguyên nhân matching bị chặn trước khi gọi provider.
+  Kiểm tra kết nối này chưa xác minh chất lượng nhận xét Gemini mới trên dữ liệu thật.
 - 234 test backend liên quan pass (profile, scoring, discovery, quyền truy cập,
   mục tiêu học, E2E connection, quota đồng thời và giải thích theo nhóm).
 - 81 test frontend pass; TypeScript, production build và lint hai file UI/test đã sửa pass.

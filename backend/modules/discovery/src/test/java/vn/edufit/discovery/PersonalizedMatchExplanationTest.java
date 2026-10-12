@@ -97,6 +97,30 @@ class PersonalizedMatchExplanationTest {
     assertFalse(result.aiGenerated());
     assertTrue(result.text().contains("350000"));
     assertTrue(result.text().contains("vượt"));
+    assertTrue(result.text().length() <= 180);
+  }
+
+  @Test
+  void changingOnlyNumbersDoesNotCountAsPersonalizedModelOutput() {
+    var first = score();
+    var second = score();
+    when(gateway.complete(any())).thenReturn(new AiResponse(
+        "1|Bạn phù hợp với gia sư có 5 năm kinh nghiệm, học phí 200000 đồng.\n"
+        + "2|Bạn phù hợp với gia sư có 8 năm kinh nghiệm, học phí 150000 đồng.", 1, 1));
+    var result = service.explainMatches(UUID.randomUUID(), goal(), List.of(first, second),
+        List.of(tutor(first.tutorId(), 200000), tutor(second.tutorId(), 150000)));
+    assertTrue(result.stream().noneMatch(MatchExplanationService.Explanation::aiGenerated));
+    assertNotEquals(result.getFirst().text(), result.getLast().text());
+  }
+
+  @Test
+  void longModelOutputFallsBackInsteadOfFloodingTheCard() {
+    var score = score();
+    when(gateway.complete(any())).thenReturn(new AiResponse("1|" + "Nội dung dài. ".repeat(30), 1, 1));
+    var result = service.explainMatches(UUID.randomUUID(), goal(), List.of(score),
+        List.of(tutor(score.tutorId(), 200000))).getFirst();
+    assertFalse(result.aiGenerated());
+    assertTrue(result.text().length() <= 180);
   }
 
   private LearningGoalDiscoveryDto goal() {

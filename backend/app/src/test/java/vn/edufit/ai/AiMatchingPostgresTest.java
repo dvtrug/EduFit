@@ -269,8 +269,7 @@ class AiMatchingPostgresTest {
     assertThat(results).hasSize(2);
     assertThat(results).allSatisfy(result -> {
       assertThat(result.aiGenerated()).isFalse();
-      assertThat(result.explanation()).contains(result.profile().tutor().displayName(),
-          result.profile().tutor().pricePerSession().toString(), "đồng/buổi");
+      assertThat(result.explanation()).isNotBlank().hasSizeLessThanOrEqualTo(180);
     });
   }
 
