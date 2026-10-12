@@ -78,7 +78,7 @@ public class SecurityConfig {
                 "/actuator/health",
                 "/error"
             ).permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/v1/discovery/tutors/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/v1/discovery/tutors", "/api/v1/discovery/tutors/**").permitAll()
 
             // 2.2. Phân quyền dành riêng cho Quản trị viên (ADMIN)
             .requestMatchers(

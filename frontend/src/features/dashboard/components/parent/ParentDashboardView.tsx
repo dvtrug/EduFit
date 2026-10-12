@@ -54,21 +54,21 @@ export function ParentDashboardView({ user }: ParentDashboardViewProps) {
     {
       title: "Liên kết tài khoản con em",
       description: "Nhập mã tài khoản học sinh để đồng bộ lịch học và liên lạc gia sư.",
-      href: "/dashboard/children",
+      href: "/parent/children",
       actionText: "Liên kết ngay",
       completed: childrenList.length > 0,
     },
     {
       title: "Khám phá & Chọn gia sư",
       description: "Lựa chọn gia sư có năng lực kiểm định hoặc để AI đề xuất hồ sơ tốt nhất.",
-      href: "/dashboard/tutors",
+      href: "/parent/tutors",
       actionText: "Tìm gia sư",
       completed: false,
     },
     {
       title: "Theo dõi báo cáo tiến độ",
       description: "Nhận nhật ký buổi dạy, điểm bài kiểm tra và quản lý gói học phí minh bạch.",
-      href: "/dashboard/progress",
+      href: "/parent/progress",
       actionText: "Xem báo cáo",
       completed: false,
     },
@@ -90,14 +90,14 @@ export function ParentDashboardView({ user }: ParentDashboardViewProps) {
         </div>
         <div className="flex items-center gap-2.5">
           <Link
-            href="/dashboard/children"
+            href="/parent/children"
             className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-stone-50 border border-stone-200 text-neutral-800 rounded-xl text-xs font-bold shadow-2xs transition-colors shrink-0"
           >
             <Plus className="size-3.5 text-neutral-500" />
             <span>Liên kết thêm con</span>
           </Link>
           <Link
-            href="/dashboard/billing"
+            href="/parent/billing"
             className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors shrink-0"
           >
             <CreditCard className="size-3.5" />
@@ -123,25 +123,25 @@ export function ParentDashboardView({ user }: ParentDashboardViewProps) {
           description="Để bắt đầu theo dõi lịch học, nhận báo cáo tiến độ và quản lý học phí, vui lòng kết nối tài khoản học sinh của con bạn vào hệ thống."
           action={{
             label: "Liên kết tài khoản con em ngay",
-            href: "/dashboard/children",
+            href: "/parent/children",
             icon: UserPlus,
           }}
           secondaryAction={{
             label: "Khám phá danh sách gia sư trước",
-            href: "/dashboard/tutors",
+            href: "/parent/tutors",
           }}
           steps={[
             {
               step: 1,
               title: "Lấy mã học sinh",
               description: "Học sinh đăng nhập và sao chép mã tài khoản trong mục Cài đặt.",
-              href: "/dashboard/profile",
+              href: "/student/profile",
             },
             {
               step: 2,
               title: "Gửi yêu cầu liên kết",
               description: "Phụ huynh dán mã học sinh và gửi xác thực qua email/số điện thoại.",
-              href: "/dashboard/children",
+              href: "/parent/children",
             },
             {
               step: 3,
