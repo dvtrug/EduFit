@@ -15,7 +15,6 @@ public record TutorDiscoveryCardResponse(
     String teachingMode,
     String area,
     Long pricePerSession,
-    Short experienceYears,
     BigDecimal ratingAvg,
     Integer reviewCount,
     boolean verified,
@@ -31,7 +30,6 @@ public record TutorDiscoveryCardResponse(
         tutor.teachingMode(),
         tutor.area(),
         tutor.pricePerSession(),
-        tutor.experienceYears(),
         tutor.ratingAvg(),
         tutor.reviewCount(),
         "VERIFIED".equals(tutor.status()),
@@ -43,7 +41,7 @@ public record TutorDiscoveryCardResponse(
     TutorSummaryDto tutor = profile.tutor();
     return new TutorDiscoveryCardResponse(
         tutor.tutorId(), tutor.displayName(), tutor.headline(), shorten(tutor.bio()),
-        tutor.teachingMode(), tutor.area(), tutor.pricePerSession(), tutor.experienceYears(), tutor.ratingAvg(),
+        tutor.teachingMode(), tutor.area(), tutor.pricePerSession(), tutor.ratingAvg(),
         tutor.reviewCount(), "VERIFIED".equals(tutor.status()), profile.subjects()
     );
   }

@@ -39,7 +39,7 @@ export function StudentNextSessionCard({ session }: StudentNextSessionCardProps)
           description="Bạn chưa đăng ký lịch học nào trong tuần này. Hãy tìm gia sư môn học bạn cần và gửi yêu cầu để bắt đầu buổi học đầu tiên."
           action={{
             label: "Tìm gia sư & Đặt lịch học",
-            href: "/student/tutors",
+            href: "/dashboard/tutors",
             icon: Search,
           }}
         />
@@ -53,7 +53,7 @@ export function StudentNextSessionCard({ session }: StudentNextSessionCardProps)
         <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900">
           Buổi học sắp tới
         </h3>
-        <Link href="/student/schedule" className="text-xs text-amber-600 font-bold hover:underline">
+        <Link href="/dashboard/schedule" className="text-xs text-amber-600 font-bold hover:underline">
           Xem toàn bộ lịch
         </Link>
       </div>

@@ -21,7 +21,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.ResponseEntity;
 import vn.edufit.profile.application.service.StudentProfileService;
-import vn.edufit.profile.application.service.LearningGoalService;
 import vn.edufit.profile.application.service.TutorProfileService;
 import vn.edufit.profile.infra.persistence.entity.TeachingMode;
 import vn.edufit.profile.web.ProfileController;
@@ -45,9 +44,6 @@ class ProfileControllerTest {
   private TutorProfileService tutorProfileService;
 
   @Mock
-  private LearningGoalService learningGoalService;
-
-  @Mock
   private ObjectProvider<CurrentUser> currentUserProvider;
 
   private ProfileController profileController;
@@ -59,7 +55,6 @@ class ProfileControllerTest {
   void setUp() {
     profileController = new ProfileController(
         studentProfileService,
-        learningGoalService,
         tutorProfileService,
         currentUserProvider
     );

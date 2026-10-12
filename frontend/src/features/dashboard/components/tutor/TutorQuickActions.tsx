@@ -11,7 +11,7 @@ export function TutorQuickActions() {
         Thao tác giảng dạy
       </h4>
       <Link
-        href="/tutor/schedule"
+        href="/dashboard/schedule"
         className="w-full p-2.5 rounded-xl hover:bg-stone-50 flex items-center justify-between text-xs font-semibold text-neutral-700 transition-colors"
       >
         <div className="flex items-center gap-2.5">
@@ -21,7 +21,7 @@ export function TutorQuickActions() {
         <ChevronRight className="size-4 text-neutral-400" />
       </Link>
       <Link
-        href="/tutor/classes"
+        href="/dashboard/classes"
         className="w-full p-2.5 rounded-xl hover:bg-stone-50 flex items-center justify-between text-xs font-semibold text-neutral-700 transition-colors"
       >
         <div className="flex items-center gap-2.5">
@@ -31,7 +31,7 @@ export function TutorQuickActions() {
         <ChevronRight className="size-4 text-neutral-400" />
       </Link>
       <Link
-        href="/tutor/profile"
+        href="/dashboard/profile"
         className="w-full p-2.5 rounded-xl hover:bg-stone-50 flex items-center justify-between text-xs font-semibold text-neutral-700 transition-colors"
       >
         <div className="flex items-center gap-2.5">

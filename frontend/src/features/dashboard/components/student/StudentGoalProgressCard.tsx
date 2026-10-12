@@ -42,12 +42,12 @@ export function StudentGoalProgressCard({ goal }: StudentGoalProgressCardProps) 
           description="Thiết lập môn học trọng điểm và mục tiêu điểm số (ví dụ: Thi vào 10, Ôn chuyên, Lấy lại căn bản) để hệ thống AI Match gợi ý gia sư và lộ trình chính xác nhất."
           action={{
             label: "Cập nhật hồ sơ & Mục tiêu học",
-            href: "/student/profile",
+            href: "/dashboard/profile",
             icon: PlusCircle,
           }}
           secondaryAction={{
             label: "Tìm kiếm gia sư trước",
-            href: "/student/tutors",
+            href: "/dashboard/tutors",
           }}
         />
       </div>
@@ -128,7 +128,7 @@ export function StudentGoalProgressCard({ goal }: StudentGoalProgressCardProps) 
           {goal.nextSessionText || "Chưa có buổi học tiếp theo"}
         </span>
         <Link
-          href="/student/progress"
+          href="/dashboard/progress"
           className="text-amber-600 hover:text-amber-700 font-bold flex items-center gap-1 transition-transform hover:translate-x-0.5"
         >
           Xem chi tiết lộ trình <ArrowRight className="size-3.5" />

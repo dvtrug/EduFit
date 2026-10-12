@@ -11,7 +11,7 @@ export function ParentQuickActions() {
         Thao tác nhanh
       </h4>
       <Link
-        href="/parent/schedule"
+        href="/dashboard/schedule"
         className="w-full p-2.5 rounded-xl hover:bg-stone-50 flex items-center justify-between text-xs font-semibold text-neutral-700 transition-colors"
       >
         <div className="flex items-center gap-2.5">
@@ -21,7 +21,7 @@ export function ParentQuickActions() {
         <ChevronRight className="size-4 text-neutral-400" />
       </Link>
       <Link
-        href="/parent/billing"
+        href="/dashboard/billing"
         className="w-full p-2.5 rounded-xl hover:bg-stone-50 flex items-center justify-between text-xs font-semibold text-neutral-700 transition-colors"
       >
         <div className="flex items-center gap-2.5">

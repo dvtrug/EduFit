@@ -38,7 +38,7 @@ export function AdminKycQueueCard({ pendingCount = 0 }: AdminKycQueueCardProps) 
       </p>
 
       <Link
-        href="/admin/kyc-queue"
+        href="/dashboard/kyc-queue"
         className="w-full py-2.5 px-3 bg-purple-50 hover:bg-purple-100 text-purple-900 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
       >
         <span>{isAllClear ? "Mở hàng đợi kiểm duyệt" : "Vào duyệt hồ sơ ngay"}</span>

@@ -1,8 +1,7 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
 import { EduFitLogo } from "@/shared/ui/EduFitLogo";
 import {
   LayoutDashboard,
@@ -28,35 +27,6 @@ import {
 } from "lucide-react";
 
 export type UserRole = "STUDENT" | "TUTOR" | "PARENT" | "ADMIN";
-
-function isNavItemActive(
-  itemHref: string,
-  pathname: string,
-  searchParams: ReturnType<typeof useSearchParams> | null
-): boolean {
-  const [itemPath, itemQueryString] = itemHref.split("?");
-
-  if (pathname !== itemPath) {
-    return false;
-  }
-
-  const itemParams = new URLSearchParams(itemQueryString || "");
-  const currentTab = searchParams?.get("tab");
-  const itemTab = itemParams.get("tab");
-
-  // Nếu mục menu có chỉ định tab cụ thể (vd: ?tab=matches hoặc ?tab=requests)
-  if (itemTab) {
-    return currentTab === itemTab;
-  }
-
-  // Nếu mục menu không có tab query (vd: /student/tutors)
-  // Chỉ active khi currentTab không có hoặc là tab mặc định "browse" / "discover"
-  if (currentTab && currentTab !== "browse" && currentTab !== "discover") {
-    return false;
-  }
-
-  return true;
-}
 
 interface NavItem {
   label: string;
@@ -214,76 +184,6 @@ interface SidebarProps {
   };
 }
 
-function SidebarNav({
-  sections,
-  collapsed,
-  currentPath,
-}: {
-  sections: NavSection[];
-  collapsed: boolean;
-  currentPath: string;
-}) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const effectivePathname = pathname || currentPath;
-
-  return (
-    <nav className="flex flex-col gap-5">
-      {sections.map((section, idx) => (
-        <div key={idx} className="flex flex-col gap-1">
-          <span
-            aria-hidden={collapsed}
-            className={`h-4 px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 font-sans whitespace-nowrap transition-opacity duration-200 ${
-              collapsed ? "opacity-0" : "opacity-100"
-            }`}
-          >
-            {section.title}
-          </span>
-          {section.items.map((item, itemIdx) => {
-            const Icon = item.icon;
-            const isActive = isNavItemActive(item.href, effectivePathname, searchParams);
-
-            return (
-              <Link
-                key={itemIdx}
-                href={item.href}
-                className={`h-10 flex items-center justify-between px-2.5 rounded-xl text-xs font-medium transition-colors group ${
-                  isActive
-                    ? "bg-amber-500/10 text-amber-900 font-semibold shadow-xs"
-                    : "text-neutral-600 hover:bg-stone-100 hover:text-neutral-900"
-                }`}
-                title={collapsed ? item.label : undefined}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Icon
-                    className={`size-4.5 shrink-0 transition-transform group-hover:scale-105 ${
-                      isActive ? "text-amber-600" : "text-neutral-400 group-hover:text-neutral-700"
-                    }`}
-                  />
-                  <span
-                    aria-hidden={collapsed}
-                    className={`truncate whitespace-nowrap transition-[max-width,opacity] duration-200 ${
-                      collapsed ? "max-w-0 opacity-0" : "max-w-40 opacity-100"
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-                </div>
-
-                {!collapsed && item.badge && (
-                  <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-500 text-white leading-none shadow-xs">
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </div>
-      ))}
-    </nav>
-  );
-}
-
 export function Sidebar({
   role = "STUDENT",
   collapsed,
@@ -308,67 +208,59 @@ export function Sidebar({
         </div>
 
         {/* Navigation Sections */}
-        <Suspense
-          fallback={
-            <nav className="flex flex-col gap-5">
-              {currentConfig.sections.map((section, idx) => (
-                <div key={idx} className="flex flex-col gap-1">
-                  <span
-                    aria-hidden={collapsed}
-                    className={`h-4 px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 font-sans whitespace-nowrap transition-opacity duration-200 ${
-                      collapsed ? "opacity-0" : "opacity-100"
+        <nav className="flex flex-col gap-5">
+          {currentConfig.sections.map((section, idx) => (
+            <div key={idx} className="flex flex-col gap-1">
+              <span
+                aria-hidden={collapsed}
+                className={`h-4 px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 font-sans whitespace-nowrap transition-opacity duration-200 ${
+                  collapsed ? "opacity-0" : "opacity-100"
+                }`}
+              >
+                  {section.title}
+              </span>
+              {section.items.map((item, itemIdx) => {
+                const Icon = item.icon;
+                const isActive = effectiveCurrentPath === item.href;
+
+                return (
+                  <Link
+                    key={itemIdx}
+                    href={item.href}
+                    className={`h-10 flex items-center justify-between px-2.5 rounded-xl text-xs font-medium transition-colors group ${
+                      isActive
+                        ? "bg-amber-500/10 text-amber-900 font-semibold shadow-xs"
+                        : "text-neutral-600 hover:bg-stone-100 hover:text-neutral-900"
                     }`}
+                    title={collapsed ? item.label : undefined}
                   >
-                    {section.title}
-                  </span>
-                  {section.items.map((item, itemIdx) => {
-                    const Icon = item.icon;
-                    const isActive = isNavItemActive(item.href, effectiveCurrentPath, null);
-                    return (
-                      <Link
-                        key={itemIdx}
-                        href={item.href}
-                        className={`h-10 flex items-center justify-between px-2.5 rounded-xl text-xs font-medium transition-colors group ${
-                          isActive
-                            ? "bg-amber-500/10 text-amber-900 font-semibold shadow-xs"
-                            : "text-neutral-600 hover:bg-stone-100 hover:text-neutral-900"
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Icon
+                        className={`size-4.5 shrink-0 transition-transform group-hover:scale-105 ${
+                          isActive ? "text-amber-600" : "text-neutral-400 group-hover:text-neutral-700"
                         }`}
-                        title={collapsed ? item.label : undefined}
+                      />
+                      <span
+                        aria-hidden={collapsed}
+                        className={`truncate whitespace-nowrap transition-[max-width,opacity] duration-200 ${
+                          collapsed ? "max-w-0 opacity-0" : "max-w-40 opacity-100"
+                        }`}
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <Icon
-                            className={`size-4.5 shrink-0 transition-transform group-hover:scale-105 ${
-                              isActive ? "text-amber-600" : "text-neutral-400 group-hover:text-neutral-700"
-                            }`}
-                          />
-                          <span
-                            aria-hidden={collapsed}
-                            className={`truncate whitespace-nowrap transition-[max-width,opacity] duration-200 ${
-                              collapsed ? "max-w-0 opacity-0" : "max-w-40 opacity-100"
-                            }`}
-                          >
-                            {item.label}
-                          </span>
-                        </div>
-                        {!collapsed && item.badge && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-500 text-white leading-none shadow-xs">
-                            {item.badge}
-                          </span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-              ))}
-            </nav>
-          }
-        >
-          <SidebarNav
-            sections={currentConfig.sections}
-            collapsed={collapsed}
-            currentPath={effectiveCurrentPath}
-          />
-        </Suspense>
+                        {item.label}
+                      </span>
+                    </div>
+
+                    {!collapsed && item.badge && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-500 text-white leading-none shadow-xs">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
       </div>
 
       {/* Footer / Toggle & User pill */}
