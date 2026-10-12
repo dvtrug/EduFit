@@ -14,7 +14,7 @@ export function AdminDisputesCard() {
             Tranh chấp & Khiếu nại cần can thiệp
           </h3>
         </div>
-        <Link href="/admin/disputes" className="text-xs text-purple-700 font-bold hover:underline">
+        <Link href="/dashboard/disputes" className="text-xs text-purple-700 font-bold hover:underline">
           Xem toàn bộ
         </Link>
       </div>

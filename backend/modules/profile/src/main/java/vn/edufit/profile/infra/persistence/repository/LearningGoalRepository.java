@@ -12,7 +12,5 @@ public interface LearningGoalRepository extends JpaRepository<LearningGoal, UUID
 
   List<LearningGoal> findByStudentIdAndStatus(UUID studentId, GoalStatus status);
 
-  List<LearningGoal> findByStudentIdAndStatusOrderByUpdatedAtDesc(UUID studentId, GoalStatus status);
-
   List<LearningGoal> findByStudentId(UUID studentId);
 }

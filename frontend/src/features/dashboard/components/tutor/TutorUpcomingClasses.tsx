@@ -37,7 +37,7 @@ export function TutorUpcomingClasses({ classes = [] }: TutorUpcomingClassesProps
           description="Cập nhật ma trận khung giờ rảnh trong tuần để hệ thống tự động gợi ý lịch học tương thích tới học sinh & phụ huynh."
           action={{
             label: "Cập nhật ma trận lịch rảnh",
-            href: "/tutor/profile",
+            href: "/dashboard/profile",
             icon: Clock,
           }}
         />
@@ -51,7 +51,7 @@ export function TutorUpcomingClasses({ classes = [] }: TutorUpcomingClassesProps
         <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900">
           Lịch dạy hôm nay
         </h3>
-        <Link href="/tutor/schedule" className="text-xs text-sky-600 font-bold hover:underline">
+        <Link href="/dashboard/schedule" className="text-xs text-sky-600 font-bold hover:underline">
           Xem toàn bộ tuần
         </Link>
       </div>

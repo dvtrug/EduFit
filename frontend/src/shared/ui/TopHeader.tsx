@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import { Bell, Search, LogOut, User as UserIcon, PanelLeft, ChevronDown, ShieldCheck } from "lucide-react";
 import { UserRole } from "./Sidebar";
 
@@ -111,14 +110,14 @@ export function TopHeader({
                   <p className="text-[10px] text-neutral-400 truncate">{user.email}</p>
                 </div>
 
-                <Link
-                  href={user?.role ? `/${user.role.toLowerCase()}/profile` : "/student/profile"}
+                <button
+                  type="button"
                   onClick={() => setProfileMenuOpen(false)}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-600 hover:bg-stone-50 hover:text-neutral-900 transition-colors"
                 >
                   <UserIcon className="size-4 text-neutral-400" />
                   Hồ sơ cá nhân
-                </Link>
+                </button>
 
                 <div className="my-1 border-t border-stone-100" />
 

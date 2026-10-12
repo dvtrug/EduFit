@@ -54,21 +54,21 @@ export function TutorDashboardView({ user }: TutorDashboardViewProps) {
     {
       title: "Thiết lập môn dạy & Lịch rảnh",
       description: "Khai báo mức học phí và các khung giờ bạn sẵn sàng nhận lớp trong tuần.",
-      href: "/tutor/profile",
+      href: "/dashboard/profile",
       actionText: "Cài đặt ngay",
       completed: hasConfiguredTeachingProfile,
     },
     {
       title: "Xác minh bằng cấp năng lực (KYC)",
       description: "Tải chứng chỉ sư phạm, bằng đại học để nhận huy hiệu Gia Sư Uy Tín.",
-      href: "/tutor/verification",
+      href: "/dashboard/verification",
       actionText: "Nộp bằng cấp",
       completed: verificationStatus === "VERIFIED" || verificationStatus === "APPROVED",
     },
     {
       title: "Nhận yêu cầu & Bắt đầu dạy",
       description: "Chấp nhận lời mời học thử từ học sinh và tạo lớp học 1-1 trực tiếp.",
-      href: "/tutor/requests",
+      href: "/dashboard/requests",
       actionText: "Xem hàng đợi",
       completed: false,
     },
@@ -90,14 +90,14 @@ export function TutorDashboardView({ user }: TutorDashboardViewProps) {
         </div>
         <div className="flex items-center gap-2.5">
           <Link
-            href="/tutor/profile"
+            href="/dashboard/profile"
             className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-stone-50 border border-stone-200 text-neutral-800 rounded-xl text-xs font-bold shadow-2xs transition-colors shrink-0"
           >
             <Clock className="size-3.5 text-neutral-500" />
             <span>Cập nhật lịch rảnh</span>
           </Link>
           <Link
-            href="/tutor/classes"
+            href="/dashboard/classes"
             className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors shrink-0"
           >
             <Plus className="size-3.5" />
