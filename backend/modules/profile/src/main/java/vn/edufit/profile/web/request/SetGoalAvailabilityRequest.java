@@ -6,7 +6,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 public record SetGoalAvailabilityRequest(
-    @NotNull @Size(max = 100) @Valid List<@NotNull Slot> slots) {
+    @NotNull @Size(max = 100) List<@NotNull @Valid Slot> slots) {
   public record Slot(
       @NotNull @Min(1) @Max(7) Short dayOfWeek,
       @NotNull LocalTime startTime,

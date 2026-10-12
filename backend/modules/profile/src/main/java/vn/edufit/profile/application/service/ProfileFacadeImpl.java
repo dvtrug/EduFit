@@ -19,6 +19,7 @@ import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.profile.api.dto.EducationLevelOrderDto;
 import vn.edufit.profile.api.dto.TutorCandidateCriteria;
 import vn.edufit.profile.api.dto.LearningGoalDiscoveryDto;
+import vn.edufit.profile.api.dto.LearningGoalView;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.profile.api.dto.TutorDiscoveryProfileDto;
 import vn.edufit.profile.api.dto.TutorSearchCriteria;
@@ -183,6 +184,17 @@ public class ProfileFacadeImpl implements ProfileFacade {
         studentProfileRepository.findById(goal.getStudentId())
             .map(student -> toLearningGoalDto(goal, student))
     );
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<LearningGoalView> findLearningGoalsForStudent(UUID studentId) {
+    StudentProfile student = studentProfileRepository.findById(studentId)
+        .orElseThrow(() -> EntityNotFoundException.of("StudentProfile", studentId));
+    var goals = learningGoalRepository.findByStudentIdOrderByCreatedAtAscGoalIdAsc(studentId);
+    if (goals.isEmpty()) return List.of();
+    return LearningGoalViews.fromAll(goals, student, goalAvailabilitySlotRepository
+        .findByGoalIdInOrderByDayOfWeekAscStartTimeAsc(goals.stream().map(LearningGoal::getGoalId).toList()));
   }
 
   @Override

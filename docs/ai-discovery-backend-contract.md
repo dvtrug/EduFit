@@ -1,6 +1,6 @@
 # AI provider contract — Phase 1
 
-Cập nhật 2026-10-12. Phạm vi hiện thực: B02–B04 trong [kế hoạch](../tasks/ai-discovery/plan.md). Phần HTTP goals/readiness của B01/B08–B10 chưa triển khai; ba endpoint Discovery giữ [contract hiện tại](discovery-api-contract.md).
+Cập nhật 2026-10-12. Tài liệu này ghi phạm vi Phase 1: B02–B04 trong [kế hoạch](../tasks/ai-discovery/plan.md). Goals/slots/readiness và Parent goal selection hiện được bổ sung trong [Phase 3 contract](ai-discovery-phase3-contract.md); Discovery giữ [API contract](discovery-api-contract.md).
 
 ## Cấu hình và khởi động
 
@@ -46,7 +46,7 @@ Stub nhận diện explanation trước bio vì prompt matching cũng chứa “
 
 Tại thời điểm Phase 1, quota còn count-then-call. [Phase 2](ai-discovery-phase2-contract.md) thay bằng reservation atomic bắt buộc trong gateway và xử lý logger commit failure/DB failure isolation. Phase 1 riêng lẻ không giải quyết các race này; đọc contract Phase 2 cho runtime hiện tại.
 
-Backend chưa frontend-ready chỉ nhờ Phase 1: còn goal/slots APIs, Parent goal selection, full-filter CSRF/CORS/session, HTTP validation và cross-module E2E trong kế hoạch. AI bio UC1.7 chưa có consumer HTTP hoàn chỉnh.
+Backend chưa frontend-ready chỉ nhờ Phase 1–3: còn full-filter CSRF/CORS/session, HTTP validation matrix và cross-module E2E trong kế hoạch. Goals/slots và Parent goal selection đã có contract Phase 3 riêng. AI bio UC1.7 chưa có consumer HTTP hoàn chỉnh.
 
 ## Kiểm chứng
 

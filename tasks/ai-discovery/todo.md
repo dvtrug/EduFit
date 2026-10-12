@@ -1,7 +1,7 @@
 # AI + Discovery backend — checklist
 
 Nguồn: [plan.md](plan.md). Ngày khảo sát 2026-10-11; base `feat/discovery@4cc8767`.
-Cập nhật 2026-10-12: B00, Phase 1 (B02–B04) và Phase 2 (B05–B07) hoàn tất. Phase 3 trở đi chưa triển khai; B01 tổng thể vẫn pending.
+Cập nhật 2026-10-12: B00, Phase 1 (B02–B04), Phase 2 (B05–B07) và Phase 3 (B08–B10) hoàn tất. Phase 4 trở đi chưa triển khai; B01 tổng thể còn phần security/HTTP pending.
 
 ## Khảo sát và contract
 
@@ -30,8 +30,8 @@ Cập nhật 2026-10-12: B00, Phase 1 (B02–B04) và Phase 2 (B05–B07) hoàn 
 
 - [x] B08: Student create/list/update/archive goals đúng owner và BR-12.
 - [x] B09: Goal availability save nguyên tử; validation và readback.
-- [ ] B10: Parent chỉ đọc goals qua confirmed-link authorization; không dependency cycle.
-- [ ] Checkpoint D: tạo goal -> slots -> match qua HTTP, không cần SQL thủ công.
+- [x] B10: Parent chỉ đọc goals qua confirmed-link authorization; không dependency cycle.
+- [x] Checkpoint D: tạo goal -> slots -> match qua HTTP, không cần SQL goal/slot thủ công (account/profile/catalogs vẫn là fixture; CurrentUser kiểm soát trong test).
 
 ## HTTP integration
 
@@ -114,3 +114,24 @@ mvn -B -ntp -pl platform/ai,modules/discovery '-Djacoco.haltOnFailure=true' jaco
 - B09 hoàn tất: [red](b09-red.log) 18 failures/0 errors do thiếu availability route; [body error red](b09-unreadable-body-red.log) 38/39 goal cases pass, JSON null bị trả 500. Đã sửa tối thiểu HttpMessageNotReadableException -> 400 an toàn, thêm handler regression; B12 tổng thể vẫn pending.
 - [B09 green](b09-green.log): **39 goal cases + 9 app architecture + 7 handler tests = 55 app tests, 0 fail/error/skip, BUILD SUCCESS**. Replace giữ owner goal lock qua commit; concurrent second request chờ transaction thứ nhất, kết quả không trộn slots. Deferred PostgreSQL trigger gây lỗi commit sau delete/insert, old slot ID vẫn còn nguyên. Duplicate/overlap/null/day/time/minute precision/100-slot limit/empty clear/touching boundary đều kiểm tra. Create goal -> replace slots -> POST match chạy qua MockMvc với facade/repository thật, không seed SQL goal/slot; fixture vẫn seed account/profile/catalogs và CurrentUser được kiểm soát.
 - Lệnh B09 backend/JDK 21: `mvn -B -ntp -pl app -am '-Dtest=LearningGoalPostgresTest,GlobalExceptionHandlerTest,Architecture*Test' '-Dsurefire.failIfNoSpecifiedTests=false' test`.
+- B10 hoàn tất: [red](b10-red.log) 13 failures/0 errors do thiếu Parent route; [green](b10-green.log) **53 goal cases + 9 architecture + 7 handler = 69 app tests pass**. Profile chỉ expose read facade/DTO; Discovery kiểm tra confirmed link trước khi đọc. Real ConnectionService revoke do Student thực hiện, Parent bị chặn ở lần đọc/match tiếp theo. Pending/declined/expired/withdrawn/revoked/unlinked và role không phải Parent bị chặn. DTO không chứa contact/email/account ID; active/incomplete/archived và empty-list readiness được kiểm chứng. 3 goals dùng đúng 4 business SQL queries, không N+1; không tính auth/session filter.
+- Final module regression: **280 tests, 0 fail/error/skip, BUILD SUCCESS**. Shared 22, AI 63, IAM 32, Profile 44 (gồm PostgreSQL candidates), Connection 13, Discovery 106. [Log](phase3-module-regression.log). Lệnh backend/JDK 21: `mvn -B -ntp -pl platform/ai,modules/discovery,modules/connection -am test`.
+- [Final app regression](phase3-app-regression.log): **106 tests, 0 fail/error/skip, BUILD SUCCESS**, gồm goal 54 (thêm direct service validation), architecture 9, Flyway 3, DiscoveryRead 22, MatchingWorkflow 9, CurrentUser 2, handler 7. Lượt này đã chạy lại sau khi chuyển nested slot @Valid sang type argument theo Hibernate Validator 9 và bổ sung linked-Parent write denial; production code không thay đổi sau lượt này.
+- Gate Profile ban đầu **793/895 lines, 168/218 branches (77,06%)**, chưa đạt branch 80%: [log ban đầu](phase3-profile-coverage-before-boundaries.log). Chỉ bổ sung goal/slot boundary tests trong phạm vi mới: null currentLevel/budgetMax/mode, BOTH area trắng, endTime null, nano/second precision, cùng giờ khác ngày, validation direct Java caller. [Final goal suite](phase3-goal-boundary-final.log): **62 cases pass, 0 fail/error/skip, BUILD SUCCESS**. 52 app cases ngoài goal class đã pass trong lượt 106 và không đổi; tổng cuối là **114 app cases khác nhau đã pass**. Không cộng các lượt chạy trùng thành số test mới. Tổng module + app: **394 cases khác nhau pass**, không skip.
+- App command: `mvn -B -ntp -pl app -am '-Dtest=LearningGoalPostgresTest,Architecture*Test,FlywayMigrationIT,DiscoveryReadPostgresTest,MatchingWorkflowPostgresTest,GlobalExceptionHandlerTest,SpringSecurityCurrentUserTest' '-Dsurefire.failIfNoSpecifiedTests=false' test`; final goal rerun dùng selector `LearningGoalPostgresTest`. Không cộng các XML app cũ nằm ngoài selector.
+- Coverage ghép unit + PostgreSQL integration cuối: **Profile 793/895 lines = 88,60%; 178/218 branches = 81,65%**. **Discovery 355/377 lines = 94,16%; 177/204 branches = 86,76%**. [Final gate](phase3-coverage-final.log): cả hai module pass `jacoco.haltOnFailure=true`, không exclude class/hạ ngưỡng. Exec là dữ liệu test thật tích lũy; giữ source backup unit ở target/jacoco-unit-phase3.exec, ghép với app.exec bằng [helper](Phase2MergeCoverage.java). Không tuyên bố unit-only coverage hoặc toàn reactor verify đã pass (baseline Shared ghi ở Phase 1).
+- Không sửa frontend/main, không sửa migration cũ, không gọi Gemini live hoặc cold-start Compose/full-filter session/CSRF/CORS E2E. Phase 4/5 và B01 phần security vẫn pending. Docs/whitespace/secret-pattern checks thực hiện trước commit/push B10.
+
+### Reproduce coverage Phase 3
+
+Chạy module/app commands phía trên trước; dùng JDK 21 từ backend. Có thể chạy app selector toàn bộ một lượt với bộ goal hiện tại (62 cases) để tái lập 114 app cases.
+
+```powershell
+$jacocoCore = Join-Path $env:USERPROFILE '.m2/repository/org/jacoco/org.jacoco.core/0.8.12/org.jacoco.core-0.8.12.jar'
+Copy-Item modules/profile/target/jacoco.exec modules/profile/target/jacoco-unit-phase3.exec
+Copy-Item modules/discovery/target/jacoco.exec modules/discovery/target/jacoco-unit-phase3.exec
+java -cp $jacocoCore ../tasks/ai-discovery/Phase2MergeCoverage.java target/phase3-merged.exec modules/profile/target/jacoco-unit-phase3.exec modules/discovery/target/jacoco-unit-phase3.exec app/target/jacoco.exec
+Copy-Item target/phase3-merged.exec modules/profile/target/jacoco.exec
+Copy-Item target/phase3-merged.exec modules/discovery/target/jacoco.exec
+mvn -B -ntp -pl modules/profile,modules/discovery '-Djacoco.haltOnFailure=true' jacoco:report jacoco:check@check-coverage-gate
+```

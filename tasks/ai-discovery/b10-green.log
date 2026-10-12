@@ -1,0 +1,1226 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] EduFit :: Parent                                                   [pom]
+[INFO] EduFit :: Platform (Aggregator)                                    [pom]
+[INFO] EduFit :: Platform :: Shared Kernel                                [jar]
+[INFO] EduFit :: Platform :: AI Gateway                                   [jar]
+[INFO] EduFit :: Platform :: File Storage                                 [jar]
+[INFO] EduFit :: Platform :: Audit Logging                                [jar]
+[INFO] EduFit :: Modules (Aggregator)                                     [pom]
+[INFO] EduFit :: Module :: IAM                                            [jar]
+[INFO] EduFit :: Module :: Profile                                        [jar]
+[INFO] EduFit :: Module :: Verification                                   [jar]
+[INFO] EduFit :: Module :: Connection                                     [jar]
+[INFO] EduFit :: Module :: Scheduling                                     [jar]
+[INFO] EduFit :: Module :: Review                                         [jar]
+[INFO] EduFit :: Module :: Discovery                                      [jar]
+[INFO] EduFit :: Module :: Progress                                       [jar]
+[INFO] EduFit :: Module :: Notification                                   [jar]
+[INFO] EduFit :: App Runner                                               [jar]
+[INFO]
+[INFO] ----------------------< vn.edufit:edufit-parent >-----------------------
+[INFO] Building EduFit :: Parent 1.0-SNAPSHOT                            [1/17]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ edufit-parent ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\target\\jacoco.exec
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ edufit-parent ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] -------------------------< vn.edufit:platform >-------------------------
+[INFO] Building EduFit :: Platform (Aggregator) 1.0-SNAPSHOT             [2/17]
+[INFO]   from platform\pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ platform ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\target\\jacoco.exec
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ platform ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] --------------------------< vn.edufit:shared >--------------------------
+[INFO] Building EduFit :: Platform :: Shared Kernel 1.0-SNAPSHOT         [3/17]
+[INFO]   from platform\shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ shared ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\shared\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\shared\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\shared\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ shared ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ shared ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\shared\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Platform :: Shared Kernel' with 11 classes
+[INFO]
+[INFO] ----------------------------< vn.edufit:ai >----------------------------
+[INFO] Building EduFit :: Platform :: AI Gateway 1.0-SNAPSHOT            [4/17]
+[INFO]   from platform\ai\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ ai ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\ai\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ ai ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\ai\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ ai ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ ai ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\ai\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ ai ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ ai ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ ai ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\ai\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Platform :: AI Gateway' with 17 classes
+[INFO]
+[INFO] -------------------------< vn.edufit:storage >--------------------------
+[INFO] Building EduFit :: Platform :: File Storage 1.0-SNAPSHOT          [5/17]
+[INFO]   from platform\storage\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ storage ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\storage\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ storage ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\storage\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ storage ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ storage ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\storage\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ storage ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ storage ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ storage ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] --------------------------< vn.edufit:audit >---------------------------
+[INFO] Building EduFit :: Platform :: Audit Logging 1.0-SNAPSHOT         [6/17]
+[INFO]   from platform\audit\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ audit ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\audit\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ audit ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\audit\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ audit ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ audit ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\audit\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ audit ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ audit ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ audit ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] -------------------------< vn.edufit:modules >--------------------------
+[INFO] Building EduFit :: Modules (Aggregator) 1.0-SNAPSHOT              [7/17]
+[INFO]   from modules\pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ modules ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\target\\jacoco.exec
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ modules ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] ---------------------------< vn.edufit:iam >----------------------------
+[INFO] Building EduFit :: Module :: IAM 1.0-SNAPSHOT                     [8/17]
+[INFO]   from modules\iam\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ iam ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\iam\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ iam ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\iam\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ iam ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ iam ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\iam\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ iam ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ iam ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ iam ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\iam\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: IAM' with 26 classes
+[INFO]
+[INFO] -------------------------< vn.edufit:profile >--------------------------
+[INFO] Building EduFit :: Module :: Profile 1.0-SNAPSHOT                 [9/17]
+[INFO]   from modules\profile\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ profile ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\profile\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ profile ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\profile\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ profile ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 53 source files with javac [debug parameters release 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ profile ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\profile\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ profile ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 7 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ profile ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ profile ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\profile\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: Profile' with 50 classes
+[WARNING] Classes in bundle 'EduFit :: Module :: Profile' do not match with execution data. For report generation the same class files must be used as at runtime.
+[WARNING] Execution data for class vn/edufit/profile/infra/persistence/entity/LearningGoal does not match.
+[WARNING] Execution data for class vn/edufit/profile/application/service/ProfileFacadeImpl does not match.
+[WARNING] Execution data for class vn/edufit/profile/infra/persistence/entity/GoalAvailabilitySlot does not match.
+[INFO]
+[INFO] -----------------------< vn.edufit:verification >-----------------------
+[INFO] Building EduFit :: Module :: Verification 1.0-SNAPSHOT           [10/17]
+[INFO]   from modules\verification\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ verification ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\verification\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ verification ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\verification\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ verification ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 16 source files with javac [debug parameters release 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ verification ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\verification\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ verification ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 4 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ verification ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ verification ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] ------------------------< vn.edufit:connection >------------------------
+[INFO] Building EduFit :: Module :: Connection 1.0-SNAPSHOT             [11/17]
+[INFO]   from modules\connection\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ connection ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\connection\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ connection ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\connection\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ connection ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 13 source files with javac [debug parameters release 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ connection ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\connection\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ connection ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 1 source file with javac [debug parameters release 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ connection ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ connection ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\connection\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: Connection' with 18 classes
+[INFO]
+[INFO] ------------------------< vn.edufit:scheduling >------------------------
+[INFO] Building EduFit :: Module :: Scheduling 1.0-SNAPSHOT             [12/17]
+[INFO]   from modules\scheduling\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ scheduling ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\scheduling\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ scheduling ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\scheduling\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ scheduling ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ scheduling ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\scheduling\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ scheduling ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ scheduling ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ scheduling ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] --------------------------< vn.edufit:review >--------------------------
+[INFO] Building EduFit :: Module :: Review 1.0-SNAPSHOT                 [13/17]
+[INFO]   from modules\review\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ review ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\review\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ review ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\review\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ review ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ review ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\review\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ review ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ review ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ review ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] ------------------------< vn.edufit:discovery >-------------------------
+[INFO] Building EduFit :: Module :: Discovery 1.0-SNAPSHOT              [14/17]
+[INFO]   from modules\discovery\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ discovery ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\discovery\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ discovery ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\discovery\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ discovery ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 27 source files with javac [debug parameters release 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ discovery ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\discovery\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ discovery ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 8 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ discovery ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ discovery ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\discovery\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: Discovery' with 26 classes
+[INFO]
+[INFO] -------------------------< vn.edufit:progress >-------------------------
+[INFO] Building EduFit :: Module :: Progress 1.0-SNAPSHOT               [15/17]
+[INFO]   from modules\progress\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ progress ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\progress\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ progress ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\progress\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ progress ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ progress ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\progress\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ progress ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ progress ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ progress ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] -----------------------< vn.edufit:notification >-----------------------
+[INFO] Building EduFit :: Module :: Notification 1.0-SNAPSHOT           [16/17]
+[INFO]   from modules\notification\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ notification ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\notification\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ notification ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\notification\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ notification ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ notification ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\notification\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ notification ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ notification ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ notification ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] ---------------------------< vn.edufit:app >----------------------------
+[INFO] Building EduFit :: App Runner 1.0-SNAPSHOT                       [17/17]
+[INFO]   from app\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ app ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\app\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ app ---
+[INFO] Copying 13 resources from src\main\resources to target\classes
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ app ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 7 source files with javac [debug parameters release 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ app ---
+[INFO] Copying 5 resources from src\test\resources to target\test-classes
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ app ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 12 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] /C:/Users/ASUS/Desktop/EduFit/EduFit/backend/app/src/test/java/vn/edufit/profile/LearningGoalPostgresTest.java: C:\Users\ASUS\Desktop\EduFit\EduFit\backend\app\src\test\java\vn\edufit\profile\LearningGoalPostgresTest.java uses or overrides a deprecated API.
+[INFO] /C:/Users/ASUS/Desktop/EduFit/EduFit/backend/app/src/test/java/vn/edufit/profile/LearningGoalPostgresTest.java: Recompile with -Xlint:deprecation for details.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ app ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+05:11:51.925 [main] INFO com.tngtech.archunit.ArchConfiguration -- Reading ArchUnit properties from file:/C:/Users/ASUS/Desktop/EduFit/EduFit/backend/app/target/test-classes/archunit.properties
+[INFO] Running vn.edufit.ArchitectureBoundaryTest
+05:11:53.602 [main] INFO com.tngtech.archunit.core.PluginLoader -- Detected Java version 21.0.10
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.993 s -- in vn.edufit.ArchitectureBoundaryTest
+[INFO] Running vn.edufit.ArchitectureTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.700 s -- in vn.edufit.ArchitectureTest
+[INFO] Running vn.edufit.profile.LearningGoalPostgresTest
+05:12:04.692 [main] INFO org.testcontainers.images.PullPolicy -- Image pull policy will be performed by: DefaultPullPolicy()
+05:12:04.709 [main] INFO org.testcontainers.utility.ImageNameSubstitutor -- Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+05:12:04.821 [main] INFO org.testcontainers.DockerClientFactory -- Testcontainers version: 2.0.5
+05:12:06.673 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Loaded org.testcontainers.dockerclient.NpipeSocketClientProviderStrategy from ~/.testcontainers.properties, will try it first
+05:12:08.703 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Found Docker environment with local Npipe socket (npipe:////./pipe/docker_engine)
+05:12:08.709 [main] INFO org.testcontainers.DockerClientFactory -- Docker host IP address is localhost
+05:12:08.769 [main] INFO org.testcontainers.DockerClientFactory -- Connected to docker:
+  Server Version: 28.3.0
+  API Version: 1.51
+  Operating System: Docker Desktop
+  Total Memory: 7848 MB
+  Labels:
+    com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+05:12:09.061 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Creating container for image: testcontainers/ryuk:0.14.0
+05:12:09.359 [main] INFO org.testcontainers.utility.RegistryAuthLocator -- Credential helper/store (docker-credential-desktop) does not have credentials for https://index.docker.io/v1/
+05:12:10.053 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 is starting: b21c05e1aeef2da239673581270bbd24793ee93fa0ceb31d6476d29513fb18d3
+05:12:11.131 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 started in PT2.0700794S
+05:12:11.154 [main] INFO org.testcontainers.utility.RyukResourceReaper -- Ryuk started - will monitor and terminate Testcontainers containers on JVM exit
+05:12:11.154 [main] INFO org.testcontainers.DockerClientFactory -- Checking the system...
+05:12:11.157 [main] INFO org.testcontainers.DockerClientFactory -- ?? Docker server version should be at least 1.6.0
+05:12:11.158 [main] INFO tc.postgres:16-alpine -- Creating container for image: postgres:16-alpine
+05:12:11.305 [main] INFO tc.postgres:16-alpine -- Container postgres:16-alpine is starting: 43ffd111778a477cc6cdd815c8e8368255358d8e691a6756406466b5baaa7dcf
+05:12:14.938 [main] INFO tc.postgres:16-alpine -- Container postgres:16-alpine started in PT3.7797603S
+05:12:14.939 [main] INFO tc.postgres:16-alpine -- Container is started (JDBC URL: jdbc:postgresql://localhost:52265/test?loggerLevel=OFF)
+05:12:16.983 [main] INFO org.springframework.data.repository.config.RepositoryConfigurationDelegate -- Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+05:12:17.288 [main] INFO org.springframework.data.repository.config.RepositoryConfigurationDelegate -- Finished Spring Data repository scanning in 272 ms. Found 14 JPA repository interfaces.
+05:12:20.051 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:postgresql://localhost:52265/test?loggerLevel=OFF (PostgreSQL 16.15)
+05:12:20.361 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Schema history table "public"."flyway_schema_history" does not exist yet
+05:12:20.380 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 12 migrations (execution time 00:00.150s)
+05:12:20.485 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Creating Schema History table "public"."flyway_schema_history" ...
+05:12:20.737 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema "public": << Empty Schema >>
+05:12:20.787 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.01 - create account and session tables"
+05:12:21.107 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.02 - create profile and subject tables"
+05:12:21.258 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.03 - create verification tables"
+05:12:21.357 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.04 - create connection and class tables"
+05:12:21.488 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.05 - create tutoring session tables"
+05:12:21.603 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.06 - create learning plan tables"
+05:12:21.693 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.07 - create review and notification tables"
+05:12:21.771 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.08 - create audit and ai log tables"
+05:12:21.857 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.09 - seed demo accounts and catalogs"
+05:12:21.935 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.10 - seed demo accounts and catalogs"
+05:12:21.997 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.11 - allow relink after revocation"
+05:12:22.065 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.12 - create ai match reservations"
+05:12:22.133 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Successfully applied 12 migrations to schema "public", now at version v1.12 (execution time 00:00.891s)
+05:12:22.539 [main] INFO org.hibernate.orm.jpa -- HHH008540: Processing PersistenceUnitInfo [name: default]
+05:12:22.929 [main] INFO org.hibernate.orm.core -- HHH000001: Hibernate ORM core version 7.4.5.Final
+05:12:25.741 [main] INFO org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo -- No LoadTimeWeaver setup: ignoring JPA class transformer
+05:12:26.234 [main] INFO org.hibernate.orm.connections.pooling -- HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:52265/test?loggerLevel=OFF]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 16.15
+	Default catalog/schema: test/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+05:12:29.126 [main] INFO org.hibernate.validator.internal.util.Version -- HV000001: Hibernate Validator 9.1.3.Final
+05:12:33.737 [main] INFO org.hibernate.orm.core -- HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+05:12:33.979 [main] INFO org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean -- Initialized JPA EntityManagerFactory for persistence unit 'default'
+05:12:34.417 [main] INFO org.springframework.data.jpa.repository.query.QueryEnhancerFactories -- Hibernate is in classpath; If applicable, HQL parser will be used.
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A Java agent has been loaded dynamically (C:\Users\ASUS\.m2\repository\net\bytebuddy\byte-buddy-agent\1.18.11\byte-buddy-agent-1.18.11.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+05:12:47.192 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:47.192 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:47.206 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 13 ms
+05:12:49.974 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:12:49.988 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:12:49.990 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:12:50.214 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:12:50.214 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:12:50.216 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:12:51.362 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+05:12:51.446 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: B?n kh�ng c� quy?n gh�p ?�i cho m?c ti�u h?c t?p n�y.
+05:12:51.959 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:51.960 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:51.961 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:12:52.200 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y LearningGoal v?i m� ??nh danh: a6b6cfd9-c156-4b6d-b8f0-56577a2c3959
+05:12:52.253 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y LearningGoal v?i m� ??nh danh: a6b6cfd9-c156-4b6d-b8f0-56577a2c3959
+05:12:52.770 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:52.771 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:52.772 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:12:52.951 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M�n h?c ph?i t?n t?i v� ?ang ho?t ??ng.
+05:12:53.006 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M�n h?c ph?i t?n t?i v� ?ang ho?t ??ng.
+05:12:53.453 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:53.453 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:53.454 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:12:53.596 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M�n h?c ph?i t?n t?i v� ?ang ho?t ??ng.
+05:12:53.655 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M�n h?c ph?i t?n t?i v� ?ang ho?t ??ng.
+05:12:54.010 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:54.010 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:54.010 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:12:54.137 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:54.149 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:54.512 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:54.513 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:54.513 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:12:54.653 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:54.666 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:55.009 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:55.010 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:55.010 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:12:55.091 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:55.103 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:55.422 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:55.423 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:55.423 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:12:55.498 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:55.509 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:55.843 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:55.844 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:55.844 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:12:55.930 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:55.941 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:56.311 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:56.311 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:56.312 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:12:56.388 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:56.398 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:56.716 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:56.716 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:56.716 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:12:56.794 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:56.805 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:57.103 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:57.104 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:57.104 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:12:57.182 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:57.192 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:12:57.637 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:57.637 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:57.637 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:12:58.148 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:58.148 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:58.148 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:12:58.242 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:12:58.243 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:12:58.243 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:12:58.406 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+05:12:58.651 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:58.651 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:58.652 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:12:58.771 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:12:58.772 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:12:58.773 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:12:58.998 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+05:12:59.261 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:59.261 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:59.262 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:12:59.376 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:12:59.376 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:12:59.377 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:12:59.532 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+05:12:59.819 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:12:59.819 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:12:59.820 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:12:59.933 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:12:59.934 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:12:59.934 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:00.120 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+05:13:00.507 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:00.507 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:00.507 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:00.524 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:13:00.534 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:13:00.875 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:00.875 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:00.876 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:13:01.238 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:01.238 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:01.239 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:13:01.333 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y StudentProfile v?i m� ??nh danh: b17bc27d-27b8-466e-93ee-8b4545906bd4
+05:13:01.380 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y StudentProfile v?i m� ??nh danh: b17bc27d-27b8-466e-93ee-8b4545906bd4
+05:13:01.770 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:01.770 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:01.771 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:13:01.852 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:01.853 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:01.853 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:02.263 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:02.263 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:02.263 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:02.337 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:02.338 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:02.338 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:02.453 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:13:02.807 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:02.807 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:02.808 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:02.903 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:02.904 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:02.905 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:03.025 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:13:03.320 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:03.320 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:03.321 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:03.399 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:03.399 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:03.400 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:03.514 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:13:04.034 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:04.034 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:04.034 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:04.132 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:04.133 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:04.133 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:04.278 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:13:04.711 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:04.711 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:04.711 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:04.797 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:04.797 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:04.799 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:04.912 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:13:05.229 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:05.230 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:05.230 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:05.307 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:05.307 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:05.307 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:05.401 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:13:05.717 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:05.717 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:05.717 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:05.793 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:05.793 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:05.793 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:05.890 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:13:06.217 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:06.217 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:06.218 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:06.314 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:06.314 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:06.315 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:06.446 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:13:06.915 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:06.915 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:06.916 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:13:06.986 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:06.987 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:06.987 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:07.091 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:13:07.444 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:07.444 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:07.445 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:13:07.552 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:07.552 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:07.552 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:07.662 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:13:08.001 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:08.001 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:08.001 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:08.075 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:08.076 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:08.076 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:08.172 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:13:08.473 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:08.473 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:08.473 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:08.547 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:08.548 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:08.548 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:08.651 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: Khung gi? kh�ng ???c tr�ng ho?c giao nhau.
+05:13:08.692 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: Khung gi? kh�ng ???c tr�ng ho?c giao nhau.
+05:13:08.718 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+05:13:09.024 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:09.025 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:09.025 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:09.560 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:09.561 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:09.561 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:09.657 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:09.657 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:09.658 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:10.202 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:10.202 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:10.202 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:10.279 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:10.279 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:10.280 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:10.940 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:10.940 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:10.940 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:11.342 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:11.342 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:11.343 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:13:11.444 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:11.445 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:11.445 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:11.588 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+05:13:11.642 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: B?n kh�ng c� quy?n gh�p ?�i cho m?c ti�u h?c t?p n�y.
+05:13:11.915 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:11.916 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:11.916 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:12.010 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:12.011 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:12.011 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:12.153 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+05:13:12.207 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: B?n kh�ng c� quy?n gh�p ?�i cho m?c ti�u h?c t?p n�y.
+05:13:12.477 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:12.477 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:12.478 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:13:12.561 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:12.561 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:12.562 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:12.701 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+05:13:12.760 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: B?n kh�ng c� quy?n gh�p ?�i cho m?c ti�u h?c t?p n�y.
+05:13:13.053 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:13.054 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:13.054 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:13.147 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:13.147 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:13.147 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:13.301 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+05:13:13.355 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: B?n kh�ng c� quy?n gh�p ?�i cho m?c ti�u h?c t?p n�y.
+05:13:13.647 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:13.647 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:13.647 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:13.726 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:13.727 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:13.727 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:13.872 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+05:13:13.924 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: B?n kh�ng c� quy?n gh�p ?�i cho m?c ti�u h?c t?p n�y.
+05:13:14.223 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:14.223 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:14.223 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:14.308 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:14.308 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:14.308 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:14.429 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+05:13:14.488 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: B?n kh�ng c� quy?n gh�p ?�i cho m?c ti�u h?c t?p n�y.
+05:13:14.803 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:14.803 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:14.804 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:13:14.883 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:14.884 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:14.884 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:15.109 [main] ERROR vn.edufit.web.advice.GlobalExceptionHandler -- Unhandled internal server error:
+org.springframework.orm.jpa.JpaSystemException: Unable to commit against JDBC Connection
+	at org.springframework.orm.jpa.hibernate.HibernateExceptionTranslator.convertHibernateAccessException(HibernateExceptionTranslator.java:223)
+	at org.springframework.orm.jpa.hibernate.HibernateExceptionTranslator.convertHibernateAccessException(HibernateExceptionTranslator.java:131)
+	at org.springframework.orm.jpa.hibernate.HibernateExceptionTranslator.translateExceptionIfPossible(HibernateExceptionTranslator.java:105)
+	at org.springframework.orm.jpa.vendor.HibernateJpaDialect.translateExceptionIfPossible(HibernateJpaDialect.java:223)
+	at org.springframework.orm.jpa.JpaTransactionManager.doCommit(JpaTransactionManager.java:556)
+	at org.springframework.transaction.support.AbstractPlatformTransactionManager.processCommit(AbstractPlatformTransactionManager.java:794)
+	at org.springframework.transaction.support.AbstractPlatformTransactionManager.commit(AbstractPlatformTransactionManager.java:757)
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.commitTransactionAfterReturning(TransactionAspectSupport.java:687)
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:408)
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:130)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:719)
+	at vn.edufit.profile.application.service.LearningGoalService$$SpringCGLIB$$0.replaceAvailability(<generated>)
+	at vn.edufit.profile.web.LearningGoalController.replaceAvailability(LearningGoalController.java:55)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000)
+	at org.springframework.web.servlet.FrameworkServlet.doPut(FrameworkServlet.java:914)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:650)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)
+	at org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:160)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:127)
+	at org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:199)
+	at vn.edufit.profile.LearningGoalPostgresTest.availabilityCommitFailureRestoresDeletedSlots(LearningGoalPostgresTest.java:341)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:701)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:502)
+	at org.junit.jupiter.engine.support.MethodReflectionUtils.invoke(MethodReflectionUtils.java:45)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:61)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:124)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:163)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:148)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:123)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:105)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:99)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:66)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:47)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:39)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:104)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:98)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invokeVoid(InterceptingExecutableInvoker.java:71)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$0(TestMethodTestDescriptor.java:219)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:215)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:157)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:70)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:176)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:42)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:180)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:42)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:180)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:36)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:52)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.executeEngine(EngineExecutionOrchestrator.java:246)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.failOrExecuteEngine(EngineExecutionOrchestrator.java:218)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:179)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:108)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:66)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:157)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:65)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:125)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:114)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:93)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:48)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$0(InterceptingLauncher.java:41)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:40)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:48)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+Caused by: org.hibernate.TransactionException: Unable to commit against JDBC Connection
+	at org.hibernate.resource.jdbc.internal.AbstractLogicalConnectionImplementor.commitConnection(AbstractLogicalConnectionImplementor.java:114)
+	at org.hibernate.resource.jdbc.internal.AbstractLogicalConnectionImplementor.commit(AbstractLogicalConnectionImplementor.java:82)
+	at org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl$TransactionDriverControlImpl.commitNoRollbackOnly(JdbcResourceLocalTransactionCoordinatorImpl.java:273)
+	at org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl$TransactionDriverControlImpl.commit(JdbcResourceLocalTransactionCoordinatorImpl.java:242)
+	at org.hibernate.engine.transaction.internal.TransactionImpl.commit(TransactionImpl.java:89)
+	at org.springframework.orm.jpa.JpaTransactionManager.doCommit(JpaTransactionManager.java:552)
+	... 107 common frames omitted
+Caused by: org.postgresql.util.PSQLException: ERROR: test deferred slot failure
+  Where: PL/pgSQL function reject_goal_slot() line 1 at RAISE
+	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2993)
+	at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2656)
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:446)
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:403)
+	at org.postgresql.jdbc.PgConnection.executeTransactionCommand(PgConnection.java:1022)
+	at org.postgresql.jdbc.PgConnection.commit(PgConnection.java:1044)
+	at org.hibernate.resource.jdbc.internal.AbstractLogicalConnectionImplementor.commitConnection(AbstractLogicalConnectionImplementor.java:95)
+	... 112 common frames omitted
+05:13:15.517 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:15.517 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:15.518 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:13:15.647 [virtual-77] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:15.652 [virtual-77] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:15.653 [virtual-77] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:16.268 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:16.268 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:16.268 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:16.671 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:16.672 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:16.672 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:16.918 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M?c ti�u ?� l?u tr? kh�ng ???c ch?nh s?a.
+05:13:17.221 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:17.222 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:17.222 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:17.295 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:17.296 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:17.296 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:17.329 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:17.419 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y LearningGoal v?i m� ??nh danh: f0c983a3-f8cb-401d-8dfb-ee32319e073a
+05:13:17.512 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M?c ti�u ?� l?u tr? kh�ng ???c ch?nh s?a.
+05:13:17.863 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:17.863 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:17.863 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:17.960 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:17.988 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:18.010 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:18.032 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:18.362 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:18.362 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:18.364 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 2 ms
+05:13:18.497 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:18.523 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:18.545 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:18.568 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:18.861 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:18.861 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:18.861 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:18.932 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:18.955 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:18.975 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:18.996 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:19.271 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:19.272 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:19.272 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:19.357 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:19.381 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:19.401 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:19.421 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+05:13:19.701 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:19.701 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:19.701 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:19.790 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#vn.edufit.profile.web.request.SetGoalAvailabilityRequest(List)
+05:13:19.791 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: SetGoalAvailabilityRequest#slots()
+05:13:19.791 [main] WARN org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder -- HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: slots
+05:13:20.184 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+05:13:20.201 [main] INFO org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean -- Closing JPA EntityManagerFactory for persistence unit 'default'
+Oct 12, 2026 5:13:20 AM org.junit.jupiter.engine.descriptor.AbstractExtensionContext lambda$createCloseAction$1
+WARNING: Type implements CloseableResource but not AutoCloseable: org.testcontainers.junit.jupiter.TestcontainersExtension$StoreAdapter
+[INFO] Tests run: 53, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 76.64 s -- in vn.edufit.profile.LearningGoalPostgresTest
+[INFO] Running vn.edufit.web.advice.GlobalExceptionHandlerTest
+[INFO] Running vn.edufit.web.advice.GlobalExceptionHandlerTest$BusinessExceptionMappingTests
+05:13:21.163 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:21.163 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:21.163 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:21.168 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: B?n kh�ng c� quy?n th?c hi?n thao t�c n�y
+05:13:21.258 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:21.258 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:21.259 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:21.260 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y ng??i d�ng v?i m� ??nh danh: 12345
+05:13:21.288 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:21.288 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:21.288 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:21.291 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource conflict: Khung gi? b? tr�ng l?ch h?c [ErrorCode: SCHEDULE_OVERLAP]
+05:13:21.319 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:21.319 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:21.321 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 2 ms
+05:13:21.322 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: Thao t�c kh�ng h?p l? v?i tr?ng th�i hi?n t?i
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.210 s -- in vn.edufit.web.advice.GlobalExceptionHandlerTest$BusinessExceptionMappingTests
+[INFO] Running vn.edufit.web.advice.GlobalExceptionHandlerTest$ValidationAndSystemErrorTests
+05:13:21.355 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:21.356 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:21.357 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:13:21.403 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:21.403 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:21.404 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+05:13:21.405 [main] ERROR vn.edufit.web.advice.GlobalExceptionHandler -- Unhandled internal server error:
+java.lang.RuntimeException: C? s? d? li?u b? ng?t k?t n?i ??t ng?t!
+	at vn.edufit.web.advice.GlobalExceptionHandlerTest$StubController.throwCrash(GlobalExceptionHandlerTest.java:172)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)
+	at org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:160)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:127)
+	at org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:199)
+	at vn.edufit.web.advice.GlobalExceptionHandlerTest$ValidationAndSystemErrorTests.shouldReturn500SafeResponseWhenUnexpectedCrashOccurs(GlobalExceptionHandlerTest.java:130)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:701)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:502)
+	at org.junit.jupiter.engine.support.MethodReflectionUtils.invoke(MethodReflectionUtils.java:45)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:61)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:124)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:163)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:148)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:123)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:105)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:99)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:66)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:47)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:39)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:104)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:98)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invokeVoid(InterceptingExecutableInvoker.java:71)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$0(TestMethodTestDescriptor.java:219)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:215)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:157)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:70)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:176)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:42)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:180)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:42)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:180)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:42)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:180)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:36)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:52)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.executeEngine(EngineExecutionOrchestrator.java:246)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.failOrExecuteEngine(EngineExecutionOrchestrator.java:218)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:179)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:108)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:66)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:157)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:65)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:125)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:114)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:93)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:48)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$0(InterceptingLauncher.java:41)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:40)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:48)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+05:13:21.434 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+05:13:21.434 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+05:13:21.434 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+05:13:21.441 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.115 s -- in vn.edufit.web.advice.GlobalExceptionHandlerTest$ValidationAndSystemErrorTests
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.330 s -- in vn.edufit.web.advice.GlobalExceptionHandlerTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 69, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ app ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\app\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: App Runner' with 7 classes
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for EduFit :: Parent 1.0-SNAPSHOT:
+[INFO]
+[INFO] EduFit :: Parent ................................... SUCCESS [  0.832 s]
+[INFO] EduFit :: Platform (Aggregator) .................... SUCCESS [  0.034 s]
+[INFO] EduFit :: Platform :: Shared Kernel ................ SUCCESS [  1.775 s]
+[INFO] EduFit :: Platform :: AI Gateway ................... SUCCESS [  1.286 s]
+[INFO] EduFit :: Platform :: File Storage ................. SUCCESS [  0.346 s]
+[INFO] EduFit :: Platform :: Audit Logging ................ SUCCESS [  0.219 s]
+[INFO] EduFit :: Modules (Aggregator) ..................... SUCCESS [  0.009 s]
+[INFO] EduFit :: Module :: IAM ............................ SUCCESS [  0.839 s]
+[INFO] EduFit :: Module :: Profile ........................ SUCCESS [ 13.457 s]
+[INFO] EduFit :: Module :: Verification ................... SUCCESS [  7.729 s]
+[INFO] EduFit :: Module :: Connection ..................... SUCCESS [  6.315 s]
+[INFO] EduFit :: Module :: Scheduling ..................... SUCCESS [  0.311 s]
+[INFO] EduFit :: Module :: Review ......................... SUCCESS [  0.243 s]
+[INFO] EduFit :: Module :: Discovery ...................... SUCCESS [  8.015 s]
+[INFO] EduFit :: Module :: Progress ....................... SUCCESS [  0.259 s]
+[INFO] EduFit :: Module :: Notification ................... SUCCESS [  0.234 s]
+[INFO] EduFit :: App Runner ............................... SUCCESS [01:46 min]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  02:28 min
+[INFO] Finished at: 2026-10-12T05:13:23Z
+[INFO] ------------------------------------------------------------------------

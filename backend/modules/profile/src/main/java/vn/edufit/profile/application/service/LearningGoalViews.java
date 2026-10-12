@@ -2,13 +2,32 @@ package vn.edufit.profile.application.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import vn.edufit.profile.api.dto.LearningGoalView;
 import vn.edufit.profile.api.dto.WeeklyAvailabilityDto;
+import vn.edufit.profile.infra.persistence.entity.GoalAvailabilitySlot;
 import vn.edufit.profile.infra.persistence.entity.LearningGoal;
 import vn.edufit.profile.infra.persistence.entity.StudentProfile;
 
 final class LearningGoalViews {
   private LearningGoalViews() {}
+
+  static List<LearningGoalView> fromAll(
+      List<LearningGoal> goals, StudentProfile student, List<GoalAvailabilitySlot> slots) {
+    var byGoal =
+        slots.stream()
+            .collect(
+                Collectors.groupingBy(
+                    GoalAvailabilitySlot::getGoalId,
+                    Collectors.mapping(
+                        slot ->
+                            new WeeklyAvailabilityDto(
+                                slot.getDayOfWeek(), slot.getStartTime(), slot.getEndTime()),
+                        Collectors.toList())));
+    return goals.stream()
+        .map(goal -> from(goal, student, byGoal.getOrDefault(goal.getGoalId(), List.of())))
+        .toList();
+  }
 
   static LearningGoalView from(
       LearningGoal goal, StudentProfile student, List<WeeklyAvailabilityDto> slots) {

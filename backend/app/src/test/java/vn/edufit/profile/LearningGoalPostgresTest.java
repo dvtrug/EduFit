@@ -68,7 +68,8 @@ class LearningGoalPostgresTest {
     mvc =
         MockMvcBuilders.standaloneSetup(
                 context.getBean(LearningGoalController.class),
-                context.getBean(vn.edufit.discovery.web.DiscoveryController.class))
+                context.getBean(vn.edufit.discovery.web.DiscoveryController.class),
+                context.getBean(vn.edufit.discovery.web.StudentGoalsController.class))
             .setControllerAdvice(new GlobalExceptionHandler())
             .build();
   }
@@ -151,11 +152,20 @@ class LearningGoalPostgresTest {
   @ParameterizedTest
   @ValueSource(
       strings = {
-        "\"subjectId\":1|\"subjectId\":999", "\"subjectId\":1|\"subjectId\":2",
-        "\"currentLevel\":1|\"currentLevel\":3", "\"budgetMax\":200000|\"budgetMax\":0",
-        "\"budgetMin\":0|\"budgetMin\":-1", "\"budgetMin\":0|\"budgetMin\":300000",
-        "\"mode\":\"ONLINE\"|\"mode\":\"OFFLINE\"", "\"mode\":\"ONLINE\"|\"mode\":\"BOTH\"",
-        "\"subjectId\":1|\"subjectId\":null", "\"desiredLevel\":3|\"desiredLevel\":null"
+        "\"subjectId\":1|\"subjectId\":999",
+        "\"subjectId\":1|\"subjectId\":2",
+        "\"currentLevel\":1|\"currentLevel\":3",
+        "\"budgetMax\":200000|\"budgetMax\":0",
+        "\"budgetMin\":0|\"budgetMin\":-1",
+        "\"budgetMin\":0|\"budgetMin\":300000",
+        "\"mode\":\"ONLINE\"|\"mode\":\"OFFLINE\"",
+        "\"mode\":\"ONLINE\"|\"mode\":\"BOTH\"",
+        "\"subjectId\":1|\"subjectId\":null",
+        "\"desiredLevel\":3|\"desiredLevel\":null",
+        "\"currentLevel\":1|\"currentLevel\":null",
+        "\"budgetMax\":200000|\"budgetMax\":null",
+        "\"mode\":\"ONLINE\"|\"mode\":null",
+        "\"mode\":\"ONLINE\",\"area\":null|\"mode\":\"BOTH\",\"area\":\"   \""
       })
   void invalidFieldsCannotCreateOrOverwrite(String mutation) throws Exception {
     UUID id = create();
@@ -290,7 +300,10 @@ class LearningGoalPostgresTest {
         "{\"slots\":[{\"dayOfWeek\":1,\"startTime\":\"23:00\",\"endTime\":\"01:00\"}]}",
         "{\"slots\":[{\"dayOfWeek\":1,\"startTime\":\"18:00:01\",\"endTime\":\"19:00\"}]}",
         "{\"slots\":[{\"dayOfWeek\":1,\"startTime\":\"18:00\",\"endTime\":\"19:00:00.001\"}]}",
-        "{\"slots\":[{\"dayOfWeek\":1,\"startTime\":null,\"endTime\":\"19:00\"}]}"
+        "{\"slots\":[{\"dayOfWeek\":1,\"startTime\":null,\"endTime\":\"19:00\"}]}",
+        "{\"slots\":[{\"dayOfWeek\":1,\"startTime\":\"18:00\",\"endTime\":null}]}",
+        "{\"slots\":[{\"dayOfWeek\":1,\"startTime\":\"18:00:00.001\",\"endTime\":\"19:00\"}]}",
+        "{\"slots\":[{\"dayOfWeek\":1,\"startTime\":\"18:00\",\"endTime\":\"19:00:01\"}]}"
       })
   void availabilityInvalidInputKeepsOldSlots(String invalid) throws Exception {
     UUID id = create();
@@ -301,6 +314,16 @@ class LearningGoalPostgresTest {
         .andExpect(status().isBadRequest());
     assertEquals(
         oldSlot, jdbc.queryForObject("select slot_id from goal_availability_slot", UUID.class));
+  }
+
+  @Test
+  void availabilityDifferentDaysDoNotOverlap() throws Exception {
+    UUID goal = create();
+    replace(
+        goal,
+        "{\"slots\":[{\"dayOfWeek\":1,\"startTime\":\"18:00\",\"endTime\":\"19:00\"},{\"dayOfWeek\":2,\"startTime\":\"18:00\",\"endTime\":\"19:00\"}]}");
+    assertEquals(
+        2, jdbc.queryForObject("select count(*) from goal_availability_slot", Integer.class));
   }
 
   @Test
@@ -443,6 +466,200 @@ class LearningGoalPostgresTest {
     }
   }
 
+  @Test
+  void parentConfirmedCanReadAndMatchThenRealRevokeBlocksNextRequests() throws Exception {
+    UUID goal = readyGoal();
+    UUID parent = parent("CONFIRMED");
+    String path = "/api/v1/discovery/students/" + studentId + "/goals";
+    actor(parent, "PARENT");
+    mvc.perform(get(path))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data[0].goalId").value(goal.toString()))
+        .andExpect(jsonPath("$.data[0].readyForMatching").value(true))
+        .andExpect(jsonPath("$.data[0].studentUserId").doesNotExist())
+        .andExpect(jsonPath("$.data[0].email").doesNotExist());
+    mvc.perform(post(ROOT).contentType("application/json").content(payload()))
+        .andExpect(status().isForbidden());
+    mvc.perform(put(ROOT + "/" + goal).contentType("application/json").content(payload()))
+        .andExpect(status().isForbidden());
+    mvc.perform(
+            put(ROOT + "/" + goal + "/availability")
+                .contentType("application/json")
+                .content(availability(1, "18:00", "19:00")))
+        .andExpect(status().isForbidden());
+    mvc.perform(post(ROOT + "/" + goal + "/archive")).andExpect(status().isForbidden());
+    mvc.perform(
+            post("/api/v1/discovery/match")
+                .contentType("application/json")
+                .content("{\"goalId\":\"" + goal + "\"}"))
+        .andExpect(status().isOk());
+    UUID link = jdbc.queryForObject("select link_id from parent_student_link", UUID.class);
+    actor(accountId, "STUDENT");
+    context
+        .getBean(vn.edufit.connection.application.ConnectionService.class)
+        .revokeLink(user, link, "test revoke");
+    actor(parent, "PARENT");
+    mvc.perform(get(path)).andExpect(status().isForbidden());
+    mvc.perform(
+            post("/api/v1/discovery/match")
+                .contentType("application/json")
+                .content("{\"goalId\":\"" + goal + "\"}"))
+        .andExpect(status().isForbidden());
+    assertEquals(1, jdbc.queryForObject("select count(*) from matching_run_log", Integer.class));
+    verifyNoInteractions(
+        context.getBean(vn.edufit.discovery.application.service.MatchExplanationService.class));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"PENDING", "DECLINED", "EXPIRED", "WITHDRAWN", "REVOKED", "NONE"})
+  void parentWithoutConfirmedLinkCannotReadOrMatch(String state) throws Exception {
+    UUID goal = readyGoal();
+    UUID parent = parent(state);
+    actor(parent, "PARENT");
+    mvc.perform(get("/api/v1/discovery/students/" + studentId + "/goals"))
+        .andExpect(status().isForbidden());
+    mvc.perform(
+            post("/api/v1/discovery/match")
+                .contentType("application/json")
+                .content("{\"goalId\":\"" + goal + "\"}"))
+        .andExpect(status().isForbidden());
+    assertEquals(0, jdbc.queryForObject("select count(*) from matching_run_log", Integer.class));
+    verifyNoInteractions(
+        context.getBean(vn.edufit.discovery.application.service.MatchExplanationService.class));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"STUDENT", "TUTOR", "ADMIN", "GUEST"})
+  void parentRouteRejectsOtherRolesEvenWithLink(String role) throws Exception {
+    readyGoal();
+    UUID parent = parent("CONFIRMED");
+    actor(parent, role);
+    mvc.perform(get("/api/v1/discovery/students/" + studentId + "/goals"))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void parentListsActiveIncompleteAndArchivedGoalsUsingOneSlotBatch() throws Exception {
+    UUID first = readyGoal(), second = create(), third = create();
+    mvc.perform(post(ROOT + "/" + third + "/archive")).andExpect(status().isOk());
+    UUID parent = parent("CONFIRMED");
+    actor(parent, "PARENT");
+    var statistics =
+        context
+            .getBean(EntityManagerFactory.class)
+            .unwrap(org.hibernate.SessionFactory.class)
+            .getStatistics();
+    statistics.setStatisticsEnabled(true);
+    statistics.clear();
+    try {
+      mvc.perform(get("/api/v1/discovery/students/" + studentId + "/goals"))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.data.length()").value(3))
+          .andExpect(jsonPath("$.data[0].goalId").value(first.toString()))
+          .andExpect(jsonPath("$.data[0].readyForMatching").value(true))
+          .andExpect(jsonPath("$.data[1].goalId").value(second.toString()))
+          .andExpect(jsonPath("$.data[1].readinessReasons[0]").value("AVAILABILITY_REQUIRED"))
+          .andExpect(jsonPath("$.data[2].goalId").value(third.toString()))
+          .andExpect(jsonPath("$.data[2].readinessReasons[0]").value("GOAL_ARCHIVED"));
+      assertEquals(
+          4, statistics.getPrepareStatementCount(), "link + student + goals + batch slots; no N+1");
+    } finally {
+      statistics.setStatisticsEnabled(false);
+    }
+    mvc.perform(get("/api/v1/discovery/students/" + UUID.randomUUID() + "/goals"))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void parentLegacyIncompleteGoalReportsReasonsWithoutLeakingContact() throws Exception {
+    UUID goal = create();
+    jdbc.update(
+        "update learning_goal set budget_max=0,mode='OFFLINE',area=null where goal_id=?", goal);
+    UUID parent = parent("CONFIRMED");
+    actor(parent, "PARENT");
+    mvc.perform(get("/api/v1/discovery/students/" + studentId + "/goals"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data[0].readyForMatching").value(false))
+        .andExpect(jsonPath("$.data[0].readinessReasons.length()").value(4))
+        .andExpect(jsonPath("$.data[0].readinessReasons[1]").value("BUDGET_MAX_REQUIRED"))
+        .andExpect(jsonPath("$.data[0].readinessReasons[2]").value("AREA_REQUIRED"));
+  }
+
+  @Test
+  void parentConfirmedCanReadEmptyGoalList() throws Exception {
+    UUID parent = parent("CONFIRMED");
+    actor(parent, "PARENT");
+    mvc.perform(get("/api/v1/discovery/students/" + studentId + "/goals"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data").isEmpty());
+  }
+
+  @Test
+  void serviceBoundaryRejectsInvalidInputsWithoutMvcValidation() throws Exception {
+    UUID goal = create();
+    var service = context.getBean(vn.edufit.profile.application.service.LearningGoalService.class);
+    assertThrows(
+        vn.edufit.shared.exception.ForbiddenOperationException.class, () -> service.list(null));
+    assertThrows(
+        vn.edufit.shared.exception.InvalidOperationException.class,
+        () -> service.create(user, null));
+    var invalidGoal =
+        new vn.edufit.profile.web.request.SaveLearningGoalRequest(
+            1,
+            (short) 1,
+            (short) 3,
+            vn.edufit.profile.infra.persistence.entity.GoalType.OTHER,
+            LocalDate.now().plusDays(30),
+            vn.edufit.profile.infra.persistence.entity.TeachingMode.ONLINE,
+            null,
+            300000L,
+            200000L);
+    assertThrows(
+        vn.edufit.shared.exception.InvalidOperationException.class,
+        () -> service.create(user, invalidGoal));
+    assertThrows(
+        vn.edufit.shared.exception.InvalidOperationException.class,
+        () -> service.replaceAvailability(user, goal, null));
+    var invalid =
+        new vn.edufit.profile.web.request.SetGoalAvailabilityRequest(
+            java.util.List.of(
+                new vn.edufit.profile.web.request.SetGoalAvailabilityRequest.Slot(
+                    (short) 0, java.time.LocalTime.of(18, 0), java.time.LocalTime.of(19, 0))));
+    assertThrows(
+        vn.edufit.shared.exception.InvalidOperationException.class,
+        () -> service.replaceAvailability(user, goal, invalid));
+    assertEquals(
+        0, jdbc.queryForObject("select count(*) from goal_availability_slot", Integer.class));
+  }
+
+  UUID readyGoal() throws Exception {
+    UUID goal = create();
+    jdbc.update("update student_profile set education_level_id=1 where student_id=?", studentId);
+    replace(goal, availability(1, "18:00", "19:00"));
+    return goal;
+  }
+
+  UUID parent(String state) {
+    UUID parent = UUID.randomUUID();
+    account(parent, "PARENT");
+    if (state.equals("CONFIRMED") || state.equals("REVOKED")) {
+      jdbc.update(
+          "insert into parent_student_link(parent_user_id,student_id,status,confirmed_at)"
+              + " values(?,?,?,now())",
+          parent,
+          studentId,
+          state);
+    } else if (!state.equals("NONE")) {
+      jdbc.update(
+          "insert into link_invitation(inviter_user_id,invited_user_id,status,expires_at)"
+              + " values(?,?,?,now()+interval '1 day')",
+          parent,
+          accountId,
+          state);
+    }
+    return parent;
+  }
+
   UUID create() throws Exception {
     String body =
         mvc.perform(post(ROOT).contentType("application/json").content(payload()))
@@ -490,6 +707,8 @@ class LearningGoalPostgresTest {
     vn.edufit.discovery.application.service.TutorMatchingService.class,
     vn.edufit.discovery.application.service.DiscoveryQueryService.class,
     vn.edufit.discovery.web.DiscoveryController.class,
+    vn.edufit.discovery.web.StudentGoalsController.class,
+    vn.edufit.discovery.application.service.StudentGoalQueryService.class,
     vn.edufit.connection.application.ConnectionService.class
   })
   static class Config {

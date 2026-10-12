@@ -4,7 +4,6 @@ import jakarta.validation.Validator;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edufit.profile.api.dto.LearningGoalView;
@@ -60,25 +59,11 @@ public class LearningGoalService {
     StudentProfile student = owner(actor);
     var owned = goals.findByStudentIdOrderByCreatedAtAscGoalIdAsc(student.getStudentId());
     if (owned.isEmpty()) return List.of();
-    var byGoal =
-        slots
-            .findByGoalIdInOrderByDayOfWeekAscStartTimeAsc(
-                owned.stream().map(LearningGoal::getGoalId).toList())
-            .stream()
-            .collect(
-                Collectors.groupingBy(
-                    GoalAvailabilitySlot::getGoalId,
-                    Collectors.mapping(
-                        slot ->
-                            new WeeklyAvailabilityDto(
-                                slot.getDayOfWeek(), slot.getStartTime(), slot.getEndTime()),
-                        Collectors.toList())));
-    return owned.stream()
-        .map(
-            goal ->
-                LearningGoalViews.from(
-                    goal, student, byGoal.getOrDefault(goal.getGoalId(), List.of())))
-        .toList();
+    return LearningGoalViews.fromAll(
+        owned,
+        student,
+        slots.findByGoalIdInOrderByDayOfWeekAscStartTimeAsc(
+            owned.stream().map(LearningGoal::getGoalId).toList()));
   }
 
   @Transactional

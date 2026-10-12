@@ -1,7 +1,7 @@
 # AI + Discovery: đánh giá hiện trạng và kế hoạch backend sẵn sàng tích hợp
 
 Ngày kiểm tra: 2026-10-11 (Asia/Ho_Chi_Minh). Base: `feat/discovery`, commit `4cc8767`.
-Trạng thái cập nhật 2026-10-12: **Phase 1 (B02–B04) và Phase 2 (B05–B07) hoàn tất** trên `feat/discovery-ai`, tạo từ main mới nhất lúc chuyển nhánh (`24dc2f1`). Các mục khảo sát bên dưới ghi hiện trạng trước thay đổi; kết quả thực thi mới ở mục 9/10 và checklist. Chỉ backend, cấu hình, test và tài liệu; không sửa frontend. Theo yêu cầu người dùng, hoàn tất/kiểm tra mỗi task rồi commit và push lên `feat/discovery-ai` trước task tiếp theo.
+Trạng thái cập nhật 2026-10-12: **Phase 1 (B02–B04), Phase 2 (B05–B07) và Phase 3 (B08–B10) hoàn tất** trên `feat/discovery-ai`, tạo từ main mới nhất lúc chuyển nhánh (`24dc2f1`). Các mục khảo sát bên dưới ghi hiện trạng trước thay đổi; kết quả thực thi mới ở mục 9–11 và checklist. Chỉ backend, cấu hình, test và tài liệu; không sửa frontend. Theo yêu cầu người dùng, hoàn tất/kiểm tra mỗi task rồi commit và push lên `feat/discovery-ai` trước task tiếp theo.
 Checklist thực thi: [todo.md](todo.md). Kế hoạch Discovery cũ tại `../plan.md` và `../todo.md` được giữ nguyên như lịch sử.
 
 ## 1. Kết luận: đã có AI, nhưng chưa phải chỉ thêm API key là xong
@@ -120,7 +120,7 @@ Mỗi task là một thay đổi tập trung gồm code + test liên quan. Đư�
 
 - Làm: tài liệu mới `docs/ai-discovery-backend-contract.md`: route goal/slots, quyền, AI modes, response/error, CSRF, quota, mapping sang Connection.
 - Đề xuất Student: POST/GET `/api/v1/profiles/students/me/goals`; PUT `/api/v1/profiles/students/me/goals/{goalId}`; PUT `.../{goalId}/availability`; POST `.../{goalId}/archive`.
-- Đề xuất Parent: GET `/api/v1/discovery/students/{studentId}/goals`, trả goal + lịch tối thiểu để chọn, có confirmed-link authorization. Các route này **chưa tồn tại**.
+- Parent: GET `/api/v1/discovery/students/{studentId}/goals`, trả goal + lịch tối thiểu để chọn, có confirmed-link authorization. Student/Parent routes của mục này đã được hiện thực ở Phase 3; xem [contract đã chốt](../../docs/ai-discovery-phase3-contract.md). Phần security/HTTP tổng thể B01 còn pending Phase 4.
 - Goal create/update: subjectId, currentLevel, desiredLevel, goalType, deadline, mode, area, budgetMin/budgetMax. Cấp học lấy từ Student profile; không nhầm với current/desired skill level.
 - Đạt: có schema mẫu, validation/error table, phân biệt DRAFT/incomplete readiness bằng dữ liệu hợp lệ hiện có (không tự thêm goal status mới); frontend biết khi nào cần hoàn thiện profile/slots.
 - Kiểm chứng: review từng field với entity/migration/SRS; kiểm tra dependency graph không cycle. Không viết frontend types trong task này.
@@ -319,3 +319,12 @@ Theo yêu cầu thực hiện Phase 1, đã hoàn thành B02–B04. B01 mới ch
 - B07: gateway bắt buộc reserve MATCH_EXPLANATION; Discovery bỏ count-then-call. Một terminal outcome/attempt; request bị deny không gọi provider. Default 15s/trickle/I/O/500 và matching concurrency được kiểm chứng bằng Gemini adapter + HTTP loopback + PostgreSQL, score/ranking giữ nguyên.
 - Final evidence: 280 module + 82 app cases pass, không skip; AI/Discovery coverage ghép unit/integration đạt gate 80%. Một lượt rộng có 6 assertions DiscoveryRead cũ fail; sau sửa fixture, cả class 22 tests pass. Logs, lệnh, số coverage và giới hạn đầy đủ ở [checklist](todo.md), semantics ở [Phase 2 contract](../../docs/ai-discovery-phase2-contract.md).
 - Phase 3+ và B01 tổng thể vẫn pending; không tuyên bố frontend-ready, live Gemini, full-filter security hoặc whole-reactor verify. Không sửa frontend/main, không merge.
+
+## 11. Thực thi Phase 3 — 2026-10-12
+
+- Phần goal/readiness của B01 được chốt ở [Phase 3 contract](../../docs/ai-discovery-phase3-contract.md); phần security tổng thể giữ pending cho Phase 4.
+- B08: Student create/list/update/archive, owner từ session, validate BR-12/catalog/budget/mode/area, giữ history và trả readiness từ dữ liệu thật. Commit/push `d709a73`; 21 goal + 9 architecture checks pass.
+- B09: replace slots all-or-rollback, owner goal row lock đồng bộ update/archive/replace, reject duplicate/overlap và độ chính xác dưới phút, cho phép touching boundary/clear. Commit/push `b0cfcd9`; 39 goal + 9 architecture + 7 handler tests pass. Null/unreadable body từng trả 500, đã sửa safe 400 tối thiểu; B12 tổng thể còn pending.
+- B10: Parent query ở Discovery kiểm tra confirmed link trước Profile read; batch slot query + shared readiness mapper, không Profile -> Connection cycle. Student thu hồi link thật -> Parent đọc/match bị chặn ở request tiếp theo; Parent linked vẫn không ghi goal được. 4 business queries cho list 3 goals.
+- Final: 280 module + 114 app cases khác nhau đã pass, gồm 62 goal cases cuối; Profile/Discovery đều qua gate coverage 80% ghép unit/integration. Gate Profile ban đầu thiếu branches, đã thêm boundary tests trong phạm vi mới rồi pass, không hạ gate/exclude class. Logs/lệnh/giới hạn đầy đủ ở [checklist](todo.md).
+- Phase 4 trở đi chưa thực hiện. Chưa frontend-ready toàn luồng: full-filter session/CSRF/CORS, error matrix tổng thể, Connection E2E, cold-start/runbook và live Gemini vẫn theo plan. Frontend/main giữ nguyên, không merge.

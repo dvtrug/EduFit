@@ -2,6 +2,8 @@
 
 Ngày 2026-10-12, nhánh `feat/discovery-ai`. B08–B10 trong [plan](../tasks/ai-discovery/plan.md). Tài liệu này chốt phần goal/readiness của B01; session/CSRF/CORS đầy đủ vẫn thuộc Phase 4. Không thay đổi frontend, scorer hoặc quyền ghi của Parent.
 
+B08–B10 hoàn tất: [checklist/evidence](../tasks/ai-discovery/todo.md). 62 goal HTTP/service/PostgreSQL cases pass; Parent confirmed đọc/match được, Student thu hồi link bằng ConnectionService thật rồi Parent bị chặn ở request tiếp theo. Linked Parent vẫn bị chặn toàn bộ API ghi Student. Parent list có 4 business queries (link, student, goals, batch slots) với 3 goals; phép đo không bao gồm security/session filter hoặc provider latency.
+
 ## Routes và payload
 
 - Student: POST/GET `/api/v1/profiles/students/me/goals` (201 create, 200 list).

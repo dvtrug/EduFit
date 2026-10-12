@@ -15,6 +15,9 @@ HTTP có base path `/api/v1/discovery`, trả web DTO trong `ApiResponse`.
 | `GET /api/v1/discovery/tutors` | Public | `Page<TutorDiscoveryCardResponse>` |
 | `GET /api/v1/discovery/tutors/{tutorId}` | Public | `TutorDetailResponse` |
 | `POST /api/v1/discovery/match` | Session, STUDENT/PARENT và quyền trên goal | `List<TutorMatchResponse>` |
+| `GET /api/v1/discovery/students/{studentId}/goals` | Session, PARENT và confirmed link hiện tại | `List<LearningGoalView>` |
+
+Phase 3 bổ sung Parent goal selection, không trả contact/email/account ID của học sinh. Student tạo/list/update/archive goal và replace lịch qua `/api/v1/profiles/students/me/goals`; routes, payload, readiness, validation và quyền chi tiết ở [Phase 3 contract](ai-discovery-phase3-contract.md). Parent không có quyền ghi goal; pending/declined/expired/withdrawn/revoked/unlinked bị 403 trước khi Profile đọc goals. Revoke có hiệu lực ở request đọc/match tiếp theo.
 
 Thành công HTTP 200 có `{ success: true, data, message, timestamp }`. Lỗi theo
 `ApiError` có `{ code, message, details, timestamp }`, không nằm trong `data` và

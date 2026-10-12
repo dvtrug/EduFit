@@ -1,0 +1,29 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+[INFO] Scanning for projects...
+[INFO]
+[INFO] -------------------------< vn.edufit:profile >--------------------------
+[INFO] Building EduFit :: Module :: Profile 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:report (default-cli) @ profile ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\profile\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: Profile' with 50 classes
+[INFO]
+[INFO] --- jacoco:0.8.12:check (check-coverage-gate) @ profile ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\profile\target\jacoco.exec
+[INFO] Analyzed bundle 'profile' with 50 classes
+[WARNING] Rule violated for bundle profile: branches covered ratio is 0.77, but expected minimum is 0.80
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  4.095 s
+[INFO] Finished at: 2026-10-12T05:20:20Z
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.jacoco:jacoco-maven-plugin:0.8.12:check (check-coverage-gate) on project profile: Coverage checks have not been met. See log for details. -> [Help 1]
+[ERROR]
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR]
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

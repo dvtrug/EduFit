@@ -2,6 +2,8 @@
 
 > Bản bàn giao T15 ngày 2026-10-10, đối chiếu code sau Phase 5 trên `feat/discovery`. Diagram PNG bên dưới phản ánh implementation hiện tại, không phải thiết kế dự kiến.
 
+Cập nhật 2026-10-12: [Phase 3](ai-discovery-phase3-contract.md) bổ sung `StudentGoalsController -> StudentGoalQueryService -> ConnectionFacade.hasConfirmedParentLink -> ProfileFacade.findLearningGoalsForStudent`. Quyền được kiểm tra ở Discovery trước đọc Profile; không có dependency Profile -> Connection. Profile sở hữu CRUD/archive/replace slots; cả Student và Parent nhận cùng readiness DTO. Parent list đọc slots theo batch; các diagram bên dưới mô tả luồng search/detail/scoring.
+
 ## Bắt đầu đọc ở đâu?
 
 - [Hợp đồng API Discovery](discovery-api-contract.md): HTTP, input/output, lỗi, facade và event cho người tích hợp.
