@@ -2,8 +2,19 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Bell, Search, LogOut, User as UserIcon, PanelLeft, ChevronDown, ShieldCheck } from "lucide-react";
+import {
+  Bell,
+  Search,
+  LogOut,
+  User as UserIcon,
+  PanelLeft,
+  ChevronDown,
+  ShieldCheck,
+  Settings,
+  SunMoon,
+} from "lucide-react";
 import { UserRole } from "./Sidebar";
+import { useTheme } from "@/context/ThemeContext";
 
 interface TopHeaderProps {
   role?: UserRole;
@@ -33,8 +44,10 @@ export function TopHeader({
 }: TopHeaderProps) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [unreadNotifications] = useState(2);
+  const { theme, setTheme } = useTheme();
 
   const roleLabel = ROLE_LABEL_MAP[role] || "Thành viên";
+  const roleBase = role.toLowerCase();
 
   return (
     <header className="h-16 px-6 sm:px-8 bg-white border-b border-stone-200/80 flex items-center justify-between sticky top-0 z-30">
@@ -85,7 +98,7 @@ export function TopHeader({
           <button
             type="button"
             onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-            className="flex items-center gap-2.5 p-1.5 pr-2.5 rounded-xl border border-stone-200/60 hover:bg-stone-50 transition-colors group"
+            className="flex items-center gap-2.5 p-1.5 pr-2.5 rounded-xl border border-stone-200/60 hover:bg-stone-50 transition-colors group cursor-pointer"
           >
             <div className="size-8 rounded-lg bg-gradient-to-tr from-amber-500 to-orange-400 text-white font-bold text-xs flex items-center justify-center shadow-xs">
               {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
@@ -105,40 +118,105 @@ export function TopHeader({
                 className="fixed inset-0 z-40"
                 onClick={() => setProfileMenuOpen(false)}
               />
-              <div className="absolute right-0 mt-2 w-56 bg-white border border-stone-200 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="px-3 py-2 border-b border-stone-100 mb-1">
-                  <p className="text-xs font-semibold text-neutral-900 truncate">{user.fullName}</p>
-                  <p className="text-[10px] text-neutral-400 truncate">{user.email}</p>
+              <div className="absolute right-0 mt-2 w-64 bg-white border border-stone-200 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                {/* 1. Header Profile Info */}
+                <div className="px-3 py-2.5 border-b border-stone-100 mb-1.5 bg-stone-50/60 rounded-xl">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-bold text-neutral-900 truncate">{user.fullName}</p>
+                    <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-amber-100 text-amber-800 shrink-0">
+                      {roleLabel}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 truncate mt-0.5">{user.email}</p>
                 </div>
 
-                <Link
-                  href={
-                    user.role === "TUTOR"
-                      ? "/tutor/profile"
-                      : user.role === "STUDENT"
-                      ? "/student/profile"
-                      : "/parent/profile"
-                  }
-                  onClick={() => setProfileMenuOpen(false)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-600 hover:bg-stone-50 hover:text-neutral-900 transition-colors"
-                >
-                  <UserIcon className="size-4 text-neutral-400" />
-                  <span>Hồ sơ cá nhân</span>
-                </Link>
+                {/* 2. Navigation items */}
+                <div className="space-y-0.5">
+                  <Link
+                    href={`/${roleBase}/settings?tab=profile`}
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-700 hover:bg-stone-50 hover:text-neutral-900 transition-colors"
+                  >
+                    <UserIcon className="size-4 text-neutral-400" />
+                    <span>Hồ sơ cá nhân</span>
+                  </Link>
 
-                <div className="my-1 border-t border-stone-100" />
+                  <Link
+                    href={`/${roleBase}/settings?tab=account`}
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-700 hover:bg-stone-50 hover:text-neutral-900 transition-colors"
+                  >
+                    <ShieldCheck className="size-4 text-neutral-400" />
+                    <span>Tài khoản & Bảo mật</span>
+                  </Link>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setProfileMenuOpen(false);
-                    onLogout();
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-rose-600 hover:bg-rose-50 transition-colors font-medium"
-                >
-                  <LogOut className="size-4 text-rose-500" />
-                  Đăng xuất
-                </button>
+                  <Link
+                    href={`/${roleBase}/settings`}
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-700 hover:bg-stone-50 hover:text-neutral-900 transition-colors"
+                  >
+                    <Settings className="size-4 text-neutral-400" />
+                    <span>Cài đặt</span>
+                  </Link>
+                </div>
+
+                {/* 3. Appearance / Giao diện Quick Switcher (Ảnh 2) */}
+                <div className="my-2 pt-2 border-t border-stone-100 px-1">
+                  <div className="flex items-center gap-2 text-xs font-medium text-neutral-700 mb-2 px-2">
+                    <SunMoon className="size-4 text-neutral-400" />
+                    <span>Giao diện</span>
+                  </div>
+                  <div className="grid grid-cols-3 p-1 bg-stone-100 rounded-xl gap-1 text-[11px] text-neutral-600">
+                    <button
+                      type="button"
+                      onClick={() => setTheme("light")}
+                      className={`py-1.5 rounded-lg font-semibold transition-all text-center cursor-pointer ${
+                        theme === "light"
+                          ? "bg-white text-neutral-900 shadow-xs"
+                          : "hover:text-neutral-900 hover:bg-stone-200/50"
+                      }`}
+                    >
+                      Sáng
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTheme("dark")}
+                      className={`py-1.5 rounded-lg font-semibold transition-all text-center cursor-pointer ${
+                        theme === "dark"
+                          ? "bg-white text-neutral-900 shadow-xs"
+                          : "hover:text-neutral-900 hover:bg-stone-200/50"
+                      }`}
+                    >
+                      Tối
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTheme("system")}
+                      className={`py-1.5 rounded-lg font-semibold transition-all text-center cursor-pointer ${
+                        theme === "system"
+                          ? "bg-white text-neutral-900 shadow-xs"
+                          : "hover:text-neutral-900 hover:bg-stone-200/50"
+                      }`}
+                    >
+                      Hệ thống
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4. Logout Action */}
+                <div className="mt-1 pt-1.5 border-t border-stone-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      onLogout();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-rose-600 hover:bg-rose-50 transition-colors font-semibold cursor-pointer"
+                  >
+                    <LogOut className="size-4 text-rose-500" />
+                    <span>Đăng xuất</span>
+                  </button>
+                </div>
               </div>
             </>
           )}
