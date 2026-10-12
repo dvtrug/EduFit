@@ -63,6 +63,23 @@ export interface UpdateTutorProfilePayload {
   teachingMethod?: string;
 }
 
+export interface GenerateTutorBioPayload {
+  displayName?: string;
+  subjects?: string[];
+  educationLevels?: string[];
+  experienceYears?: number;
+  tone?: "friendly" | "professional" | "concise";
+  focusArea?: string;
+  customPrompt?: string;
+  currentBio?: string;
+}
+
+export interface GenerateTutorBioResult {
+  bio: string;
+  isAiGenerated: boolean;
+  remainingQuota: number;
+}
+
 export interface MyProfileComposite {
   userId: string;
   email: string;
@@ -143,5 +160,16 @@ export const profileService = {
       slots,
     });
     return res.data as TutorProfileData;
+  },
+
+  /**
+   * Sinh bản thảo tiểu sử gia sư (Bio) thông qua AI Assistant
+   */
+  async generateTutorBio(payload: GenerateTutorBioPayload): Promise<GenerateTutorBioResult> {
+    const res = await apiClient.post<GenerateTutorBioResult>(
+      "/api/v1/profiles/tutors/me/generate-bio",
+      payload
+    );
+    return res.data as GenerateTutorBioResult;
   },
 };

@@ -16,6 +16,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useToast } from "@/shared/ui/Toast";
+import { profileService } from "@/services/profile";
 
 export interface AiBioAssistantModalProps {
   isOpen: boolean;
@@ -44,10 +45,19 @@ export function AiBioAssistantModal({
 
   const [tone, setTone] = useState<AiTone>("friendly");
   const [focusArea, setFocusArea] = useState<string>("exam"); // "exam" | "foundation" | "mindset"
+  const [userDraftBio, setUserDraftBio] = useState<string>(currentBio || "");
   const [isGenerating, setIsGenerating] = useState(false);
   const [draftBio, setDraftBio] = useState<string | null>(null);
+  const [isAiGenerated, setIsAiGenerated] = useState<boolean>(true);
+  const [remainingQuota, setRemainingQuota] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [agreed, setAgreed] = useState(true);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setUserDraftBio(currentBio || "");
+    }
+  }, [isOpen, currentBio]);
 
   if (!isOpen) return null;
 
@@ -61,43 +71,35 @@ export function AiBioAssistantModal({
     }
 
     setIsGenerating(true);
-    // Tạo độ trễ ngắn mang lại cảm giác AI đang phân tích dữ liệu chuyên môn
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    try {
+      const res = await profileService.generateTutorBio({
+        displayName,
+        subjects,
+        educationLevels,
+        experienceYears,
+        tone,
+        focusArea,
+        currentBio: userDraftBio.trim() || undefined,
+      });
 
-    const name = displayName.trim() || "Gia sư";
-    const exp = experienceYears > 0 ? `${experienceYears} năm` : "nhiều năm";
-
-    let generatedText = "";
-
-    if (tone === "friendly") {
-      if (focusArea === "foundation") {
-        generatedText = `Chào các em học sinh và quý phụ huynh! Thầy/Cô là ${name}, chuyên giảng dạy ${subjectNamesText} (${levelsText}). Với ${exp} kinh nghiệm, phong cách giảng dạy của tôi luôn lấy sự kiên nhẫn và thấu hiểu làm trọng tâm, giúp các em xóa bỏ nỗi sợ mất gốc, tìm lại niềm vui và sự tự tin trong từng buổi học!`;
-      } else if (focusArea === "mindset") {
-        generatedText = `Chào các em và quý phụ huynh! Tôi là ${name}, đồng hành cùng học sinh ${levelsText} môn ${subjectNamesText}. Với ${exp} giảng dạy, tôi không chỉ truyền đạt kiến thức mà còn rèn luyện tư duy tự học, phương pháp giải quyết vấn đề logic để các em chủ động bứt phá thành tích lâu dài.`;
-      } else {
-        generatedText = `Chào các em và quý phụ huynh! Tôi là ${name}, gia sư chuyên trách môn ${subjectNamesText} (${levelsText}). Với ${exp} đồng hành cùng nhiều lứa học sinh, tôi luôn kiên nhẫn giảng giải trực quan, biến kiến thức phức tạp thành bài học gần gũi, giúp các em tự tin vượt qua các kỳ thi quan trọng với điểm số cao nhất!`;
-      }
-    } else if (tone === "professional") {
-      if (focusArea === "exam") {
-        generatedText = `Cử nhân chuyên ngành Sư phạm với ${exp} kinh nghiệm luyện thi môn ${subjectNamesText} cấp ${levelsText}. Giáo trình giảng dạy được thiết kế chuẩn hóa, bám sát ma trận đề thi chính thức, chú trọng rèn luyện kỹ năng phân tích đề, xử lý câu hỏi phân hóa và cam kết mục tiêu điểm 8+ đến 9+.`;
-      } else if (focusArea === "foundation") {
-        generatedText = `Giáo viên chuyên môn môn ${subjectNamesText} (${levelsText}) với ${exp} kinh nghiệm sư phạm. Phương pháp giảng dạy khoa học: khảo sát năng lực ban đầu, xây dựng lộ trình lấp lỗ hổng kiến thức cá nhân hóa, rèn nề nếp học tập nghiêm túc và có báo cáo tiến độ chi tiết tới phụ huynh sau từng tuần.`;
-      } else {
-        generatedText = `Chuyên gia giảng dạy môn ${subjectNamesText} (${levelsText}) với ${exp} kinh nghiệm đào tạo học sinh giỏi và luyện thi chuyển cấp. Triết lý đào tạo hướng đến xây dựng nền tảng tư duy độc lập, chuẩn hóa phương pháp giải toán/khoa học hiện đại và phát triển tối đa năng lực cá nhân của học sinh.`;
-      }
-    } else {
-      // Concise
-      if (focusArea === "foundation") {
-        generatedText = `Gia sư ${subjectNamesText} (${levelsText}) - ${exp} kinh nghiệm. Chuyên trị mất gốc, củng cố căn bản nhanh sau 4-6 tuần, phương pháp dễ hiểu, tận tâm và trách nhiệm cao.`;
-      } else if (focusArea === "exam") {
-        generatedText = `Gia sư ${subjectNamesText} (${levelsText}) - ${exp} kinh nghiệm. Bám sát cấu trúc đề thi, rèn mẹo giải nhanh, quản lý thời gian thi hiệu quả, cam kết tiến bộ rõ rệt qua từng tháng.`;
-      } else {
-        generatedText = `Gia sư ${subjectNamesText} (${levelsText}) (${exp} KN). Đào tạo tư duy logic, đồng hành 1-1 kiên nhẫn, rèn kỹ năng tự học và giải bài tập chuẩn xác. Phản hồi tiến độ định kỳ tới phụ huynh.`;
-      }
+      setDraftBio(res.bio);
+      setIsAiGenerated(res.isAiGenerated);
+      setRemainingQuota(res.remainingQuota);
+    } catch (err: unknown) {
+      console.error("Lỗi khi sinh bio AI:", err);
+      // Fallback nếu gặp lỗi mạng
+      const name = displayName.trim() || "Gia sư";
+      const exp = experienceYears > 0 ? `${experienceYears} năm` : "nhiều năm";
+      const fallbackBio = userDraftBio.trim()
+        ? `${userDraftBio.trim()} Với ${exp} kinh nghiệm chuyên môn môn ${subjectNamesText} (${levelsText}), tôi luôn nỗ lực đồng hành giúp học sinh thấu hiểu bản chất bài học và tự tin bứt phá thành tích.`
+        : `Chào các em và quý phụ huynh! Tôi là ${name}, chuyên giảng dạy ${subjectNamesText} (${levelsText}). Với ${exp} kinh nghiệm, phong cách giảng dạy của tôi luôn lấy sự kiên nhẫn và thấu hiểu làm trọng tâm, giúp học sinh nắm chắc kiến thức và tự tin đạt điểm số cao!`;
+      setDraftBio(fallbackBio);
+      setIsAiGenerated(false);
+      const msg = err instanceof Error ? err.message : "Dịch vụ AI tạm thời gián đoạn. Đã tải bản thảo dự phòng.";
+      showToast(msg, "info");
+    } finally {
+      setIsGenerating(false);
     }
-
-    setDraftBio(generatedText);
-    setIsGenerating(false);
   };
 
   const handleApply = () => {
@@ -249,6 +251,29 @@ export function AiBioAssistantModal({
             </div>
           </div>
 
+          {/* 3. Bản nháp / Ý tưởng cá nhân của gia sư */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="font-bold text-neutral-800 block">
+                3. Ý tưởng / Bản nháp của bạn (Tùy chọn)
+              </label>
+              <span className="text-[10px] text-neutral-400">
+                {userDraftBio.length}/2000 ký tự
+              </span>
+            </div>
+            <textarea
+              rows={3}
+              maxLength={2000}
+              value={userDraftBio}
+              onChange={(e) => setUserDraftBio(e.target.value)}
+              placeholder="Nhập đoạn tiểu sử bạn đã tự viết hoặc các ý tưởng/thế mạnh riêng (vd: phương pháp sơ đồ tư duy, kiên nhẫn với học sinh mất gốc)..."
+              className="w-full px-3 py-2 text-xs border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-neutral-800 placeholder:text-neutral-400 resize-none transition-all"
+            />
+            <p className="text-[10px] text-neutral-500 leading-normal">
+              💡 AI sẽ chắt lọc ý hay từ bản nháp của bạn và chuẩn hóa theo thông tin hồ sơ (môn học, số năm kinh nghiệm).
+            </p>
+          </div>
+
           {/* Điều khoản */}
           <label className="flex items-center gap-2 text-[11px] text-neutral-600 cursor-pointer pt-1">
             <input
@@ -288,9 +313,16 @@ export function AiBioAssistantModal({
               <div className="flex items-center justify-between text-[11px]">
                 <span className="font-bold text-amber-900 flex items-center gap-1.5">
                   <Sparkles className="size-3 text-amber-600" />
-                  BẢN THẢO GỢI Ý
+                  {isAiGenerated ? "BẢN THẢO TỪ GEMINI AI" : "BẢN THẢO GỢI Ý (DỰ PHÒNG)"}
                 </span>
-                <span className="text-neutral-400 font-medium">{draftBio.length} ký tự</span>
+                <div className="flex items-center gap-2">
+                  {remainingQuota !== null && (
+                    <span className="text-[10px] bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded-full">
+                      Còn {remainingQuota} lượt/giờ
+                    </span>
+                  )}
+                  <span className="text-neutral-400 font-medium">{draftBio.length} ký tự</span>
+                </div>
               </div>
 
               <p className="text-xs text-neutral-800 leading-relaxed italic bg-white p-3.5 rounded-xl border border-stone-200 shadow-2xs">
