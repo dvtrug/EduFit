@@ -116,6 +116,7 @@ public class ConnectionService implements ConnectionFacade {
     LinkInvitation initial = invitations.findById(id).orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
     UUID a = initial.getInviterUserId(), b = initial.getInvitedUserId();
     if (!b.equals(actor.getUserId())) throw new ForbiddenOperationException("Không phải người nhận lời mời");
+    entityManager.detach(initial);
     String pair = a.compareTo(b) < 0 ? a + ":" + b : b + ":" + a;
     lock("invite:" + pair);
     LinkInvitation invitation = invitations.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
@@ -152,6 +153,7 @@ public class ConnectionService implements ConnectionFacade {
     LinkInvitation initial = invitations.findById(id)
         .orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
     UUID a = initial.getInviterUserId(), b = initial.getInvitedUserId();
+    entityManager.detach(initial);
     String pair = a.compareTo(b) < 0 ? a + ":" + b : b + ":" + a;
     lock("invite:" + pair);
     LinkInvitation invitation = invitations.lockById(id)
@@ -175,7 +177,9 @@ public class ConnectionService implements ConnectionFacade {
   public void revokeLink(CurrentUser actor, UUID id, String reason) {
     requireRole(actor, "STUDENT", "ADMIN");
     ParentStudentLink initial = links.findById(id).orElseThrow(() -> EntityNotFoundException.of("Link", id));
-    lock("student:" + initial.getStudentId());
+    UUID studentId = initial.getStudentId();
+    entityManager.detach(initial);
+    lock("student:" + studentId);
     ParentStudentLink link = links.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Link", id));
     if (!"CONFIRMED".equals(link.getStatus())) throw new ResourceConflictException("Liên kết đã bị thu hồi");
     if (actor.hasRole("ADMIN") && (reason == null || reason.isBlank()))
@@ -264,7 +268,9 @@ public class ConnectionService implements ConnectionFacade {
   public void cancelRequest(CurrentUser actor, UUID id) {
     requireRole(actor, "STUDENT", "PARENT");
     ConnectionRequest initial = requests.findById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
-    lock("student:" + initial.getStudentId());
+    UUID studentId = initial.getStudentId();
+    entityManager.detach(initial);
+    lock("student:" + studentId);
     ConnectionRequest request = requests.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
     requireStudentAccess(actor, request.getStudentId());
     request.expire(Instant.now());
@@ -278,7 +284,9 @@ public class ConnectionService implements ConnectionFacade {
     ConnectionRequest initial = requests.findById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
     UUID tutorId = profile.getTutorIdByUserId(actor.getUserId());
     if (!initial.getTutorId().equals(tutorId)) throw new ForbiddenOperationException("Không phải gia sư nhận yêu cầu");
-    lock("student:" + initial.getStudentId());
+    UUID studentId = initial.getStudentId();
+    entityManager.detach(initial);
+    lock("student:" + studentId);
     ConnectionRequest request = requests.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
     Instant now = Instant.now();
     request.expire(now);

@@ -20,8 +20,8 @@ class MatchWeightsTest {
 
   @Test
   void standardWeightsMatchSpecificationAndZeroWeightsAreAllowed() {
-    assertEquals(new MatchWeights(new BigDecimal("0.30"), new BigDecimal("0.20"), new BigDecimal("0.20"),
-        new BigDecimal("0.15"), new BigDecimal("0.15")), MatchWeights.standard());
+    assertEquals(new MatchWeights(new BigDecimal("0.20"), new BigDecimal("0.20"), new BigDecimal("0.10"),
+        new BigDecimal("0.25"), new BigDecimal("0.25")), MatchWeights.standard());
     assertDoesNotThrow(() -> new MatchWeights(BigDecimal.ONE, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
     assertThrows(NullPointerException.class, () -> new MatchWeights(null, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE));
   }

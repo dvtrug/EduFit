@@ -42,6 +42,8 @@ public interface AiGateway {
    *
    * <p>Quy trình thực thi bên trong:
    * <ol>
+   *   <li>MATCH_EXPLANATION phải commit reservation BR-25 trước khi gọi provider; hết quota
+   *       hoặc store lỗi -> AiUnavailableException, không gọi provider/ghi attempt log.</li>
    *   <li>Ủy quyền cuộc gọi tới {@code LlmProvider} (Gemini hoặc Stub).</li>
    *   <li>Khống chế thời gian chờ tối đa 15 giây (NFR-10).</li>
    *   <li>Làm sạch kết quả văn bản trả về qua {@code OutputSanitizer}.</li>
@@ -52,7 +54,7 @@ public interface AiGateway {
    * @param request Yêu cầu xử lý AI chứa thông tin đã được loại bỏ PII (NFR-09).
    * @return Kết quả văn bản đã được kiểm tra tính hợp lệ kèm thời gian thực thi (latency).
    * @throws AiTimeoutException       Khi cuộc gọi vượt quá giới hạn 15 giây (NFR-10).
-   * @throws AiUnavailableException   Khi nhà cung cấp AI trả về lỗi hoặc mất kết nối mạng.
+   * @throws AiUnavailableException   Khi provider lỗi, quota hết hoặc quota store không khả dụng.
    * @throws IllegalArgumentException Nếu dữ liệu trong {@code request} không hợp lệ.
    */
   AiResponse complete(AiRequest request);
