@@ -500,7 +500,7 @@ class AiDiscoveryConnectionE2ETest {
               String body =
                   providerMode.equals("blocked")
                       ? "{\"promptFeedback\":{\"blockReason\":\"SAFETY\"}}"
-                      : "{\"candidates\":[{\"finishReason\":\"STOP\",\"content\":{\"parts\":[{\"text\":\"Grounded E2E answer\"}]}}]}";
+                      : "{\"candidates\":[{\"finishReason\":\"STOP\",\"content\":{\"parts\":[{\"text\":\"1|Grounded E2E answer\"}]}}]}";
               byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
               exchange.getResponseHeaders().set("Content-Type", "application/json");
               exchange.sendResponseHeaders(providerMode.equals("http429") ? 429 : 200, bytes.length);

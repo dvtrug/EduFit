@@ -288,13 +288,13 @@ class DiscoveryReadPostgresTest {
     assertEquals(200, bounded.size());
     assertEquals(240, full.size());
     assertEquals(id(240), full.getFirst().tutorId());
-    assertEquals(new java.math.BigDecimal("97.00"), full.getFirst().total());
-    assertEquals(new java.math.BigDecimal("78.50"), bounded.getFirst().total());
+    assertEquals(new java.math.BigDecimal("95.00"), full.getFirst().total());
+    assertEquals(new java.math.BigDecimal("77.50"), bounded.getFirst().total());
     assertFalse(bounded.stream().anyMatch(s -> s.tutorId().equals(id(240))));
     var fullTop = full.stream().limit(5).map(MatchScore::tutorId).toList();
     long shared = bounded.stream().limit(5).map(MatchScore::tutorId).filter(fullTop::contains).count();
     assertEquals(4, shared);
-    System.out.println("CAP_REPORT candidates=200/240 globalTop1=97.00 boundedTop1=78.50 recallAt5=" + shared + "/5");
+    System.out.println("CAP_REPORT candidates=200/240 globalTop1=95.00 boundedTop1=77.50 recallAt5=" + shared + "/5");
   }
 
   private List<MatchScore> rank(List<TutorDiscoveryProfileDto> candidates) {

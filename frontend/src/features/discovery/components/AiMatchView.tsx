@@ -136,9 +136,12 @@ export function AiMatchView({
             const rankStr = String(idx + 1).padStart(2, "0");
 
             return (
+              <React.Fragment key={item.tutorId}>
+              {idx === 0 && <h3 className="font-heading font-bold text-base text-neutral-900">Gợi ý phù hợp nhất</h3>}
+              {idx === 1 && <h3 className="font-heading font-bold text-sm text-neutral-700 pt-5">Các gia sư khác</h3>}
               <div
                 key={item.tutorId}
-                className="bg-white rounded-2xl border border-stone-200/80 p-4 sm:p-5 hover:border-sky-300 hover:shadow-xs transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                className={`bg-white rounded-2xl border p-4 sm:p-5 hover:border-sky-300 hover:shadow-xs transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${idx === 0 ? "border-sky-400 ring-1 ring-sky-100" : "border-stone-200/80"}`}
               >
                 {/* Left: Rank + Avatar + Basic Info */}
                 <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
@@ -176,16 +179,8 @@ export function AiMatchView({
 
                 {/* Middle: Bullet Points Reasons */}
                 <div className="flex-1 lg:max-w-xs space-y-1 text-xs text-neutral-600 border-t lg:border-t-0 pt-2 lg:pt-0 border-stone-100">
-                  {(item.reasons || [
-                    `Môn học: ${Math.round(item.scoreBreakdown.subjectFit)}% · Cấp lớp: ${Math.round(item.scoreBreakdown.levelFit)}%`,
-                    `✓ Trùng ${item.scoreBreakdown.overlappingSlots} khung giờ rảnh`,
-                    `Ngân sách: ${Math.round(item.scoreBreakdown.budgetFit)}%`,
-                  ]).map((reason, rIdx) => (
-                    <div key={rIdx} className="flex items-center gap-1 text-[11px] text-neutral-700">
-                      <span className="text-emerald-600 font-bold">✓</span>
-                      <span className="truncate">{reason.replace(/^✓\s*/, "")}</span>
-                    </div>
-                  ))}
+                  <p className="text-[11px] font-semibold text-purple-700">{item.aiGenerated ? "Nhận xét từ AI" : "Nhận xét theo dữ liệu"}</p>
+                  <p className="text-xs leading-relaxed text-neutral-700">{item.explanation}</p>
                 </div>
 
                 {/* Right: Match Score & Action Buttons */}
@@ -212,6 +207,7 @@ export function AiMatchView({
                   </div>
                 </div>
               </div>
+              </React.Fragment>
             );
           })}
         </div>
@@ -267,31 +263,31 @@ export function AiMatchView({
               {selectedExplanation.explanation}
             </p>
 
-            {/* 5 tiêu chí chi tiết */}
+            {/* Four criteria; subject and level jointly form learning need. */}
             <div className="space-y-2.5 pt-1">
               <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
-                Điểm số thành phần
+                4 tiêu chí đánh giá
               </span>
 
               <div className="space-y-2 text-xs">
                 <div>
                   <div className="flex justify-between text-neutral-700 mb-1">
-                    <span>Môn học & Khối lớp</span>
+                    <span>Nhu cầu học · 40%</span>
                     <span className="font-bold text-neutral-900">
-                      {Math.round(selectedExplanation.scoreBreakdown.subjectFit)}%
+                      {Math.round((selectedExplanation.scoreBreakdown.subjectFit + selectedExplanation.scoreBreakdown.levelFit) / 2)}%
                     </span>
                   </div>
                   <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-emerald-500 rounded-full"
-                      style={{ width: `${selectedExplanation.scoreBreakdown.subjectFit}%` }}
+                      style={{ width: `${(selectedExplanation.scoreBreakdown.subjectFit + selectedExplanation.scoreBreakdown.levelFit) / 2}%` }}
                     />
                   </div>
                 </div>
 
                 <div>
                   <div className="flex justify-between text-neutral-700 mb-1">
-                    <span>Trùng khớp lịch rảnh ({selectedExplanation.scoreBreakdown.overlappingSlots} khung giờ)</span>
+                    <span>Lịch & hình thức · 25% ({selectedExplanation.scoreBreakdown.overlappingSlots} khung giờ)</span>
                     <span className="font-bold text-neutral-900">
                       {Math.round(selectedExplanation.scoreBreakdown.scheduleFit)}%
                     </span>
@@ -306,7 +302,7 @@ export function AiMatchView({
 
                 <div>
                   <div className="flex justify-between text-neutral-700 mb-1">
-                    <span>Học phí phù hợp ngân sách</span>
+                    <span>Ngân sách · 10%</span>
                     <span className="font-bold text-neutral-900">
                       {Math.round(selectedExplanation.scoreBreakdown.budgetFit)}%
                     </span>
@@ -321,7 +317,7 @@ export function AiMatchView({
 
                 <div>
                   <div className="flex justify-between text-neutral-700 mb-1">
-                    <span>Uy tín & Đánh giá sao</span>
+                    <span>Năng lực & độ tin cậy · 25%</span>
                     <span className="font-bold text-neutral-900">
                       {Math.round(selectedExplanation.scoreBreakdown.ratingFit)}%
                     </span>

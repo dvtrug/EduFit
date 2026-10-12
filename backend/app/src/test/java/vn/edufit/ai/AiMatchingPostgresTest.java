@@ -133,7 +133,7 @@ class AiMatchingPostgresTest {
               return;
             }
             byte[] response =
-                "{\"candidates\":[{\"finishReason\":\"STOP\",\"content\":{\"parts\":[{\"text\":\"Grounded model answer\"}]}}]}"
+                "{\"candidates\":[{\"finishReason\":\"STOP\",\"content\":{\"parts\":[{\"text\":\"1|Grounded first tutor answer\\n2|Distinct second tutor answer\"}]}}]}"
                     .getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(mode.equals("http500") ? 500 : 200, response.length);
@@ -170,7 +170,7 @@ class AiMatchingPostgresTest {
     seedNine();
     var tenth = match();
     assertThat(tenth.getFirst().aiGenerated()).isTrue();
-    assertThat(tenth.get(1).aiGenerated()).isFalse();
+    assertThat(tenth.get(1).aiGenerated()).isTrue();
     var eleventh = match();
     assertFallback(eleventh);
     assertThat(eleventh.stream().map(TutorMatchResult::score).toList())
@@ -267,9 +267,11 @@ class AiMatchingPostgresTest {
 
   void assertFallback(List<TutorMatchResult> results) {
     assertThat(results).hasSize(2);
-    assertThat(results.getFirst().aiGenerated()).isFalse();
-    assertThat(results.getFirst().explanation())
-        .isEqualTo(explanations.ruleBased(results.getFirst().score()));
+    assertThat(results).allSatisfy(result -> {
+      assertThat(result.aiGenerated()).isFalse();
+      assertThat(result.explanation()).contains(result.profile().tutor().displayName(),
+          result.profile().tutor().pricePerSession().toString(), "đồng/buổi");
+    });
   }
 
   void seedNine() {

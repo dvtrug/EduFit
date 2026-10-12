@@ -92,7 +92,7 @@ class DiscoveryControllerTest {
         goalId, UUID.randomUUID(), userId, 1, 2, "ONLINE", "Hanoi", 0L, 300000L, "ACTIVE", profile.availabilitySlots())));
     when(profileFacade.findVerifiedCandidatesBySubject(any())).thenReturn(List.of(profile));
     if (outcome.equals("SUCCESS")) {
-      when(gateway.complete(any())).thenReturn(new vn.edufit.ai.api.AiResponse("Grounded AI", 1, 1));
+      when(gateway.complete(any())).thenReturn(new vn.edufit.ai.api.AiResponse("1|Grounded AI explanation", 1, 1));
     } else {
       when(gateway.complete(any())).thenThrow(outcome.equals("TIMEOUT")
           ? new vn.edufit.ai.api.AiTimeoutException("Deadline") : new vn.edufit.ai.api.AiUnavailableException("Offline"));
@@ -176,9 +176,9 @@ class DiscoveryControllerTest {
             profile.subjects(), profile.availabilitySlots(), profile.registeredAt()
         )).toList();
     when(profileFacade.findVerifiedCandidatesBySubject(any())).thenReturn(candidates);
-    when(explanationService.explainTopMatch(eq(userId), any(), any()))
-        .thenReturn(new MatchExplanationService.Explanation("Grounded explanation", true));
-    when(explanationService.ruleBased(any())).thenReturn("Rule explanation");
+    when(explanationService.explainMatches(eq(userId), any(), any(), any()))
+        .thenReturn(java.util.Collections.nCopies(5,
+            new MatchExplanationService.Explanation("Grounded explanation", true)));
 
     mvc.perform(post("/api/v1/discovery/match").contentType(MediaType.APPLICATION_JSON)
             .content("{\"goalId\":\"" + goalId + "\"}"))
@@ -196,7 +196,7 @@ class DiscoveryControllerTest {
         .andExpect(jsonPath("$.data[0].aiGenerated").value(true))
         .andExpect(jsonPath("$.data[0].tutorInfo.verified").value(true))
         .andExpect(jsonPath("$.data[0].tutorInfo.userId").doesNotExist())
-        .andExpect(jsonPath("$.data[1].aiGenerated").value(false));
+        .andExpect(jsonPath("$.data[1].aiGenerated").value(true));
   }
 
   @ParameterizedTest

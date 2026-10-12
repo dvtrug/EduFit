@@ -74,9 +74,9 @@ class TutorMatchingServiceTest {
     TutorDiscoveryProfileDto second = tutor(BigDecimal.valueOf(4), 8, 320_000L);
     when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal(userId)));
     when(profileFacade.findVerifiedCandidatesBySubject(any())).thenReturn(List.of(second, best));
-    when(explanationService.explainTopMatch(eq(userId), any(), eq(best)))
-        .thenReturn(new MatchExplanationService.Explanation("Giải thích AI", true));
-    when(explanationService.ruleBased(any())).thenReturn("Giải thích theo quy tắc");
+    when(explanationService.explainMatches(eq(userId), any(), any(), any()))
+        .thenReturn(List.of(new MatchExplanationService.Explanation("Giải thích AI", true),
+            new MatchExplanationService.Explanation("Giải thích theo quy tắc", false)));
 
     var result = matchingService.match(currentUser(userId), goalId, 5);
 
@@ -113,8 +113,8 @@ class TutorMatchingServiceTest {
         new EducationLevelOrderDto(80, 10), new EducationLevelOrderDto(2, 30),
         new EducationLevelOrderDto(41, 60), new EducationLevelOrderDto(12, 90)));
     when(profileFacade.findVerifiedCandidatesBySubject(any())).thenReturn(List.of(candidate));
-    when(explanationService.explainTopMatch(eq(userId), any(), eq(candidate)))
-        .thenReturn(new MatchExplanationService.Explanation("Explanation", false));
+    when(explanationService.explainMatches(eq(userId), any(), any(), any()))
+        .thenReturn(List.of(new MatchExplanationService.Explanation("Explanation", false)));
 
     var result = matchingService.match(currentUser(userId), goalId, 5).getFirst();
 
@@ -223,9 +223,9 @@ class TutorMatchingServiceTest {
         .mapToObj(i -> tutor(BigDecimal.valueOf(5), 10, 200000)).toList();
     when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal(userId)));
     when(profileFacade.findVerifiedCandidatesBySubject(any())).thenReturn(candidates);
-    when(explanationService.explainTopMatch(eq(userId), any(), any()))
-        .thenReturn(new MatchExplanationService.Explanation("Explanation", false));
-    org.mockito.Mockito.lenient().when(explanationService.ruleBased(any())).thenReturn("Fallback");
+    when(explanationService.explainMatches(eq(userId), any(), any(), any()))
+        .thenAnswer(inv -> java.util.Collections.nCopies(((List<?>) inv.getArgument(2)).size(),
+            new MatchExplanationService.Explanation("Explanation", false)));
     var first = matchingService.match(currentUser(userId), goalId, topN);
     var second = matchingService.match(currentUser(userId), goalId, topN);
     assertEquals(topN, first.size());
@@ -266,8 +266,8 @@ class TutorMatchingServiceTest {
     var tutor = tutor(BigDecimal.valueOf(5), 10, 200000);
     when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal(userId)));
     when(profileFacade.findVerifiedCandidatesBySubject(any())).thenReturn(List.of(tutor));
-    when(explanationService.explainTopMatch(eq(userId), any(), eq(tutor)))
-        .thenReturn(new MatchExplanationService.Explanation("Grounded explanation", true));
+    when(explanationService.explainMatches(eq(userId), any(), any(), any()))
+        .thenReturn(List.of(new MatchExplanationService.Explanation("Grounded explanation", true)));
     var facade = new vn.edufit.discovery.application.service.DiscoveryFacadeImpl(matchingService);
     var summary = facade.findTopMatchesForGoal(currentUser(userId), goalId, 5).getFirst();
     assertEquals(tutor.tutor().tutorId(), summary.tutorId());
@@ -278,20 +278,21 @@ class TutorMatchingServiceTest {
   }
 
   @Test
-  void linkedParentUsesOwnAiQuotaOnlyForTopOne() {
+  void linkedParentUsesOneOwnAiQuotaForAllRankedTutors() {
     var gateway = org.mockito.Mockito.mock(vn.edufit.ai.api.AiGateway.class);
     var goal = goal(UUID.randomUUID());
     when(profileFacade.findLearningGoalForDiscovery(goalId)).thenReturn(Optional.of(goal));
     when(connectionFacade.hasConfirmedParentLink(userId, goal.studentId())).thenReturn(true);
     when(profileFacade.findVerifiedCandidatesBySubject(any()))
         .thenReturn(List.of(tutor(BigDecimal.valueOf(5), 10, 200000), tutor(BigDecimal.valueOf(4), 8, 300000)));
-    when(gateway.complete(any())).thenReturn(new vn.edufit.ai.api.AiResponse("AI explanation", 1, 1));
+    when(gateway.complete(any())).thenReturn(new vn.edufit.ai.api.AiResponse(
+        "1|Lịch người đầu phù hợp đầy đủ.\n2|Học phí người thứ hai cần cân nhắc.", 1, 1));
     var service = new TutorMatchingService(profileFacade, logRepository, new MatchExplanationService(gateway),
         new DiscoveryQueryService(profileFacade), connectionFacade, eventPublisher);
     var results = service.match(currentUser(userId, "PARENT"), goalId, 5);
     assertEquals(2, results.size());
     assertEquals(true, results.getFirst().aiGenerated());
-    assertEquals(false, results.get(1).aiGenerated());
+    assertEquals(true, results.get(1).aiGenerated());
     var request = org.mockito.ArgumentCaptor.forClass(vn.edufit.ai.api.AiRequest.class);
     verify(gateway).complete(request.capture());
     assertEquals(userId, request.getValue().userId());

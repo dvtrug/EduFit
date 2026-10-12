@@ -85,6 +85,34 @@ phản hồi yêu cầu chưa nằm trong phạm vi tích hợp này; backend đ
 
 ## Kiểm chứng tự động
 
+### Matching theo bốn tiêu chí
+
+- Nhu cầu học 40%: trung bình điểm đúng môn và cấp học. Môn là điều kiện đầu vào;
+  cấp học gần nhau vẫn là gợi ý, nhưng giải thích phải nêu độ lệch.
+- Năng lực/độ tin cậy 25%: ứng viên phải có hồ sơ VERIFIED; điểm dùng đánh giá
+  có điều chỉnh theo số lượt phản hồi. Kinh nghiệm tự khai là dữ kiện tư vấn,
+  chưa phải chứng nhận chuyên môn hoặc một điểm cộng riêng trong công thức.
+- Lịch/hình thức 25%: điểm lịch theo thời lượng trùng; hình thức và khu vực
+  học trực tiếp là điều kiện lọc trước khi xếp hạng.
+- Ngân sách 10%: học phí so với mức tối đa người học đặt.
+
+Backend tính điểm và xếp hạng ổn định; AI giải thích lựa chọn, không tự đổi điểm
+hoặc thứ tự. Gia sư đầu danh sách được làm nổi bật, các lựa chọn còn lại nằm dưới.
+API giữ nguyên scoreBreakdown hiện có; UI gộp subjectFit và levelFit để hiển thị
+điểm nhu cầu học. Điểm phù hợp là điểm xếp hạng, không phải xác suất học thành công.
+
+Một matching run gọi AI một lần cho toàn bộ kết quả (tối đa 10 người), dùng quota
+của người gửi yêu cầu, kể cả khi phụ huynh tìm cho con. Ngữ cảnh gồm loại mục tiêu,
+mức hiện tại/mong muốn, hạn học, ngân sách, lịch, điểm số và dữ kiện riêng từng gia sư.
+Không gửi tên, email, số điện thoại, bio hay phương pháp tự do của gia sư sang AI.
+Chưa chấm semantic độ phù hợp với luyện thi/nâng điểm vì thiếu dữ liệu thành tích
+giảng dạy tương ứng; AI không được suy diễn thành tích, bằng cấp hoặc kết quả học.
+
+Mỗi lý do AI được gắn theo vị trí ứng viên trong danh sách đã xếp hạng. Thiếu mục,
+trùng chỉ số, nội dung quá dài hoặc lý do giống hệt nhau sẽ dùng lời giải thích
+dựa trên dữ kiện riêng của ứng viên đó và trả aiGenerated=false. Provider lỗi,
+quota hết hoặc chế độ stub cũng dùng fallback; giao diện phân biệt hai nguồn rõ ràng.
+
 ```powershell
 # frontend
 npm test
@@ -100,6 +128,17 @@ Migration giữ nguyên V1.09–V1.12 đã phát hành; seed frontend chuyển s
 để không trùng migration quota AI. Không dùng `flyway repair` hoặc xóa volume DB.
 
 ## Kết quả kiểm tra ngày 12/10/2026
+
+Bổ sung cho thay đổi matching bốn tiêu chí:
+
+- 234 test backend liên quan pass (profile, scoring, discovery, quyền truy cập,
+  mục tiêu học, E2E connection, quota đồng thời và giải thích theo nhóm).
+- 81 test frontend pass; TypeScript, production build và lint hai file UI/test đã sửa pass.
+- Smoke trên backend tạm trả đủ 6 ứng viên, đứng đầu Cô Trần Thu Hà 99.50 điểm;
+  mỗi fallback có dữ kiện riêng, gồm trường hợp vượt ngân sách và thiếu lịch.
+- Chưa nhận được lý do Gemini thật trong smoke này: tài khoản student.demo đã
+  dùng đủ 10 lượt AI trong cửa sổ 24 giờ. Không reset hoặc bỏ qua quota để test.
+  Backend tạm đã dừng sau kiểm tra; cần restart backend IDE để nạp code mới.
 
 - Backend: 79 test PostgreSQL/E2E pass; kiểm tra migration script thêm 2 test pass.
 - Frontend: 79 test pass, TypeScript và production build pass; lint không có error,

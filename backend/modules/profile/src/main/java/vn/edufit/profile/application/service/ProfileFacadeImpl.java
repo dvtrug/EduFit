@@ -371,7 +371,7 @@ public class ProfileFacadeImpl implements ProfileFacade {
         goal.getBudgetMin(),
         goal.getBudgetMax(),
         goal.getStatus().name(),
-        slots
+        slots, goal.getGoalType().name(), goal.getCurrentLevel(), goal.getDesiredLevel(), goal.getDeadline()
     );
   }
 
