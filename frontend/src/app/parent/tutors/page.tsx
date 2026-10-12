@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, Compass, ChevronLeft, ChevronRight, Users, Sparkles } from "lucide-react";
+import { Compass, ChevronLeft, ChevronRight, ShieldCheck } from "lucide-react";
 import {
   TutorSearchFilters,
   TutorCard,
@@ -40,88 +40,92 @@ export default function ParentTutorsPage() {
 
   // 3. AI Matching Hook
   const {
+    need,
     matches,
     isMatching,
     error: matchError,
+    updateNeed,
     runMatching,
   } = useTutorMatching();
 
   const handleRequestConnect = (tutorId: string) => {
-    showToast("Phụ huynh đã gửi yêu cầu kết nối! Gia sư sẽ liên hệ lại với gia đình sớm nhất.", "success");
+    showToast(
+      "Phụ huynh đã gửi yêu cầu kết nối! Gia sư sẽ liên hệ lại với gia đình sớm nhất.",
+      "success"
+    );
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
-      {/* 1. Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-900 rounded-full text-xs font-bold mb-2">
-            <Users className="size-3.5 text-emerald-600" />
-            <span>Gia Sư Cho Con Em (Parent Discovery)</span>
-          </div>
-          <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
-            Tìm Gia Sư Dạy Kèm Cho Con
-          </h2>
-          <p className="text-xs sm:text-sm text-neutral-500 mt-1 font-medium">
-            Chọn lọc gia sư uy tín có chứng chỉ sư phạm, kinh nghiệm luyện thi và biểu phí minh bạch
-          </p>
-        </div>
-
-        {/* Tab Buttons */}
-        <div className="flex rounded-2xl bg-stone-100 p-1 border border-stone-200/80 shrink-0 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setActiveTab("browse")}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === "browse"
-                ? "bg-white text-neutral-900 shadow-2xs"
-                : "text-neutral-500 hover:text-neutral-900"
-            }`}
-          >
-            <Search className="size-3.5" />
-            <span>Tất cả gia sư</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab("matches");
-              if (matches.length === 0) {
-                runMatching("00000000-0000-0000-0000-000000000001");
-              }
-            }}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === "matches"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-neutral-500 hover:text-neutral-900"
-            }`}
-          >
-            <Sparkles className="size-3.5" />
-            <span>AI Match cho con</span>
-          </button>
-        </div>
+    <div className="space-y-6 animate-in fade-in duration-200">
+      {/* 1. Header (Figma Heading) */}
+      <div className="space-y-1">
+        <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
+          Tìm gia sư phù hợp cho con
+        </h2>
+        <p className="text-xs sm:text-sm text-neutral-500 font-medium">
+          Chọn lọc gia sư uy tín có chứng chỉ sư phạm, kinh nghiệm luyện thi và biểu phí minh bạch.
+        </p>
       </div>
 
-      {/* 2. TAB: AI MATCHES */}
-      {activeTab === "matches" && (
-        <AiMatchView
-          matches={matches}
-          isMatching={isMatching}
-          error={matchError}
-          onRefresh={() => runMatching("00000000-0000-0000-0000-000000000001")}
-          onViewDetail={openTutor}
-          onRequestConnect={handleRequestConnect}
-        />
-      )}
+      {/* 2. Tabs Navigator */}
+      <div className="flex items-center gap-6 border-b border-stone-200/90 text-xs font-semibold">
+        <button
+          type="button"
+          onClick={() => setActiveTab("browse")}
+          className={`pb-3 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+            activeTab === "browse"
+              ? "border-[#006DCC] text-[#006DCC] font-bold"
+              : "border-transparent text-neutral-500 hover:text-neutral-900"
+          }`}
+        >
+          <span>Khám phá</span>
+        </button>
 
-      {/* 3. TAB: BROWSE ALL */}
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("matches");
+            if (matches.length === 0) runMatching();
+          }}
+          className={`pb-3 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+            activeTab === "matches"
+              ? "border-[#006DCC] text-[#006DCC] font-bold"
+              : "border-transparent text-neutral-500 hover:text-neutral-900"
+          }`}
+        >
+          <span>Gợi ý phù hợp</span>
+          <span
+            className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              activeTab === "matches"
+                ? "bg-[#006DCC] text-white"
+                : "bg-stone-200 text-neutral-600"
+            }`}
+          >
+            {matches.length || 6}
+          </span>
+        </button>
+      </div>
+
+      {/* 3. TAB: KHÁM PHÁ (Discover) */}
       {activeTab === "browse" && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           <TutorSearchFilters
             params={params}
             onUpdateFilters={updateFilters}
             onResetFilters={resetFilters}
             totalResults={pagination?.totalElements}
           />
+
+          {/* Results count & note */}
+          <div className="flex items-center justify-between text-xs pt-2">
+            <span className="font-heading font-bold text-sm text-neutral-900">
+              {pagination?.totalElements ?? tutors.length} gia sư phù hợp
+            </span>
+            <span className="text-[11px] text-neutral-400 flex items-center gap-1 font-medium">
+              <ShieldCheck className="size-3.5 text-emerald-500" />
+              <span>Chỉ hiển thị gia sư đã xác minh</span>
+            </span>
+          </div>
 
           {searchError && (
             <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
@@ -130,20 +134,20 @@ export default function ParentTutorsPage() {
           )}
 
           {isSearchLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="h-64 rounded-3xl bg-white border border-stone-200/60 p-6 animate-pulse flex flex-col justify-between"
+                  className="h-24 rounded-2xl bg-white border border-stone-200/60 p-5 animate-pulse flex items-center justify-between"
                 >
-                  <div className="flex gap-3">
-                    <div className="size-12 rounded-2xl bg-stone-100" />
-                    <div className="space-y-2 flex-1">
-                      <div className="h-4 w-32 bg-stone-100 rounded-md" />
+                  <div className="flex items-center gap-4">
+                    <div className="size-12 rounded-full bg-stone-100" />
+                    <div className="space-y-2">
+                      <div className="h-4 w-36 bg-stone-100 rounded-md" />
                       <div className="h-3 w-48 bg-stone-100 rounded-md" />
                     </div>
                   </div>
-                  <div className="h-10 w-full bg-stone-100 rounded-xl" />
+                  <div className="h-8 w-28 bg-stone-100 rounded-full" />
                 </div>
               ))}
             </div>
@@ -154,18 +158,18 @@ export default function ParentTutorsPage() {
                 Không tìm thấy gia sư phù hợp
               </h3>
               <p className="text-xs text-neutral-500 max-w-md mx-auto">
-                Quý phụ huynh hãy thử chọn mở rộng phạm vi khu vực hoặc nới lỏng các yêu cầu môn học.
+                Hãy thử nới lỏng các tiêu chí bộ lọc (môn học, mức học phí hoặc khu vực) để xem thêm nhiều lựa chọn gia sư khác.
               </p>
               <button
                 type="button"
                 onClick={resetFilters}
-                className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-neutral-800 text-xs font-bold transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-full bg-stone-100 hover:bg-stone-200 text-neutral-800 text-xs font-bold transition-colors cursor-pointer"
               >
                 Đặt lại bộ lọc
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="space-y-3">
               {tutors.map((tutor) => (
                 <TutorCard
                   key={tutor.tutorId}
@@ -188,7 +192,7 @@ export default function ParentTutorsPage() {
                   type="button"
                   disabled={pagination.first || isSearchLoading}
                   onClick={() => setPage(pagination.page - 1)}
-                  className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-white border border-stone-200 text-neutral-700 font-bold hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white border border-stone-200 text-neutral-700 font-semibold hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   <ChevronLeft className="size-4" />
                   <span>Trang trước</span>
@@ -198,7 +202,7 @@ export default function ParentTutorsPage() {
                   type="button"
                   disabled={pagination.last || isSearchLoading}
                   onClick={() => setPage(pagination.page + 1)}
-                  className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-white border border-stone-200 text-neutral-700 font-bold hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white border border-stone-200 text-neutral-700 font-semibold hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   <span>Trang sau</span>
                   <ChevronRight className="size-4" />
@@ -209,7 +213,21 @@ export default function ParentTutorsPage() {
         </div>
       )}
 
-      {/* 4. DETAIL MODAL */}
+      {/* 4. TAB: GỢI Ý PHÙ HỢP (AI Matches) */}
+      {activeTab === "matches" && (
+        <AiMatchView
+          matches={matches}
+          isMatching={isMatching}
+          error={matchError}
+          need={need}
+          onUpdateNeed={updateNeed}
+          onRefresh={() => runMatching()}
+          onViewDetail={openTutor}
+          onRequestConnect={handleRequestConnect}
+        />
+      )}
+
+      {/* 5. Detail Modal */}
       <TutorDetailModal
         isOpen={isDetailOpen}
         tutor={selectedTutor}

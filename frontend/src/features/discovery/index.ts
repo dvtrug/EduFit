@@ -9,3 +9,4 @@ export * from "./components/TutorSearchFilters";
 export * from "./components/TutorDetailModal";
 export * from "./components/AiExplanationBadge";
 export * from "./components/AiMatchView";
+export * from "./components/MatchingNeedModal";

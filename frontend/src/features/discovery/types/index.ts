@@ -89,6 +89,16 @@ export interface TutorMatchResult {
   explanation: string;
   aiGenerated: boolean;
   tutorInfo: TutorDiscoveryCard;
+  reasons?: string[];
+}
+
+export interface MatchingNeed {
+  subjectName: string;
+  gradeName: string;
+  targetDescription: string;
+  teachingMode: "ONLINE" | "OFFLINE" | "BOTH";
+  area: string;
+  timeSlotsDescription: string;
 }
 
 export interface TutorMatchRequest {
