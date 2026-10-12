@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Inter } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { ToastProvider } from "@/shared/ui/Toast";
 import "./globals.css";
 
@@ -49,12 +50,14 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${bricolage.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans bg-stone-50 text-neutral-900">
-        <AuthProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
-        </AuthProvider>
+      <body className="min-h-full flex flex-col font-sans bg-stone-50 text-neutral-900 transition-colors duration-200">
+        <ThemeProvider>
+          <AuthProvider>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
