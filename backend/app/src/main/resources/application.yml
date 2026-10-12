@@ -10,6 +10,10 @@ server:
         same-site: lax
 
 spring:
+  session:
+    timeout: 60m
+    jdbc:
+      initialize-schema: never # Flyway owns SPRING_SESSION and its attributes table.
   application:
     name: edufit-backend
 

@@ -205,6 +205,8 @@ Checkpoint D: Student và Parent có thể lấy goalId hợp lệ qua HTTP, kh�
 
 ### Phase 4 — HTTP sẵn sàng tích hợp
 
+B11 hoàn tất trên `feat/discovery-ai`: full application test phát hiện thiếu Boot 4 session auto-configuration; bổ sung starter JDBC và CookieSerializer rõ `EDUFIT_SESSION`. Flyway tiếp tục sở hữu session schema. Contract thực thi: [Phase 4 HTTP](../../docs/ai-discovery-phase4-contract.md).
+
 **B11 — Session, CSRF và CORS nhất quán** (M; phụ thuộc: B01, B10)
 
 - File: `SecurityConfig`, `WebConfig`, IAM CSRF endpoint nhỏ, full-filter security tests, auth contract. OpenAPI cookie schema sửa riêng cùng tài liệu ở B14 để giữ task nhỏ.

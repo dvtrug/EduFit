@@ -1,0 +1,163 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] EduFit :: Parent                                                   [pom]
+[INFO] EduFit :: Platform (Aggregator)                                    [pom]
+[INFO] EduFit :: Platform :: Shared Kernel                                [jar]
+[INFO] EduFit :: Modules (Aggregator)                                     [pom]
+[INFO] EduFit :: Module :: IAM                                            [jar]
+[INFO]
+[INFO] ----------------------< vn.edufit:edufit-parent >-----------------------
+[INFO] Building EduFit :: Parent 1.0-SNAPSHOT                             [1/5]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ edufit-parent ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\target\\jacoco.exec
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ edufit-parent ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] -------------------------< vn.edufit:platform >-------------------------
+[INFO] Building EduFit :: Platform (Aggregator) 1.0-SNAPSHOT              [2/5]
+[INFO]   from platform\pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ platform ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\target\\jacoco.exec
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ platform ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] --------------------------< vn.edufit:shared >--------------------------
+[INFO] Building EduFit :: Platform :: Shared Kernel 1.0-SNAPSHOT          [3/5]
+[INFO]   from platform\shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ shared ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\shared\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\shared\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\shared\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ shared ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+[INFO] Running vn.edufit.shared.domain.valueobject.MoneyTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.188 s -- in vn.edufit.shared.domain.valueobject.MoneyTest
+[INFO] Running vn.edufit.shared.domain.valueobject.TimeIntervalTest
+[INFO] Running vn.edufit.shared.domain.valueobject.TimeIntervalTest$UtilityTests
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in vn.edufit.shared.domain.valueobject.TimeIntervalTest$UtilityTests
+[INFO] Running vn.edufit.shared.domain.valueobject.TimeIntervalTest$OverlapPolicyTests
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.039 s -- in vn.edufit.shared.domain.valueobject.TimeIntervalTest$OverlapPolicyTests
+[INFO] Running vn.edufit.shared.domain.valueobject.TimeIntervalTest$ValidationTests
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.037 s -- in vn.edufit.shared.domain.valueobject.TimeIntervalTest$ValidationTests
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.104 s -- in vn.edufit.shared.domain.valueobject.TimeIntervalTest
+[INFO] Running vn.edufit.shared.exception.BusinessExceptionTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.036 s -- in vn.edufit.shared.exception.BusinessExceptionTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 22, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ shared ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\shared\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Platform :: Shared Kernel' with 11 classes
+[INFO]
+[INFO] -------------------------< vn.edufit:modules >--------------------------
+[INFO] Building EduFit :: Modules (Aggregator) 1.0-SNAPSHOT               [4/5]
+[INFO]   from modules\pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ modules ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\target\\jacoco.exec
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ modules ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] ---------------------------< vn.edufit:iam >----------------------------
+[INFO] Building EduFit :: Module :: IAM 1.0-SNAPSHOT                      [5/5]
+[INFO]   from modules\iam\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ iam ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\iam\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ iam ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\iam\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ iam ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ iam ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\iam\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ iam ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ iam ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+[INFO] Running vn.edufit.iam.AccountTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.252 s -- in vn.edufit.iam.AccountTest
+[INFO] Running vn.edufit.iam.AccountTokenTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.046 s -- in vn.edufit.iam.AccountTokenTest
+[INFO] Running vn.edufit.iam.Argon2PasswordServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.145 s -- in vn.edufit.iam.Argon2PasswordServiceTest
+[INFO] Running vn.edufit.iam.AuthenticateAccountServiceTest
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (C:\Users\ASUS\.m2\repository\net\bytebuddy\byte-buddy-agent\1.18.11\byte-buddy-agent-1.18.11.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.691 s -- in vn.edufit.iam.AuthenticateAccountServiceTest
+[INFO] Running vn.edufit.iam.PasswordPolicyTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.353 s -- in vn.edufit.iam.PasswordPolicyTest
+[INFO] Running vn.edufit.iam.PasswordResetAndChangeTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.280 s -- in vn.edufit.iam.PasswordResetAndChangeTest
+[INFO] Running vn.edufit.iam.RegisterAccountServiceTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in vn.edufit.iam.RegisterAccountServiceTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 32, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ iam ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\iam\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: IAM' with 28 classes
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for EduFit :: Parent 1.0-SNAPSHOT:
+[INFO]
+[INFO] EduFit :: Parent ................................... SUCCESS [  0.990 s]
+[INFO] EduFit :: Platform (Aggregator) .................... SUCCESS [  0.024 s]
+[INFO] EduFit :: Platform :: Shared Kernel ................ SUCCESS [  3.672 s]
+[INFO] EduFit :: Modules (Aggregator) ..................... SUCCESS [  0.021 s]
+[INFO] EduFit :: Module :: IAM ............................ SUCCESS [  9.433 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  15.005 s
+[INFO] Finished at: 2026-10-12T06:01:05Z
+[INFO] ------------------------------------------------------------------------

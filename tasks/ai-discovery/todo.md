@@ -35,7 +35,9 @@ Cập nhật 2026-10-12: B00, Phase 1 (B02–B04), Phase 2 (B05–B07) và Phase
 
 ## HTTP integration
 
-- [ ] B11: Session thật, CSRF endpoint/validation, security CORS/preflight; docs đồng bộ.
+- [x] B11: Session thật, CSRF endpoint/validation, security CORS/preflight; docs đồng bộ.
+
+  B11 evidence: [full-context security + architecture](phase4-b11-final.log), **18 tests pass, 0 fail/error/skip** (7 full-filter PostgreSQL cases + 9 architecture + 2 CurrentUser adapter). [Initial red](phase4-b11-red.log) exposed missing JDBC session auto-configuration; [fixture correction run](phase4-b11-red-http.log) exposed use of the unused Spring Argon2 encoder without BouncyCastle, fixed by seeding with actual IAM Argon2PasswordService. [Intermediate run](phase4-b11-green.log) is a failed harness iteration, not acceptance evidence. [IAM regression](phase4-b11-iam-regression.log). Contract: [Phase 4](../../docs/ai-discovery-phase4-contract.md). No live provider call.
 - [ ] B12: Malformed input 400; ApiError thống nhất; search pagination tie-break.
 - [ ] Checkpoint E: full filter security và error regression pass.
 

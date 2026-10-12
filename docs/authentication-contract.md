@@ -2,7 +2,7 @@
 
 - **Module:** IAM (Identity & Access Management) — UC1.1 đến UC1.4
 - **Trạng thái:** Frozen (Đã chốt)
-- **Tài liệu liên quan:** [ADR-001](file:///e:/iykyk/S5/SWP391/Projects/EduFit/docs/ADR-001-tech-stack.md), [ADR-002](file:///e:/iykyk/S5/SWP391/Projects/EduFit/docs/ADR-002-multi-module-architecture.md), [tasks/plan.md](file:///e:/iykyk/S5/SWP391/Projects/EduFit/tasks/plan.md)
+- **Tài liệu liên quan:** [ADR-001](ADR-001-tech-stack.md), [ADR-002](ADR-002-multi-module-architecture.md), [tasks/plan.md](../tasks/plan.md)
 
 ---
 
@@ -24,7 +24,7 @@ Mọi phản hồi API đều được bọc trong cấu trúc chuẩn của h�
 * **Thất bại (Error - 4xx, 5xx):**
 ```json
 {
-  "success": false,
+
   "code": "ERROR_CODE_STRING",
   "message": "Thông báo lỗi hiển thị cho người dùng",
   "details": [
@@ -47,12 +47,15 @@ Mọi phản hồi API đều được bọc trong cấu trúc chuẩn của h�
   * `Secure`: `false` ở local dev (`http://localhost`), tự động kích hoạt `true` ở production (`https://`).
 * **Thời gian sống:** Hết hạn sau **60 phút bất hoạt (sliding inactivity)**.
 * **Xử lý đa phiên (Multi-device invalidation):**
+  * **Khoảng trống hiện hữu:** hai cam kết đổi/đặt lại mật khẩu bên dưới chưa được service hiện thực; B11 chỉ nghiệm thu login/logout và CSRF/CORS. Xem [giới hạn Phase 4](ai-discovery-phase4-contract.md).
   * Đăng xuất thông thường (`POST /logout`): Chỉ thu hồi phiên của thiết bị hiện tại.
   * Đổi mật khẩu thành công (`POST /change-password`): Duy trì phiên hiện tại, hủy tất cả các phiên khác.
   * Đặt lại mật khẩu thành công (`POST /reset-password`): Hủy toàn bộ mọi phiên đang hoạt động.
 
 ### 1.3. Chính sách CSRF (Cross-Site Request Forgery)
-* Tất cả các request có tính thay đổi dữ liệu (`POST`, `PUT`, `DELETE`) đều phải gửi kèm Header `X-XSRF-TOKEN`.
+* Cập nhật B11: [contract HTTP Phase 4](ai-discovery-phase4-contract.md) mô tả chính xác thứ tự filter, CORS và vòng đời cookie.
+* Login/register/logout/forgot-password/reset-password cũng cần CSRF. Sau login/logout thành công phải gọi lại `/csrf`; session ID cũ bị đổi khi login, session JDBC bị hủy khi logout.
+* Tất cả các request có tính thay đổi dữ liệu (`POST`, `PUT`, `PATCH`, `DELETE`) đều phải gửi kèm Header `X-XSRF-TOKEN`.
 * Frontend lấy token thông qua endpoint `GET /api/v1/auth/csrf` trước khi thực hiện gửi form.
 
 ---

@@ -53,24 +53,23 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
+        .cors(org.springframework.security.config.Customizer.withDefaults())
+        // REST clients handle 401 directly; do not persist redirect requests in anonymous sessions.
+        .requestCache(cache -> cache.disable())
         // 1. Cấu hình bảo vệ chống tấn công CSRF:
         // Bảo vệ phiên làm việc dựa trên Cookie EDUFIT_SESSION với SameSite=Lax (ADR-001 / RFC 6265bis)
-        .csrf(csrf -> csrf
-            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-            .ignoringRequestMatchers(
-                "/api/v1/**",
-                "/v3/api-docs/**",
-                "/swagger-ui/**",
-                "/swagger-ui.html",
-                "/actuator/**"
-            )
-        )
+        .csrf(csrf -> csrf.spa().csrfTokenRepository(csrfTokenRepository()))
 
         // 2. Cấu hình phân quyền truy cập URL theo từng vai trò (NFR-07: Role-Based Access Control)
         .authorizeHttpRequests(auth -> auth
             // 2.1. Các đường dẫn công khai (không cần đăng nhập: Xác thực, Danh mục chung, Swagger, Actuator)
             .requestMatchers(
-                "/api/v1/auth/**",
+                "/api/v1/auth/csrf",
+                "/api/v1/auth/register",
+                "/api/v1/auth/login",
+                "/api/v1/auth/logout",
+                "/api/v1/auth/forgot-password",
+                "/api/v1/auth/reset-password",
                 "/api/v1/catalogs/**",
                 "/v3/api-docs/**",
                 "/swagger-ui/**",
@@ -115,6 +114,25 @@ public class SecurityConfig {
         );
 
     return http.build();
+  }
+
+  @Bean
+  public CookieCsrfTokenRepository csrfTokenRepository() {
+    CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+    repository.setCookiePath("/");
+    repository.setCookieCustomizer(cookie -> cookie.sameSite("Lax"));
+    return repository;
+  }
+
+  @Bean
+  public org.springframework.session.web.http.CookieSerializer sessionCookieSerializer() {
+    var serializer = new org.springframework.session.web.http.DefaultCookieSerializer();
+    serializer.setCookieName("EDUFIT_SESSION");
+    serializer.setCookiePath("/");
+    serializer.setUseHttpOnlyCookie(true);
+    serializer.setSameSite("Lax");
+    // Default secure detection follows request.isSecure(), supporting local HTTP and production HTTPS.
+    return serializer;
   }
 
   /**
