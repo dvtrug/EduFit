@@ -47,6 +47,10 @@ không cần sửa file SQL, chạy `flyway repair` hay xóa volume database.
 
 Next.js proxy `/api/*` sang backend cổng 8080. Browser dùng cùng origin cổng 3000,
 gửi cookie `EDUFIT_SESSION`; mỗi mutation lấy token CSRF mới trước khi gửi.
+`npm run dev` và `npm run start` cố định cổng 3000. Nếu cổng đang được sử dụng,
+dừng frontend cũ trước khi chạy lại; không chuyển sang 3001 vì backend chỉ cho
+phép origin `http://localhost:3000` và `http://127.0.0.1:3000`. Request đăng nhập
+từ origin 3001 bị trả `403 Invalid CORS request` dù CSRF hợp lệ.
 Không đặt Gemini API key trong frontend. Docker đọc `AI_PROVIDER`,
 `GEMINI_API_KEY`, `GEMINI_MODEL` từ `.env` ở gốc repo.
 
