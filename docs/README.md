@@ -7,6 +7,7 @@
 - [AI + Discovery — Phase 3](ai-discovery-phase3-contract.md): Student goals/slots, readiness và Parent goal selection qua confirmed link.
 - [AI + Discovery — Phase 4](ai-discovery-phase4-contract.md): JDBC session, CSRF/CORS và HTTP integration contract.
 - [AI + Discovery — Phase 5 E2E](ai-discovery-phase5-e2e.md): luồng Discovery -> Connection, fallback và eligibility rule.
+- [AI + Discovery backend runbook](ai-discovery-backend-runbook.md): cold start, fixture, smoke offline/live và contract bàn giao frontend.
 
 Trạng thái bàn giao T15 ngày 2026-10-10 trên `feat/discovery`. Đọc theo thứ tự:
 

@@ -4,6 +4,9 @@
 > Dành cho frontend và module backend tích hợp. [Flow/code](discovery-module-flow.md),
 > [performance evidence](discovery-performance-report.md), [mục lục](README.md).
 
+Để chạy fixture và luồng tích hợp từ Discovery tới Connection, xem
+[AI + Discovery backend runbook](ai-discovery-backend-runbook.md).
+
 ## Hai loại API
 
 HTTP có base path `/api/v1/discovery`, trả web DTO trong `ApiResponse`.

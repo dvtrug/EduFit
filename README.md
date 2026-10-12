@@ -63,9 +63,9 @@ cd backend
 .\mvnw.cmd -B -ntp verify
 ```
 
-Xem `CONTRIBUTING.md` để biết quy tắc định dạng, đặt tên, branch, review và commit. Xem tài liệu kiến trúc và thiết kế tổng thể tại [`docs/software-architecture-design-specification.md`](docs/software-architecture-design-specification.md), tổng quan toàn diện tại `docs/PROJECT_OVERVIEW.md`, cũng như các quyết định kiến trúc trong `docs/ADR-001-tech-stack.md` và `docs/ADR-002-multi-module-architecture.md`. Lộ trình tổng thể & quy chuẩn Frontend được quy định tại [`docs/frontend-master-roadmap-and-architecture-plan.md`](docs/frontend-master-roadmap-and-architecture-plan.md), kèm kế hoạch hành động Giai đoạn 1 tại [`docs/frontend-phase1-demo-and-figma-refactor-plan.md`](docs/frontend-phase1-demo-and-figma-refactor-plan.md).
+Xem `CONTRIBUTING.md` để biết quy tắc định dạng, đặt tên, branch, review và commit. Xem tài liệu kiến trúc và thiết kế tổng thể tại [`docs/software-architecture-design-specification.md`](docs/software-architecture-design-specification.md), tổng quan toàn diện tại `docs/PROJECT_OVERVIEW.md`, cũng như các quyết định kiến trúc trong `docs/ADR-001-tech-stack.md` và `docs/ADR-002-multi-module-architecture.md`. Lộ trình tổng thể và quy chuẩn Frontend được quy định tại [`docs/frontend-master-roadmap-and-architecture-plan.md`](docs/frontend-master-roadmap-and-architecture-plan.md).
 
-Tài liệu backend hiện thực: [mục lục](docs/README.md), [Discovery API contract](docs/discovery-api-contract.md), [Discovery flow và diagram](docs/discovery-module-flow.md), [Discovery performance](docs/discovery-performance-report.md).
+Tài liệu backend hiện thực: [mục lục](docs/README.md), [AI + Discovery runbook](docs/ai-discovery-backend-runbook.md), [Discovery API contract](docs/discovery-api-contract.md), [Discovery flow và diagram](docs/discovery-module-flow.md), [Discovery performance](docs/discovery-performance-report.md).
 
 ## Thiết lập GitHub sau lần push đầu tiên
 

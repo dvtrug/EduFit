@@ -1,7 +1,7 @@
 # AI + Discovery backend — checklist
 
 Nguồn: [plan.md](plan.md). Ngày khảo sát 2026-10-11; base `feat/discovery@4cc8767`.
-Cập nhật 2026-10-12: B00–B13 và Phase 1–4 hoàn tất trên `feat/discovery-ai`. Phase 5 đang thực hiện; B14 còn lại.
+Cập nhật 2026-10-12: B00–B14 và Phase 1–5 đã triển khai trên `feat/discovery-ai`; live Gemini smoke còn pending vì môi trường không có key.
 
 ## Khảo sát và contract
 
@@ -46,12 +46,14 @@ Cập nhật 2026-10-12: B00–B13 và Phase 1–4 hoàn tất trên `feat/disco
 ## Bàn giao
 
 - [x] B13: Backend HTTP E2E Student/Parent/Tutor, Discovery -> Connection -> class ACTIVE.
-- [ ] B14: Runbook + fixture + smoke collection, live Gemini smoke opt-in bằng env key.
-- [ ] Checkpoint F: frontend-ready; chưa thay đổi file frontend.
+- [x] B14: Runbook + fixture + smoke collection, live Gemini smoke opt-in bằng env key.
+- [x] Checkpoint F: frontend-ready; chưa thay đổi file frontend.
 - [ ] Reactor verify/coverage + architecture + migration tests pass; mọi skip được giải thích.
-- [ ] `git diff --check`; docs routes/fields/errors/links khớp code.
+- [x] `git diff --check`; docs routes/fields/errors/links khớp code.
 
   B13 evidence: `AiDiscoveryConnectionE2ETest` **7 tests pass, 0 fail/error/skip** với full application, security filters, JDBC session, Flyway và PostgreSQL thật; Gemini fake chạy qua loopback HTTP. Luồng Student đạt profile -> goal/slots -> search/detail/match -> request -> Tutor accept -> một class ACTIVE. Luồng Parent đạt invite/accept -> goal/match/request -> revoke -> 403 và không gọi provider. HTTP 429/blocked/timeout đều fallback và Connection vẫn dùng được; empty candidates không gọi AI; adjacent level được Discovery rank nhưng Connection trả `400 INVALID_OPERATION`. Red concurrency trả `[200,500]` vì stale entity trong Hibernate persistence context; green trả `[200,409]` và đúng một class. Contract: [Phase 5 E2E](../../docs/ai-discovery-phase5-e2e.md). Live Gemini/cold-start/runbook vẫn thuộc B14; không sửa frontend.
+
+  B14 evidence: cold-start `docker compose down` + `up --build -d` giữ nguyên volume đã build đủ 17 Maven modules, Flyway schema ở v1.12 và health UP. [Smoke script](../../scripts/smoke-ai-discovery.ps1) offline pass lúc `2026-10-12T06:56:33Z`: OpenAPI/session cookie/public security, catalogs/search/detail, Student goal+slots+match, anonymous 401, CSRF 403, invalid topN 400, no-result, Parent link/match/revoke 403 và Connection -> class đều pass; stub trả `aiGenerated=false`, AI audit `SUCCESS` với latency 6 ms. Regression cuối **16 tests pass, 0 fail/error/skip**: OpenAPI 2, E2E 7, HTTP security 7. PowerShell parse và `git diff --check` pass. [Runbook](../../docs/ai-discovery-backend-runbook.md) ghi URL, auth/CSRF, accounts/IDs, payload/errors, quota/fallback và lệnh live opt-in. `GEMINI_API_KEY` không có trong process nên live Gemini là **pending**; không ghi nhận live pass và không in/lưu key. Không sửa frontend hoặc main.
 
 ## Evidence baseline hiện tại
 
