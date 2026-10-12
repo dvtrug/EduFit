@@ -46,8 +46,22 @@ const MAJOR_VIETNAM_CITIES = [
 
 export function TutorOnboardingWizard() {
   const router = useRouter();
-  const { user, refreshUser } = useAuth();
+  const { user, isLoading, refreshUser } = useAuth();
   const { showToast } = useToast();
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!user) {
+      showToast("Vui lòng đăng nhập bằng tài khoản Gia sư để thiết lập hồ sơ.", "error");
+      router.replace("/login");
+      return;
+    }
+    if (user.role?.toUpperCase() !== "TUTOR") {
+      showToast(`Bạn đang đăng nhập với vai trò ${user.role}. Trang này chỉ dành riêng cho Gia sư.`, "error");
+      const targetRole = user.role?.toLowerCase() || "student";
+      router.replace(`/${targetRole}/dashboard`);
+    }
+  }, [user, isLoading, router, showToast]);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
