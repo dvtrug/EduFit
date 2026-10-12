@@ -50,34 +50,34 @@ export function TopHeader({
   const roleBase = role.toLowerCase();
 
   return (
-    <header className="h-16 px-6 sm:px-8 bg-white border-b border-stone-200/80 flex items-center justify-between sticky top-0 z-30">
+    <header className="h-16 px-6 sm:px-8 bg-white dark:bg-stone-900 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between sticky top-0 z-30 transition-colors duration-200">
       {/* Topbar Left */}
       <div className="flex items-center gap-3">
         {onToggleSidebar && (
           <button
             type="button"
             onClick={onToggleSidebar}
-            className="lg:hidden p-2 rounded-xl hover:bg-stone-100 text-neutral-600 transition-colors"
+            className="lg:hidden p-2 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 text-neutral-600 dark:text-stone-300 transition-colors"
           >
             <PanelLeft className="size-5" />
           </button>
         )}
-        <h1 className="font-heading text-lg font-bold text-neutral-900 tracking-tight">
+        <h1 className="font-heading text-lg font-bold text-neutral-900 dark:text-stone-100 tracking-tight">
           {title}
         </h1>
-        <span className="hidden sm:inline text-stone-300">/</span>
-        <span className="hidden sm:inline text-xs text-neutral-500 font-medium">{roleLabel}</span>
+        <span className="hidden sm:inline text-stone-300 dark:text-stone-700">/</span>
+        <span className="hidden sm:inline text-xs text-neutral-500 dark:text-stone-400 font-medium">{roleLabel}</span>
       </div>
 
       {/* Topbar Right */}
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Search Bar */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl text-xs text-neutral-400 focus-within:border-amber-400 focus-within:bg-white transition-all w-56">
-          <Search className="size-3.5 text-neutral-400" />
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700/80 rounded-xl text-xs text-neutral-400 dark:text-stone-400 focus-within:border-amber-400 focus-within:bg-white dark:focus-within:bg-stone-800 transition-all w-56">
+          <Search className="size-3.5 text-neutral-400 dark:text-stone-400" />
           <input
             type="text"
             placeholder="Tìm kiếm nội dung..."
-            className="bg-transparent border-none outline-hidden text-neutral-800 placeholder:text-neutral-400 w-full text-xs"
+            className="bg-transparent border-none outline-hidden text-neutral-800 dark:text-stone-100 placeholder:text-neutral-400 dark:placeholder:text-stone-500 w-full text-xs"
           />
         </div>
 
@@ -85,11 +85,11 @@ export function TopHeader({
         <button
           type="button"
           aria-label="Thông báo"
-          className="relative p-2 rounded-xl border border-stone-200/60 hover:bg-stone-50 text-neutral-600 transition-colors"
+          className="relative p-2 rounded-xl border border-stone-200/60 dark:border-stone-700/60 hover:bg-stone-50 dark:hover:bg-stone-800 text-neutral-600 dark:text-stone-300 transition-colors"
         >
           <Bell className="size-4.5" />
           {unreadNotifications > 0 && (
-            <span className="absolute top-1 right-1 size-2 rounded-full bg-amber-500 animate-pulse ring-2 ring-white" />
+            <span className="absolute top-1 right-1 size-2 rounded-full bg-amber-500 animate-pulse ring-2 ring-white dark:ring-stone-900" />
           )}
         </button>
 
@@ -98,18 +98,18 @@ export function TopHeader({
           <button
             type="button"
             onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-            className="flex items-center gap-2.5 p-1.5 pr-2.5 rounded-xl border border-stone-200/60 hover:bg-stone-50 transition-colors group cursor-pointer"
+            className="flex items-center gap-2.5 p-1.5 pr-2.5 rounded-xl border border-stone-200/60 dark:border-stone-700/60 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors group cursor-pointer"
           >
             <div className="size-8 rounded-lg bg-gradient-to-tr from-amber-500 to-orange-400 text-white font-bold text-xs flex items-center justify-center shadow-xs">
               {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
             </div>
             <div className="hidden sm:flex flex-col text-left">
-              <span className="text-xs font-semibold text-neutral-800 leading-tight">
+              <span className="text-xs font-semibold text-neutral-800 dark:text-stone-100 leading-tight">
                 {user.fullName || "Tài khoản EduFit"}
               </span>
-              <span className="text-[10px] text-neutral-400 leading-tight">{roleLabel}</span>
+              <span className="text-[10px] text-neutral-400 dark:text-stone-400 leading-tight">{roleLabel}</span>
             </div>
-            <ChevronDown className="size-3.5 text-neutral-400 group-hover:text-neutral-700 transition-colors" />
+            <ChevronDown className="size-3.5 text-neutral-400 dark:text-stone-400 group-hover:text-neutral-700 dark:group-hover:text-stone-200 transition-colors" />
           </button>
 
           {profileMenuOpen && (
@@ -118,16 +118,16 @@ export function TopHeader({
                 className="fixed inset-0 z-40"
                 onClick={() => setProfileMenuOpen(false)}
               />
-              <div className="absolute right-0 mt-2 w-64 bg-white border border-stone-200 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                 {/* 1. Header Profile Info */}
-                <div className="px-3 py-2.5 border-b border-stone-100 mb-1.5 bg-stone-50/60 rounded-xl">
+                <div className="px-3 py-2.5 border-b border-stone-100 dark:border-stone-800 mb-1.5 bg-stone-50/60 dark:bg-stone-800/60 rounded-xl">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-bold text-neutral-900 truncate">{user.fullName}</p>
-                    <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-amber-100 text-amber-800 shrink-0">
+                    <p className="text-xs font-bold text-neutral-900 dark:text-stone-100 truncate">{user.fullName}</p>
+                    <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-400 shrink-0">
                       {roleLabel}
                     </span>
                   </div>
-                  <p className="text-[11px] text-neutral-400 truncate mt-0.5">{user.email}</p>
+                  <p className="text-[11px] text-neutral-400 dark:text-stone-400 truncate mt-0.5">{user.email}</p>
                 </div>
 
                 {/* 2. Navigation items */}
@@ -135,45 +135,45 @@ export function TopHeader({
                   <Link
                     href={`/${roleBase}/settings?tab=profile`}
                     onClick={() => setProfileMenuOpen(false)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-700 hover:bg-stone-50 hover:text-neutral-900 transition-colors"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-neutral-900 dark:hover:text-stone-100 transition-colors"
                   >
-                    <UserIcon className="size-4 text-neutral-400" />
+                    <UserIcon className="size-4 text-neutral-400 dark:text-stone-500" />
                     <span>Hồ sơ cá nhân</span>
                   </Link>
 
                   <Link
                     href={`/${roleBase}/settings?tab=account`}
                     onClick={() => setProfileMenuOpen(false)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-700 hover:bg-stone-50 hover:text-neutral-900 transition-colors"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-neutral-900 dark:hover:text-stone-100 transition-colors"
                   >
-                    <ShieldCheck className="size-4 text-neutral-400" />
+                    <ShieldCheck className="size-4 text-neutral-400 dark:text-stone-500" />
                     <span>Tài khoản & Bảo mật</span>
                   </Link>
 
                   <Link
                     href={`/${roleBase}/settings`}
                     onClick={() => setProfileMenuOpen(false)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-700 hover:bg-stone-50 hover:text-neutral-900 transition-colors"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-neutral-900 dark:hover:text-stone-100 transition-colors"
                   >
-                    <Settings className="size-4 text-neutral-400" />
+                    <Settings className="size-4 text-neutral-400 dark:text-stone-500" />
                     <span>Cài đặt</span>
                   </Link>
                 </div>
 
                 {/* 3. Appearance / Giao diện Quick Switcher (Ảnh 2) */}
-                <div className="my-2 pt-2 border-t border-stone-100 px-1">
-                  <div className="flex items-center gap-2 text-xs font-medium text-neutral-700 mb-2 px-2">
-                    <SunMoon className="size-4 text-neutral-400" />
+                <div className="my-2 pt-2 border-t border-stone-100 dark:border-stone-800 px-1">
+                  <div className="flex items-center gap-2 text-xs font-medium text-neutral-700 dark:text-stone-300 mb-2 px-2">
+                    <SunMoon className="size-4 text-neutral-400 dark:text-stone-500" />
                     <span>Giao diện</span>
                   </div>
-                  <div className="grid grid-cols-3 p-1 bg-stone-100 rounded-xl gap-1 text-[11px] text-neutral-600">
+                  <div className="grid grid-cols-3 p-1 bg-stone-100 dark:bg-stone-800 rounded-xl gap-1 text-[11px] text-neutral-600 dark:text-stone-400">
                     <button
                       type="button"
                       onClick={() => setTheme("light")}
                       className={`py-1.5 rounded-lg font-semibold transition-all text-center cursor-pointer ${
                         theme === "light"
-                          ? "bg-white text-neutral-900 shadow-xs"
-                          : "hover:text-neutral-900 hover:bg-stone-200/50"
+                          ? "bg-white dark:bg-stone-700 text-neutral-900 dark:text-stone-100 shadow-xs"
+                          : "text-neutral-600 dark:text-stone-400 hover:text-neutral-900 dark:hover:text-stone-100 hover:bg-stone-200/50 dark:hover:bg-stone-700/50"
                       }`}
                     >
                       Sáng
@@ -183,8 +183,8 @@ export function TopHeader({
                       onClick={() => setTheme("dark")}
                       className={`py-1.5 rounded-lg font-semibold transition-all text-center cursor-pointer ${
                         theme === "dark"
-                          ? "bg-white text-neutral-900 shadow-xs"
-                          : "hover:text-neutral-900 hover:bg-stone-200/50"
+                          ? "bg-white dark:bg-stone-700 text-neutral-900 dark:text-stone-100 shadow-xs"
+                          : "text-neutral-600 dark:text-stone-400 hover:text-neutral-900 dark:hover:text-stone-100 hover:bg-stone-200/50 dark:hover:bg-stone-700/50"
                       }`}
                     >
                       Tối
@@ -194,8 +194,8 @@ export function TopHeader({
                       onClick={() => setTheme("system")}
                       className={`py-1.5 rounded-lg font-semibold transition-all text-center cursor-pointer ${
                         theme === "system"
-                          ? "bg-white text-neutral-900 shadow-xs"
-                          : "hover:text-neutral-900 hover:bg-stone-200/50"
+                          ? "bg-white dark:bg-stone-700 text-neutral-900 dark:text-stone-100 shadow-xs"
+                          : "text-neutral-600 dark:text-stone-400 hover:text-neutral-900 dark:hover:text-stone-100 hover:bg-stone-200/50 dark:hover:bg-stone-700/50"
                       }`}
                     >
                       Hệ thống
@@ -204,14 +204,14 @@ export function TopHeader({
                 </div>
 
                 {/* 4. Logout Action */}
-                <div className="mt-1 pt-1.5 border-t border-stone-100">
+                <div className="mt-1 pt-1.5 border-t border-stone-100 dark:border-stone-800">
                   <button
                     type="button"
                     onClick={() => {
                       setProfileMenuOpen(false);
                       onLogout();
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-rose-600 hover:bg-rose-50 transition-colors font-semibold cursor-pointer"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors font-semibold cursor-pointer"
                   >
                     <LogOut className="size-4 text-rose-500" />
                     <span>Đăng xuất</span>

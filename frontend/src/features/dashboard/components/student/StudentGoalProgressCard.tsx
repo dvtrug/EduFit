@@ -25,13 +25,13 @@ export function StudentGoalProgressCard({ goal }: StudentGoalProgressCardProps) 
   // Khi học viên mới chưa thiết lập mục tiêu nào trong database
   if (!goal) {
     return (
-      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-stone-200/80 shadow-xs space-y-4">
+      <div className="bg-white dark:bg-stone-900 p-6 sm:p-7 rounded-3xl border border-stone-200/80 dark:border-stone-800 shadow-xs space-y-4">
         <div className="flex justify-between items-center">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-stone-100 rounded-full text-xs font-semibold text-neutral-700">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-xs font-semibold text-neutral-700 dark:text-stone-300">
             <Sparkles className="size-3.5 text-amber-500" />
             <span>Mục tiêu đang tập trung</span>
           </div>
-          <span className="text-xs text-neutral-400 font-medium">Chưa kích hoạt</span>
+          <span className="text-xs text-neutral-400 dark:text-stone-400 font-medium">Chưa kích hoạt</span>
         </div>
 
         <EmptyState
@@ -57,22 +57,22 @@ export function StudentGoalProgressCard({ goal }: StudentGoalProgressCardProps) 
   const remaining = Math.max(0, goal.totalMilestones - goal.completedMilestones);
 
   return (
-    <div className="bg-white p-6 sm:p-7 rounded-3xl border border-stone-200/80 shadow-xs flex flex-col justify-between gap-5">
+    <div className="bg-white dark:bg-stone-900 p-6 sm:p-7 rounded-3xl border border-stone-200/80 dark:border-stone-800 shadow-xs flex flex-col justify-between gap-5">
       <div>
         <div className="flex justify-between items-center mb-3">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-stone-100 rounded-full text-xs font-semibold text-neutral-700">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-full text-xs font-semibold text-neutral-700 dark:text-stone-300">
             <Sparkles className="size-3.5 text-amber-500" />
             <span>Mục tiêu đang tập trung</span>
           </div>
-          <span className="px-2.5 py-0.5 bg-amber-200 text-amber-950 rounded-full text-xs font-bold">
+          <span className="px-2.5 py-0.5 bg-amber-200 dark:bg-amber-950/80 text-amber-950 dark:text-amber-300 rounded-full text-xs font-bold">
             {goal.grade}
           </span>
         </div>
 
-        <h3 className="font-heading text-lg sm:text-xl font-bold text-neutral-900 mb-1">
+        <h3 className="font-heading text-lg sm:text-xl font-bold text-neutral-900 dark:text-stone-100 mb-1">
           {goal.title}
         </h3>
-        <p className="text-xs text-neutral-500 font-medium font-sans">
+        <p className="text-xs text-neutral-500 dark:text-stone-300 font-medium font-sans">
           {goal.roadmapDesc}
         </p>
       </div>

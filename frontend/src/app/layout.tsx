@@ -49,8 +49,26 @@ export default function RootLayout({
       lang="vi"
       data-scroll-behavior="smooth"
       className={`${bricolage.variable} ${inter.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans bg-stone-50 text-neutral-900 transition-colors duration-200">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const t = localStorage.getItem('edufit_theme') || 'system';
+                const isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (isDark) {
+                  document.documentElement.classList.add('dark');
+                  document.documentElement.setAttribute('data-theme', 'dark');
+                  document.documentElement.style.colorScheme = 'dark';
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
+      <body className="min-h-full flex flex-col font-sans bg-stone-50 dark:bg-stone-950 text-neutral-900 dark:text-stone-100 transition-colors duration-200">
         <ThemeProvider>
           <AuthProvider>
             <ToastProvider>

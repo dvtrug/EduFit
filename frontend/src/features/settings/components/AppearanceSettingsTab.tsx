@@ -63,17 +63,17 @@ export function AppearanceSettingsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="pb-4 border-b border-stone-100">
-        <h2 className="font-heading text-xl font-bold text-neutral-900">
+      <div className="pb-4 border-b border-stone-100 dark:border-stone-800">
+        <h2 className="font-heading text-xl font-bold text-neutral-900 dark:text-stone-100">
           Giao diện & Chủ đề
         </h2>
-        <p className="text-xs text-neutral-500 mt-1">
+        <p className="text-xs text-neutral-500 dark:text-stone-400 mt-1">
           Tùy chỉnh diện mạo của EduFit để phù hợp với sở thích và môi trường học tập của bạn.
         </p>
       </div>
 
       <div className="space-y-4">
-        <div className="flex items-center gap-2 text-xs font-bold text-neutral-800">
+        <div className="flex items-center gap-2 text-xs font-bold text-neutral-800 dark:text-stone-200">
           <Palette className="size-4 text-amber-600" />
           <span>Lựa chọn chủ đề hiển thị</span>
         </div>
@@ -91,8 +91,8 @@ export function AppearanceSettingsTab() {
                 onClick={() => setTheme(t.id)}
                 className={`flex flex-col text-left p-4 rounded-3xl border transition-all cursor-pointer relative group ${
                   isSelected
-                    ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/20 shadow-xs"
-                    : "border-stone-200/90 bg-white hover:border-stone-300 hover:shadow-xs"
+                    ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/20 dark:bg-amber-950/20 shadow-xs"
+                    : "border-stone-200/90 dark:border-stone-800 bg-white dark:bg-stone-850 hover:border-stone-300 dark:hover:border-stone-700 hover:shadow-xs"
                 }`}
               >
                 {/* Visual Mini Mockup */}
@@ -120,8 +120,8 @@ export function AppearanceSettingsTab() {
 
                 {/* Card Title & Description */}
                 <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-1.5 font-bold text-xs text-neutral-900">
-                    <Icon className="size-3.5 text-neutral-500" />
+                  <div className="flex items-center gap-1.5 font-bold text-xs text-neutral-900 dark:text-stone-100">
+                    <Icon className="size-3.5 text-neutral-500 dark:text-stone-400" />
                     <span>{t.title}</span>
                   </div>
                   {isSelected && (
@@ -131,7 +131,7 @@ export function AppearanceSettingsTab() {
                   )}
                 </div>
 
-                <p className="text-[11px] text-neutral-500 mt-1 leading-relaxed">
+                <p className="text-[11px] text-neutral-500 dark:text-stone-400 mt-1 leading-relaxed">
                   {t.desc}
                 </p>
               </button>

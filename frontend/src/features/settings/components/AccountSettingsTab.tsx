@@ -132,7 +132,7 @@ export function AccountSettingsTab() {
             <KeyRound className="size-4 text-amber-600" />
             <span>Đổi mật khẩu tài khoản</span>
           </div>
-          <span className="text-[11px] text-neutral-400">Chuẩn mã hóa Argon2id an toàn</span>
+
         </div>
 
         {errorMsg && (
@@ -199,12 +199,12 @@ export function AccountSettingsTab() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  {criteria.hasNumber ? (
+                  {criteria.hasDigit ? (
                     <CheckCircle2 className="size-3.5 text-emerald-600" />
                   ) : (
                     <XCircle className="size-3.5 text-neutral-300" />
                   )}
-                  <span className={criteria.hasNumber ? "text-emerald-700 font-medium" : "text-neutral-500"}>
+                  <span className={criteria.hasDigit ? "text-emerald-700 font-medium" : "text-neutral-500"}>
                     Chứa ít nhất 1 chữ số
                   </span>
                 </div>
