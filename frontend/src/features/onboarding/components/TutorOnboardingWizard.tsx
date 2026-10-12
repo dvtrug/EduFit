@@ -24,9 +24,25 @@ import {
   Loader2,
   Trash2,
 } from "lucide-react";
+import { AiBioAssistantModal } from "@/features/profile/components/AiBioAssistantModal";
 
 const MAX_CREDENTIAL_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_CREDENTIAL_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png"];
+
+const MAJOR_VIETNAM_CITIES = [
+  "Hà Nội",
+  "TP. Hồ Chí Minh",
+  "Đà Nẵng",
+  "Hải Phòng",
+  "Cần Thơ",
+  "Bình Dương",
+  "Đồng Nai",
+  "Quảng Ninh",
+  "Huế",
+  "Khánh Hòa",
+  "Bà Rịa - Vũng Tàu",
+  "Toàn quốc (Online)",
+];
 
 export function TutorOnboardingWizard() {
   const router = useRouter();
@@ -45,7 +61,7 @@ export function TutorOnboardingWizard() {
   // Form State - Step 1: Chuyên môn
   const [displayName, setDisplayName] = useState(user?.fullName || "");
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<number[]>([]);
-  const [selectedLevelId, setSelectedLevelId] = useState<number>(0);
+  const [selectedLevelIds, setSelectedLevelIds] = useState<number[]>([]);
   const [teachingMode, setTeachingMode] = useState<"ONLINE" | "OFFLINE" | "BOTH">("ONLINE");
   const [pricePerSession, setPricePerSession] = useState<number>(0);
   const [experienceYears, setExperienceYears] = useState<number>(0);
@@ -62,10 +78,6 @@ export function TutorOnboardingWizard() {
 
   // AI Bio Tool state
   const [showAiModal, setShowAiModal] = useState(false);
-  const [aiTone, setAiTone] = useState<"friendly" | "professional" | "concise">("friendly");
-  const [aiAgreed, setAiAgreed] = useState(true);
-  const [generatingAi, setGeneratingAi] = useState(false);
-  const [aiDraft, setAiDraft] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -90,8 +102,12 @@ export function TutorOnboardingWizard() {
           if (myProfile.area) setArea(myProfile.area);
           if (myProfile.teachingMode) setTeachingMode(myProfile.teachingMode);
           if (myProfile.subjects && myProfile.subjects.length > 0) {
-            setSelectedSubjectIds(myProfile.subjects.map((s) => s.subjectId));
-            setSelectedLevelId(myProfile.subjects[0].educationLevelId);
+            setSelectedSubjectIds(Array.from(new Set(myProfile.subjects.map((s) => s.subjectId))));
+            setSelectedLevelIds(Array.from(new Set(myProfile.subjects.map((s) => s.educationLevelId))));
+            // Nếu đã lưu chuyên môn và khu vực, tự động chuyển sang Bước 2 để không phải nhập lại
+            if (myProfile.area) {
+              setStep(2);
+            }
           }
         }
       } catch (err) {
@@ -110,21 +126,104 @@ export function TutorOnboardingWizard() {
     );
   };
 
-  const handleNextFromStep1 = () => {
+  const toggleLevel = (id: number) => {
+    setSelectedLevelIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleNextFromStep1 = async () => {
     if (selectedSubjectIds.length === 0) {
       showToast("Vui lòng chọn ít nhất 1 môn giảng dạy!", "error");
       return;
     }
-    if (!selectedLevelId) {
-      showToast("Vui lòng chọn khối lớp giảng dạy!", "error");
+    if (selectedLevelIds.length === 0) {
+      showToast("Vui lòng chọn ít nhất 1 khối lớp giảng dạy!", "error");
       return;
     }
     if (!area.trim()) {
-      showToast("Vui lòng nhập khu vực giảng dạy của bạn!", "error");
+      showToast("Vui lòng nhập hoặc chọn khu vực giảng dạy của bạn!", "error");
       return;
     }
-    setStep(2);
-    setLastSaved(new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }));
+
+    try {
+      setSubmitting(true);
+      // 1. Lưu thông tin hồ sơ gia sư xuống server
+      await profileService.updateTutorProfile({
+        displayName: displayName.trim() || user?.fullName || "Gia sư EduFit",
+        headline: headline.trim(),
+        bio: bio.trim(),
+        teachingMode,
+        area: area.trim(),
+        pricePerSession: Number(pricePerSession) || 200000,
+        experienceYears: Number(experienceYears) || 1,
+        teachingMethod: teachingMethod.trim(),
+      });
+
+      // 2. Lưu các cặp môn học & khối lớp đã chọn
+      for (const subId of selectedSubjectIds) {
+        for (const lvlId of selectedLevelIds) {
+          try {
+            await profileService.addTutorSubject(subId, lvlId);
+          } catch {
+            // bỏ qua nếu đã tồn tại
+          }
+        }
+      }
+
+      setLastSaved(new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }));
+      setStep(2);
+      showToast("Đã lưu thông tin chuyên môn thành công!", "success");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Có lỗi xảy ra khi lưu thông tin chuyên môn";
+      showToast(message, "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSkipToDashboard = async () => {
+    // Nếu gia sư đã chọn môn và khu vực hợp lệ ở bước 1, lưu nháp xuống server
+    if (selectedSubjectIds.length > 0 && selectedLevelIds.length > 0 && area.trim()) {
+      try {
+        await profileService.updateTutorProfile({
+          displayName: displayName.trim() || user?.fullName || "Gia sư EduFit",
+          headline: headline.trim(),
+          bio: bio.trim(),
+          teachingMode,
+          area: area.trim(),
+          pricePerSession: Number(pricePerSession) || 200000,
+          experienceYears: Number(experienceYears) || 1,
+          teachingMethod: teachingMethod.trim(),
+        });
+        for (const subId of selectedSubjectIds) {
+          for (const lvlId of selectedLevelIds) {
+            try {
+              await profileService.addTutorSubject(subId, lvlId);
+            } catch {
+              // bỏ qua nếu đã có
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Lưu nháp khi bỏ qua onboarding:", err);
+      }
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "edufit_tutor_onboarding_completed",
+        JSON.stringify({
+          completedAt: new Date().toISOString(),
+          skipped: true,
+          displayName,
+          subjectsCount: selectedSubjectIds.length,
+          step: "SKIPPED",
+        })
+      );
+    }
+    showToast("Bạn có thể hoàn thiện hồ sơ và gửi duyệt KYC bất cứ lúc nào trong Bảng điều khiển.", "info");
+    router.push("/tutor/dashboard");
   };
 
   const handleNextFromStep2 = () => {
@@ -142,44 +241,6 @@ export function TutorOnboardingWizard() {
     }
     setStep(3);
     setLastSaved(new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }));
-  };
-
-  const handleGenerateAiBio = async () => {
-    if (!aiAgreed) {
-      showToast("Vui lòng đồng ý điều khoản xử lý nội dung để tạo bio!", "error");
-      return;
-    }
-    setGeneratingAi(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    const selectedSubjNames = subjectsCatalog
-      .filter((s) => selectedSubjectIds.includes(s.subjectId))
-      .map((s) => s.name)
-      .join(", ");
-
-    let toneBio = "";
-    if (aiTone === "friendly") {
-      toneBio = `Chào các em và quý phụ huynh! Tôi là ${displayName || "Gia sư"}, đồng hành cùng học sinh khối ${
-        educationLevels.find((l) => l.levelId === selectedLevelId)?.name || "THCS"
-      } môn ${selectedSubjNames || "Toán"}. Với ${experienceYears} năm kinh nghiệm, tôi luôn kiên nhẫn giảng dạy bằng phương pháp trực quan, biến kiến thức phức tạp thành những bài học gần gũi, giúp các em tự tin bứt phá điểm số!`;
-    } else if (aiTone === "professional") {
-      toneBio = `Cử nhân Sư phạm với ${experienceYears} năm kinh nghiệm chuyên sâu môn ${selectedSubjNames || "Toán"} cấp ${
-        educationLevels.find((l) => l.levelId === selectedLevelId)?.name || "THCS"
-      }. Lộ trình giảng dạy được chuẩn hóa theo năng lực từng học sinh, cam kết nắm chắc kiến thức căn bản, rèn tư duy giải toán nâng cao và đạt điểm cao trong các kỳ thi chuyển cấp.`;
-    } else {
-      toneBio = `Gia sư ${selectedSubjNames || "Toán"} (${experienceYears} năm KN). Tập trung lấp lỗ hổng kiến thức, bám sát cấu trúc đề thi, rèn kỹ năng làm bài nhanh và chính xác. Tận tâm, trách nhiệm, tiến bộ rõ sau từng tuần.`;
-    }
-
-    setAiDraft(toneBio);
-    setGeneratingAi(false);
-  };
-
-  const handleApplyAiDraft = () => {
-    if (aiDraft) {
-      setBio(aiDraft);
-      setShowAiModal(false);
-      showToast("Đã áp dụng bản nháp bio thành công!", "success");
-    }
   };
 
   const handleFileSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -234,11 +295,11 @@ export function TutorOnboardingWizard() {
         teachingMethod: teachingMethod.trim(),
       });
 
-      // 2. Cập nhật môn học giảng dạy
-      if (selectedSubjectIds.length > 0) {
-        for (const subId of selectedSubjectIds) {
+      // 2. Cập nhật môn học & khối lớp giảng dạy
+      for (const subId of selectedSubjectIds) {
+        for (const lvlId of selectedLevelIds) {
           try {
-            await profileService.addTutorSubject(subId, selectedLevelId);
+            await profileService.addTutorSubject(subId, lvlId);
           } catch {
             // bỏ qua nếu đã tồn tại
           }
@@ -316,12 +377,13 @@ export function TutorOnboardingWizard() {
             <Clock className="size-3.5" />
             <span>Đã lưu nháp lúc {lastSaved}</span>
           </div>
-          <Link
-            href="/tutor/dashboard"
-            className="text-xs text-neutral-500 hover:text-neutral-900 transition-colors"
+          <button
+            type="button"
+            onClick={handleSkipToDashboard}
+            className="text-xs text-neutral-500 hover:text-neutral-900 transition-colors cursor-pointer font-medium"
           >
             Bỏ qua để vào sau
-          </Link>
+          </button>
         </div>
       </header>
 
@@ -471,22 +533,54 @@ export function TutorOnboardingWizard() {
               </div>
 
               {/* Khối lớp giảng dạy & Kinh nghiệm */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-neutral-700 mb-1.5">
-                    Khối lớp học sinh trọng tâm
-                  </label>
-                  <select
-                    value={selectedLevelId}
-                    onChange={(e) => setSelectedLevelId(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 text-neutral-800"
-                  >
-                    {educationLevels.map((lvl) => (
-                      <option key={lvl.levelId} value={lvl.levelId}>
-                        {lvl.name} (Chương trình THCS)
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-bold text-neutral-700">
+                      Khối lớp bạn nhận dạy <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (selectedLevelIds.length === educationLevels.length) {
+                            setSelectedLevelIds([]);
+                          } else {
+                            setSelectedLevelIds(educationLevels.map((l) => l.levelId));
+                          }
+                        }}
+                        className="text-[11px] text-amber-600 hover:text-amber-700 font-semibold cursor-pointer"
+                      >
+                        {selectedLevelIds.length === educationLevels.length
+                          ? "Bỏ chọn tất cả"
+                          : "Chọn tất cả khối lớp"}
+                      </button>
+                      <span className="text-[11px] text-neutral-400">• Chọn 1 hoặc nhiều khối</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {educationLevels.map((lvl) => {
+                      const isSelected = selectedLevelIds.includes(lvl.levelId);
+                      return (
+                        <button
+                          key={lvl.levelId}
+                          type="button"
+                          onClick={() => toggleLevel(lvl.levelId)}
+                          className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-amber-500 text-white shadow-xs"
+                              : "bg-stone-100 hover:bg-stone-200 text-neutral-700"
+                          }`}
+                        >
+                          {isSelected && <Check className="size-3 inline-block mr-1.5" />}
+                          {lvl.name} (THCS)
+                        </button>
+                      );
+                    })}
+                    {educationLevels.length === 0 && (
+                      <span className="text-xs text-neutral-400 italic">Đang tải danh sách khối lớp...</span>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -561,9 +655,40 @@ export function TutorOnboardingWizard() {
                     type="text"
                     value={area}
                     onChange={(e) => setArea(e.target.value)}
-                    placeholder="VD: Cầu Giấy, Nam Từ Liêm, Hà Nội"
-                    className="w-full pl-10 pr-4 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 text-neutral-900"
+                    placeholder="VD: Cầu Giấy, Nam Từ Liêm, Hà Nội (hoặc chọn bên dưới)"
+                    className="w-full pl-10 pr-4 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-2xl focus:bg-white focus:outline-hidden focus:border-amber-500 text-neutral-900 font-medium"
                   />
+                </div>
+                {/* Danh sách các tỉnh thành lớn & gợi ý nhanh */}
+                <div className="mt-2.5 space-y-1.5">
+                  <span className="text-[11px] text-neutral-400 font-medium block">
+                    Chọn nhanh tỉnh/thành lớn (hoặc tự nhập tỉnh/thành khác vào ô phía trên):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {MAJOR_VIETNAM_CITIES.map((city) => {
+                      const isMatch = area.toLowerCase().includes(city.toLowerCase());
+                      return (
+                        <button
+                          key={city}
+                          type="button"
+                          onClick={() => {
+                            if (city === "Toàn quốc (Online)") {
+                              setArea("Toàn quốc");
+                            } else {
+                              setArea(city);
+                            }
+                          }}
+                          className={`px-2.5 py-1 text-[11px] rounded-lg transition-all cursor-pointer font-medium ${
+                            isMatch
+                              ? "bg-amber-100 text-amber-900 border border-amber-300 font-bold shadow-2xs"
+                              : "bg-stone-100 hover:bg-stone-200 text-neutral-600"
+                          }`}
+                        >
+                          {city}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
@@ -749,109 +874,6 @@ export function TutorOnboardingWizard() {
               </p>
             </div>
 
-            {/* AI Assistant Modal / Sub-card */}
-            {showAiModal && (
-              <div className="p-5 bg-gradient-to-br from-amber-50/80 to-orange-50/50 border border-amber-200 rounded-3xl space-y-4 animate-in fade-in">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="size-4 text-amber-600" />
-                    <h4 className="text-xs font-bold text-neutral-900">
-                      Viết bio với AI từ CV (Tạo bản nháp, không tự lưu)
-                    </h4>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowAiModal(false)}
-                    className="text-neutral-400 hover:text-neutral-700 text-xs"
-                  >
-                    Đóng
-                  </button>
-                </div>
-
-                <p className="text-[11px] text-neutral-600 leading-relaxed">
-                  AI sẽ dùng thông tin chuyên môn ({subjectsCatalog.filter((s) => selectedSubjectIds.includes(s.subjectId)).map((s) => s.name).join(", ")}) và CV đã nhập để tạo bản thảo giới thiệu thu hút.
-                </p>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-neutral-700">Giọng văn (Tone)</label>
-                  <div className="flex gap-2">
-                    {[
-                      { id: "friendly", label: "Thân thiện & Gần gũi" },
-                      { id: "professional", label: "Chuyên nghiệp & Chuẩn mực" },
-                      { id: "concise", label: "Ngắn gọn & Trọng tâm" },
-                    ].map((tone) => (
-                      <button
-                        key={tone.id}
-                        type="button"
-                        onClick={() => setAiTone(tone.id as typeof aiTone)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                          aiTone === tone.id
-                            ? "bg-amber-600 text-white shadow-xs"
-                            : "bg-white border border-stone-200 text-neutral-700 hover:bg-stone-50"
-                        }`}
-                      >
-                        {tone.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <label className="flex items-center gap-2 text-xs text-neutral-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={aiAgreed}
-                    onChange={(e) => setAiAgreed(e.target.checked)}
-                    className="rounded text-amber-600 focus:ring-amber-500"
-                  />
-                  <span>Tôi đồng ý để EduFit xử lý nội dung để tạo bio nháp.</span>
-                </label>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={generatingAi}
-                    onClick={handleGenerateAiBio}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
-                  >
-                    {generatingAi ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="size-3.5" />
-                    )}
-                    <span>{generatingAi ? "AI đang tạo..." : "Tạo bio với AI"}</span>
-                  </button>
-                </div>
-
-                {aiDraft && (
-                  <div className="p-4 bg-white border border-amber-200 rounded-2xl space-y-3">
-                    <div className="flex items-center justify-between text-[11px] text-amber-800 font-bold">
-                      <span>BẢN NHÁP AI GỢI Ý</span>
-                      <span className="text-neutral-400 font-normal">Vừa tạo</span>
-                    </div>
-                    <p className="text-xs text-neutral-800 leading-relaxed italic bg-stone-50/80 p-3 rounded-xl border border-stone-100">
-                      &ldquo;{aiDraft}&rdquo;
-                    </p>
-                    <div className="flex items-center gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={handleApplyAiDraft}
-                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
-                      >
-                        Dùng bản nháp này
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleGenerateAiBio}
-                        className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-neutral-700 font-medium text-xs rounded-xl cursor-pointer"
-                      >
-                        Tạo lại
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
             <div className="flex items-center justify-between pt-4 border-t border-stone-100">
               <button
                 type="button"
@@ -862,14 +884,24 @@ export function TutorOnboardingWizard() {
                 <span>Quay lại</span>
               </button>
 
-              <button
-                type="button"
-                onClick={handleNextFromStep2}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
-              >
-                <span>Lưu và tiếp tục</span>
-                <ArrowRight className="size-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSkipToDashboard}
+                  className="px-4 py-2.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 hover:bg-stone-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  Bỏ qua bước này
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleNextFromStep2}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+                >
+                  <span>Lưu và tiếp tục</span>
+                  <ArrowRight className="size-4" />
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -907,7 +939,12 @@ export function TutorOnboardingWizard() {
                 </p>
                 <p className="text-xs text-neutral-600">
                   Cấp học:{" "}
-                  {educationLevels.find((l) => l.levelId === selectedLevelId)?.name || "Chưa chọn"}
+                  <strong>
+                    {educationLevels
+                      .filter((l) => selectedLevelIds.includes(l.levelId))
+                      .map((l) => l.name)
+                      .join(", ") || "Chưa chọn"}
+                  </strong>
                 </p>
                 <p className="text-xs text-amber-700 font-semibold">
                   Học phí: {pricePerSession.toLocaleString("vi-VN")} đ / buổi
@@ -983,6 +1020,22 @@ export function TutorOnboardingWizard() {
       <footer className="border-t border-stone-200 py-4 px-6 text-center text-[11px] text-neutral-400">
         © 2026 EduFit Platform. Bảo mật thông tin gia sư & cam kết chất lượng giáo dục.
       </footer>
+
+      {/* Modal trợ lý AI viết Bio */}
+      <AiBioAssistantModal
+        isOpen={showAiModal}
+        onClose={() => setShowAiModal(false)}
+        displayName={displayName}
+        subjects={subjectsCatalog
+          .filter((s) => selectedSubjectIds.includes(s.subjectId))
+          .map((s) => s.name)}
+        educationLevels={educationLevels
+          .filter((l) => selectedLevelIds.includes(l.levelId))
+          .map((l) => l.name)}
+        experienceYears={experienceYears}
+        currentBio={bio}
+        onApplyBio={(newBio) => setBio(newBio)}
+      />
     </div>
   );
 }
