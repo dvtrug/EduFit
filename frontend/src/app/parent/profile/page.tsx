@@ -1,12 +1,8 @@
 "use client";
 
 import React from "react";
-import { ParentProfileForm } from "@/features/profile";
+import { SettingsView } from "@/features/settings";
 
 export default function ParentProfilePage() {
-  return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <ParentProfileForm />
-    </div>
-  );
+  return <SettingsView role="PARENT" defaultTab="profile" />;
 }
