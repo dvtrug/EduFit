@@ -1,0 +1,752 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] EduFit :: Parent                                                   [pom]
+[INFO] EduFit :: Platform (Aggregator)                                    [pom]
+[INFO] EduFit :: Platform :: Shared Kernel                                [jar]
+[INFO] EduFit :: Platform :: AI Gateway                                   [jar]
+[INFO] EduFit :: Platform :: File Storage                                 [jar]
+[INFO] EduFit :: Platform :: Audit Logging                                [jar]
+[INFO] EduFit :: Modules (Aggregator)                                     [pom]
+[INFO] EduFit :: Module :: IAM                                            [jar]
+[INFO] EduFit :: Module :: Profile                                        [jar]
+[INFO] EduFit :: Module :: Verification                                   [jar]
+[INFO] EduFit :: Module :: Connection                                     [jar]
+[INFO] EduFit :: Module :: Scheduling                                     [jar]
+[INFO] EduFit :: Module :: Review                                         [jar]
+[INFO] EduFit :: Module :: Discovery                                      [jar]
+[INFO] EduFit :: Module :: Progress                                       [jar]
+[INFO] EduFit :: Module :: Notification                                   [jar]
+[INFO] EduFit :: App Runner                                               [jar]
+[INFO]
+[INFO] ----------------------< vn.edufit:edufit-parent >-----------------------
+[INFO] Building EduFit :: Parent 1.0-SNAPSHOT                            [1/17]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ edufit-parent ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\target\\jacoco.exec
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ edufit-parent ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] -------------------------< vn.edufit:platform >-------------------------
+[INFO] Building EduFit :: Platform (Aggregator) 1.0-SNAPSHOT             [2/17]
+[INFO]   from platform\pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ platform ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\target\\jacoco.exec
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ platform ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] --------------------------< vn.edufit:shared >--------------------------
+[INFO] Building EduFit :: Platform :: Shared Kernel 1.0-SNAPSHOT         [3/17]
+[INFO]   from platform\shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ shared ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\shared\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\shared\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\shared\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ shared ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ shared ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\shared\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Platform :: Shared Kernel' with 11 classes
+[INFO]
+[INFO] ----------------------------< vn.edufit:ai >----------------------------
+[INFO] Building EduFit :: Platform :: AI Gateway 1.0-SNAPSHOT            [4/17]
+[INFO]   from platform\ai\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ ai ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\ai\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ ai ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\ai\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ ai ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ ai ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\ai\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ ai ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ ai ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ ai ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\ai\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Platform :: AI Gateway' with 17 classes
+[INFO]
+[INFO] -------------------------< vn.edufit:storage >--------------------------
+[INFO] Building EduFit :: Platform :: File Storage 1.0-SNAPSHOT          [5/17]
+[INFO]   from platform\storage\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ storage ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\storage\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ storage ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\storage\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ storage ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ storage ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\storage\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ storage ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ storage ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ storage ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] --------------------------< vn.edufit:audit >---------------------------
+[INFO] Building EduFit :: Platform :: Audit Logging 1.0-SNAPSHOT         [6/17]
+[INFO]   from platform\audit\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ audit ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\audit\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ audit ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\audit\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ audit ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ audit ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\audit\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ audit ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ audit ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ audit ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] -------------------------< vn.edufit:modules >--------------------------
+[INFO] Building EduFit :: Modules (Aggregator) 1.0-SNAPSHOT              [7/17]
+[INFO]   from modules\pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ modules ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\target\\jacoco.exec
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ modules ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] ---------------------------< vn.edufit:iam >----------------------------
+[INFO] Building EduFit :: Module :: IAM 1.0-SNAPSHOT                     [8/17]
+[INFO]   from modules\iam\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ iam ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\iam\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ iam ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\iam\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ iam ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ iam ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\iam\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ iam ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ iam ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ iam ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\iam\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: IAM' with 26 classes
+[INFO]
+[INFO] -------------------------< vn.edufit:profile >--------------------------
+[INFO] Building EduFit :: Module :: Profile 1.0-SNAPSHOT                 [9/17]
+[INFO]   from modules\profile\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ profile ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\profile\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ profile ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\profile\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ profile ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 52 source files with javac [debug parameters release 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ profile ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\profile\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ profile ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 7 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ profile ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ profile ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\profile\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: Profile' with 48 classes
+[WARNING] Classes in bundle 'EduFit :: Module :: Profile' do not match with execution data. For report generation the same class files must be used as at runtime.
+[WARNING] Execution data for class vn/edufit/profile/infra/persistence/entity/LearningGoal does not match.
+[INFO]
+[INFO] -----------------------< vn.edufit:verification >-----------------------
+[INFO] Building EduFit :: Module :: Verification 1.0-SNAPSHOT           [10/17]
+[INFO]   from modules\verification\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ verification ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\verification\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ verification ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\verification\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ verification ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 16 source files with javac [debug parameters release 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ verification ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\verification\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ verification ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 4 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ verification ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ verification ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] ------------------------< vn.edufit:connection >------------------------
+[INFO] Building EduFit :: Module :: Connection 1.0-SNAPSHOT             [11/17]
+[INFO]   from modules\connection\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ connection ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\connection\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ connection ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\connection\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ connection ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 13 source files with javac [debug parameters release 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ connection ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\connection\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ connection ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 1 source file with javac [debug parameters release 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ connection ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ connection ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\connection\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: Connection' with 18 classes
+[INFO]
+[INFO] ------------------------< vn.edufit:scheduling >------------------------
+[INFO] Building EduFit :: Module :: Scheduling 1.0-SNAPSHOT             [12/17]
+[INFO]   from modules\scheduling\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ scheduling ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\scheduling\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ scheduling ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\scheduling\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ scheduling ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ scheduling ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\scheduling\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ scheduling ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ scheduling ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ scheduling ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] --------------------------< vn.edufit:review >--------------------------
+[INFO] Building EduFit :: Module :: Review 1.0-SNAPSHOT                 [13/17]
+[INFO]   from modules\review\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ review ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\review\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ review ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\review\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ review ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ review ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\review\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ review ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ review ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ review ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] ------------------------< vn.edufit:discovery >-------------------------
+[INFO] Building EduFit :: Module :: Discovery 1.0-SNAPSHOT              [14/17]
+[INFO]   from modules\discovery\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ discovery ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\discovery\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ discovery ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\discovery\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ discovery ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 25 source files with javac [debug parameters release 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ discovery ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\discovery\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ discovery ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 8 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ discovery ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ discovery ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\discovery\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: Discovery' with 24 classes
+[INFO]
+[INFO] -------------------------< vn.edufit:progress >-------------------------
+[INFO] Building EduFit :: Module :: Progress 1.0-SNAPSHOT               [15/17]
+[INFO]   from modules\progress\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ progress ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\progress\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ progress ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\progress\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ progress ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ progress ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\progress\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ progress ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ progress ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ progress ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] -----------------------< vn.edufit:notification >-----------------------
+[INFO] Building EduFit :: Module :: Notification 1.0-SNAPSHOT           [16/17]
+[INFO]   from modules\notification\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ notification ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\notification\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ notification ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\notification\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ notification ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ notification ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\notification\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ notification ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ notification ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ notification ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] ---------------------------< vn.edufit:app >----------------------------
+[INFO] Building EduFit :: App Runner 1.0-SNAPSHOT                       [17/17]
+[INFO]   from app\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ app ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\app\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ app ---
+[INFO] Copying 13 resources from src\main\resources to target\classes
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ app ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 7 source files with javac [debug parameters release 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ app ---
+[INFO] Copying 5 resources from src\test\resources to target\test-classes
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ app ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 12 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] /C:/Users/ASUS/Desktop/EduFit/EduFit/backend/app/src/test/java/vn/edufit/profile/LearningGoalPostgresTest.java: C:\Users\ASUS\Desktop\EduFit\EduFit\backend\app\src\test\java\vn\edufit\profile\LearningGoalPostgresTest.java uses or overrides a deprecated API.
+[INFO] /C:/Users/ASUS/Desktop/EduFit/EduFit/backend/app/src/test/java/vn/edufit/profile/LearningGoalPostgresTest.java: Recompile with -Xlint:deprecation for details.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ app ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+04:54:18.069 [main] INFO com.tngtech.archunit.ArchConfiguration -- Reading ArchUnit properties from file:/C:/Users/ASUS/Desktop/EduFit/EduFit/backend/app/target/test-classes/archunit.properties
+[INFO] Running vn.edufit.ArchitectureBoundaryTest
+04:54:19.396 [main] INFO com.tngtech.archunit.core.PluginLoader -- Detected Java version 21.0.10
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 10.99 s -- in vn.edufit.ArchitectureBoundaryTest
+[INFO] Running vn.edufit.ArchitectureTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.666 s -- in vn.edufit.ArchitectureTest
+[INFO] Running vn.edufit.profile.LearningGoalPostgresTest
+04:54:31.625 [main] INFO org.testcontainers.images.PullPolicy -- Image pull policy will be performed by: DefaultPullPolicy()
+04:54:31.654 [main] INFO org.testcontainers.utility.ImageNameSubstitutor -- Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+04:54:31.784 [main] INFO org.testcontainers.DockerClientFactory -- Testcontainers version: 2.0.5
+04:54:33.922 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Loaded org.testcontainers.dockerclient.NpipeSocketClientProviderStrategy from ~/.testcontainers.properties, will try it first
+04:54:36.287 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Found Docker environment with local Npipe socket (npipe:////./pipe/docker_engine)
+04:54:36.293 [main] INFO org.testcontainers.DockerClientFactory -- Docker host IP address is localhost
+04:54:36.358 [main] INFO org.testcontainers.DockerClientFactory -- Connected to docker:
+  Server Version: 28.3.0
+  API Version: 1.51
+  Operating System: Docker Desktop
+  Total Memory: 7848 MB
+  Labels:
+    com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+04:54:36.695 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Creating container for image: testcontainers/ryuk:0.14.0
+04:54:37.025 [main] INFO org.testcontainers.utility.RegistryAuthLocator -- Credential helper/store (docker-credential-desktop) does not have credentials for https://index.docker.io/v1/
+04:54:38.114 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 is starting: 885c5c7c7ddc80c775e9cab39094447c68011062e3524815197261a974d3268e
+04:54:39.988 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 started in PT3.2927368S
+04:54:40.071 [main] INFO org.testcontainers.utility.RyukResourceReaper -- Ryuk started - will monitor and terminate Testcontainers containers on JVM exit
+04:54:40.071 [main] INFO org.testcontainers.DockerClientFactory -- Checking the system...
+04:54:40.078 [main] INFO org.testcontainers.DockerClientFactory -- ?? Docker server version should be at least 1.6.0
+04:54:40.081 [main] INFO tc.postgres:16-alpine -- Creating container for image: postgres:16-alpine
+04:54:40.331 [main] INFO tc.postgres:16-alpine -- Container postgres:16-alpine is starting: 74ae42bd09cf086ce38793ea43c6b0e66373e7c1bceb37bea2d3635b562cdda8
+04:54:44.548 [main] INFO tc.postgres:16-alpine -- Container postgres:16-alpine started in PT4.4669942S
+04:54:44.549 [main] INFO tc.postgres:16-alpine -- Container is started (JDBC URL: jdbc:postgresql://localhost:56707/test?loggerLevel=OFF)
+04:54:46.724 [main] INFO org.springframework.data.repository.config.RepositoryConfigurationDelegate -- Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+04:54:47.155 [main] INFO org.springframework.data.repository.config.RepositoryConfigurationDelegate -- Finished Spring Data repository scanning in 380 ms. Found 14 JPA repository interfaces.
+04:54:52.064 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:postgresql://localhost:56707/test?loggerLevel=OFF (PostgreSQL 16.15)
+04:54:52.523 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Schema history table "public"."flyway_schema_history" does not exist yet
+04:54:52.540 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 12 migrations (execution time 00:00.179s)
+04:54:52.595 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Creating Schema History table "public"."flyway_schema_history" ...
+04:54:52.774 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema "public": << Empty Schema >>
+04:54:52.829 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.01 - create account and session tables"
+04:54:53.435 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.02 - create profile and subject tables"
+04:54:53.634 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.03 - create verification tables"
+04:54:53.774 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.04 - create connection and class tables"
+04:54:53.962 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.05 - create tutoring session tables"
+04:54:54.136 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.06 - create learning plan tables"
+04:54:54.322 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.07 - create review and notification tables"
+04:54:54.454 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.08 - create audit and ai log tables"
+04:54:54.614 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.09 - seed demo accounts and catalogs"
+04:54:54.732 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.10 - seed demo accounts and catalogs"
+04:54:54.901 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.11 - allow relink after revocation"
+04:54:55.003 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.12 - create ai match reservations"
+04:54:55.109 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Successfully applied 12 migrations to schema "public", now at version v1.12 (execution time 00:01.568s)
+04:54:56.034 [main] INFO org.hibernate.orm.jpa -- HHH008540: Processing PersistenceUnitInfo [name: default]
+04:54:56.725 [main] INFO org.hibernate.orm.core -- HHH000001: Hibernate ORM core version 7.4.5.Final
+04:55:00.517 [main] INFO org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo -- No LoadTimeWeaver setup: ignoring JPA class transformer
+04:55:01.119 [main] INFO org.hibernate.orm.connections.pooling -- HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:56707/test?loggerLevel=OFF]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 16.15
+	Default catalog/schema: test/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+04:55:04.365 [main] INFO org.hibernate.validator.internal.util.Version -- HV000001: Hibernate Validator 9.1.3.Final
+04:55:09.158 [main] INFO org.hibernate.orm.core -- HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+04:55:09.537 [main] INFO org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean -- Initialized JPA EntityManagerFactory for persistence unit 'default'
+04:55:10.228 [main] INFO org.springframework.data.jpa.repository.query.QueryEnhancerFactories -- Hibernate is in classpath; If applicable, HQL parser will be used.
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A Java agent has been loaded dynamically (C:\Users\ASUS\.m2\repository\net\bytebuddy\byte-buddy-agent\1.18.11\byte-buddy-agent-1.18.11.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+04:55:25.056 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:25.056 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:25.072 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 15 ms
+04:55:29.145 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y LearningGoal v?i m� ??nh danh: af3323a2-a9b7-4ab3-bd4a-6c230b3e198b
+04:55:29.225 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y LearningGoal v?i m� ??nh danh: af3323a2-a9b7-4ab3-bd4a-6c230b3e198b
+04:55:29.937 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:29.937 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:29.937 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:30.144 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M�n h?c ph?i t?n t?i v� ?ang ho?t ??ng.
+04:55:30.218 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M�n h?c ph?i t?n t?i v� ?ang ho?t ??ng.
+04:55:30.844 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:30.844 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:30.844 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:31.019 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M�n h?c ph?i t?n t?i v� ?ang ho?t ??ng.
+04:55:31.096 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M�n h?c ph?i t?n t?i v� ?ang ho?t ??ng.
+04:55:31.689 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:31.690 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:31.690 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:31.867 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:31.885 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:32.384 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:32.384 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:32.385 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:32.585 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:32.598 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:33.060 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:33.061 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:33.061 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:33.183 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:33.197 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:33.681 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:33.682 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:33.682 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:33.797 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:33.810 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:34.186 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:34.188 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:34.188 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:34.285 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:34.298 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:34.631 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:34.631 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:34.631 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:34.719 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:34.731 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:35.048 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:35.048 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:35.049 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+04:55:35.132 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:35.144 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:35.511 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:35.512 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:35.512 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:35.594 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:35.603 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:36.094 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:36.095 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:36.095 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:36.626 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:36.626 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:36.627 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+04:55:36.646 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:36.655 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+04:55:36.990 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:36.992 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:36.992 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:37.065 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y StudentProfile v?i m� ??nh danh: 94fc16d8-66a2-4985-ac6e-4f37c3917458
+04:55:37.100 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y StudentProfile v?i m� ??nh danh: 94fc16d8-66a2-4985-ac6e-4f37c3917458
+04:55:37.365 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:37.365 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:37.365 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:37.718 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:37.718 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:37.718 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:38.275 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:38.276 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:38.276 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:38.574 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M?c ti�u ?� l?u tr? kh�ng ???c ch?nh s?a.
+04:55:38.847 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:38.847 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:38.849 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 2 ms
+04:55:38.953 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:38.982 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:39.003 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:39.022 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:39.296 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:39.296 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:39.297 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+04:55:39.399 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:39.436 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:39.460 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:39.482 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:39.872 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:39.873 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:39.873 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:39.997 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:40.031 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:40.055 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:40.075 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:40.365 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+04:55:40.365 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+04:55:40.365 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+04:55:40.478 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:40.510 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:40.537 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:40.562 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+04:55:40.574 [main] INFO org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean -- Closing JPA EntityManagerFactory for persistence unit 'default'
+Oct 12, 2026 4:55:40 AM org.junit.jupiter.engine.descriptor.AbstractExtensionContext lambda$createCloseAction$1
+WARNING: Type implements CloseableResource but not AutoCloseable: org.testcontainers.junit.jupiter.TestcontainersExtension$StoreAdapter
+[ERROR] Tests run: 21, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 69.95 s <<< FAILURE! -- in vn.edufit.profile.LearningGoalPostgresTest
+[ERROR] vn.edufit.profile.LearningGoalPostgresTest.archivedGoalIsRejectedByRealMatchingAndConnectionServices -- Time elapsed: 0.661 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Unexpected exception type thrown, expected: <vn.edufit.shared.exception.InvalidOperationException> but was: <org.springframework.beans.factory.NoSuchBeanDefinitionException>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:68)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3223)
+	at vn.edufit.profile.LearningGoalPostgresTest.archivedGoalIsRejectedByRealMatchingAndConnectionServices(LearningGoalPostgresTest.java:226)
+Caused by: org.springframework.beans.factory.NoSuchBeanDefinitionException: No qualifying bean of type 'vn.edufit.connection.application.ConnectionService' available
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.getBean(DefaultListableBeanFactory.java:386)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.getBean(DefaultListableBeanFactory.java:377)
+	at org.springframework.context.support.AbstractApplicationContext.getBean(AbstractApplicationContext.java:1317)
+	at vn.edufit.profile.LearningGoalPostgresTest.lambda$archivedGoalIsRejectedByRealMatchingAndConnectionServices$1(LearningGoalPostgresTest.java:230)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:54)
+	... 3 more
+
+[INFO]
+[INFO] Results:
+[INFO]
+[ERROR] Failures:
+[ERROR]   LearningGoalPostgresTest.archivedGoalIsRejectedByRealMatchingAndConnectionServices:226 Unexpected exception type thrown, expected: <vn.edufit.shared.exception.InvalidOperationException> but was: <org.springframework.beans.factory.NoSuchBeanDefinitionException>
+[INFO]
+[ERROR] Tests run: 30, Failures: 1, Errors: 0, Skipped: 0
+[INFO]
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for EduFit :: Parent 1.0-SNAPSHOT:
+[INFO]
+[INFO] EduFit :: Parent ................................... SUCCESS [  1.601 s]
+[INFO] EduFit :: Platform (Aggregator) .................... SUCCESS [  0.037 s]
+[INFO] EduFit :: Platform :: Shared Kernel ................ SUCCESS [  2.047 s]
+[INFO] EduFit :: Platform :: AI Gateway ................... SUCCESS [  1.721 s]
+[INFO] EduFit :: Platform :: File Storage ................. SUCCESS [  0.476 s]
+[INFO] EduFit :: Platform :: Audit Logging ................ SUCCESS [  0.310 s]
+[INFO] EduFit :: Modules (Aggregator) ..................... SUCCESS [  0.012 s]
+[INFO] EduFit :: Module :: IAM ............................ SUCCESS [  1.223 s]
+[INFO] EduFit :: Module :: Profile ........................ SUCCESS [ 15.498 s]
+[INFO] EduFit :: Module :: Verification ................... SUCCESS [  7.544 s]
+[INFO] EduFit :: Module :: Connection ..................... SUCCESS [  7.562 s]
+[INFO] EduFit :: Module :: Scheduling ..................... SUCCESS [  0.293 s]
+[INFO] EduFit :: Module :: Review ......................... SUCCESS [  0.296 s]
+[INFO] EduFit :: Module :: Discovery ...................... SUCCESS [  7.561 s]
+[INFO] EduFit :: Module :: Progress ....................... SUCCESS [  0.268 s]
+[INFO] EduFit :: Module :: Notification ................... SUCCESS [  0.211 s]
+[INFO] EduFit :: App Runner ............................... FAILURE [01:34 min]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  02:22 min
+[INFO] Finished at: 2026-10-12T04:55:42Z
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.0:test (default-test) on project app: There are test failures.
+[ERROR]
+[ERROR] Please refer to C:\Users\ASUS\Desktop\EduFit\EduFit\backend\app\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR]
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR]
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR]
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :app

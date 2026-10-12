@@ -28,7 +28,7 @@ Cập nhật 2026-10-12: B00, Phase 1 (B02–B04) và Phase 2 (B05–B07) hoàn 
 
 ## Đầu vào matching
 
-- [ ] B08: Student create/list/update/archive goals đúng owner và BR-12.
+- [x] B08: Student create/list/update/archive goals đúng owner và BR-12.
 - [ ] B09: Goal availability save nguyên tử; validation và readback.
 - [ ] B10: Parent chỉ đọc goals qua confirmed-link authorization; không dependency cycle.
 - [ ] Checkpoint D: tạo goal -> slots -> match qua HTTP, không cần SQL thủ công.
@@ -105,3 +105,9 @@ mvn -B -ntp -pl platform/ai,modules/discovery '-Djacoco.haltOnFailure=true' jaco
 ```
 
 `jacoco:check` đọc dataFile mặc định của module (không dùng property override của report), nên bước copy là có chủ đích. Đây là evidence coverage kết hợp unit + PostgreSQL integration, không phải tuyên bố unit-only hoặc toàn reactor verify đã đạt gate. Báo cáo local nằm trong target/site/jacoco, không commit build outputs.
+
+## Evidence Phase 3
+
+- Goal/readiness contract của B01 được chốt trong [Phase 3 contract](../../docs/ai-discovery-phase3-contract.md); phần security tổng thể B01 vẫn pending cho Phase 4. B08 hoàn tất: create/list/update/archive, active subject, BR-12, budget/mode/area, owner từ session, archive idempotent và giữ matching history. Real Matching/Connection từ chối archived goal.
+- [B08 red](b08-red.log): chạy controller scaffold không có routes, 18 failures/0 errors chứng minh thiếu API. Test đã viết trước implementation; do Docker ban đầu chưa chạy, sau khi khởi động engine đã tái lập scaffold để có red HTTP thật. [Docker unavailable](phase3-docker-unavailable.log), [Docker đang khởi động](phase3-docker-starting.log) là lỗi môi trường, không tính là business red. [Fixture proxy](b08-fixture-proxy.log): 20/21 goal tests pass, một failure do test lookup concrete ConnectionService qua JDK proxy; sửa fixture sang class proxy.
+- [B08 green](b08-green.log): **21 goal HTTP/service/PostgreSQL cases + 9 app architecture checks, 0 fail/error/skip, BUILD SUCCESS**. CurrentUser kiểm soát trong fixture; chưa nhận full-filter auth/CSRF E2E đã pass. Migrations PostgreSQL thật, không skip/H2. Lệnh backend/JDK 21: `mvn -B -ntp -pl app -am '-Dtest=LearningGoalPostgresTest,Architecture*Test' '-Dsurefire.failIfNoSpecifiedTests=false' test`.

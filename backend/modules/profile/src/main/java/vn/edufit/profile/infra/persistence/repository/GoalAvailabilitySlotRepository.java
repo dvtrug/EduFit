@@ -9,5 +9,7 @@ import vn.edufit.profile.infra.persistence.entity.GoalAvailabilitySlot;
 @Repository
 public interface GoalAvailabilitySlotRepository extends JpaRepository<GoalAvailabilitySlot, UUID> {
 
+  List<GoalAvailabilitySlot> findByGoalIdInOrderByDayOfWeekAscStartTimeAsc(List<UUID> goalIds);
+
   List<GoalAvailabilitySlot> findByGoalIdOrderByDayOfWeekAscStartTimeAsc(UUID goalId);
 }
