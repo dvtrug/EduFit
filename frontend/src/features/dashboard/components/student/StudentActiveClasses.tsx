@@ -22,12 +22,12 @@ interface StudentActiveClassesProps {
 export function StudentActiveClasses({ classes = [] }: StudentActiveClassesProps) {
   if (classes.length === 0) {
     return (
-      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-stone-200/80 shadow-xs space-y-4">
+      <div className="bg-white dark:bg-stone-900 p-6 sm:p-7 rounded-3xl border border-stone-200/80 dark:border-stone-800 shadow-xs space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900">
+          <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900 dark:text-stone-100">
             Lớp học đang diễn ra
           </h3>
-          <span className="text-xs text-neutral-400 font-medium">0 lớp</span>
+          <span className="text-xs text-neutral-400 dark:text-stone-400 font-medium">0 lớp</span>
         </div>
 
         <EmptyState

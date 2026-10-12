@@ -25,7 +25,9 @@ import {
   Save,
   Loader2,
   Briefcase,
+  Sparkles,
 } from "lucide-react";
+import { AiBioAssistantModal } from "./AiBioAssistantModal";
 
 /**
  * =========================================================================
@@ -50,6 +52,7 @@ export function TutorProfileForm({ initialProfile, onSaved }: TutorProfileFormPr
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showAiModal, setShowAiModal] = useState(false);
 
   // Catalogs
   const [subjectsCatalog, setSubjectsCatalog] = useState<SubjectItem[]>([]);
@@ -329,13 +332,46 @@ export function TutorProfileForm({ initialProfile, onSaved }: TutorProfileFormPr
                 className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-hidden focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 text-neutral-900 font-medium"
               />
             </div>
+            {/* Gợi ý tỉnh thành */}
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              <span className="text-[10px] text-neutral-400 font-medium">Gợi ý nhanh:</span>
+              {["Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ", "Bình Dương", "Đồng Nai", "Toàn quốc (Online)"].map((city) => (
+                <button
+                  key={city}
+                  type="button"
+                  onClick={() => setArea(city)}
+                  className={`px-2 py-0.5 text-[10px] rounded-md transition-colors cursor-pointer ${
+                    area === city
+                      ? "bg-sky-100 text-sky-800 font-bold border border-sky-300"
+                      : "bg-stone-100 hover:bg-stone-200 text-neutral-600"
+                  }`}
+                >
+                  {city}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-neutral-700 mb-1.5">
-            Tiểu sử & Giới thiệu bản thân (Bio)
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-xs font-bold text-neutral-700">
+              Tiểu sử & Giới thiệu bản thân (Bio)
+            </label>
+            <div className="flex items-center gap-2.5">
+              <span className="text-[11px] text-neutral-400">
+                {bio.length} / 1.500 ký tự
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowAiModal(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-amber-800 font-bold text-[11px] rounded-full transition-all border border-amber-200/80 shadow-2xs cursor-pointer active:scale-95"
+              >
+                <Sparkles className="size-3 text-amber-600 animate-pulse" />
+                <span>Viết bio bằng AI</span>
+              </button>
+            </div>
+          </div>
           <textarea
             rows={4}
             value={bio}
@@ -427,6 +463,18 @@ export function TutorProfileForm({ initialProfile, onSaved }: TutorProfileFormPr
       <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200/90 shadow-xs">
         <AvailabilitySlotPicker slots={availabilitySlots} onChange={setAvailabilitySlots} />
       </div>
+
+      {/* Modal trợ lý AI viết Bio */}
+      <AiBioAssistantModal
+        isOpen={showAiModal}
+        onClose={() => setShowAiModal(false)}
+        displayName={displayName}
+        subjects={(profile?.subjects || []).map((s) => s.subjectName)}
+        educationLevels={Array.from(new Set((profile?.subjects || []).map((s) => s.educationLevelName)))}
+        experienceYears={experienceYears}
+        currentBio={bio}
+        onApplyBio={(newBio) => setBio(newBio)}
+      />
     </form>
   );
 }

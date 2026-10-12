@@ -68,7 +68,7 @@ export function TutorDashboardView({ user }: TutorDashboardViewProps) {
     {
       title: "Nhận yêu cầu & Bắt đầu dạy",
       description: "Chấp nhận lời mời học thử từ học sinh và tạo lớp học 1-1 trực tiếp.",
-      href: "/tutor/requests",
+      href: "/tutor/dashboard",
       actionText: "Xem hàng đợi",
       completed: false,
     },
@@ -90,18 +90,18 @@ export function TutorDashboardView({ user }: TutorDashboardViewProps) {
         </div>
         <div className="flex items-center gap-2.5">
           <Link
-            href="/tutor/profile"
+            href="/tutor/schedule"
             className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-stone-50 border border-stone-200 text-neutral-800 rounded-xl text-xs font-bold shadow-2xs transition-colors shrink-0"
           >
             <Clock className="size-3.5 text-neutral-500" />
             <span>Cập nhật lịch rảnh</span>
           </Link>
           <Link
-            href="/tutor/classes"
+            href="/tutor/profile"
             className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors shrink-0"
           >
             <Plus className="size-3.5" />
-            <span>Tạo buổi dạy mới</span>
+            <span>Chỉnh sửa hồ sơ</span>
           </Link>
         </div>
       </div>

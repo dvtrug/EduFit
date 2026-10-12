@@ -105,7 +105,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "CÀI ĐẶT",
         items: [
-          { label: "Hồ sơ học tập", href: "/student/profile", icon: Settings },
+          { label: "Cài đặt", href: "/student/settings", icon: Settings },
         ],
       },
     ],
@@ -137,7 +137,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "CÀI ĐẶT",
         items: [
-          { label: "Hồ sơ & Môn dạy", href: "/tutor/profile", icon: Settings },
+          { label: "Cài đặt", href: "/tutor/settings", icon: Settings },
         ],
       },
     ],
@@ -169,7 +169,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "CÀI ĐẶT",
         items: [
-          { label: "Hồ sơ phụ huynh", href: "/parent/profile", icon: Settings },
+          { label: "Cài đặt", href: "/parent/settings", icon: Settings },
         ],
       },
     ],
@@ -233,7 +233,7 @@ function SidebarNav({
         <div key={idx} className="flex flex-col gap-1">
           <span
             aria-hidden={collapsed}
-            className={`h-4 px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 font-sans whitespace-nowrap transition-opacity duration-200 ${
+            className={`h-4 px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-stone-500 font-sans whitespace-nowrap transition-opacity duration-200 ${
               collapsed ? "opacity-0" : "opacity-100"
             }`}
           >
@@ -249,15 +249,17 @@ function SidebarNav({
                 href={item.href}
                 className={`h-10 flex items-center justify-between px-2.5 rounded-xl text-xs font-medium transition-colors group ${
                   isActive
-                    ? "bg-amber-500/10 text-amber-900 font-semibold shadow-xs"
-                    : "text-neutral-600 hover:bg-stone-100 hover:text-neutral-900"
+                    ? "bg-amber-500/10 dark:bg-amber-500/20 text-amber-900 dark:text-amber-400 font-semibold shadow-xs"
+                    : "text-neutral-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-neutral-900 dark:hover:text-stone-100"
                 }`}
                 title={collapsed ? item.label : undefined}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Icon
                     className={`size-4.5 shrink-0 transition-transform group-hover:scale-105 ${
-                      isActive ? "text-amber-600" : "text-neutral-400 group-hover:text-neutral-700"
+                      isActive
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-neutral-400 dark:text-stone-500 group-hover:text-neutral-700 dark:group-hover:text-stone-300"
                     }`}
                   />
                   <span
@@ -299,12 +301,35 @@ export function Sidebar({
     <aside
       className={`${
         collapsed ? "w-20" : "w-64"
-      } bg-white border-r border-stone-200/80 transition-[width] duration-300 ease-in-out flex flex-col justify-between shrink-0 h-screen sticky top-0 z-40 select-none`}
+      } bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 transition-[width] duration-300 ease-in-out flex flex-col justify-between shrink-0 h-screen sticky top-0 z-40 select-none`}
     >
       <div className="p-4 flex flex-col gap-5 overflow-y-auto overflow-x-hidden">
-        {/* Logo EduFit chuẩn thương hiệu */}
-        <div className="h-12 px-1 flex items-center">
-          <EduFitLogo href={`/${roleBase}/dashboard#dashboard-top`} showText={!collapsed} roleBadge={currentConfig.roleTitle} />
+        {/* Top Header: Logo EduFit chuẩn thương hiệu + Thu gọn menu ở trên */}
+        <div
+          className={`flex items-center pb-3 border-b border-stone-100 dark:border-stone-800/80 transition-all ${
+            collapsed ? "flex-col gap-2.5 px-0" : "justify-between px-1"
+          }`}
+        >
+          <EduFitLogo
+            href={`/${roleBase}/dashboard#dashboard-top`}
+            showText={!collapsed}
+            roleBadge={currentConfig.roleTitle}
+          />
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className={`p-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 text-neutral-400 hover:text-neutral-700 dark:text-stone-400 dark:hover:text-stone-200 transition-colors cursor-pointer shrink-0 ${
+              collapsed ? "w-9 h-9 flex items-center justify-center bg-stone-50 dark:bg-stone-800" : ""
+            }`}
+            title={collapsed ? "Mở rộng thanh menu" : "Thu gọn thanh menu"}
+            aria-label={collapsed ? "Mở rộng thanh menu" : "Thu gọn thanh menu"}
+          >
+            {collapsed ? (
+              <PanelLeft className="size-4.5" />
+            ) : (
+              <PanelLeftClose className="size-4.5" />
+            )}
+          </button>
         </div>
 
         {/* Navigation Sections */}
@@ -315,7 +340,7 @@ export function Sidebar({
                 <div key={idx} className="flex flex-col gap-1">
                   <span
                     aria-hidden={collapsed}
-                    className={`h-4 px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 font-sans whitespace-nowrap transition-opacity duration-200 ${
+                    className={`h-4 px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-stone-500 font-sans whitespace-nowrap transition-opacity duration-200 ${
                       collapsed ? "opacity-0" : "opacity-100"
                     }`}
                   >
@@ -330,15 +355,17 @@ export function Sidebar({
                         href={item.href}
                         className={`h-10 flex items-center justify-between px-2.5 rounded-xl text-xs font-medium transition-colors group ${
                           isActive
-                            ? "bg-amber-500/10 text-amber-900 font-semibold shadow-xs"
-                            : "text-neutral-600 hover:bg-stone-100 hover:text-neutral-900"
+                            ? "bg-amber-500/10 dark:bg-amber-500/20 text-amber-900 dark:text-amber-400 font-semibold shadow-xs"
+                            : "text-neutral-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-neutral-900 dark:hover:text-stone-100"
                         }`}
                         title={collapsed ? item.label : undefined}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
                           <Icon
                             className={`size-4.5 shrink-0 transition-transform group-hover:scale-105 ${
-                              isActive ? "text-amber-600" : "text-neutral-400 group-hover:text-neutral-700"
+                              isActive
+                                ? "text-amber-600 dark:text-amber-400"
+                                : "text-neutral-400 dark:text-stone-500 group-hover:text-neutral-700 dark:group-hover:text-stone-300"
                             }`}
                           />
                           <span
@@ -371,27 +398,17 @@ export function Sidebar({
         </Suspense>
       </div>
 
-      {/* Footer / Toggle & User pill */}
-      <div className="p-3 border-t border-stone-100 flex flex-col gap-2 bg-stone-50/50">
-        <button
-          type="button"
-          onClick={onToggleCollapse}
-          className="w-full flex items-center justify-center gap-2 p-2 rounded-xl hover:bg-stone-200/60 text-neutral-500 text-xs transition-colors"
-          title={collapsed ? "Mở rộng thanh menu" : "Thu gọn thanh menu"}
-        >
-          {collapsed ? (
-            <PanelLeft className="size-4" />
-          ) : (
-            <>
-              <PanelLeftClose className="size-4" />
-              <span>Thu gọn menu</span>
-            </>
-          )}
-        </button>
-
+      {/* Footer / User pill (Đã chuyển nút thu gọn lên trên) */}
+      <div className="p-3 border-t border-stone-100 dark:border-stone-800 flex flex-col gap-2 bg-stone-50/50 dark:bg-stone-900/50">
         {user && (
-          <div className={`h-11 px-2 flex items-center bg-white rounded-xl border border-stone-200/60 transition-[gap] duration-300 ${collapsed ? "justify-center gap-0" : "gap-2"}`}>
-            <div className="size-7 rounded-lg bg-amber-100 text-amber-700 font-bold text-xs flex items-center justify-center shrink-0">
+          <Link
+            href={`/${roleBase}/settings`}
+            title={collapsed ? "Cài đặt tài khoản" : undefined}
+            className={`h-11 px-2 flex items-center bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-750 rounded-xl border border-stone-200/60 dark:border-stone-700/60 hover:border-amber-300 dark:hover:border-amber-500/60 transition-[gap,border-color,background-color] duration-300 group cursor-pointer ${
+              collapsed ? "justify-center gap-0" : "gap-2"
+            }`}
+          >
+            <div className="size-7 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 font-bold text-xs flex items-center justify-center shrink-0 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/60 transition-colors">
               {user.fullName.charAt(0).toUpperCase()}
             </div>
             <div
@@ -400,10 +417,12 @@ export function Sidebar({
                 collapsed ? "max-w-0 opacity-0" : "max-w-44 opacity-100"
               }`}
             >
-              <span className="text-xs font-semibold text-neutral-900 truncate">{user.fullName}</span>
-              <span className="text-[10px] text-neutral-400 truncate">{user.email}</span>
+              <span className="text-xs font-semibold text-neutral-900 dark:text-stone-100 group-hover:text-amber-900 dark:group-hover:text-amber-400 transition-colors truncate">
+                {user.fullName}
+              </span>
+              <span className="text-[10px] text-neutral-400 dark:text-stone-400 truncate">{user.email}</span>
             </div>
-          </div>
+          </Link>
         )}
       </div>
     </aside>

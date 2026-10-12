@@ -89,11 +89,13 @@ public class SecurityConfig {
             // 2.3. Phân quyền dành riêng cho Gia sư (TUTOR)
             .requestMatchers(
                 "/api/v1/verifications/tutors/**",
+                "/api/v1/profiles/tutors/me",
                 "/api/v1/profiles/tutors/me/**"
             ).hasRole("TUTOR")
 
             // 2.4. Phân quyền dành riêng cho Học sinh & Phụ huynh (STUDENT, PARENT)
             .requestMatchers(
+                "/api/v1/profiles/students/me",
                 "/api/v1/profiles/students/me/**"
             ).hasAnyRole("STUDENT", "PARENT", "ADMIN")
 
