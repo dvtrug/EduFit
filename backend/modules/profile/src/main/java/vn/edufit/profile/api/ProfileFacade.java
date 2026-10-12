@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
+import vn.edufit.profile.api.dto.LearningGoalView;
 import vn.edufit.profile.api.dto.EducationLevelOrderDto;
 import vn.edufit.profile.api.dto.TutorCandidateCriteria;
 import vn.edufit.profile.api.dto.LearningGoalDiscoveryDto;
@@ -44,6 +45,12 @@ public interface ProfileFacade {
   List<EducationLevelOrderDto> findEducationLevelsForMatching();
 
   Optional<LearningGoalDiscoveryDto> findLearningGoalForDiscovery(UUID goalId);
+
+  /**
+   * Internal read contract. The caller must authorize student ownership/confirmed Parent link
+   * before calling; Profile does not depend on Connection. Includes archived goals and readiness.
+   */
+  List<LearningGoalView> findLearningGoalsForStudent(UUID studentId);
 
   UUID getTutorIdByUserId(UUID userId);
 
