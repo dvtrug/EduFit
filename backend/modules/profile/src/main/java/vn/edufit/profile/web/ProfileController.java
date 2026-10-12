@@ -13,15 +13,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import vn.edufit.profile.application.service.LearningGoalService;
 import vn.edufit.profile.application.service.StudentProfileService;
+import vn.edufit.profile.application.service.TutorBioService;
 import vn.edufit.profile.application.service.TutorProfileService;
-import vn.edufit.profile.web.request.AddTutorSubjectRequest;
-import vn.edufit.profile.web.request.SetAvailabilitySlotsRequest;
-import vn.edufit.profile.web.request.UpdateStudentProfileRequest;
-import vn.edufit.profile.web.request.UpdateTutorProfileRequest;
-import vn.edufit.profile.web.response.MyProfileResponse;
-import vn.edufit.profile.web.response.StudentProfileResponse;
-import vn.edufit.profile.web.response.TutorProfileResponse;
+import vn.edufit.profile.web.request.*;
+import vn.edufit.profile.web.response.*;
 import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.exception.EntityNotFoundException;
 import vn.edufit.shared.exception.ForbiddenOperationException;
@@ -35,16 +32,22 @@ import vn.edufit.shared.response.ApiResponse;
 public class ProfileController {
 
   private final StudentProfileService studentProfileService;
+  private final LearningGoalService learningGoalService;
   private final TutorProfileService tutorProfileService;
+  private final TutorBioService tutorBioService;
   private final ObjectProvider<CurrentUser> currentUserProvider;
 
   public ProfileController(
       StudentProfileService studentProfileService,
+      LearningGoalService learningGoalService,
       TutorProfileService tutorProfileService,
+      TutorBioService tutorBioService,
       ObjectProvider<CurrentUser> currentUserProvider
   ) {
     this.studentProfileService = studentProfileService;
+    this.learningGoalService = learningGoalService;
     this.tutorProfileService = tutorProfileService;
+    this.tutorBioService = tutorBioService;
     this.currentUserProvider = currentUserProvider;
   }
 

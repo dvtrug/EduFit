@@ -108,10 +108,10 @@ public class LearningGoalService {
       }
     }
     Map<Short, List<CreateLearningGoalRequest.SlotItem>> slotsByDay = request.availabilitySlots()
-        .stream().collect(Collectors.groupingBy(CreateLearningGoalRequest.SlotItem::dayOfWeek));
+        .stream().collect(Collectors.groupingBy(slot -> slot.dayOfWeek()));
     for (List<CreateLearningGoalRequest.SlotItem> sameDaySlots : slotsByDay.values()) {
       List<CreateLearningGoalRequest.SlotItem> sorted = new ArrayList<>(sameDaySlots);
-      sorted.sort(Comparator.comparing(CreateLearningGoalRequest.SlotItem::startTime));
+      sorted.sort(Comparator.comparing(slot -> slot.startTime()));
       for (int i = 0; i < sorted.size() - 1; i++) {
         if (sorted.get(i).endTime().isAfter(sorted.get(i + 1).startTime())) {
           throw new InvalidOperationException("Các khung giờ học trong cùng ngày không được chồng lấn.");
