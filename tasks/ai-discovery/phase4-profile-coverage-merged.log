@@ -1,0 +1,22 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+[INFO] Scanning for projects...
+[INFO]
+[INFO] -------------------------< vn.edufit:profile >--------------------------
+[INFO] Building EduFit :: Module :: Profile 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:report (default-cli) @ profile ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\profile\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: Profile' with 50 classes
+[INFO]
+[INFO] --- jacoco:0.8.12:check (check-coverage-gate) @ profile ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\profile\target\jacoco.exec
+[INFO] Analyzed bundle 'profile' with 50 classes
+[INFO] All coverage checks have been met.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.904 s
+[INFO] Finished at: 2026-10-12T06:25:34Z
+[INFO] ------------------------------------------------------------------------

@@ -1,0 +1,25 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+[INFO] Scanning for projects...
+[INFO]
+[INFO] ---------------------------< vn.edufit:app >----------------------------
+[INFO] Building EduFit :: App Runner 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:check (check-coverage-gate) @ app ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\app\target\jacoco.exec
+[INFO] Analyzed bundle 'app' with 7 classes
+[WARNING] Rule violated for bundle app: branches covered ratio is 0.56, but expected minimum is 0.80
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.797 s
+[INFO] Finished at: 2026-10-12T06:24:35Z
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.jacoco:jacoco-maven-plugin:0.8.12:check (check-coverage-gate) on project app: Coverage checks have not been met. See log for details. -> [Help 1]
+[ERROR]
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR]
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

@@ -48,9 +48,11 @@ keyword tìm trên nhiều field bằng OR. Chỉ trả tutor VERIFIED.
 | `sortBy` | `rating` | `rating`/`relevance` -> ratingAvg; `price` -> pricePerSession; `experience` -> experienceYears. Không nhận property tùy ý. |
 | `sortDirection` | `desc` | `asc` hoặc `desc`. Rating/relevance luôn có secondary reviewCount DESC. |
 
-`relevance` hiện là alias rating, không phải matchScore. Không có unique tutorId
-tie-break cho search: không bảo đảm thứ tự giữa các dòng cùng sort key, nhất là
-phân trang khi dữ liệu đang thay đổi. Candidate matching có ordering riêng.
+`relevance` hiện là alias rating, không phải matchScore. Search thêm unique
+`tutorId ASC` cuối sort tại Profile facade; rating/relevance vẫn giữ reviewCount DESC
+trước tie-break. Dataset đứng yên có thứ tự ổn định giữa các page. Offset paging
+vẫn có thể duplicate/mất dòng giữa các request khi dữ liệu được thêm/xóa hoặc sort
+key thay đổi đồng thời. Candidate matching có ordering riêng.
 
 ```http
 GET /api/v1/discovery/tutors?subjectId=1&levelId=3&mode=ONLINE&minRating=4&dayOfWeek=1&availableFrom=18:00&availableTo=20:00&page=0&size=10&sortBy=price&sortDirection=asc
@@ -106,9 +108,10 @@ truyền actor/userId/role/criteria trong body; goal data được đọc từ P
 
 Theo [SecurityConfig](../backend/app/src/main/java/vn/edufit/config/SecurityConfig.java),
 POST cần session cookie `EDUFIT_SESSION` và CSRF hợp lệ. Cookie repository dùng
-`XSRF-TOKEN`/header `X-XSRF-TOKEN`; token acquisition phải theo cấu hình auth thực
-tế, không giả định Discovery có endpoint cấp token. Chưa có bằng chứng browser/
-security-filter end-to-end trong bộ Discovery standalone MockMvc tests.
+`XSRF-TOKEN`/header `X-XSRF-TOKEN`; lấy token qua `GET /api/v1/auth/csrf`
+trước login và gọi lại sau login/logout. Phase 4 đã có full application/filter test
+với cookie thật và JDBC PostgreSQL; xem [contract HTTP](ai-discovery-phase4-contract.md).
+Chưa nghiệm thu browser frontend hoặc workflow populated Discovery -> Connection (Phase 5).
 
 Service kiểm tra actor trước, rồi input và goal. STUDENT phải có userId bằng
 `goal.studentUserId`; PARENT phải được
@@ -189,8 +192,9 @@ Xem [quota, transaction và deadline contract](ai-discovery-phase2-contract.md).
 | 500 | Lỗi hệ thống không được xử lý, ví dụ persistence failure; không cam kết 200 chỉ vì AI có fallback |
 
 Không dùng mã dự kiến `INVALID_FILTER`, `TUTOR_NOT_FOUND`, `GOAL_NOT_FOUND` từ
-bảng thiết kế cũ để tích hợp. Bảng này không cam kết malformed JSON/type-binding
-đều được map 400: global handler hiện cần regression riêng cho các lỗi đó.
+bảng thiết kế cũ để tích hợp. B12 đã kiểm chứng malformed JSON/UUID/type/enum/time
+và thiếu parameter trả 400 `VALIDATION_FAILED`; giá trị bị từ chối không được echo
+hoặc ghi vào log handler. Auth/CSRF filter có thể chặn trước validation như bảng trên.
 Nguồn: [GlobalExceptionHandler](../backend/app/src/main/java/vn/edufit/web/advice/GlobalExceptionHandler.java).
 
 ## Java Facade và Event

@@ -1,5 +1,21 @@
 # AI provider contract — Phase 1
 
+## Contract tích hợp đã chốt (B01, Phase 1–4)
+
+- [Goals/slots/readiness và Parent authorization](ai-discovery-phase3-contract.md): schema, validation, payload mẫu và quyền. Goal thiếu slots vẫn ACTIVE, readiness false; không thêm DRAFT.
+- [Quota/log/deadline](ai-discovery-phase2-contract.md): 10 attempts/24h cho MATCH_EXPLANATION, provider errors vẫn tính quota.
+- [HTTP session/CSRF/CORS và safe input errors](ai-discovery-phase4-contract.md): gọi `/api/v1/auth/csrf` trước login và sau login/logout; mọi write cần session/CSRF theo quyền tương ứng. Các giới hạn IAM hiện hữu được ghi rõ ở đó.
+- [Discovery API](discovery-api-contract.md): search/detail/match và Parent goal selection; search có tutorId tie-break, không thay Page schema.
+
+Mapping Discovery -> Connection dùng controller hiện hữu, không thêm endpoint hoặc dependency ngược Profile -> Connection:
+
+1. Chọn `goalId` từ API goals và `tutorId` từ card/match. Gửi `POST /api/v1/connections/requests` với `{ "goalId": "UUID", "tutorId": "UUID", "desiredSlots": ["Monday 09:00-10:00"], "message": "Tùy chọn" }`, session và CSRF.
+2. `desiredSlots` hiện là danh sách chuỗi hiển thị, không phải slot UUID hay object availability. Phải có ít nhất một chuỗi không blank, mỗi chuỗi <=100 ký tự; message <=500 ký tự. Connection chưa parse hoặc kiểm tra overlap nội dung chuỗi này. Không coi điểm scheduleFit của Discovery là xác nhận lịch booking.
+3. Student phải sở hữu goal; Parent phải có link CONFIRMED. Goal ACTIVE, Tutor VERIFIED và **exact subject + education level**. Discovery có thể rank gia sư lệch cấp; Connection sẽ trả 400 `INVALID_OPERATION` khi không đạt exact eligibility. Không làm mềm quy tắc này trong tích hợp.
+4. Response tạo request là 200 ApiResponse chứa requestId/studentId/tutorId/goalId/status/createdAt/expiresAt. Tutor gọi `POST /api/v1/connections/requests/{requestId}/respond` với `{ "accept": true }`; accept tạo class ACTIVE trong cùng transaction và trả classId/studentId/tutorId/goalId. Khi Student thu hồi link, Parent mất quyền ở request tiếp theo.
+
+Nguồn: [ConnectionController](../backend/modules/connection/src/main/java/vn/edufit/connection/web/ConnectionController.java), [ConnectionService](../backend/modules/connection/src/main/java/vn/edufit/connection/application/ConnectionService.java), [Connection flow](connection-module-flow.md). Contract được đọc từ implementation; nghiệm thu HTTP xuyên module/populated workflow và Gemini live vẫn thuộc B13/B14 (Phase 5).
+
 Cập nhật 2026-10-12. Tài liệu này ghi phạm vi Phase 1: B02–B04 trong [kế hoạch](../tasks/ai-discovery/plan.md). Goals/slots/readiness và Parent goal selection hiện được bổ sung trong [Phase 3 contract](ai-discovery-phase3-contract.md); Discovery giữ [API contract](discovery-api-contract.md).
 
 ## Cấu hình và khởi động

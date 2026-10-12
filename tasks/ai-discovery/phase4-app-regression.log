@@ -1,0 +1,1589 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] EduFit :: Parent                                                   [pom]
+[INFO] EduFit :: Platform (Aggregator)                                    [pom]
+[INFO] EduFit :: Platform :: Shared Kernel                                [jar]
+[INFO] EduFit :: Platform :: AI Gateway                                   [jar]
+[INFO] EduFit :: Platform :: File Storage                                 [jar]
+[INFO] EduFit :: Platform :: Audit Logging                                [jar]
+[INFO] EduFit :: Modules (Aggregator)                                     [pom]
+[INFO] EduFit :: Module :: IAM                                            [jar]
+[INFO] EduFit :: Module :: Profile                                        [jar]
+[INFO] EduFit :: Module :: Verification                                   [jar]
+[INFO] EduFit :: Module :: Connection                                     [jar]
+[INFO] EduFit :: Module :: Scheduling                                     [jar]
+[INFO] EduFit :: Module :: Review                                         [jar]
+[INFO] EduFit :: Module :: Discovery                                      [jar]
+[INFO] EduFit :: Module :: Progress                                       [jar]
+[INFO] EduFit :: Module :: Notification                                   [jar]
+[INFO] EduFit :: App Runner                                               [jar]
+[INFO]
+[INFO] ----------------------< vn.edufit:edufit-parent >-----------------------
+[INFO] Building EduFit :: Parent 1.0-SNAPSHOT                            [1/17]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ edufit-parent ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\target\\jacoco.exec
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ edufit-parent ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] -------------------------< vn.edufit:platform >-------------------------
+[INFO] Building EduFit :: Platform (Aggregator) 1.0-SNAPSHOT             [2/17]
+[INFO]   from platform\pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ platform ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\target\\jacoco.exec
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ platform ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] --------------------------< vn.edufit:shared >--------------------------
+[INFO] Building EduFit :: Platform :: Shared Kernel 1.0-SNAPSHOT         [3/17]
+[INFO]   from platform\shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ shared ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\shared\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\shared\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\shared\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ shared ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ shared ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\shared\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Platform :: Shared Kernel' with 11 classes
+[INFO]
+[INFO] ----------------------------< vn.edufit:ai >----------------------------
+[INFO] Building EduFit :: Platform :: AI Gateway 1.0-SNAPSHOT            [4/17]
+[INFO]   from platform\ai\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ ai ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\ai\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ ai ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\ai\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ ai ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ ai ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\ai\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ ai ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ ai ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ ai ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\ai\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Platform :: AI Gateway' with 17 classes
+[INFO]
+[INFO] -------------------------< vn.edufit:storage >--------------------------
+[INFO] Building EduFit :: Platform :: File Storage 1.0-SNAPSHOT          [5/17]
+[INFO]   from platform\storage\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ storage ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\storage\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ storage ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\storage\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ storage ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ storage ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\storage\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ storage ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ storage ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ storage ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] --------------------------< vn.edufit:audit >---------------------------
+[INFO] Building EduFit :: Platform :: Audit Logging 1.0-SNAPSHOT         [6/17]
+[INFO]   from platform\audit\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ audit ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\platform\\audit\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ audit ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\audit\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ audit ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ audit ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\platform\audit\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ audit ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ audit ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ audit ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] -------------------------< vn.edufit:modules >--------------------------
+[INFO] Building EduFit :: Modules (Aggregator) 1.0-SNAPSHOT              [7/17]
+[INFO]   from modules\pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ modules ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\target\\jacoco.exec
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ modules ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] ---------------------------< vn.edufit:iam >----------------------------
+[INFO] Building EduFit :: Module :: IAM 1.0-SNAPSHOT                     [8/17]
+[INFO]   from modules\iam\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ iam ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\iam\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ iam ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\iam\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ iam ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ iam ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\iam\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ iam ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ iam ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ iam ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\iam\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: IAM' with 28 classes
+[INFO]
+[INFO] -------------------------< vn.edufit:profile >--------------------------
+[INFO] Building EduFit :: Module :: Profile 1.0-SNAPSHOT                 [9/17]
+[INFO]   from modules\profile\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ profile ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\profile\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ profile ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\profile\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ profile ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ profile ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\profile\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ profile ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ profile ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ profile ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\profile\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: Profile' with 50 classes
+[INFO]
+[INFO] -----------------------< vn.edufit:verification >-----------------------
+[INFO] Building EduFit :: Module :: Verification 1.0-SNAPSHOT           [10/17]
+[INFO]   from modules\verification\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ verification ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\verification\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ verification ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\verification\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ verification ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ verification ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\verification\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ verification ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ verification ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ verification ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] ------------------------< vn.edufit:connection >------------------------
+[INFO] Building EduFit :: Module :: Connection 1.0-SNAPSHOT             [11/17]
+[INFO]   from modules\connection\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ connection ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\connection\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ connection ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\connection\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ connection ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ connection ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\connection\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ connection ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ connection ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ connection ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\connection\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: Connection' with 18 classes
+[INFO]
+[INFO] ------------------------< vn.edufit:scheduling >------------------------
+[INFO] Building EduFit :: Module :: Scheduling 1.0-SNAPSHOT             [12/17]
+[INFO]   from modules\scheduling\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ scheduling ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\scheduling\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ scheduling ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\scheduling\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ scheduling ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ scheduling ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\scheduling\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ scheduling ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ scheduling ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ scheduling ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] --------------------------< vn.edufit:review >--------------------------
+[INFO] Building EduFit :: Module :: Review 1.0-SNAPSHOT                 [13/17]
+[INFO]   from modules\review\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ review ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\review\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ review ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\review\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ review ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ review ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\review\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ review ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ review ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ review ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] ------------------------< vn.edufit:discovery >-------------------------
+[INFO] Building EduFit :: Module :: Discovery 1.0-SNAPSHOT              [14/17]
+[INFO]   from modules\discovery\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ discovery ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\discovery\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ discovery ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\discovery\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ discovery ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ discovery ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\discovery\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ discovery ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ discovery ---
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ discovery ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\discovery\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: Module :: Discovery' with 26 classes
+[INFO]
+[INFO] -------------------------< vn.edufit:progress >-------------------------
+[INFO] Building EduFit :: Module :: Progress 1.0-SNAPSHOT               [15/17]
+[INFO]   from modules\progress\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ progress ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\progress\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ progress ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\progress\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ progress ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ progress ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\progress\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ progress ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ progress ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ progress ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] -----------------------< vn.edufit:notification >-----------------------
+[INFO] Building EduFit :: Module :: Notification 1.0-SNAPSHOT           [16/17]
+[INFO]   from modules\notification\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ notification ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\modules\\notification\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ notification ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\notification\src\main\resources
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ notification ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ notification ---
+[INFO] skip non existing resourceDirectory C:\Users\ASUS\Desktop\EduFit\EduFit\backend\modules\notification\src\test\resources
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ notification ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ notification ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ notification ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO]
+[INFO] ---------------------------< vn.edufit:app >----------------------------
+[INFO] Building EduFit :: App Runner 1.0-SNAPSHOT                       [17/17]
+[INFO]   from app\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ app ---
+[INFO] argLine set to -javaagent:C:\\Users\\ASUS\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\ASUS\\Desktop\\EduFit\\EduFit\\backend\\app\\target\\jacoco.exec
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ app ---
+[INFO] Copying 13 resources from src\main\resources to target\classes
+[INFO]
+[INFO] --- compiler:3.13.0:compile (default-compile) @ app ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ app ---
+[INFO] Copying 5 resources from src\test\resources to target\test-classes
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ app ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 14 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] /C:/Users/ASUS/Desktop/EduFit/EduFit/backend/app/src/test/java/vn/edufit/profile/LearningGoalPostgresTest.java: C:\Users\ASUS\Desktop\EduFit\EduFit\backend\app\src\test\java\vn\edufit\profile\LearningGoalPostgresTest.java uses or overrides a deprecated API.
+[INFO] /C:/Users/ASUS/Desktop/EduFit/EduFit/backend/app/src/test/java/vn/edufit/profile/LearningGoalPostgresTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] /C:/Users/ASUS/Desktop/EduFit/EduFit/backend/app/src/test/java/vn/edufit/web/advice/HttpInputErrorTest.java: C:\Users\ASUS\Desktop\EduFit\EduFit\backend\app\src\test\java\vn\edufit\web\advice\HttpInputErrorTest.java uses unchecked or unsafe operations.
+[INFO] /C:/Users/ASUS/Desktop/EduFit/EduFit/backend/app/src/test/java/vn/edufit/web/advice/HttpInputErrorTest.java: Recompile with -Xlint:unchecked for details.
+[INFO]
+[INFO] --- surefire:3.5.0:test (default-test) @ app ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
+06:11:15.502 [main] INFO com.tngtech.archunit.ArchConfiguration -- Reading ArchUnit properties from file:/C:/Users/ASUS/Desktop/EduFit/EduFit/backend/app/target/test-classes/archunit.properties
+[INFO] Running vn.edufit.ArchitectureBoundaryTest
+06:11:16.908 [main] INFO com.tngtech.archunit.core.PluginLoader -- Detected Java version 21.0.10
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.426 s -- in vn.edufit.ArchitectureBoundaryTest
+[INFO] Running vn.edufit.ArchitectureTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.421 s -- in vn.edufit.ArchitectureTest
+[INFO] Running vn.edufit.config.security.SpringSecurityCurrentUserTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.250 s -- in vn.edufit.config.security.SpringSecurityCurrentUserTest
+[INFO] Running vn.edufit.db.FlywayMigrationIT
+06:11:24.283 [main] INFO org.testcontainers.images.PullPolicy -- Image pull policy will be performed by: DefaultPullPolicy()
+06:11:24.295 [main] INFO org.testcontainers.utility.ImageNameSubstitutor -- Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+06:11:24.329 [main] INFO org.testcontainers.DockerClientFactory -- Testcontainers version: 2.0.5
+06:11:25.629 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Loaded org.testcontainers.dockerclient.NpipeSocketClientProviderStrategy from ~/.testcontainers.properties, will try it first
+06:11:26.982 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Found Docker environment with local Npipe socket (npipe:////./pipe/docker_engine)
+06:11:26.986 [main] INFO org.testcontainers.DockerClientFactory -- Docker host IP address is localhost
+06:11:27.035 [main] INFO org.testcontainers.DockerClientFactory -- Connected to docker:
+  Server Version: 28.3.0
+  API Version: 1.51
+  Operating System: Docker Desktop
+  Total Memory: 7848 MB
+  Labels:
+    com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+06:11:27.265 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Creating container for image: testcontainers/ryuk:0.14.0
+06:11:27.519 [main] INFO org.testcontainers.utility.RegistryAuthLocator -- Credential helper/store (docker-credential-desktop) does not have credentials for https://index.docker.io/v1/
+06:11:27.922 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 is starting: bae1bc9f006b74dc6ace3ffe95d71f81314911b73cd08d3812b9834d8da13448
+06:11:28.887 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 started in PT1.6215631S
+06:11:28.904 [main] INFO org.testcontainers.utility.RyukResourceReaper -- Ryuk started - will monitor and terminate Testcontainers containers on JVM exit
+06:11:28.904 [main] INFO org.testcontainers.DockerClientFactory -- Checking the system...
+06:11:28.906 [main] INFO org.testcontainers.DockerClientFactory -- ?? Docker server version should be at least 1.6.0
+06:11:28.907 [main] INFO tc.postgres:17-alpine -- Creating container for image: postgres:17-alpine
+06:11:29.076 [main] INFO tc.postgres:17-alpine -- Container postgres:17-alpine is starting: 40b279f48bce67eae7ac468522f94f2df1e84cb3bccf4a028b41eef79d1bc823
+06:11:32.112 [main] INFO tc.postgres:17-alpine -- Container postgres:17-alpine started in PT3.2040756S
+06:11:32.112 [main] INFO tc.postgres:17-alpine -- Container is started (JDBC URL: jdbc:postgresql://localhost:62722/edufit_test?loggerLevel=OFF)
+06:11:33.730 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:postgresql://localhost:62722/edufit_test?loggerLevel=OFF (PostgreSQL 17.11)
+06:11:34.023 [main] INFO org.flywaydb.core.internal.database.base.Schema -- Creating schema "ai_quota_upgrade" ...
+06:11:34.044 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Creating Schema History table "ai_quota_upgrade"."flyway_schema_history" ...
+06:11:34.258 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema "ai_quota_upgrade": null
+06:11:34.298 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "ai_quota_upgrade" to version "1.01 - create account and session tables"
+06:11:34.541 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "ai_quota_upgrade" to version "1.02 - create profile and subject tables"
+06:11:34.644 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "ai_quota_upgrade" to version "1.03 - create verification tables"
+06:11:34.712 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "ai_quota_upgrade" to version "1.04 - create connection and class tables"
+06:11:34.809 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "ai_quota_upgrade" to version "1.05 - create tutoring session tables"
+06:11:34.888 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "ai_quota_upgrade" to version "1.06 - create learning plan tables"
+06:11:34.960 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "ai_quota_upgrade" to version "1.07 - create review and notification tables"
+06:11:35.018 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "ai_quota_upgrade" to version "1.08 - create audit and ai log tables"
+06:11:35.078 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "ai_quota_upgrade" to version "1.09 - seed demo accounts and catalogs"
+06:11:35.127 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "ai_quota_upgrade" to version "1.10 - seed demo accounts and catalogs"
+06:11:35.161 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "ai_quota_upgrade" to version "1.11 - allow relink after revocation"
+06:11:35.199 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Successfully applied 11 migrations to schema "ai_quota_upgrade", now at version v1.11 (execution time 00:00.643s)
+06:11:35.287 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:postgresql://localhost:62722/edufit_test?loggerLevel=OFF (PostgreSQL 17.11)
+06:11:35.352 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 13 migrations (execution time 00:00.032s)
+06:11:35.389 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema "ai_quota_upgrade": 1.11
+06:11:35.398 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "ai_quota_upgrade" to version "1.12 - create ai match reservations"
+06:11:35.442 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Successfully applied 1 migration to schema "ai_quota_upgrade", now at version v1.12 (execution time 00:00.031s)
+06:11:35.471 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:postgresql://localhost:62722/edufit_test?loggerLevel=OFF (PostgreSQL 17.11)
+06:11:35.542 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 13 migrations (execution time 00:00.041s)
+06:11:35.600 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:postgresql://localhost:62722/edufit_test?loggerLevel=OFF (PostgreSQL 17.11)
+06:11:35.662 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 13 migrations (execution time 00:00.033s)
+06:11:35.706 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema "ai_quota_upgrade": 1.12
+06:11:35.708 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Schema "ai_quota_upgrade" is up to date. No migration necessary.
+06:11:35.795 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:postgresql://localhost:62722/edufit_test?loggerLevel=OFF (PostgreSQL 17.11)
+06:11:35.851 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Schema history table "public"."flyway_schema_history" does not exist yet
+06:11:35.853 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 12 migrations (execution time 00:00.026s)
+06:11:35.869 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Creating Schema History table "public"."flyway_schema_history" ...
+06:11:35.913 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema "public": << Empty Schema >>
+06:11:35.922 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.01 - create account and session tables"
+06:11:35.940 [main] WARN org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor -- DB: extension "uuid-ossp" already exists, skipping (SQL State: 42710 - Error Code: 0)
+06:11:35.942 [main] WARN org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor -- DB: extension "pgcrypto" already exists, skipping (SQL State: 42710 - Error Code: 0)
+06:11:35.944 [main] WARN org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor -- DB: extension "btree_gist" already exists, skipping (SQL State: 42710 - Error Code: 0)
+06:11:36.012 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.02 - create profile and subject tables"
+06:11:36.126 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.03 - create verification tables"
+06:11:36.200 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.04 - create connection and class tables"
+06:11:36.305 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.05 - create tutoring session tables"
+06:11:36.404 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.06 - create learning plan tables"
+06:11:36.474 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.07 - create review and notification tables"
+06:11:36.526 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.08 - create audit and ai log tables"
+06:11:36.592 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.09 - seed demo accounts and catalogs"
+06:11:36.646 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.10 - seed demo accounts and catalogs"
+06:11:36.697 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.11 - allow relink after revocation"
+06:11:36.762 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.12 - create ai match reservations"
+06:11:36.814 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Successfully applied 12 migrations to schema "public", now at version v1.12 (execution time 00:00.622s)
+06:11:36.908 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:postgresql://localhost:62722/edufit_test?loggerLevel=OFF (PostgreSQL 17.11)
+06:11:36.999 [main] INFO org.flywaydb.core.internal.database.base.Schema -- Creating schema "main_seed_upgrade" ...
+06:11:37.011 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Creating Schema History table "main_seed_upgrade"."flyway_schema_history" ...
+06:11:37.089 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema "main_seed_upgrade": null
+06:11:37.098 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "main_seed_upgrade" to version "1.01 - create account and session tables"
+06:11:37.102 [main] WARN org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor -- DB: extension "uuid-ossp" already exists, skipping (SQL State: 42710 - Error Code: 0)
+06:11:37.104 [main] WARN org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor -- DB: extension "pgcrypto" already exists, skipping (SQL State: 42710 - Error Code: 0)
+06:11:37.106 [main] WARN org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor -- DB: extension "btree_gist" already exists, skipping (SQL State: 42710 - Error Code: 0)
+06:11:37.183 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "main_seed_upgrade" to version "1.02 - create profile and subject tables"
+06:11:37.286 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "main_seed_upgrade" to version "1.03 - create verification tables"
+06:11:37.364 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "main_seed_upgrade" to version "1.04 - create connection and class tables"
+06:11:37.483 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "main_seed_upgrade" to version "1.05 - create tutoring session tables"
+06:11:37.611 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "main_seed_upgrade" to version "1.06 - create learning plan tables"
+06:11:37.738 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "main_seed_upgrade" to version "1.07 - create review and notification tables"
+06:11:37.803 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "main_seed_upgrade" to version "1.08 - create audit and ai log tables"
+06:11:37.895 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "main_seed_upgrade" to version "1.09 - seed demo accounts and catalogs"
+06:11:37.955 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Successfully applied 9 migrations to schema "main_seed_upgrade", now at version v1.09 (execution time 00:00.621s)
+06:11:38.043 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:postgresql://localhost:62722/edufit_test?loggerLevel=OFF (PostgreSQL 17.11)
+06:11:38.139 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 13 migrations (execution time 00:00.048s)
+06:11:38.192 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema "main_seed_upgrade": 1.09
+06:11:38.202 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "main_seed_upgrade" to version "1.10 - seed demo accounts and catalogs"
+06:11:38.259 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "main_seed_upgrade" to version "1.11 - allow relink after revocation"
+06:11:38.316 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "main_seed_upgrade" to version "1.12 - create ai match reservations"
+06:11:38.367 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Successfully applied 3 migrations to schema "main_seed_upgrade", now at version v1.12 (execution time 00:00.100s)
+06:11:38.397 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:postgresql://localhost:62722/edufit_test?loggerLevel=OFF (PostgreSQL 17.11)
+06:11:38.484 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 13 migrations (execution time 00:00.052s)
+06:11:38.575 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:postgresql://localhost:62722/edufit_test?loggerLevel=OFF (PostgreSQL 17.11)
+06:11:38.677 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 13 migrations (execution time 00:00.060s)
+06:11:38.767 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema "main_seed_upgrade": 1.12
+06:11:38.770 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Schema "main_seed_upgrade" is up to date. No migration necessary.
+Oct 12, 2026 6:11:38 AM org.junit.jupiter.engine.descriptor.AbstractExtensionContext lambda$createCloseAction$1
+WARNING: Type implements CloseableResource but not AutoCloseable: org.testcontainers.junit.jupiter.TestcontainersExtension$StoreAdapter
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 15.37 s -- in vn.edufit.db.FlywayMigrationIT
+[INFO] Running vn.edufit.discovery.DiscoveryReadPostgresTest
+06:11:39.524 [main] INFO tc.postgres:17-alpine -- Creating container for image: postgres:17-alpine
+06:11:39.653 [main] INFO tc.postgres:17-alpine -- Container postgres:17-alpine is starting: 6fb9255f4ae99d619ff2fa8ab4c1c4db1875cd0c0647c50352a8ac9a100317d6
+06:11:42.904 [main] INFO tc.postgres:17-alpine -- Container postgres:17-alpine started in PT3.3803721S
+06:11:42.905 [main] INFO tc.postgres:17-alpine -- Container is started (JDBC URL: jdbc:postgresql://localhost:62749/test?loggerLevel=OFF)
+06:11:44.077 [main] INFO org.springframework.data.repository.config.RepositoryConfigurationDelegate -- Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+06:11:44.317 [main] INFO org.springframework.data.repository.config.RepositoryConfigurationDelegate -- Finished Spring Data repository scanning in 200 ms. Found 9 JPA repository interfaces.
+06:11:44.946 [main] INFO com.zaxxer.hikari.HikariDataSource -- HikariPool-1 - Starting...
+06:11:45.028 [main] INFO com.zaxxer.hikari.pool.HikariPool -- HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@faa0299
+06:11:45.035 [main] INFO com.zaxxer.hikari.HikariDataSource -- HikariPool-1 - Start completed.
+06:11:45.066 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:postgresql://localhost:62749/test?loggerLevel=OFF (PostgreSQL 17.11)
+06:11:45.124 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Schema history table "public"."flyway_schema_history" does not exist yet
+06:11:45.125 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 12 migrations (execution time 00:00.027s)
+06:11:45.144 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Creating Schema History table "public"."flyway_schema_history" ...
+06:11:45.184 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema "public": << Empty Schema >>
+06:11:45.193 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.01 - create account and session tables"
+06:11:45.391 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.02 - create profile and subject tables"
+06:11:45.496 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.03 - create verification tables"
+06:11:45.563 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.04 - create connection and class tables"
+06:11:45.662 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.05 - create tutoring session tables"
+06:11:45.740 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.06 - create learning plan tables"
+06:11:45.805 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.07 - create review and notification tables"
+06:11:45.856 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.08 - create audit and ai log tables"
+06:11:45.925 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.09 - seed demo accounts and catalogs"
+06:11:45.969 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.10 - seed demo accounts and catalogs"
+06:11:46.002 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.11 - allow relink after revocation"
+06:11:46.044 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.12 - create ai match reservations"
+06:11:46.080 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Successfully applied 12 migrations to schema "public", now at version v1.12 (execution time 00:00.651s)
+06:11:46.342 [main] INFO org.hibernate.orm.jpa -- HHH008540: Processing PersistenceUnitInfo [name: default]
+06:11:46.564 [main] INFO org.hibernate.orm.core -- HHH000001: Hibernate ORM core version 7.4.5.Final
+06:11:48.701 [main] INFO org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo -- No LoadTimeWeaver setup: ignoring JPA class transformer
+06:11:48.995 [main] INFO org.hibernate.orm.connections.pooling -- HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:62749/test?loggerLevel=OFF]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 17.11
+	Default catalog/schema: test/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+06:11:51.015 [main] INFO org.hibernate.validator.internal.util.Version -- HV000001: Hibernate Validator 9.1.3.Final
+06:11:54.086 [main] INFO org.hibernate.orm.core -- HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+06:11:54.235 [main] INFO org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean -- Initialized JPA EntityManagerFactory for persistence unit 'default'
+06:11:54.469 [main] INFO org.springframework.data.jpa.repository.query.QueryEnhancerFactories -- Hibernate is in classpath; If applicable, HQL parser will be used.
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A Java agent has been loaded dynamically (C:\Users\ASUS\.m2\repository\net\bytebuddy\byte-buddy-agent\1.18.11\byte-buddy-agent-1.18.11.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+06:12:01.854 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:01.855 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:01.864 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 7 ms
+06:12:04.149 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:04.150 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:04.150 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+PERF operation=search-http tutors=20 samples=30 queries=5 p50Ms=31.574 p95Ms=49.046 maxMs=51.996
+PERF operation=detail-http tutors=20 samples=30 queries=3 p50Ms=15.497 p95Ms=19.393 maxMs=19.972
+PERF operation=match-http-no-ai tutors=20 samples=30 queries=8 p50Ms=47.298 p95Ms=74.004 maxMs=92.307
+PERF operation=candidate-db-hydration tutors=20 samples=30 queries=3 p50Ms=13.678 p95Ms=16.696 maxMs=16.734
+PERF operation=scorer-only tutors=20 samples=30 queries=0 p50Ms=0.349 p95Ms=0.749 maxMs=1.176
+06:12:09.231 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:09.231 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:09.232 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+PERF operation=search-http tutors=200 samples=30 queries=5 p50Ms=28.716 p95Ms=38.190 maxMs=40.492
+PERF operation=detail-http tutors=200 samples=30 queries=3 p50Ms=10.071 p95Ms=12.086 maxMs=12.612
+PERF operation=match-http-no-ai tutors=200 samples=30 queries=8 p50Ms=42.961 p95Ms=47.290 maxMs=51.800
+PERF operation=candidate-db-hydration tutors=200 samples=30 queries=3 p50Ms=15.503 p95Ms=20.543 maxMs=20.929
+PERF operation=scorer-only tutors=200 samples=30 queries=0 p50Ms=0.703 p95Ms=1.053 maxMs=1.072
+06:12:13.064 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:13.064 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:13.065 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+PERF operation=search-http tutors=240 samples=30 queries=5 p50Ms=15.610 p95Ms=18.991 maxMs=19.467
+PERF operation=detail-http tutors=240 samples=30 queries=3 p50Ms=9.351 p95Ms=10.806 maxMs=12.033
+PERF operation=match-http-no-ai tutors=240 samples=30 queries=8 p50Ms=30.318 p95Ms=37.384 maxMs=40.795
+PERF operation=candidate-db-hydration tutors=240 samples=30 queries=3 p50Ms=17.522 p95Ms=21.576 maxMs=22.328
+PERF operation=scorer-only tutors=240 samples=30 queries=0 p50Ms=0.600 p95Ms=1.467 maxMs=8.452
+QUERY_PLAN search
+Limit  (cost=13.19..13.21 rows=10 width=166) (actual time=0.081..0.083 rows=10 loops=1)
+  Buffers: shared hit=5
+  ->  Sort  (cost=13.19..13.79 rows=240 width=166) (actual time=0.079..0.081 rows=10 loops=1)
+        Sort Key: price_per_session DESC
+        Sort Method: top-N heapsort  Memory: 30kB
+        Buffers: shared hit=5
+        ->  Seq Scan on tutor_profile t  (cost=0.00..8.00 rows=240 width=166) (actual time=0.014..0.047 rows=240 loops=1)
+              Filter: ((status)::text = 'VERIFIED'::text)
+              Buffers: shared hit=5
+Planning Time: 0.112 ms
+Execution Time: 0.101 ms
+QUERY_PLAN candidate
+Limit  (cost=37.39..37.89 rows=200 width=198) (actual time=0.575..0.598 rows=200 loops=1)
+  Buffers: shared hit=9
+  ->  Sort  (cost=37.39..37.99 rows=240 width=198) (actual time=0.573..0.583 rows=200 loops=1)
+        Sort Key: (COALESCE(t.rating_avg, '0'::numeric)) DESC, t.review_count DESC, t.created_at, t.tutor_id
+        Sort Method: quicksort  Memory: 86kB
+        Buffers: shared hit=9
+        ->  Hash Semi Join  (cost=16.00..27.90 rows=240 width=198) (actual time=0.201..0.340 rows=240 loops=1)
+              Hash Cond: (t.tutor_id = ts.tutor_id)
+              Buffers: shared hit=9
+              ->  Seq Scan on tutor_profile t  (cost=0.00..8.60 rows=240 width=166) (actual time=0.048..0.118 rows=240 loops=1)
+                    Filter: (((teaching_mode)::text = ANY ('{ONLINE,BOTH}'::text[])) AND ((status)::text = 'VERIFIED'::text))
+                    Buffers: shared hit=5
+              ->  Hash  (cost=10.00..10.00 rows=480 width=16) (actual time=0.143..0.145 rows=480 loops=1)
+                    Buckets: 1024  Batches: 1  Memory Usage: 31kB
+                    Buffers: shared hit=4
+                    ->  Seq Scan on tutor_subject ts  (cost=0.00..10.00 rows=480 width=16) (actual time=0.010..0.055 rows=480 loops=1)
+                          Filter: (subject_id = 1)
+                          Buffers: shared hit=4
+Planning:
+  Buffers: shared hit=10
+Planning Time: 0.806 ms
+Execution Time: 0.738 ms
+06:12:15.995 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:15.996 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:15.996 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+CAP_REPORT candidates=200/240 globalTop1=97.00 boundedTop1=78.50 recallAt5=4/5
+06:12:16.316 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:16.317 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:16.317 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:16.464 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y TutorProfile v?i m� ??nh danh: 00000000-0000-0000-0000-000000000002
+06:12:16.490 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y TutorProfile v?i m� ??nh danh: 00000000-0000-0000-0000-0000000003e7
+06:12:16.701 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:16.701 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:16.701 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:17.015 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:17.015 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:17.015 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:17.338 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:17.338 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:17.338 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:17.602 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:17.602 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:17.603 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:17.820 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:17.820 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:17.820 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:18.041 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:18.041 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:18.041 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:18.275 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:18.275 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:18.275 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:18.512 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:18.512 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:18.512 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:18.740 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:18.740 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:18.740 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:18.890 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:18.890 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:18.890 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:19.060 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:19.060 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:19.060 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:19.208 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:19.208 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:19.208 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:19.354 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:19.354 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:19.355 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+06:12:19.490 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:19.490 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:19.490 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:19.622 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:19.622 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:19.622 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:19.788 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:19.788 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:19.788 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:19.989 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:19.989 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:19.990 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:20.251 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:20.251 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:20.251 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:20.419 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:20.419 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:20.419 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:20.562 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:20.562 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:20.562 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:20.705 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:20.705 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:20.705 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:20.848 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:20.848 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:20.848 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:21.025 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:21.025 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:21.025 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:21.257 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:21.257 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:21.257 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:21.393 [main] INFO org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean -- Closing JPA EntityManagerFactory for persistence unit 'default'
+06:12:21.395 [main] INFO com.zaxxer.hikari.HikariDataSource -- HikariPool-1 - Shutdown initiated...
+06:12:21.399 [main] INFO com.zaxxer.hikari.HikariDataSource -- HikariPool-1 - Shutdown completed.
+[INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 42.54 s -- in vn.edufit.discovery.DiscoveryReadPostgresTest
+[INFO] Running vn.edufit.discovery.MatchingWorkflowPostgresTest
+06:12:22.068 [main] INFO tc.postgres:17-alpine -- Creating container for image: postgres:17-alpine
+06:12:22.231 [main] INFO tc.postgres:17-alpine -- Container postgres:17-alpine is starting: 684673f97dd487ad0af283e8f0882e35586e2db039a4bf11e79672e7129f25b5
+06:12:24.985 [main] INFO tc.postgres:17-alpine -- Container postgres:17-alpine started in PT2.9171736S
+06:12:24.986 [main] INFO tc.postgres:17-alpine -- Container is started (JDBC URL: jdbc:postgresql://localhost:60701/test?loggerLevel=OFF)
+06:12:25.023 [main] INFO org.springframework.data.repository.config.RepositoryConfigurationDelegate -- Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+06:12:25.075 [main] INFO org.springframework.data.repository.config.RepositoryConfigurationDelegate -- Finished Spring Data repository scanning in 48 ms. Found 6 JPA repository interfaces.
+06:12:25.163 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:postgresql://localhost:60701/test?loggerLevel=OFF (PostgreSQL 17.11)
+06:12:25.235 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Schema history table "public"."flyway_schema_history" does not exist yet
+06:12:25.238 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 12 migrations (execution time 00:00.033s)
+06:12:25.258 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Creating Schema History table "public"."flyway_schema_history" ...
+06:12:25.321 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema "public": << Empty Schema >>
+06:12:25.338 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.01 - create account and session tables"
+06:12:25.537 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.02 - create profile and subject tables"
+06:12:25.629 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.03 - create verification tables"
+06:12:25.684 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.04 - create connection and class tables"
+06:12:25.765 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.05 - create tutoring session tables"
+06:12:25.835 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.06 - create learning plan tables"
+06:12:25.893 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.07 - create review and notification tables"
+06:12:25.957 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.08 - create audit and ai log tables"
+06:12:26.031 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.09 - seed demo accounts and catalogs"
+06:12:26.086 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.10 - seed demo accounts and catalogs"
+06:12:26.124 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.11 - allow relink after revocation"
+06:12:26.184 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.12 - create ai match reservations"
+06:12:26.235 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Successfully applied 12 migrations to schema "public", now at version v1.12 (execution time 00:00.648s)
+06:12:26.257 [main] INFO org.hibernate.orm.jpa -- HHH008540: Processing PersistenceUnitInfo [name: default]
+06:12:26.329 [main] INFO org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo -- No LoadTimeWeaver setup: ignoring JPA class transformer
+06:12:26.360 [main] INFO org.hibernate.orm.connections.pooling -- HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:60701/test?loggerLevel=OFF]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 17.11
+	Default catalog/schema: test/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+06:12:26.619 [main] INFO org.hibernate.orm.core -- HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+06:12:26.684 [main] INFO org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean -- Initialized JPA EntityManagerFactory for persistence unit 'default'
+06:12:29.667 [main] WARN org.hibernate.orm.jdbc.error -- HHH000247: ErrorCode: 0, SQLState: 23503
+06:12:29.670 [main] WARN org.hibernate.orm.jdbc.error -- ERROR: insert or update on table "matching_run_log" violates foreign key constraint "fk_matching_log_goal"
+  Detail: Key (goal_id)=(a295c385-e99c-4b9f-88b1-f1d9d30ed499) is not present in table "learning_goal".
+06:12:30.923 [main] INFO org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean -- Closing JPA EntityManagerFactory for persistence unit 'default'
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.443 s -- in vn.edufit.discovery.MatchingWorkflowPostgresTest
+[INFO] Running vn.edufit.profile.LearningGoalPostgresTest
+06:12:31.514 [main] INFO tc.postgres:16-alpine -- Creating container for image: postgres:16-alpine
+06:12:31.673 [main] INFO tc.postgres:16-alpine -- Container postgres:16-alpine is starting: adc1e0a029f64de29fac53636baa261970eb2554db3f9b21330a7669e2dba8a5
+06:12:34.516 [main] INFO tc.postgres:16-alpine -- Container postgres:16-alpine started in PT3.0023442S
+06:12:34.517 [main] INFO tc.postgres:16-alpine -- Container is started (JDBC URL: jdbc:postgresql://localhost:60801/test?loggerLevel=OFF)
+06:12:34.557 [main] INFO org.springframework.data.repository.config.RepositoryConfigurationDelegate -- Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+06:12:34.653 [main] INFO org.springframework.data.repository.config.RepositoryConfigurationDelegate -- Finished Spring Data repository scanning in 90 ms. Found 14 JPA repository interfaces.
+06:12:34.792 [main] INFO org.flywaydb.core.FlywayExecutor -- Database: jdbc:postgresql://localhost:60801/test?loggerLevel=OFF (PostgreSQL 16.15)
+06:12:34.890 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Schema history table "public"."flyway_schema_history" does not exist yet
+06:12:34.893 [main] INFO org.flywaydb.core.internal.command.DbValidate -- Successfully validated 12 migrations (execution time 00:00.044s)
+06:12:34.921 [main] INFO org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory -- Creating Schema History table "public"."flyway_schema_history" ...
+06:12:34.989 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Current version of schema "public": << Empty Schema >>
+06:12:35.002 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.01 - create account and session tables"
+06:12:35.233 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.02 - create profile and subject tables"
+06:12:35.350 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.03 - create verification tables"
+06:12:35.425 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.04 - create connection and class tables"
+06:12:35.532 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.05 - create tutoring session tables"
+06:12:35.628 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.06 - create learning plan tables"
+06:12:35.695 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.07 - create review and notification tables"
+06:12:35.749 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.08 - create audit and ai log tables"
+06:12:35.813 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.09 - seed demo accounts and catalogs"
+06:12:35.860 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.10 - seed demo accounts and catalogs"
+06:12:35.911 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.11 - allow relink after revocation"
+06:12:35.970 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Migrating schema "public" to version "1.12 - create ai match reservations"
+06:12:36.031 [main] INFO org.flywaydb.core.internal.command.DbMigrate -- Successfully applied 12 migrations to schema "public", now at version v1.12 (execution time 00:00.754s)
+06:12:36.071 [main] INFO org.hibernate.orm.jpa -- HHH008540: Processing PersistenceUnitInfo [name: default]
+06:12:36.183 [main] INFO org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo -- No LoadTimeWeaver setup: ignoring JPA class transformer
+06:12:36.222 [main] INFO org.hibernate.orm.connections.pooling -- HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:60801/test?loggerLevel=OFF]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 16.15
+	Default catalog/schema: test/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+06:12:36.593 [main] INFO org.hibernate.orm.core -- HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+06:12:36.668 [main] INFO org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean -- Initialized JPA EntityManagerFactory for persistence unit 'default'
+06:12:37.447 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:37.447 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:37.447 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:38.091 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:12:38.119 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:12:38.141 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:12:38.163 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:12:38.458 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+06:12:38.499 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: B?n kh�ng c� quy?n gh�p ?�i cho m?c ti�u h?c t?p n�y.
+06:12:38.744 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:38.744 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:38.744 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:38.902 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y LearningGoal v?i m� ??nh danh: 89a87686-611e-4953-b714-b479d0f1f2e7
+06:12:38.941 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y LearningGoal v?i m� ??nh danh: 89a87686-611e-4953-b714-b479d0f1f2e7
+06:12:39.237 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:39.237 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:39.237 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:39.312 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M�n h?c ph?i t?n t?i v� ?ang ho?t ??ng.
+06:12:39.346 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M�n h?c ph?i t?n t?i v� ?ang ho?t ??ng.
+06:12:39.626 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:39.626 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:39.626 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:39.709 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M�n h?c ph?i t?n t?i v� ?ang ho?t ??ng.
+06:12:39.748 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M�n h?c ph?i t?n t?i v� ?ang ho?t ??ng.
+06:12:40.073 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:40.073 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:40.073 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:40.185 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:40.195 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:40.463 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:40.463 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:40.463 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:40.528 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:40.532 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:40.825 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:40.825 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:40.825 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:40.883 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:40.889 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:41.158 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:41.158 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:41.158 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:41.214 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:41.220 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:41.471 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:41.471 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:41.472 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:41.515 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:41.520 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:41.774 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:41.774 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:41.775 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:41.818 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:41.822 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:42.136 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:42.136 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:42.136 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:42.199 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:42.204 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:42.474 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:42.474 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:42.474 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:42.524 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:42.532 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:42.810 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:42.810 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:42.810 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:42.858 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:42.863 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:43.129 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:43.129 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:43.129 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:43.180 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:43.183 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:43.475 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:43.475 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:43.475 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:43.518 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:43.523 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:43.772 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:43.772 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:43.772 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:43.822 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:43.827 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:44.078 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:44.078 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:44.078 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:44.490 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:44.490 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:44.490 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:44.675 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+06:12:44.900 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:44.900 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:44.900 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:45.068 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+06:12:45.297 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:45.297 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:45.297 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:45.492 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+06:12:45.741 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:45.741 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:45.741 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:45.921 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+06:12:46.183 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:46.183 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:46.184 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+06:12:46.188 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:46.191 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:46.442 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:46.442 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:46.442 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:46.731 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:46.731 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:46.732 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+06:12:46.788 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y StudentProfile v?i m� ??nh danh: 8d76a4b3-f9b6-4119-ad20-07ea899be3c6
+06:12:46.811 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y StudentProfile v?i m� ??nh danh: 8d76a4b3-f9b6-4119-ad20-07ea899be3c6
+06:12:47.031 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:47.031 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:47.031 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:47.417 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:47.418 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:47.418 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:47.533 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:47.762 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:47.762 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:47.762 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:47.859 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:48.076 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:48.077 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:48.077 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:48.182 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:48.424 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:48.424 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:48.424 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:48.557 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:48.807 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:48.807 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:48.807 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:48.906 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:49.141 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:49.141 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:49.141 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:49.240 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:49.472 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:49.472 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:49.472 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:49.567 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:49.810 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:49.810 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:49.810 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:49.940 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:50.323 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:50.323 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:50.323 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:50.439 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:50.699 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:50.699 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:50.699 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:50.807 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:51.060 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:51.060 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:51.060 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:51.174 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:51.431 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:51.431 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:51.431 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:51.525 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:51.756 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:51.757 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:51.757 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:51.855 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:52.098 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:52.098 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:52.099 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+06:12:52.194 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:52.442 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:52.443 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:52.443 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:52.590 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: Khung gi? kh�ng ???c tr�ng ho?c giao nhau.
+06:12:52.627 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: Khung gi? kh�ng ???c tr�ng ho?c giao nhau.
+06:12:52.645 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Validation failed for request with 1 errors
+06:12:52.978 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:52.978 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:52.978 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:53.420 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:53.420 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:53.420 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:53.862 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:53.862 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:53.862 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:54.342 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:54.342 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:54.342 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:54.659 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:54.659 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:54.659 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:54.816 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+06:12:54.854 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: B?n kh�ng c� quy?n gh�p ?�i cho m?c ti�u h?c t?p n�y.
+06:12:55.166 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:55.166 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:55.166 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:55.388 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+06:12:55.442 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: B?n kh�ng c� quy?n gh�p ?�i cho m?c ti�u h?c t?p n�y.
+06:12:55.686 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:55.686 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:55.686 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:55.850 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+06:12:55.886 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: B?n kh�ng c� quy?n gh�p ?�i cho m?c ti�u h?c t?p n�y.
+06:12:56.171 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:56.171 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:56.171 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:56.347 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+06:12:56.386 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: B?n kh�ng c� quy?n gh�p ?�i cho m?c ti�u h?c t?p n�y.
+06:12:56.642 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:56.642 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:56.642 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:56.820 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+06:12:56.857 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: B?n kh�ng c� quy?n gh�p ?�i cho m?c ti�u h?c t?p n�y.
+06:12:57.137 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:57.137 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:57.137 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:57.279 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+06:12:57.318 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: B?n kh�ng c� quy?n gh�p ?�i cho m?c ti�u h?c t?p n�y.
+06:12:57.568 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:57.568 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:57.568 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:57.757 [main] ERROR vn.edufit.web.advice.GlobalExceptionHandler -- Unhandled internal server error:
+org.springframework.orm.jpa.JpaSystemException: Unable to commit against JDBC Connection
+	at org.springframework.orm.jpa.hibernate.HibernateExceptionTranslator.convertHibernateAccessException(HibernateExceptionTranslator.java:223)
+	at org.springframework.orm.jpa.hibernate.HibernateExceptionTranslator.convertHibernateAccessException(HibernateExceptionTranslator.java:131)
+	at org.springframework.orm.jpa.hibernate.HibernateExceptionTranslator.translateExceptionIfPossible(HibernateExceptionTranslator.java:105)
+	at org.springframework.orm.jpa.vendor.HibernateJpaDialect.translateExceptionIfPossible(HibernateJpaDialect.java:223)
+	at org.springframework.orm.jpa.JpaTransactionManager.doCommit(JpaTransactionManager.java:556)
+	at org.springframework.transaction.support.AbstractPlatformTransactionManager.processCommit(AbstractPlatformTransactionManager.java:794)
+	at org.springframework.transaction.support.AbstractPlatformTransactionManager.commit(AbstractPlatformTransactionManager.java:757)
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.commitTransactionAfterReturning(TransactionAspectSupport.java:687)
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:408)
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:130)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:719)
+	at vn.edufit.profile.application.service.LearningGoalService$$SpringCGLIB$$0.replaceAvailability(<generated>)
+	at vn.edufit.profile.web.LearningGoalController.replaceAvailability(LearningGoalController.java:55)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000)
+	at org.springframework.web.servlet.FrameworkServlet.doPut(FrameworkServlet.java:914)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:650)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874)
+	at org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)
+	at org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:160)
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:127)
+	at org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:199)
+	at vn.edufit.profile.LearningGoalPostgresTest.availabilityCommitFailureRestoresDeletedSlots(LearningGoalPostgresTest.java:363)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:701)
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:502)
+	at org.junit.jupiter.engine.support.MethodReflectionUtils.invoke(MethodReflectionUtils.java:45)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:61)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:124)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:163)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:148)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:123)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:105)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:99)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:66)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:47)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:39)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:104)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:98)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invokeVoid(InterceptingExecutableInvoker.java:71)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$0(TestMethodTestDescriptor.java:219)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:215)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:157)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:70)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:176)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:42)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:180)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:42)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:180)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:36)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:52)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.executeEngine(EngineExecutionOrchestrator.java:246)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.failOrExecuteEngine(EngineExecutionOrchestrator.java:218)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:179)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:108)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:66)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:157)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:65)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:125)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:114)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:93)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:48)
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$0(InterceptingLauncher.java:41)
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:40)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:48)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+Caused by: org.hibernate.TransactionException: Unable to commit against JDBC Connection
+	at org.hibernate.resource.jdbc.internal.AbstractLogicalConnectionImplementor.commitConnection(AbstractLogicalConnectionImplementor.java:114)
+	at org.hibernate.resource.jdbc.internal.AbstractLogicalConnectionImplementor.commit(AbstractLogicalConnectionImplementor.java:82)
+	at org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl$TransactionDriverControlImpl.commitNoRollbackOnly(JdbcResourceLocalTransactionCoordinatorImpl.java:273)
+	at org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl$TransactionDriverControlImpl.commit(JdbcResourceLocalTransactionCoordinatorImpl.java:242)
+	at org.hibernate.engine.transaction.internal.TransactionImpl.commit(TransactionImpl.java:89)
+	at org.springframework.orm.jpa.JpaTransactionManager.doCommit(JpaTransactionManager.java:552)
+	... 107 common frames omitted
+Caused by: org.postgresql.util.PSQLException: ERROR: test deferred slot failure
+  Where: PL/pgSQL function reject_goal_slot() line 1 at RAISE
+	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2993)
+	at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2656)
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:446)
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:403)
+	at org.postgresql.jdbc.PgConnection.executeTransactionCommand(PgConnection.java:1022)
+	at org.postgresql.jdbc.PgConnection.commit(PgConnection.java:1044)
+	at org.hibernate.resource.jdbc.internal.AbstractLogicalConnectionImplementor.commitConnection(AbstractLogicalConnectionImplementor.java:95)
+	... 112 common frames omitted
+06:12:58.093 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:58.093 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:58.093 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:58.672 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:58.672 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:58.672 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:58.991 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:58.991 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:58.991 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:59.165 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M?c ti�u ?� l?u tr? kh�ng ???c ch?nh s?a.
+06:12:59.401 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:59.401 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:59.401 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:59.454 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:12:59.513 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Resource not found: Kh�ng t�m th?y LearningGoal v?i m� ??nh danh: 0b614306-347e-44d0-8a4d-2f34c9ab9b7b
+06:12:59.567 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Invalid operation: M?c ti�u ?� l?u tr? kh�ng ???c ch?nh s?a.
+06:12:59.775 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:12:59.775 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:12:59.775 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:12:59.832 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:12:59.853 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:12:59.869 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:12:59.887 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:13:00.291 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:13:00.291 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:13:00.291 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:13:00.362 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:13:00.381 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:13:00.399 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:13:00.418 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:13:00.667 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:13:00.667 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:13:00.667 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:13:00.717 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:13:00.733 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:13:00.746 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:13:00.759 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:13:00.977 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:13:00.977 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:13:00.978 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+06:13:01.035 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:13:01.052 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:13:01.068 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:13:01.082 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? h?c sinh ???c qu?n l� m?c ti�u c?a m�nh.
+06:13:01.378 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:13:01.378 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:13:01.379 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+06:13:01.733 [main] WARN vn.edufit.web.advice.GlobalExceptionHandler -- Forbidden operation: Ch? ph? huynh c� li�n k?t x�c nh?n ???c ??c m?c ti�u h?c t?p.
+06:13:02.070 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:13:02.070 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:13:02.071 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+06:13:02.457 [main] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+06:13:02.457 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+06:13:02.457 [main] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+06:13:02.654 [main] INFO org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean -- Closing JPA EntityManagerFactory for persistence unit 'default'
+[INFO] Tests run: 62, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 31.99 s -- in vn.edufit.profile.LearningGoalPostgresTest
+[INFO] Running vn.edufit.security.DiscoveryHttpSecurityPostgresTest
+06:13:03.529 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [vn.edufit.security.DiscoveryHttpSecurityPostgresTest]: DiscoveryHttpSecurityPostgresTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+06:13:03.686 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration vn.edufit.EduFitApplication for test class vn.edufit.security.DiscoveryHttpSecurityPostgresTest
+06:13:03.819 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [vn.edufit.security.DiscoveryHttpSecurityPostgresTest]: DiscoveryHttpSecurityPostgresTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+06:13:03.821 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration vn.edufit.EduFitApplication for test class vn.edufit.security.DiscoveryHttpSecurityPostgresTest
+06:13:03.825 [main] INFO tc.postgres:16-alpine -- Creating container for image: postgres:16-alpine
+06:13:03.979 [main] INFO tc.postgres:16-alpine -- Container postgres:16-alpine is starting: b428e50e04d82a47f0e251cd279e9322a37e1b848e18a5582509c38d38fb8c2a
+06:13:07.471 [main] INFO tc.postgres:16-alpine -- Container postgres:16-alpine started in PT3.6466252S
+06:13:07.471 [main] INFO tc.postgres:16-alpine -- Container is started (JDBC URL: jdbc:postgresql://localhost:61501/test?loggerLevel=OFF)
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-12T06:13:08.547Z  INFO 31632 --- [edufit-backend] [           main] v.e.s.DiscoveryHttpSecurityPostgresTest  : Starting DiscoveryHttpSecurityPostgresTest using Java 21.0.10 with PID 31632 (started by ASUS in C:\Users\ASUS\Desktop\EduFit\EduFit\backend\app)
+2026-10-12T06:13:08.550Z  INFO 31632 --- [edufit-backend] [           main] v.e.s.DiscoveryHttpSecurityPostgresTest  : No active profile set, falling back to 1 default profile: "default"
+2026-10-12T06:13:11.298Z  INFO 31632 --- [edufit-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-12T06:13:11.477Z  INFO 31632 --- [edufit-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 176 ms. Found 21 JPA repository interfaces.
+2026-10-12T06:13:12.639Z  INFO 31632 --- [edufit-backend] [           main] com.zaxxer.hikari.HikariDataSource       : EduFitHikariPool - Starting...
+2026-10-12T06:13:12.693Z  INFO 31632 --- [edufit-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : EduFitHikariPool - Added connection org.postgresql.jdbc.PgConnection@4d077767
+2026-10-12T06:13:12.693Z  INFO 31632 --- [edufit-backend] [           main] com.zaxxer.hikari.HikariDataSource       : EduFitHikariPool - Start completed.
+2026-10-12T06:13:12.697Z  INFO 31632 --- [edufit-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:61501/test?loggerLevel=OFF (PostgreSQL 16.15)
+2026-10-12T06:13:12.771Z  INFO 31632 --- [edufit-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-12T06:13:12.773Z  INFO 31632 --- [edufit-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 12 migrations (execution time 00:00.031s)
+2026-10-12T06:13:12.791Z  INFO 31632 --- [edufit-backend] [           main] org.flywaydb.core.Flyway                 : All configured schemas are empty; a baseline marker will not be added to Flyway's schema history table. A baseline or migration script with a lower version than the baseline version may execute if available. Check the Schemas parameter if this is not intended. See https://help.red-gate.com/help/flyway-cli12/help_4.aspx?topic=baseline-on-migrate for more info
+2026-10-12T06:13:12.796Z  INFO 31632 --- [edufit-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-12T06:13:12.835Z  INFO 31632 --- [edufit-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+2026-10-12T06:13:12.843Z  INFO 31632 --- [edufit-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1.01 - create account and session tables"
+2026-10-12T06:13:13.053Z  INFO 31632 --- [edufit-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1.02 - create profile and subject tables"
+2026-10-12T06:13:13.201Z  INFO 31632 --- [edufit-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1.03 - create verification tables"
+2026-10-12T06:13:13.279Z  INFO 31632 --- [edufit-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1.04 - create connection and class tables"
+2026-10-12T06:13:13.396Z  INFO 31632 --- [edufit-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1.05 - create tutoring session tables"
+2026-10-12T06:13:13.481Z  INFO 31632 --- [edufit-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1.06 - create learning plan tables"
+2026-10-12T06:13:13.557Z  INFO 31632 --- [edufit-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1.07 - create review and notification tables"
+2026-10-12T06:13:13.609Z  INFO 31632 --- [edufit-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1.08 - create audit and ai log tables"
+2026-10-12T06:13:13.678Z  INFO 31632 --- [edufit-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1.09 - seed demo accounts and catalogs"
+2026-10-12T06:13:13.728Z  INFO 31632 --- [edufit-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1.10 - seed demo accounts and catalogs"
+2026-10-12T06:13:13.776Z  INFO 31632 --- [edufit-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1.11 - allow relink after revocation"
+2026-10-12T06:13:13.822Z  INFO 31632 --- [edufit-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1.12 - create ai match reservations"
+2026-10-12T06:13:13.863Z  INFO 31632 --- [edufit-backend] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 12 migrations to schema "public", now at version v1.12 (execution time 00:00.760s)
+2026-10-12T06:13:13.980Z  INFO 31632 --- [edufit-backend] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-10-12T06:13:14.047Z  INFO 31632 --- [edufit-backend] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-12T06:13:14.062Z  INFO 31632 --- [edufit-backend] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:61501/test?loggerLevel=OFF]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 16.15
+	Default catalog/schema: test/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-12T06:13:14.917Z  INFO 31632 --- [edufit-backend] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-12T06:13:14.923Z  INFO 31632 --- [edufit-backend] [           main] org.hibernate.orm.jdbc.batch             : HHH100501: Automatic JDBC statement batching enabled (maximum batch size 25)
+2026-10-12T06:13:14.974Z  INFO 31632 --- [edufit-backend] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-12T06:13:18.102Z  INFO 31632 --- [edufit-backend] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+2026-10-12T06:13:19.151Z  INFO 31632 --- [edufit-backend] [           main] v.e.s.DiscoveryHttpSecurityPostgresTest  : Started DiscoveryHttpSecurityPostgresTest in 11.585 seconds (process running for 125.797)
+2026-10-12T06:13:19.264Z  WARN 31632 --- [edufit-backend] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-10-12T06:13:19.264Z  WARN 31632 --- [edufit-backend] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+2026-10-12T06:13:19.275Z  INFO 31632 --- [edufit-backend] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:19.275Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:19.277Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 2 ms
+2026-10-12T06:13:20.064Z  WARN 31632 --- [edufit-backend] [           main] ration$PageModule$WarningLoggingModifier : Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
+	For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
+	or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
+
+2026-10-12T06:13:20.088Z  WARN 31632 --- [edufit-backend] [           main] v.e.web.advice.GlobalExceptionHandler    : Resource not found: Kh�ng t�m th?y TutorProfile v?i m� ??nh danh: 4a8a24f2-d60c-4160-bcee-0e312e58d841
+2026-10-12T06:13:20.107Z  INFO 31632 --- [edufit-backend] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:20.107Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:20.111Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 4 ms
+2026-10-12T06:13:20.521Z  INFO 31632 --- [edufit-backend] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:20.521Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:20.522Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-10-12T06:13:20.779Z  INFO 31632 --- [edufit-backend] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:20.779Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:20.780Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-10-12T06:13:21.045Z  INFO 31632 --- [edufit-backend] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:21.045Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:21.046Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-10-12T06:13:21.844Z  INFO 31632 --- [edufit-backend] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:21.845Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:21.846Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-10-12T06:13:22.536Z  INFO 31632 --- [edufit-backend] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:22.536Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:22.537Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-10-12T06:13:22.913Z  INFO 31632 --- [edufit-backend] [           main] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-10-12T06:13:22.918Z  INFO 31632 --- [edufit-backend] [           main] com.zaxxer.hikari.HikariDataSource       : EduFitHikariPool - Shutdown initiated...
+2026-10-12T06:13:22.923Z  INFO 31632 --- [edufit-backend] [           main] com.zaxxer.hikari.HikariDataSource       : EduFitHikariPool - Shutdown completed.
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 20.05 s -- in vn.edufit.security.DiscoveryHttpSecurityPostgresTest
+[INFO] Running vn.edufit.web.advice.GlobalExceptionHandlerTest
+[INFO] Running vn.edufit.web.advice.GlobalExceptionHandlerTest$BusinessExceptionMappingTests
+2026-10-12T06:13:23.571Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:23.571Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:23.571Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:23.573Z  WARN 31632 --- [edufit-backend] [           main] v.e.web.advice.GlobalExceptionHandler    : Forbidden operation: B?n kh�ng c� quy?n th?c hi?n thao t�c n�y
+2026-10-12T06:13:23.627Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:23.628Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:23.628Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:23.628Z  WARN 31632 --- [edufit-backend] [           main] v.e.web.advice.GlobalExceptionHandler    : Resource not found: Kh�ng t�m th?y ng??i d�ng v?i m� ??nh danh: 12345
+2026-10-12T06:13:23.655Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:23.656Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:23.656Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:23.658Z  WARN 31632 --- [edufit-backend] [           main] v.e.web.advice.GlobalExceptionHandler    : Resource conflict: Khung gi? b? tr�ng l?ch h?c [ErrorCode: SCHEDULE_OVERLAP]
+2026-10-12T06:13:23.681Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:23.682Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:23.682Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:23.683Z  WARN 31632 --- [edufit-backend] [           main] v.e.web.advice.GlobalExceptionHandler    : Invalid operation: Thao t�c kh�ng h?p l? v?i tr?ng th�i hi?n t?i
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.142 s -- in vn.edufit.web.advice.GlobalExceptionHandlerTest$BusinessExceptionMappingTests
+[INFO] Running vn.edufit.web.advice.GlobalExceptionHandlerTest$ValidationAndSystemErrorTests
+2026-10-12T06:13:23.705Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:23.705Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:23.705Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:23.735Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:23.735Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:23.736Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-10-12T06:13:23.737Z ERROR 31632 --- [edufit-backend] [           main] v.e.web.advice.GlobalExceptionHandler    : Unhandled internal server error:
+
+java.lang.RuntimeException: C? s? d? li?u b? ng?t k?t n?i ??t ng?t!
+	at vn.edufit.web.advice.GlobalExceptionHandlerTest$StubController.throwCrash(GlobalExceptionHandlerTest.java:172) ~[test-classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[tomcat-embed-core-11.0.24.jar:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72) ~[spring-test-7.0.9.jar:7.0.9]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.24.jar:6.1]
+	at org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:160) ~[spring-test-7.0.9.jar:7.0.9]
+	at org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:127) ~[spring-test-7.0.9.jar:7.0.9]
+	at org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:199) ~[spring-test-7.0.9.jar:7.0.9]
+	at vn.edufit.web.advice.GlobalExceptionHandlerTest$ValidationAndSystemErrorTests.shouldReturn500SafeResponseWhenUnexpectedCrashOccurs(GlobalExceptionHandlerTest.java:130) ~[test-classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:701) ~[junit-platform-commons-6.0.3.jar:6.0.3]
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:502) ~[junit-platform-commons-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.support.MethodReflectionUtils.invoke(MethodReflectionUtils.java:45) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:61) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:124) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:163) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:148) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:123) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:105) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:99) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:66) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:47) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:39) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:104) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:98) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invokeVoid(InterceptingExecutableInvoker.java:71) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$0(TestMethodTestDescriptor.java:219) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:215) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:157) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:70) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:176) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596) ~[na:na]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:42) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:180) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596) ~[na:na]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:42) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:180) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596) ~[na:na]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:42) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:180) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:36) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:52) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:58) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.executeEngine(EngineExecutionOrchestrator.java:246) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.failOrExecuteEngine(EngineExecutionOrchestrator.java:218) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:179) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:108) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:66) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:157) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:65) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:125) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:114) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:93) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:48) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$0(InterceptingLauncher.java:41) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:40) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:48) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56) ~[surefire-junit-platform-3.5.0.jar:3.5.0]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184) ~[surefire-junit-platform-3.5.0.jar:3.5.0]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148) ~[surefire-junit-platform-3.5.0.jar:3.5.0]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122) ~[surefire-junit-platform-3.5.0.jar:3.5.0]
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385) ~[surefire-booter-3.5.0.jar:3.5.0]
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.5.0.jar:3.5.0]
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.5.0.jar:3.5.0]
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.5.0.jar:3.5.0]
+
+2026-10-12T06:13:23.766Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:23.766Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:23.767Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-10-12T06:13:23.772Z  WARN 31632 --- [edufit-backend] [           main] v.e.web.advice.GlobalExceptionHandler    : Validation failed for request with 1 errors
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.090 s -- in vn.edufit.web.advice.GlobalExceptionHandlerTest$ValidationAndSystemErrorTests
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.234 s -- in vn.edufit.web.advice.GlobalExceptionHandlerTest
+[INFO] Running vn.edufit.web.advice.HttpInputErrorTest
+2026-10-12T06:13:24.156Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.157Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.158Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-10-12T06:13:24.206Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.206Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.206Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:24.243Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.243Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.243Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:24.283Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.283Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.283Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:24.313Z  WARN 31632 --- [edufit-backend] [           main] v.e.web.advice.GlobalExceptionHandler    : Validation failed for request with 1 errors
+2026-10-12T06:13:24.343Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.343Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.343Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:24.353Z  WARN 31632 --- [edufit-backend] [           main] v.e.web.advice.GlobalExceptionHandler    : Validation failed for request with 1 errors
+2026-10-12T06:13:24.382Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.382Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.382Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:24.391Z  WARN 31632 --- [edufit-backend] [           main] v.e.web.advice.GlobalExceptionHandler    : Validation failed for request with 1 errors
+2026-10-12T06:13:24.417Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.418Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.418Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:24.426Z  WARN 31632 --- [edufit-backend] [           main] v.e.web.advice.GlobalExceptionHandler    : Validation failed for request with 1 errors
+2026-10-12T06:13:24.443Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.443Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.443Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:24.448Z  WARN 31632 --- [edufit-backend] [           main] v.e.web.advice.GlobalExceptionHandler    : Validation failed for request with 1 errors
+2026-10-12T06:13:24.466Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.467Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.467Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:24.474Z  WARN 31632 --- [edufit-backend] [           main] v.e.web.advice.GlobalExceptionHandler    : Validation failed for request with 1 errors
+2026-10-12T06:13:24.490Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.490Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.490Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:24.515Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.515Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.516Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-10-12T06:13:24.555Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.555Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.556Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-10-12T06:13:24.582Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.582Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.582Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:24.640Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.640Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.640Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:24.654Z  WARN 31632 --- [edufit-backend] [           main] v.e.web.advice.GlobalExceptionHandler    : Constraint validation failed with 1 errors
+2026-10-12T06:13:24.677Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.678Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.678Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:24.709Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.710Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.710Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:24.738Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.738Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.738Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:24.760Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.760Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.760Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-10-12T06:13:24.784Z  INFO 31632 --- [edufit-backend] [           main] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2026-10-12T06:13:24.784Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-12T06:13:24.785Z  INFO 31632 --- [edufit-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-10-12T06:13:24.790Z  WARN 31632 --- [edufit-backend] [           main] v.e.web.advice.GlobalExceptionHandler    : Validation failed for request with 1 errors
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.017 s -- in vn.edufit.web.advice.HttpInputErrorTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 148, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] --- jacoco:0.8.12:report (report) @ app ---
+[INFO] Loading execution data file C:\Users\ASUS\Desktop\EduFit\EduFit\backend\app\target\jacoco.exec
+[INFO] Analyzed bundle 'EduFit :: App Runner' with 7 classes
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for EduFit :: Parent 1.0-SNAPSHOT:
+[INFO]
+[INFO] EduFit :: Parent ................................... SUCCESS [  0.633 s]
+[INFO] EduFit :: Platform (Aggregator) .................... SUCCESS [  0.020 s]
+[INFO] EduFit :: Platform :: Shared Kernel ................ SUCCESS [  1.416 s]
+[INFO] EduFit :: Platform :: AI Gateway ................... SUCCESS [  0.918 s]
+[INFO] EduFit :: Platform :: File Storage ................. SUCCESS [  0.339 s]
+[INFO] EduFit :: Platform :: Audit Logging ................ SUCCESS [  0.303 s]
+[INFO] EduFit :: Modules (Aggregator) ..................... SUCCESS [  0.017 s]
+[INFO] EduFit :: Module :: IAM ............................ SUCCESS [  0.667 s]
+[INFO] EduFit :: Module :: Profile ........................ SUCCESS [  0.987 s]
+[INFO] EduFit :: Module :: Verification ................... SUCCESS [  0.367 s]
+[INFO] EduFit :: Module :: Connection ..................... SUCCESS [  0.505 s]
+[INFO] EduFit :: Module :: Scheduling ..................... SUCCESS [  0.243 s]
+[INFO] EduFit :: Module :: Review ......................... SUCCESS [  0.224 s]
+[INFO] EduFit :: Module :: Discovery ...................... SUCCESS [  0.760 s]
+[INFO] EduFit :: Module :: Progress ....................... SUCCESS [  0.235 s]
+[INFO] EduFit :: Module :: Notification ................... SUCCESS [  0.289 s]
+[INFO] EduFit :: App Runner ............................... SUCCESS [02:22 min]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  02:31 min
+[INFO] Finished at: 2026-10-12T06:13:26Z
+[INFO] ------------------------------------------------------------------------

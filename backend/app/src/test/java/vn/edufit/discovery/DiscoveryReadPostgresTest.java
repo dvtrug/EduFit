@@ -120,6 +120,33 @@ class DiscoveryReadPostgresTest {
     verify(ai).complete(any()); // Gateway owns admission; this fixture performs no model call.
   }
 
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+      "rating,asc", "rating,desc", "relevance,asc", "relevance,desc",
+      "price,asc", "price,desc", "experience,asc", "experience,desc"})
+  void httpPaginationUsesUniqueTutorTieBreak(String sort, String direction) throws Exception {
+    seedTutors(23);
+    jdbc.update("update tutor_profile set price_per_session=200000, rating_avg=4.5, review_count=10, experience_years=2");
+    var found = new ArrayList<UUID>();
+    var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+    for (int page = 0; page < 3; page++) {
+      var response = mvc.perform(get("/api/v1/discovery/tutors").param("page",String.valueOf(page))
+          .param("size","10").param("sortBy",sort).param("sortDirection",direction)
+          .param("area","  ").param("keyword","  "))
+          .andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(23))
+          .andExpect(jsonPath("$.data.content.length()").value(page == 2 ? 3 : 10))
+          .andReturn().getResponse().getContentAsString();
+      for (var tutor : mapper.readTree(response).path("data").path("content")) {
+        found.add(UUID.fromString(tutor.path("tutorId").asText()));
+      }
+    }
+    assertEquals(java.util.stream.IntStream.rangeClosed(1,23).mapToObj(this::id).toList(), found,
+        "All equal sort keys must use ascending unique tutorId across every HTTP page");
+    assertEquals(23,found.stream().distinct().count());
+    mvc.perform(get("/api/v1/discovery/tutors").param("page","3"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.data.content").isEmpty());
+  }
+
   @Test
   void paginationHasNoDuplicatesOrMissingRowsDespiteMultipleSubjects() throws Exception {
     seedTutors(23);

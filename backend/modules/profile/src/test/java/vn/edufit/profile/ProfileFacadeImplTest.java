@@ -182,13 +182,26 @@ class ProfileFacadeImplTest {
     assertEquals("Gia sư A", dtoOpt.get().displayName());
   }
 
-  @Test
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"unsorted", "price", "id", "unpaged"})
   @DisplayName("Tìm kiếm discovery chỉ trả hồ sơ gia sư đã VERIFIED theo bộ lọc")
-  void shouldSearchVerifiedTutorsForDiscovery() {
+  void shouldSearchVerifiedTutorsForDiscovery(String order) {
     TutorProfile profile = new TutorProfile(UUID.randomUUID(), "Gia sư Search", TeachingMode.BOTH, 220_000L);
     profile.markVerified(Instant.now());
     TutorSearchCriteria criteria = new TutorSearchCriteria(1, 2, "Hà Nội", "ONLINE", 100_000L, 300_000L, null);
-    PageRequest pageable = PageRequest.of(0, 20);
+    var idSort = org.springframework.data.domain.Sort.by("tutorId");
+    org.springframework.data.domain.Pageable pageable = switch (order) {
+      case "price" -> PageRequest.of(2, 20, org.springframework.data.domain.Sort.by("pricePerSession").descending());
+      case "id" -> PageRequest.of(0, 20, idSort.descending());
+      case "unpaged" -> org.springframework.data.domain.Pageable.unpaged();
+      default -> PageRequest.of(0, 20);
+    };
+    org.springframework.data.domain.Pageable expectedPageable = switch (order) {
+      case "price" -> PageRequest.of(2, 20, org.springframework.data.domain.Sort.by("pricePerSession").descending().and(idSort));
+      case "id" -> PageRequest.of(0, 20, idSort.descending());
+      case "unpaged" -> org.springframework.data.domain.Pageable.unpaged(idSort);
+      default -> PageRequest.of(0, 20, idSort);
+    };
 
     when(tutorProfileRepository.searchVerifiedTutors(
         TutorStatus.VERIFIED,
@@ -205,7 +218,7 @@ class ProfileFacadeImplTest {
         null,
         null,
         null,
-        pageable
+        expectedPageable
     )).thenReturn(new PageImpl<>(List.of(profile)));
 
     var result = profileFacade.searchTutors(criteria, pageable);

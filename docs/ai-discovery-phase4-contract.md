@@ -38,4 +38,12 @@ Sources: [Spring Boot session auto-configuration](https://docs.spring.io/spring-
 
 ## B12: input errors and pagination
 
-Pending B12 implementation and regression evidence.
+`GlobalExceptionHandler` maps malformed JSON/UUID, numeric/enum/time conversion, missing required parameters and Spring MVC method input validation to HTTP 400 `VALIDATION_FAILED`. Binding failures use a fixed message without raw parser text. Standard field validation keeps field names/messages but always redacts `rejectedValue` to null; constraint violation logging records only the error count. No new error envelope or public field names are introduced. A method return-value constraint failure remains HTTP 500 `INTERNAL_SERVER_ERROR`, since it is a server defect.
+
+Security filters run before controller validation: a protected write with missing CSRF still returns 403; a guest write with valid CSRF returns 401. Malformed JSON produces 400 after authentication and CSRF checks pass.
+
+Profile search appends unique `tutorId ASC` after the requested ordering unless the caller already explicitly orders by tutorId. Rating/relevance keeps `ratingAvg` in the requested direction, then `reviewCount DESC`, then tutorId. Price/experience preserves its requested direction and adds tutorId. Existing page numbers, size clamps, response fields and Spring Data Page metadata are unchanged. The facade also applies stable sorting to unpaged callers.
+
+Regression uses real PostgreSQL with 23 tutors having identical rating/review count/price/experience, HTTP pages 0/1/2 and beyond-last, both directions for all four public sort keys. Every tutor appears once in deterministic order. Existing tests retain blank area/keyword filters, empty search, unverified detail 404, query counts and candidate caps. Offset pagination does not provide snapshot consistency across requests: inserts, deletes or changes to sort keys between page requests may still move rows. No cursor/snapshot API is introduced.
+
+Sources: [Spring MVC validation exceptions](https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-validation.html), [Spring Data JPA paging and sorting](https://docs.spring.io/spring-data/jpa/reference/jpa/query-methods.html).

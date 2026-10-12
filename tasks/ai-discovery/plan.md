@@ -1,7 +1,7 @@
 # AI + Discovery: đánh giá hiện trạng và kế hoạch backend sẵn sàng tích hợp
 
 Ngày kiểm tra: 2026-10-11 (Asia/Ho_Chi_Minh). Base: `feat/discovery`, commit `4cc8767`.
-Trạng thái cập nhật 2026-10-12: **Phase 1 (B02–B04), Phase 2 (B05–B07) và Phase 3 (B08–B10) hoàn tất** trên `feat/discovery-ai`, tạo từ main mới nhất lúc chuyển nhánh (`24dc2f1`). Các mục khảo sát bên dưới ghi hiện trạng trước thay đổi; kết quả thực thi mới ở mục 9–11 và checklist. Chỉ backend, cấu hình, test và tài liệu; không sửa frontend. Theo yêu cầu người dùng, hoàn tất/kiểm tra mỗi task rồi commit và push lên `feat/discovery-ai` trước task tiếp theo.
+Trạng thái cập nhật 2026-10-12: **Phase 1–4 (B01–B12) hoàn tất** trên `feat/discovery-ai`, tạo từ main mới nhất lúc chuyển nhánh (`24dc2f1`). Các mục khảo sát bên dưới ghi hiện trạng trước thay đổi; kết quả thực thi mới ở mục 9–12 và checklist. Chỉ backend, cấu hình, test và tài liệu; không sửa frontend. Theo yêu cầu người dùng, hoàn tất/kiểm tra mỗi task rồi commit và push lên `feat/discovery-ai` trước task tiếp theo.
 Checklist thực thi: [todo.md](todo.md). Kế hoạch Discovery cũ tại `../plan.md` và `../todo.md` được giữ nguyên như lịch sử.
 
 ## 1. Kết luận: đã có AI, nhưng chưa phải chỉ thêm API key là xong
@@ -205,7 +205,7 @@ Checkpoint D: Student và Parent có thể lấy goalId hợp lệ qua HTTP, kh�
 
 ### Phase 4 — HTTP sẵn sàng tích hợp
 
-B11 hoàn tất trên `feat/discovery-ai`: full application test phát hiện thiếu Boot 4 session auto-configuration; bổ sung starter JDBC và CookieSerializer rõ `EDUFIT_SESSION`. Flyway tiếp tục sở hữu session schema. Contract thực thi: [Phase 4 HTTP](../../docs/ai-discovery-phase4-contract.md).
+B11 và B12 hoàn tất trên `feat/discovery-ai`: full application test phát hiện thiếu Boot 4 session auto-configuration; bổ sung starter JDBC và CookieSerializer rõ `EDUFIT_SESSION`. Flyway tiếp tục sở hữu session schema. HTTP input lỗi được map 400 an toàn, auth status khớp contract và search có `tutorId` tie-break. Contract thực thi: [Phase 4 HTTP](../../docs/ai-discovery-phase4-contract.md).
 
 **B11 — Session, CSRF và CORS nhất quán** (M; phụ thuộc: B01, B10)
 

@@ -1,7 +1,7 @@
 # AI + Discovery backend — checklist
 
 Nguồn: [plan.md](plan.md). Ngày khảo sát 2026-10-11; base `feat/discovery@4cc8767`.
-Cập nhật 2026-10-12: B00, Phase 1 (B02–B04), Phase 2 (B05–B07) và Phase 3 (B08–B10) hoàn tất. Phase 4 trở đi chưa triển khai; B01 tổng thể còn phần security/HTTP pending.
+Cập nhật 2026-10-12: B00–B12 và Phase 1–4 hoàn tất trên `feat/discovery-ai`. Phase 5 (B13–B14) chưa triển khai.
 
 ## Khảo sát và contract
 
@@ -9,8 +9,8 @@ Cập nhật 2026-10-12: B00, Phase 1 (B02–B04), Phase 2 (B05–B07) và Phase
 - [x] Xác định model lỗi thời, provider mặc định stub, lỗi stub trả bio, goal HTTP thiếu và CSRF/docs lệch nhau.
 - [x] Lưu kế hoạch độc lập, giữ plan/checklist Discovery cũ.
 - [x] B00: Chốt kết quả baseline hiện tại — xem evidence bên dưới.
-- [ ] B01: Chốt schema goal/slots/readiness, quyền, AI/quota/security và Connection contract.
-- [ ] Checkpoint A: baseline và contract rõ.
+- [x] B01: Chốt schema goal/slots/readiness, quyền, AI/quota/security và Connection contract.
+- [x] Checkpoint A: baseline và contract rõ.
 
 ## AI provider
 
@@ -38,8 +38,10 @@ Cập nhật 2026-10-12: B00, Phase 1 (B02–B04), Phase 2 (B05–B07) và Phase
 - [x] B11: Session thật, CSRF endpoint/validation, security CORS/preflight; docs đồng bộ.
 
   B11 evidence: [full-context security + architecture](phase4-b11-final.log), **18 tests pass, 0 fail/error/skip** (7 full-filter PostgreSQL cases + 9 architecture + 2 CurrentUser adapter). [Initial red](phase4-b11-red.log) exposed missing JDBC session auto-configuration; [fixture correction run](phase4-b11-red-http.log) exposed use of the unused Spring Argon2 encoder without BouncyCastle, fixed by seeding with actual IAM Argon2PasswordService. [Intermediate run](phase4-b11-green.log) is a failed harness iteration, not acceptance evidence. [IAM regression](phase4-b11-iam-regression.log). Contract: [Phase 4](../../docs/ai-discovery-phase4-contract.md). No live provider call.
-- [ ] B12: Malformed input 400; ApiError thống nhất; search pagination tie-break.
-- [ ] Checkpoint E: full filter security và error regression pass.
+- [x] B12: Malformed input 400; ApiError thống nhất; search pagination tie-break.
+- [x] Checkpoint E: full filter security và error regression pass.
+
+  B12 evidence: [red](phase4-b12-red.log) có 14/17 input cases fail do 500/lộ rejected value và 8/8 pagination sort cases fail vì thiếu unique order. [Auth status red](phase4-b12-auth-status-red.log) chứng minh INVALID_CREDENTIALS/USER_NOT_ACTIVE/ACCOUNT_LOCKED lệch contract. [Final app regression](phase4-final-regression.log): **152 tests, 0 fail/error/skip, BUILD SUCCESS** sau mọi sửa (23 HTTP input cases, 30 Discovery PostgreSQL cases, 62 goals, 9 matching workflow, 7 full-filter security, 7 handler cũ, 9 architecture, 3 migration, 2 CurrentUser). [Module regression](phase4-module-regression.log): **283 tests, 0 fail/error/skip**. Profile coverage ghép unit + app: **799/901 lines = 88,68%; 182/222 branches = 81,98%**, gate 80% pass ([log](phase4-profile-coverage-merged.log)). App coverage branch baseline **56%**, gate không đạt và được giữ nguyên bằng chứng ([log](phase4-app-coverage.log)); không hạ ngưỡng/exclude class. Contract tổng B01 đã chốt trong [backend contract](../../docs/ai-discovery-backend-contract.md), [Phase 3](../../docs/ai-discovery-phase3-contract.md) và [Phase 4](../../docs/ai-discovery-phase4-contract.md).
 
 ## Bàn giao
 

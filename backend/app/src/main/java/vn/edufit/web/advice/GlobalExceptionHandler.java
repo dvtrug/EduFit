@@ -88,7 +88,7 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ApiError> handleInvalidOperation(InvalidOperationException ex) {
     log.warn("Invalid operation: {}", ex.getMessage());
     ApiError error = ApiError.of(ex.getErrorCode().name(), ex.getMessage());
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    return ResponseEntity.status(mapErrorCodeToHttpStatus(ex.getErrorCode())).body(error);
   }
 
   /**
@@ -116,8 +116,9 @@ public class GlobalExceptionHandler {
     List<FieldErrorItem> details = bindingResult.getFieldErrors().stream()
         .map(fe -> new FieldErrorItem(
             fe.getField(),
-            fe.getDefaultMessage() != null ? fe.getDefaultMessage() : "Giá trị không hợp lệ",
-            fe.getRejectedValue()))
+            fe.isBindingFailure() ? "Giá trị không đúng kiểu hoặc định dạng."
+                : fe.getDefaultMessage() != null ? fe.getDefaultMessage() : "Giá trị không hợp lệ",
+            null))
         .toList();
 
     log.warn("Validation failed for request with {} errors", details.size());
@@ -137,6 +138,27 @@ public class GlobalExceptionHandler {
         ErrorCode.VALIDATION_FAILED.name(), "Nội dung JSON không hợp lệ hoặc thiếu trường bắt buộc."));
   }
 
+  @ExceptionHandler({org.springframework.beans.TypeMismatchException.class,
+      org.springframework.web.bind.MissingServletRequestParameterException.class,
+      org.springframework.web.bind.ServletRequestBindingException.class})
+  public ResponseEntity<ApiError> handleMalformedParameter(Exception ex) {
+    // Conversion messages may embed passwords, tokens or arbitrary rejected values.
+    return ResponseEntity.badRequest().body(ApiError.of(
+        ErrorCode.VALIDATION_FAILED.name(), "Tham số yêu cầu bị thiếu hoặc không đúng định dạng."));
+  }
+
+  @ExceptionHandler(org.springframework.web.method.annotation.HandlerMethodValidationException.class)
+  public ResponseEntity<ApiError> handleMethodValidation(
+      org.springframework.web.method.annotation.HandlerMethodValidationException ex) {
+    // Return-value violations are server defects, not invalid client input.
+    if (ex.isForReturnValue()) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiError.of(
+          ErrorCode.INTERNAL_SERVER_ERROR.name(), "Đã xảy ra lỗi nội bộ hệ thống."));
+    }
+    return ResponseEntity.badRequest().body(ApiError.of(
+        ErrorCode.VALIDATION_FAILED.name(), "Tham số yêu cầu không thỏa mãn ràng buộc hợp lệ."));
+  }
+
   /**
    * Bắt lỗi vi phạm ràng buộc trên RequestParam hoặc PathVariable (@Validated) -> HTTP 400.
    */
@@ -146,10 +168,10 @@ public class GlobalExceptionHandler {
         .map(cv -> new FieldErrorItem(
             cv.getPropertyPath().toString(),
             cv.getMessage(),
-            cv.getInvalidValue()))
+            null))
         .toList();
 
-    log.warn("Constraint violation: {}", ex.getMessage());
+    log.warn("Constraint validation failed with {} errors", details.size());
     ApiError error = ApiError.of(
         ErrorCode.VALIDATION_FAILED.name(),
         "Tham số yêu cầu không thỏa mãn ràng buộc hợp lệ.",
@@ -256,7 +278,8 @@ public class GlobalExceptionHandler {
     }
     return switch (errorCode) {
       case UNAUTHORIZED, INVALID_CREDENTIALS -> HttpStatus.UNAUTHORIZED;
-      case FORBIDDEN -> HttpStatus.FORBIDDEN;
+      case FORBIDDEN, USER_NOT_ACTIVE -> HttpStatus.FORBIDDEN;
+      case ACCOUNT_LOCKED -> HttpStatus.LOCKED;
       case RESOURCE_NOT_FOUND -> HttpStatus.NOT_FOUND;
       case RATE_LIMIT_EXCEEDED -> HttpStatus.TOO_MANY_REQUESTS;
       case CONFLICT_DETECTED, USER_ALREADY_EXISTS, SCHEDULE_OVERLAP, REVIEW_ALREADY_EXISTS -> HttpStatus.CONFLICT;

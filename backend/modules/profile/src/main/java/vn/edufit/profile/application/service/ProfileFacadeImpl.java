@@ -100,6 +100,14 @@ public class ProfileFacadeImpl implements ProfileFacade {
     TeachingMode mode = parseTeachingMode(safeCriteria.mode());
     String area = normalizeBlank(safeCriteria.area());
     boolean includeBothMode = mode == TeachingMode.ONLINE || mode == TeachingMode.OFFLINE;
+    // Offset pages need a total order when many tutors share price/rating/experience.
+    org.springframework.data.domain.Sort sort = pageable.getSort();
+    if (sort.getOrderFor("tutorId") == null) {
+      sort = sort.and(org.springframework.data.domain.Sort.by("tutorId"));
+    }
+    Pageable stablePageable = pageable.isPaged()
+        ? PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort)
+        : Pageable.unpaged(sort);
 
     return tutorProfileRepository.searchVerifiedTutors(
         TutorStatus.VERIFIED,
@@ -116,7 +124,7 @@ public class ProfileFacadeImpl implements ProfileFacade {
         safeCriteria.dayOfWeek(),
         safeCriteria.availableFrom(),
         safeCriteria.availableTo(),
-        pageable
+        stablePageable
     ).map(this::toTutorDto);
   }
 
