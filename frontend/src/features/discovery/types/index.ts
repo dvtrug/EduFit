@@ -15,6 +15,7 @@ export interface TutorDiscoveryCard {
   teachingMode: TeachingMode;
   area: string | null;
   pricePerSession: number;
+  experienceYears?: number;
   ratingAvg: number | null;
   reviewCount: number;
   verified: boolean;
@@ -93,11 +94,21 @@ export interface TutorMatchResult {
 }
 
 export interface MatchingNeed {
+  goalId?: string;
+  subjectId: number;
   subjectName: string;
+  educationLevelId: number;
   gradeName: string;
+  goalType: "CONSOLIDATE" | "IMPROVE_GRADES" | "ADVANCED_STUDY" | "EXAM_PREPARATION" | "OTHER";
   targetDescription: string;
   teachingMode: "ONLINE" | "OFFLINE" | "BOTH";
   area: string;
+  currentLevel: number;
+  desiredLevel: number;
+  deadline: string;
+  budgetMin?: number;
+  budgetMax: number;
+  availabilitySlots: TutorAvailabilitySlot[];
   timeSlotsDescription: string;
 }
 

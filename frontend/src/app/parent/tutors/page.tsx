@@ -48,7 +48,7 @@ export default function ParentTutorsPage() {
     runMatching,
   } = useTutorMatching();
 
-  const handleRequestConnect = (tutorId: string) => {
+  const handleRequestConnect = (_tutorId: string) => {
     showToast(
       "Phụ huynh đã gửi yêu cầu kết nối! Gia sư sẽ liên hệ lại với gia đình sớm nhất.",
       "success"
@@ -101,7 +101,7 @@ export default function ParentTutorsPage() {
                 : "bg-stone-200 text-neutral-600"
             }`}
           >
-            {matches.length || 6}
+            {matches.length}
           </span>
         </button>
       </div>
@@ -221,7 +221,6 @@ export default function ParentTutorsPage() {
           error={matchError}
           need={need}
           onUpdateNeed={updateNeed}
-          onRefresh={() => runMatching()}
           onViewDetail={openTutor}
           onRequestConnect={handleRequestConnect}
         />

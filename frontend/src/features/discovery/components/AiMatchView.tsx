@@ -5,11 +5,7 @@ import {
   Sparkles,
   Target,
   CheckCircle2,
-  RotateCcw,
-  Star,
   X,
-  Sliders,
-  Check,
 } from "lucide-react";
 import type { TutorMatchResult, MatchingNeed } from "../types";
 import { MatchingNeedModal } from "./MatchingNeedModal";
@@ -19,8 +15,7 @@ export interface AiMatchViewProps {
   isMatching: boolean;
   error: string | null;
   need: MatchingNeed;
-  onUpdateNeed?: (newNeed: MatchingNeed) => void;
-  onRefresh?: () => void;
+  onUpdateNeed?: (newNeed: MatchingNeed) => void | Promise<void>;
   onViewDetail?: (tutorId: string) => void;
   onRequestConnect?: (tutorId: string) => void;
 }
@@ -31,7 +26,6 @@ export function AiMatchView({
   error,
   need,
   onUpdateNeed,
-  onRefresh,
   onViewDetail,
   onRequestConnect,
 }: AiMatchViewProps) {
@@ -100,6 +94,12 @@ export function AiMatchView({
       </div>
 
       {/* 2. SUBHEADER ROW */}
+      {error && (
+        <div role="alert" className="px-4 py-3 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700">
+          {error}
+        </div>
+      )}
+
       <div className="flex items-center justify-between text-xs pt-1">
         <div className="font-heading font-bold text-sm text-neutral-900">
           {matches.length} gợi ý phù hợp
@@ -164,7 +164,8 @@ export function AiMatchView({
                     </div>
                     <p className="text-xs text-neutral-600 font-medium truncate mt-0.5">
                       {tutor.subjects?.[0]?.subjectName || need.subjectName} ·{" "}
-                      {tutor.subjects?.[0]?.educationLevelName || need.gradeName} · 6 năm kinh nghiệm
+                      {tutor.subjects?.[0]?.educationLevelName || need.gradeName}
+                      {tutor.experienceYears !== undefined && ` · ${tutor.experienceYears} năm kinh nghiệm`}
                     </p>
                     <p className="text-[11px] text-neutral-400 mt-0.5 flex items-center gap-1">
                       <span className="text-amber-500 font-semibold">★</span>
@@ -177,8 +178,8 @@ export function AiMatchView({
                 <div className="flex-1 lg:max-w-xs space-y-1 text-xs text-neutral-600 border-t lg:border-t-0 pt-2 lg:pt-0 border-stone-100">
                   {(item.reasons || [
                     "✓ Đúng môn và khối lớp",
-                    "✓ Trùng 3 khung giờ rảnh",
-                    "✓ Kinh nghiệm ôn thi vào lớp 10",
+                    `✓ Trùng ${item.scoreBreakdown.overlappingSlots} khung giờ rảnh`,
+                    `✓ Phù hợp ${need.targetDescription}`,
                   ]).map((reason, rIdx) => (
                     <div key={rIdx} className="flex items-center gap-1 text-[11px] text-neutral-700">
                       <span className="text-emerald-600 font-bold">✓</span>
@@ -217,14 +218,14 @@ export function AiMatchView({
       )}
 
       {/* 4. MODAL THAY ĐỔI NHU CẦU */}
-      <MatchingNeedModal
-        isOpen={isEditNeedOpen}
-        currentNeed={need}
-        onClose={() => setIsEditNeedOpen(false)}
-        onSave={(newNeed) => {
-          onUpdateNeed?.(newNeed);
-        }}
-      />
+      {isEditNeedOpen && (
+        <MatchingNeedModal
+          isOpen
+          currentNeed={need}
+          onClose={() => setIsEditNeedOpen(false)}
+          onSave={(newNeed) => onUpdateNeed?.(newNeed)}
+        />
+      )}
 
       {/* 5. MODAL XEM LÝ DO GIẢI THÍCH CHI TIẾT (EXPLANATION MODAL) */}
       {selectedExplanation && (
@@ -290,7 +291,7 @@ export function AiMatchView({
 
                 <div>
                   <div className="flex justify-between text-neutral-700 mb-1">
-                    <span>Trùng khớp lịch rảnh (3 khung giờ)</span>
+                    <span>Trùng khớp lịch rảnh ({selectedExplanation.scoreBreakdown.overlappingSlots} khung giờ)</span>
                     <span className="font-bold text-neutral-900">
                       {Math.round(selectedExplanation.scoreBreakdown.scheduleFit)}%
                     </span>

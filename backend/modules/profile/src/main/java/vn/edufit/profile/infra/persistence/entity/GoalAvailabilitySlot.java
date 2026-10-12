@@ -34,6 +34,13 @@ public class GoalAvailabilitySlot {
     // JPA required
   }
 
+  public GoalAvailabilitySlot(UUID goalId, Short dayOfWeek, LocalTime startTime, LocalTime endTime) {
+    this.goalId = goalId;
+    this.dayOfWeek = dayOfWeek;
+    this.startTime = startTime;
+    this.endTime = endTime;
+  }
+
   public UUID getGoalId() {
     return goalId;
   }

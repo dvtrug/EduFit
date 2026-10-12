@@ -7,10 +7,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
-  Send,
   Clock,
   CheckCircle2,
-  Calendar,
 } from "lucide-react";
 import {
   TutorSearchFilters,
@@ -119,7 +117,7 @@ export default function StudentTutorsPage() {
     }
   }, [activeTab, matches.length, isMatching, runMatching]);
 
-  const handleRequestConnect = (tutorId: string) => {
+  const handleRequestConnect = (_tutorId: string) => {
     showToast(
       "Đã gửi yêu cầu kết nối học thử 1-1 tới gia sư thành công!",
       "success"
@@ -171,7 +169,7 @@ export default function StudentTutorsPage() {
                 : "bg-stone-200 text-neutral-600"
             }`}
           >
-            {matches.length || 6}
+            {matches.length}
           </span>
         </button>
 
@@ -321,7 +319,6 @@ export default function StudentTutorsPage() {
           error={matchError}
           need={need}
           onUpdateNeed={updateNeed}
-          onRefresh={() => runMatching()}
           onViewDetail={openTutor}
           onRequestConnect={handleRequestConnect}
         />

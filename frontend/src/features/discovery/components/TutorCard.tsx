@@ -20,15 +20,21 @@ export function TutorCard({
     currency: "VND",
   }).format(tutor.pricePerSession);
 
-  const primarySubject = tutor.subjects?.[0]?.subjectName || "Toán";
-  const primaryLevel = tutor.subjects?.[0]?.educationLevelName || "Lớp 8–9";
+  const subjectsText =
+    tutor.subjects && tutor.subjects.length > 0
+      ? tutor.subjects.map((s) => `${s.subjectName} · ${s.educationLevelName}`).join(", ")
+      : "Chưa cập nhật môn";
   const modeText =
     tutor.teachingMode === "ONLINE"
       ? "Online"
       : tutor.teachingMode === "OFFLINE"
       ? "Offline"
       : "Online & Offline";
-  const areaText = tutor.area ? tutor.area : "Quận 3";
+  const areaText = tutor.area
+    ? tutor.area
+    : tutor.teachingMode === "ONLINE"
+    ? "Toàn quốc"
+    : "Chưa cập nhật khu vực";
 
   return (
     <div className="bg-white rounded-2xl border border-stone-200/80 p-4 sm:p-5 hover:border-sky-300 hover:shadow-xs transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -50,10 +56,10 @@ export function TutorCard({
             )}
           </div>
           <p className="text-xs text-neutral-600 font-medium truncate mt-0.5">
-            {primarySubject} · {primaryLevel}
+            {subjectsText}
           </p>
           <p className="text-[11px] text-neutral-400 mt-0.5 truncate">
-            {tutor.headline || "6 năm kinh nghiệm giảng dạy"}
+            {tutor.headline || tutor.shortBio || (tutor.experienceYears ? `${tutor.experienceYears} năm kinh nghiệm` : "Gia sư tận tâm")}
           </p>
         </div>
 
@@ -62,14 +68,14 @@ export function TutorCard({
           <div className="flex items-center gap-1.5 font-semibold text-neutral-800 text-xs">
             <Star className="size-3.5 fill-amber-400 text-amber-400" />
             <span>
-              {tutor.ratingAvg ? tutor.ratingAvg.toFixed(1) : "4.9"} ({tutor.reviewCount || 128})
+              {tutor.ratingAvg ? tutor.ratingAvg.toFixed(1) : "5.0"} ({tutor.reviewCount ?? 0})
             </span>
           </div>
           <p className="text-neutral-500 text-[11px] truncate">
             {modeText} · {areaText}
           </p>
-          <div className="inline-flex items-center gap-1 text-emerald-700 text-[11px] font-medium">
-            <span>Trùng 3 khung giờ với bạn</span>
+          <div className="inline-flex items-center gap-1 text-sky-700 text-[11px] font-medium">
+            <span>{tutor.experienceYears ? `${tutor.experienceYears} năm kinh nghiệm` : "Đã xác minh chuyên môn"}</span>
           </div>
         </div>
       </div>

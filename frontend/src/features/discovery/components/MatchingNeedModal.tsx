@@ -1,243 +1,215 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { X, Target, Sparkles, Check, BookOpen, GraduationCap, Clock, MapPin } from "lucide-react";
-import type { MatchingNeed } from "../types";
+import React, { useEffect, useMemo, useState } from "react";
+import { BookOpen, Check, Clock, GraduationCap, Loader2, MapPin, Sparkles, Target, X } from "lucide-react";
+import { catalogService, type EducationLevel, type SubjectItem } from "@/services/catalog";
+import type { MatchingNeed, TutorAvailabilitySlot } from "../types";
+import {
+  formatMatchingSlots,
+  GOAL_TYPE_OPTIONS,
+  goalTypeLabel,
+  isMiddleSchoolLevel,
+} from "../utils/matchingNeed";
 
 export interface MatchingNeedModalProps {
   isOpen: boolean;
   currentNeed: MatchingNeed;
   onClose: () => void;
-  onSave: (newNeed: MatchingNeed) => void;
+  onSave: (newNeed: MatchingNeed) => void | Promise<void>;
 }
 
-const COMMON_SUBJECTS = ["Toán", "Tiếng Anh", "Ngữ văn", "Vật lý", "Hóa học", "Sinh học", "Tin học"];
-const COMMON_GRADES = ["Lớp 6", "Lớp 7", "Lớp 8", "Lớp 9", "Lớp 10", "Lớp 11", "Lớp 12"];
-const COMMON_TARGETS = [
-  "Ôn thi vào lớp 10",
-  "Ôn thi tốt nghiệp & ĐH",
-  "Lấy lại kiến thức căn bản",
-  "Nâng cao điểm số trên lớp (8.0+)",
-  "Bồi dưỡng học sinh giỏi / Thi chuyên",
-];
-const COMMON_SLOTS = [
-  "Tối T3, T5, T7 (18:00 - 20:00)",
-  "Tối T2, T4, T6 (19:00 - 21:00)",
-  "Sáng & Chiều Thứ 7, CN",
-  "Linh hoạt theo thỏa thuận",
+const SLOT_PRESETS: Array<{ id: string; label: string; slots: TutorAvailabilitySlot[] }> = [
+  {
+    id: "tue-fri-evening",
+    label: "Tối Thứ 3 & Thứ 6 · 19:00–21:00",
+    slots: [
+      { dayOfWeek: 2, startTime: "19:00:00", endTime: "21:00:00" },
+      { dayOfWeek: 5, startTime: "19:00:00", endTime: "21:00:00" },
+    ],
+  },
+  {
+    id: "mon-wed-evening",
+    label: "Tối Thứ 2 & Thứ 4 · 19:00–21:00",
+    slots: [
+      { dayOfWeek: 1, startTime: "19:00:00", endTime: "21:00:00" },
+      { dayOfWeek: 3, startTime: "19:00:00", endTime: "21:00:00" },
+    ],
+  },
+  {
+    id: "weekend-morning",
+    label: "Sáng Thứ 7 & Chủ Nhật · 08:00–10:00",
+    slots: [
+      { dayOfWeek: 6, startTime: "08:00:00", endTime: "10:00:00" },
+      { dayOfWeek: 7, startTime: "08:00:00", endTime: "10:00:00" },
+    ],
+  },
 ];
 
-export function MatchingNeedModal({
-  isOpen,
-  currentNeed,
-  onClose,
-  onSave,
-}: MatchingNeedModalProps) {
-  const [subject, setSubject] = useState(currentNeed.subjectName);
-  const [grade, setGrade] = useState(currentNeed.gradeName);
-  const [target, setTarget] = useState(currentNeed.targetDescription);
+export function MatchingNeedModal({ isOpen, currentNeed, onClose, onSave }: MatchingNeedModalProps) {
+  const [subjects, setSubjects] = useState<SubjectItem[]>([]);
+  const [levels, setLevels] = useState<EducationLevel[]>([]);
+  const [subjectId, setSubjectId] = useState(currentNeed.subjectId);
+  const [educationLevelId, setEducationLevelId] = useState(currentNeed.educationLevelId);
+  const [goalType, setGoalType] = useState(currentNeed.goalType);
   const [mode, setMode] = useState(currentNeed.teachingMode);
   const [area, setArea] = useState(currentNeed.area);
-  const [slots, setSlots] = useState(currentNeed.timeSlotsDescription);
+  const [budgetMax, setBudgetMax] = useState(currentNeed.budgetMax);
+  const [deadline, setDeadline] = useState(currentNeed.deadline);
+  const [slots, setSlots] = useState<TutorAvailabilitySlot[]>(currentNeed.availabilitySlots);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      setSubject(currentNeed.subjectName);
-      setGrade(currentNeed.gradeName);
-      setTarget(currentNeed.targetDescription);
-      setMode(currentNeed.teachingMode);
-      setArea(currentNeed.area);
-      setSlots(currentNeed.timeSlotsDescription);
-    }
-  }, [isOpen, currentNeed]);
+    if (!isOpen) return;
+    Promise.all([catalogService.getSubjects(), catalogService.getEducationLevels()])
+      .then(([subjectItems, educationLevels]) => {
+        setSubjects(subjectItems);
+        setLevels(educationLevels.filter((level) => isMiddleSchoolLevel(level.name)));
+      })
+      .catch(() => {
+        setFormError("Không thể tải danh mục môn học và khối lớp.");
+      });
+  }, [isOpen]);
+
+  const selectedSubject = subjects.find((subject) => subject.subjectId === subjectId);
+  const selectedLevel = levels.find((level) => level.levelId === educationLevelId);
+  const selectedPresetId = useMemo(
+    () => SLOT_PRESETS.find((preset) => JSON.stringify(preset.slots) === JSON.stringify(slots))?.id,
+    [slots]
+  );
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave({
-      subjectName: subject,
-      gradeName: grade,
-      targetDescription: target,
-      teachingMode: mode,
-      area: area.trim() || "Toàn quốc",
-      timeSlotsDescription: slots,
-    });
-    onClose();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedSubject || !selectedLevel) {
+      setFormError("Vui lòng chọn môn học và khối lớp THCS.");
+      return;
+    }
+    if (mode !== "ONLINE" && !area.trim()) {
+      setFormError("Vui lòng nhập khu vực khi chọn học trực tiếp.");
+      return;
+    }
+    if (slots.length === 0) {
+      setFormError("Vui lòng chọn ít nhất một khung giờ học.");
+      return;
+    }
+
+    setIsSaving(true);
+    setFormError(null);
+    try {
+      await onSave({
+        subjectId,
+        subjectName: selectedSubject.name,
+        educationLevelId,
+        gradeName: selectedLevel.name,
+        goalType,
+        targetDescription: goalTypeLabel(goalType),
+        teachingMode: mode,
+        area: area.trim() || "Toàn quốc",
+        currentLevel: currentNeed.currentLevel || 1,
+        desiredLevel: Math.max(currentNeed.desiredLevel || 3, 2),
+        deadline,
+        budgetMin: currentNeed.budgetMin,
+        budgetMax,
+        availabilitySlots: slots,
+        timeSlotsDescription: formatMatchingSlots(slots),
+      });
+      onClose();
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Không thể lưu nhu cầu học tập.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-3xl max-w-lg w-full border border-stone-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
-        {/* Header */}
-        <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/50 backdrop-blur-xs">
+      <div role="dialog" aria-modal="true" aria-labelledby="matching-need-title" className="bg-white rounded-3xl max-w-lg w-full border border-stone-200 shadow-2xl overflow-hidden">
+        <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="size-9 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center">
-              <Target className="size-5 text-sky-600" />
+              <Target className="size-5" />
             </div>
             <div>
-              <h3 className="font-heading font-bold text-base text-neutral-900">
-                Thay đổi nhu cầu Matching
-              </h3>
-              <p className="text-xs text-neutral-500">
-                Hệ thống AI sẽ cập nhật trọng số và gợi ý lại danh sách gia sư tối ưu
-              </p>
+              <h3 id="matching-need-title" className="font-heading font-bold text-base text-neutral-900">Thay đổi nhu cầu Matching</h3>
+              <p className="text-xs text-neutral-500">Nhu cầu được lưu vào database trước khi ghép đôi lại.</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 text-neutral-400 hover:text-neutral-700 hover:bg-stone-100 rounded-full transition-colors"
-          >
+          <button type="button" aria-label="Đóng" onClick={onClose} className="p-2 text-neutral-400 hover:text-neutral-700 hover:bg-stone-100 rounded-full">
             <X className="size-4" />
           </button>
         </div>
 
-        {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
-          {/* 1. Môn học */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-neutral-700 flex items-center gap-1.5">
-              <BookOpen className="size-3.5 text-neutral-400" />
-              <span>Môn học cần tìm gia sư</span>
-            </label>
+          {formError && <div role="alert" className="px-3.5 py-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700">{formError}</div>}
+
+          <fieldset className="space-y-2">
+            <legend className="text-xs font-bold text-neutral-700 flex items-center gap-1.5"><BookOpen className="size-3.5 text-neutral-400" />Môn học cần tìm gia sư</legend>
             <div className="flex flex-wrap gap-1.5">
-              {COMMON_SUBJECTS.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setSubject(s)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                    subject === s
-                      ? "bg-[#006DCC] text-white shadow-2xs"
-                      : "bg-stone-100 text-neutral-700 hover:bg-stone-200"
-                  }`}
-                >
-                  {s}
+              {subjects.map((subject) => (
+                <button key={subject.subjectId} type="button" onClick={() => setSubjectId(subject.subjectId)} className={`px-3 py-1.5 rounded-full text-xs font-semibold ${subjectId === subject.subjectId ? "bg-[#006DCC] text-white" : "bg-stone-100 text-neutral-700 hover:bg-stone-200"}`}>
+                  {subject.name}
                 </button>
               ))}
             </div>
-          </div>
+          </fieldset>
 
-          {/* 2. Khối lớp */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-neutral-700 flex items-center gap-1.5">
-              <GraduationCap className="size-3.5 text-neutral-400" />
-              <span>Khối lớp</span>
-            </label>
+          <fieldset className="space-y-2">
+            <legend className="text-xs font-bold text-neutral-700 flex items-center gap-1.5"><GraduationCap className="size-3.5 text-neutral-400" />Khối lớp THCS</legend>
             <div className="flex flex-wrap gap-1.5">
-              {COMMON_GRADES.map((g) => (
-                <button
-                  key={g}
-                  type="button"
-                  onClick={() => setGrade(g)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                    grade === g
-                      ? "bg-[#006DCC] text-white shadow-2xs"
-                      : "bg-stone-100 text-neutral-700 hover:bg-stone-200"
-                  }`}
-                >
-                  {g}
+              {levels.map((level) => (
+                <button key={level.levelId} type="button" onClick={() => setEducationLevelId(level.levelId)} className={`px-3 py-1.5 rounded-full text-xs font-semibold ${educationLevelId === level.levelId ? "bg-[#006DCC] text-white" : "bg-stone-100 text-neutral-700 hover:bg-stone-200"}`}>
+                  {level.name}
                 </button>
               ))}
             </div>
-          </div>
+          </fieldset>
 
-          {/* 3. Mục tiêu học tập */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-neutral-700 flex items-center gap-1.5">
-              <Sparkles className="size-3.5 text-amber-500" />
-              <span>Mục tiêu học tập ưu tiên</span>
-            </label>
+          <fieldset className="space-y-2">
+            <legend className="text-xs font-bold text-neutral-700 flex items-center gap-1.5"><Sparkles className="size-3.5 text-amber-500" />Mục tiêu học tập ưu tiên</legend>
             <div className="space-y-1.5">
-              {COMMON_TARGETS.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTarget(t)}
-                  className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer flex items-center justify-between ${
-                    target === t
-                      ? "border-[#006DCC] bg-sky-50/60 text-[#006DCC] font-semibold"
-                      : "border-stone-200 bg-white text-neutral-700 hover:bg-stone-50"
-                  }`}
-                >
-                  <span>{t}</span>
-                  {target === t && <Check className="size-3.5 text-[#006DCC]" />}
+              {GOAL_TYPE_OPTIONS.map((option) => (
+                <button key={option.value} type="button" onClick={() => setGoalType(option.value)} className={`w-full text-left px-3.5 py-2 rounded-xl text-xs border flex items-center justify-between ${goalType === option.value ? "border-[#006DCC] bg-sky-50/60 text-[#006DCC] font-semibold" : "border-stone-200 text-neutral-700 hover:bg-stone-50"}`}>
+                  <span>{option.label}</span>{goalType === option.value && <Check className="size-3.5" />}
                 </button>
               ))}
             </div>
-          </div>
+          </fieldset>
 
-          {/* 4. Hình thức & Khu vực */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-bold text-neutral-700 block mb-1.5">
-                Hình thức học
-              </label>
-              <select
-                value={mode}
-                onChange={(e) => setMode(e.target.value as "ONLINE" | "OFFLINE" | "BOTH")}
-                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs text-neutral-800 focus:bg-white focus:outline-hidden focus:border-sky-500 font-medium"
-              >
-                <option value="BOTH">Online & Trực tiếp</option>
-                <option value="ONLINE">Chỉ học Online</option>
-                <option value="OFFLINE">Chỉ học Trực tiếp</option>
+            <label className="text-xs font-bold text-neutral-700">Hình thức học
+              <select value={mode} onChange={(event) => setMode(event.target.value as MatchingNeed["teachingMode"])} className="mt-1.5 w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium">
+                <option value="BOTH">Online & Trực tiếp</option><option value="ONLINE">Chỉ học Online</option><option value="OFFLINE">Chỉ học Trực tiếp</option>
               </select>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-neutral-700 block mb-1.5 flex items-center gap-1">
-                <MapPin className="size-3 text-neutral-400" />
-                <span>Khu vực sinh sống</span>
-              </label>
-              <input
-                type="text"
-                value={area}
-                onChange={(e) => setArea(e.target.value)}
-                placeholder="Ví dụ: Quận 3, TP.HCM"
-                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs text-neutral-800 focus:bg-white focus:outline-hidden focus:border-sky-500 font-medium"
-              />
-            </div>
+            </label>
+            <label className="text-xs font-bold text-neutral-700"><span className="flex items-center gap-1"><MapPin className="size-3" />Khu vực</span>
+              <input value={area} onChange={(event) => setArea(event.target.value)} disabled={mode === "ONLINE"} maxLength={100} className="mt-1.5 w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium disabled:opacity-50" />
+            </label>
+            <label className="text-xs font-bold text-neutral-700">Ngân sách tối đa / buổi
+              <input type="number" min={1} required value={budgetMax} onChange={(event) => setBudgetMax(Number(event.target.value))} className="mt-1.5 w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium" />
+            </label>
+            <label className="text-xs font-bold text-neutral-700">Thời hạn mục tiêu
+              <input type="date" required value={deadline} onChange={(event) => setDeadline(event.target.value)} className="mt-1.5 w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium" />
+            </label>
           </div>
 
-          {/* 5. Khung giờ học */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-neutral-700 flex items-center gap-1.5">
-              <Clock className="size-3.5 text-neutral-400" />
-              <span>Khung giờ mong muốn học kèm</span>
-            </label>
+          <fieldset className="space-y-2">
+            <legend className="text-xs font-bold text-neutral-700 flex items-center gap-1.5"><Clock className="size-3.5 text-neutral-400" />Khung giờ mong muốn</legend>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-              {COMMON_SLOTS.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setSlots(s)}
-                  className={`text-left px-3 py-2 rounded-xl text-[11px] font-medium border transition-all cursor-pointer ${
-                    slots === s
-                      ? "border-[#006DCC] bg-sky-50/60 text-[#006DCC] font-semibold"
-                      : "border-stone-200 bg-white text-neutral-600 hover:bg-stone-50"
-                  }`}
-                >
-                  {s}
+              {SLOT_PRESETS.map((preset) => (
+                <button key={preset.id} type="button" onClick={() => setSlots(preset.slots)} className={`text-left px-3 py-2 rounded-xl text-[11px] border ${selectedPresetId === preset.id ? "border-[#006DCC] bg-sky-50/60 text-[#006DCC] font-semibold" : "border-stone-200 text-neutral-600 hover:bg-stone-50"}`}>
+                  {preset.label}
                 </button>
               ))}
             </div>
-          </div>
+          </fieldset>
 
-          {/* Buttons */}
-          <div className="pt-3 border-t border-stone-100 flex items-center justify-end gap-2.5">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 rounded-full text-xs font-semibold text-neutral-700 hover:bg-stone-100 transition-colors cursor-pointer"
-            >
-              Hủy bỏ
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2.5 rounded-full text-xs font-bold text-white bg-[#006DCC] hover:bg-[#005bb5] shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <Sparkles className="size-3.5" />
-              <span>Cập nhật & Ghép đôi lại</span>
+          <div className="pt-3 border-t border-stone-100 flex justify-end gap-2.5">
+            <button type="button" onClick={onClose} disabled={isSaving} className="px-4 py-2.5 rounded-full text-xs font-semibold text-neutral-700 hover:bg-stone-100">Hủy bỏ</button>
+            <button type="submit" disabled={isSaving} className="px-5 py-2.5 rounded-full text-xs font-bold text-white bg-[#006DCC] hover:bg-[#005bb5] disabled:opacity-60 flex items-center gap-1.5">
+              {isSaving ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+              <span>{isSaving ? "Đang lưu..." : "Lưu & Ghép đôi lại"}</span>
             </button>
           </div>
         </form>
