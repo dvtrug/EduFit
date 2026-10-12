@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api";
+import { catalogService } from "@/services/catalog";
 
 export interface StudentProfileData {
   studentId: string;
@@ -45,6 +46,8 @@ export interface LearningGoalData {
   budgetMax: number;
   status: "ACTIVE" | "ARCHIVED";
   availabilitySlots: LearningGoalAvailabilitySlot[];
+  readyForMatching?: boolean;
+  readinessReasons?: string[];
 }
 
 export interface CreateLearningGoalPayload {
@@ -159,12 +162,38 @@ export const profileService = {
 
   async getMyLearningGoals(): Promise<LearningGoalData[]> {
     const res = await apiClient.get<LearningGoalData[]>("/api/v1/profiles/students/me/goals");
-    return (res.data || []) as LearningGoalData[];
+    return profileService.labelGoals(res.data || []);
+  },
+
+  async getLinkedStudentGoals(studentId: string): Promise<LearningGoalData[]> {
+    const res = await apiClient.get<LearningGoalData[]>(`/api/v1/discovery/students/${encodeURIComponent(studentId)}/goals`);
+    return profileService.labelGoals(res.data || []);
+  },
+
+  async labelGoals(goals: LearningGoalData[]): Promise<LearningGoalData[]> {
+    try {
+      const catalog = await catalogService.getCatalog();
+      return goals.map(goal => ({
+        ...goal,
+        subjectName: catalog.subjects.find(s => s.subjectId === goal.subjectId)?.name || `Môn ${goal.subjectId}`,
+        educationLevelName: catalog.educationLevels.find(l => l.levelId === goal.educationLevelId)?.name || "Chưa chọn khối lớp",
+      }));
+    } catch {
+      return goals;
+    }
   },
 
   async createLearningGoal(payload: CreateLearningGoalPayload): Promise<LearningGoalData> {
-    const res = await apiClient.post<LearningGoalData>("/api/v1/profiles/students/me/goals", payload);
-    return res.data as LearningGoalData;
+    const { availabilitySlots, ...goal } = payload;
+    const res = await apiClient.post<LearningGoalData>("/api/v1/profiles/students/me/goals", goal);
+    const saved = res.data as LearningGoalData;
+    try {
+      const ready = await apiClient.put<LearningGoalData>(`/api/v1/profiles/students/me/goals/${saved.goalId}/availability`, { slots: availabilitySlots });
+      return ready.data as LearningGoalData;
+    } catch (error) {
+      await apiClient.post(`/api/v1/profiles/students/me/goals/${saved.goalId}/archive`).catch(() => undefined);
+      throw error;
+    }
   },
 
   /**
