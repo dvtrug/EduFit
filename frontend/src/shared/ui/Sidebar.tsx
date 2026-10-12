@@ -75,7 +75,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "CÀI ĐẶT",
         items: [
-          { label: "Hồ sơ học tập", href: "/student/profile", icon: Settings },
+          { label: "Cài đặt", href: "/student/settings", icon: Settings },
         ],
       },
     ],
@@ -107,7 +107,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "CÀI ĐẶT",
         items: [
-          { label: "Hồ sơ & Môn dạy", href: "/tutor/profile", icon: Settings },
+          { label: "Cài đặt", href: "/tutor/settings", icon: Settings },
         ],
       },
     ],
@@ -139,7 +139,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "CÀI ĐẶT",
         items: [
-          { label: "Hồ sơ phụ huynh", href: "/parent/profile", icon: Settings },
+          { label: "Cài đặt", href: "/parent/settings", icon: Settings },
         ],
       },
     ],
@@ -282,8 +282,14 @@ export function Sidebar({
         </button>
 
         {user && (
-          <div className={`h-11 px-2 flex items-center bg-white rounded-xl border border-stone-200/60 transition-[gap] duration-300 ${collapsed ? "justify-center gap-0" : "gap-2"}`}>
-            <div className="size-7 rounded-lg bg-amber-100 text-amber-700 font-bold text-xs flex items-center justify-center shrink-0">
+          <Link
+            href={`/${roleBase}/settings`}
+            title={collapsed ? "Cài đặt tài khoản" : undefined}
+            className={`h-11 px-2 flex items-center bg-white hover:bg-stone-100 rounded-xl border border-stone-200/60 hover:border-amber-300 transition-[gap,border-color,background-color] duration-300 group cursor-pointer ${
+              collapsed ? "justify-center gap-0" : "gap-2"
+            }`}
+          >
+            <div className="size-7 rounded-lg bg-amber-100 text-amber-700 font-bold text-xs flex items-center justify-center shrink-0 group-hover:bg-amber-200 transition-colors">
               {user.fullName.charAt(0).toUpperCase()}
             </div>
             <div
@@ -292,10 +298,12 @@ export function Sidebar({
                 collapsed ? "max-w-0 opacity-0" : "max-w-44 opacity-100"
               }`}
             >
-              <span className="text-xs font-semibold text-neutral-900 truncate">{user.fullName}</span>
+              <span className="text-xs font-semibold text-neutral-900 group-hover:text-amber-900 transition-colors truncate">
+                {user.fullName}
+              </span>
               <span className="text-[10px] text-neutral-400 truncate">{user.email}</span>
             </div>
-          </div>
+          </Link>
         )}
       </div>
     </aside>
