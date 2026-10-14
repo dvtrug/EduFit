@@ -43,6 +43,13 @@ public interface ConnectionFacade {
    */
   List<UUID> findConfirmedParentUserIds(UUID studentId);
 
+  /**
+   * Lấy danh sách studentId của tất cả Học sinh đang liên kết CONFIRMED với Phụ huynh.
+   * Progress dùng để dựng Parent Multi-student Dashboard.
+   */
+  List<UUID> findConfirmedStudentIds(UUID parentUserId);
+
+
   // ── Immutable Java Record DTOs ────────────────────────────────────────────
 
   record ActiveClassView(UUID classId, UUID studentId, UUID tutorId, UUID goalId) {}

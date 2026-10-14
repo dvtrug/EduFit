@@ -100,5 +100,10 @@ public enum ErrorCode {
   AI_SERVICE_UNAVAILABLE,
 
   /** Dịch vụ AI quá hạn thời gian phản hồi (vượt quá 15 giây theo NFR-10). */
-  AI_REQUEST_TIMEOUT
+  AI_REQUEST_TIMEOUT,
+
+  // --- Module Progress (Kế hoạch học tập & Tiến độ - UC5.1 đến UC5.5) ---
+  /** Xung đột phiên bản kế hoạch học tập (Optimistic Locking Conflict). */
+  PLAN_VERSION_CONFLICT
 }
+

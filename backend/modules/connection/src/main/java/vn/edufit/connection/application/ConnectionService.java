@@ -233,6 +233,14 @@ public class ConnectionService implements ConnectionFacade {
         .stream().map(ParentStudentLink::getParentUserId).toList();
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public List<UUID> findConfirmedStudentIds(UUID parentUserId) {
+    return links.findByParentUserIdAndStatus(parentUserId, "CONFIRMED")
+        .stream().map(ParentStudentLink::getStudentId).toList();
+  }
+
+
   private ClassDetailView toClassDetailView(TutoringClass c) {
     return new ClassDetailView(
         c.getId(), c.getStudentId(), c.getTutorId(), c.getGoalId(),
