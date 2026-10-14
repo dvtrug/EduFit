@@ -26,3 +26,10 @@ Current Discovery frontend formats desiredSlots as localized display strings; re
 - Functional RED: three real PostgreSQL entrypoint cases failed before publisher migration (`phase3-T11b-red-functional.log`). An earlier test-context wiring failure was corrected separately; it is not functional RED evidence.
 - GREEN:194 tests (Connection143, Notification6, App45), zero failures/errors/skips (`phase3-T11b-green.log`). Real PostgreSQL tests prove invitation create/accept/decline delivery, terminal retry deduplication, and link/invitation rollback when notification insertion fails. Existing business transaction tests use the production listener/writer through a test-only repository bridge; actual notification persistence is covered separately.
 - Affected reactor verify succeeded. Coverage warnings remain tracked for the final checkpoint; this focused run does not establish the strict coverage gate.
+
+## T12a — structured audit persistence
+
+- Added immutable AuditRecord with occurrence time and account-ID metadata; old five-argument AuditSink API and callers remain compatible. JpaAuditSink overrides structured input to persist the complete snapshot.
+- V1.14 adds JSONB metadata with empty-object default to existing audit rows; actor/reason/time columns are retained. Earlier migration bytes/checksums remain unchanged. Updated all migration count/upgrade assertions in this same slice.
+- RED:3 audit tests produced1 failure and1 error before adapter/schema support (`phase3-T12a-red.log`). GREEN affected verify:18 tests, zero failures/errors/skips (`phase3-T12a-green.log`):audit3, migration scripts2, Flyway PostgreSQL4, architecture9.
+- PostgreSQL verifies structured account IDs/reason/business time, defensive snapshot copy, legacy API, outer rollback, upgrade from V1.13 preserving historical audit rows and from V1.09 preserving seeded/user-edited data. Flyway validates and rerun is no-op. No local user DB was migrated.

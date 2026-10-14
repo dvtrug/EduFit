@@ -46,7 +46,7 @@ class FlywayMigrationIT {
 
   @Test
   @DisplayName(
-      "Nâng cấp DB main đã seed V1.09: giữ history/dữ liệu, chạy V1.10 đến V1.13 và rerun no-op")
+      "Nâng cấp DB main đã seed V1.09: giữ history/dữ liệu, chạy V1.10 đến V1.14 và rerun no-op")
   void shouldUpgradeMainSeedHistoryWithoutRepair() throws Exception {
     String schema = "main_seed_upgrade";
     Flyway previous =
@@ -85,7 +85,7 @@ class FlywayMigrationIT {
             .validateOnMigrate(true)
             .baselineOnMigrate(false)
             .load();
-    assertEquals(4, upgraded.migrate().migrationsExecuted);
+    assertEquals(5, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted, "Rerun không thực thi lại migration");
     try (Connection connection =
@@ -147,7 +147,7 @@ class FlywayMigrationIT {
     // 3. Kiểm chứng kết quả thực thi của Flyway
     assertTrue(result.success, "Quá trình migrate của Flyway phải thành công 100%");
     assertEquals(
-        13, result.migrationsExecuted, "Phải thực thi đúng 13 file migration V1.01 -> V1.13");
+        14, result.migrationsExecuted, "Phải thực thi đúng 14 file migration V1.01 -> V1.14");
 
     // 4. Kiểm tra trực tiếp các bảng và ràng buộc đã được tạo trong PostgreSQL
     try (Connection connection =
@@ -177,13 +177,41 @@ class FlywayMigrationIT {
         assertTrue(rs.next(), "Bảng tutoring_session phải tồn tại và cho phép truy vấn");
       }
 
-      // Kiểm tra bảng flyway_schema_history ghi nhận cả 13 version ở trạng thái thành công
+      // Kiểm tra bảng flyway_schema_history ghi nhận cả 14 version ở trạng thái thành công
       try (ResultSet rs =
           statement.executeQuery(
               "SELECT COUNT(*) FROM flyway_schema_history WHERE success = true")) {
         assertTrue(rs.next());
         assertEquals(
-            13, rs.getInt(1), "Lịch sử migration phải ghi nhận đúng 13 bản ghi thành công");
+            14, rs.getInt(1), "Lịch sử migration phải ghi nhận đúng 14 bản ghi thành công");
+      }
+    }
+  }
+
+  @Test
+  void auditUpgradePreservesExistingRowsAndSupportsStructuredMetadata() throws Exception {
+    String schema = "audit_snapshot_upgrade";
+    var builder = Flyway.configure().dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
+        .locations("classpath:db/migration").schemas(schema);
+    assertEquals(13, builder.target("1.13").load().migrate().migrationsExecuted);
+    try (var connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+        var statement = connection.createStatement()) {
+      statement.execute("set search_path to " + schema);
+      statement.execute("insert into audit_log(actor_user_id,action,target_type,target_id,reason,created_at) values ('11111111-1111-1111-1111-111111111111','LINK_REVOKED','PARENT_STUDENT_LINK','99999999-1111-1111-1111-111111111111','historical reason','2026-10-01T00:00:00Z')");
+    }
+    var upgraded = Flyway.configure().dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
+        .locations("classpath:db/migration").schemas(schema).load();
+    assertEquals(1, upgraded.migrate().migrationsExecuted);
+    upgraded.validate();
+    assertEquals(0, upgraded.migrate().migrationsExecuted);
+    try (var connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+        var statement = connection.createStatement()) {
+      statement.execute("set search_path to " + schema);
+      try (var rows = statement.executeQuery("select reason,created_at,metadata::text from audit_log")) {
+        assertTrue(rows.next());
+        assertEquals("historical reason",rows.getString(1));
+        assertEquals(java.time.Instant.parse("2026-10-01T00:00:00Z"),rows.getTimestamp(2).toInstant());
+        assertEquals("{}",rows.getString(3));
       }
     }
   }
@@ -218,7 +246,7 @@ class FlywayMigrationIT {
             .locations("classpath:db/migration")
             .schemas(schema)
             .load();
-    assertEquals(2, upgraded.migrate().migrationsExecuted);
+    assertEquals(3, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted);
     try (var connection =

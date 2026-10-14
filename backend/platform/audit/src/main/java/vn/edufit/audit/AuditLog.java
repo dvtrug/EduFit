@@ -3,6 +3,10 @@ package vn.edufit.audit;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.Map;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import vn.edufit.shared.audit.AuditRecord;
 
 @Entity
 @Table(name = "audit_log")
@@ -16,13 +20,21 @@ class AuditLog {
   @Column(name = "reason") private String reason;
   @Column(name = "created_at", nullable = false) private Instant createdAt;
 
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "metadata", nullable = false, columnDefinition = "jsonb")
+  private Map<String, String> metadata;
+
   protected AuditLog() {}
   AuditLog(UUID actor, String action, String targetType, UUID targetId, String reason) {
-    actorUserId = actor;
-    this.action = action;
-    this.targetType = targetType;
-    this.targetId = targetId;
-    this.reason = reason;
-    createdAt = Instant.now();
+    this(new AuditRecord(actor, action, targetType, targetId, reason, Instant.now(), Map.of()));
+  }
+  AuditLog(AuditRecord record) {
+    actorUserId = record.actorUserId();
+    action = record.action();
+    targetType = record.targetType();
+    targetId = record.targetId();
+    reason = record.reason();
+    createdAt = record.occurredAt();
+    metadata = record.metadata();
   }
 }
