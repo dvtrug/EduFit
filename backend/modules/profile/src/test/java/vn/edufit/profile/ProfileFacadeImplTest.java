@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -304,5 +305,20 @@ class ProfileFacadeImplTest {
     when(studentProfileRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
     assertThrows(EntityNotFoundException.class, () -> profileFacade.getStudentIdByUserId(userId));
+  }
+
+  @Test
+  @DisplayName("Cập nhật điểm đánh giá trung bình và số lượng review thành công")
+  void shouldUpdateTutorRatingStatsSuccessfully() {
+    UUID tutorId = UUID.randomUUID();
+    TutorProfile profile = new TutorProfile(UUID.randomUUID(), "Gia Sư Test", TeachingMode.ONLINE, 200000L);
+
+    when(tutorProfileRepository.findById(tutorId)).thenReturn(Optional.of(profile));
+
+    profileFacade.updateTutorRatingStats(tutorId, 4.75, 12);
+
+    assertEquals(new BigDecimal("4.75"), profile.getRatingAvg());
+    assertEquals(12, profile.getReviewCount());
+    verify(tutorProfileRepository).save(profile);
   }
 }

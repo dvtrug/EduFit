@@ -73,4 +73,9 @@ public interface ProfileFacade {
   Optional<ConnectionGoalDto> findGoalForConnection(UUID goalId);
 
   boolean tutorTeaches(UUID tutorId, Integer subjectId, Integer educationLevelId);
+
+  /**
+   * Cập nhật điểm đánh giá trung bình và tổng số lượt đánh giá cho hồ sơ gia sư (FR-29).
+   */
+  void updateTutorRatingStats(UUID tutorId, double ratingAvg, int reviewCount);
 }
