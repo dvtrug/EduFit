@@ -30,13 +30,14 @@ class LinkRevocationTest {
   private final AuditSink audit=mock(AuditSink.class);
   private final NotificationSink notifications=mock(NotificationSink.class);
   private final ConnectionLock lock=mock(ConnectionLock.class);
+  private final org.springframework.context.ApplicationEventPublisher events=mock(org.springframework.context.ApplicationEventPublisher.class);
   private ParentStudentLink row;
   private ParentStudentLinkService service;
   @BeforeEach void setup() {
     row=new ParentStudentLink(parent,student,now.minusSeconds(60));
     when(rows.findById(id)).thenReturn(Optional.of(row));when(rows.lockById(id)).thenReturn(Optional.of(row));
     when(profile.findStudentById(student)).thenReturn(Optional.of(new StudentSummaryDto(student,studentUser,4,null,true)));
-    service=new ParentStudentLinkService(rows,profile,lock,audit,notifications,iam,Clock.fixed(now,ZoneOffset.UTC));
+    service=new ParentStudentLinkService(rows,profile,lock,audit,events,iam,Clock.fixed(now,ZoneOffset.UTC));
   }
   private CurrentUser actor(UUID user,String role) {
     var actor=mock(CurrentUser.class);when(actor.getUserId()).thenReturn(user);
@@ -53,6 +54,11 @@ class LinkRevocationTest {
     assertEquals(now,record.occurredAt());assertEquals("private reason",record.reason());
     assertEquals(Map.of("parentUserId",parent.toString(),"studentId",student.toString(),"studentUserId",studentUser.toString()),record.metadata());
     assertEquals("REVOKED",row.getStatus());verify(rows,never()).delete(any());
+    var eventCapture=ArgumentCaptor.forClass(vn.edufit.connection.api.event.ParentStudentLinkChangedEvent.class);
+    verify(events).publishEvent(eventCapture.capture());var event=eventCapture.getValue();
+    assertEquals(user,event.actorUserId());assertEquals(studentUser,event.studentUserId());
+    assertEquals(now,event.occurredAt());assertEquals("CONFIRMED",event.oldStatus());assertEquals("REVOKED",event.newStatus());
+    verifyNoInteractions(notifications);
   }
   @Test void parentCannotRevokeEvenOwnLink() {
     assertThrows(ForbiddenOperationException.class,()->service.revokeLink(actor(parent,"PARENT"),id,"reason"));

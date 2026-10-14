@@ -52,7 +52,7 @@ class ConnectionUseCaseTest {
   @BeforeEach void setup() {
     service = new ConnectionRequestService(requests, classes, profile, lock, notifications, new ConnectionFacadeImpl(links, classes), Clock.systemUTC());
     invitationService = new LinkInvitationService(invitations, links, iam, profile, lock, new InvitationQuotaService(quotas, lock, Clock.systemUTC()), events, Clock.systemUTC());
-    linkService = new ParentStudentLinkService(links, profile, lock, audit, notifications, iam, Clock.systemUTC());
+    linkService = new ParentStudentLinkService(links, profile, lock, audit, events, iam, Clock.systemUTC());
   }
 
   private CurrentUser actor(UUID id, String role) {

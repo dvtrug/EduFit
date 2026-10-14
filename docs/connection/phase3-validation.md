@@ -41,3 +41,10 @@ Current Discovery frontend formats desiredSlots as localized display strings; re
 - RED:8 unit cases,5 failures before changes (`phase3-T12b-red.log`). The first affected verify passed unit cases but lost Docker, producing infrastructure errors and skipped PostgreSQL cases (`phase3-T12b-green.log`); it is not acceptance evidence. Docker is being restarted before rerunning.
 
 - GREEN rerun with Docker restored:112 tests, zero failures/errors/skips (`phase3-T12b-green-rerun.log`):Connection17, App95 including real audit5, Connection PostgreSQL19, Profile PostgreSQL62 and architecture9. Real database trigger failure rolls back the link; successful service revocation persists the structured snapshot while retaining Student data.
+
+## T12c — revocation notifications
+
+- Revoke publishes an ID-only link transition; direct NotificationSink calls are removed. BEFORE_COMMIT writer notifies Parent always and Student when an Admin acted. Private audit reason never enters the event or notification text.
+- Parent revocation notification is minimal and has no about_student_id, so it can remain an account-level notice after consent ends. Student recipient retains their own student scope. Notification timestamps use the transition time.
+- RED:8 real audit/notification PostgreSQL cases,3 failures before publication (`phase3-T12c-red.log`). GREEN affected verify:131 tests (Connection17, Notification6, App108), no failures/errors/skips (`phase3-T12c-green.log`).
+- Real service/database tests verify both recipient roles, terminal retry deduplication and no reason leakage. A trigger rejects the second (Student) notification after Parent insert: link stays CONFIRMED, audit and both notifications are absent after rollback. Real audit failure also rolls back notification/business rows. Profile and invitation regressions remain green.

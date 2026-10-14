@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edufit.connection.api.event.LinkInvitationChangedEvent;
+import vn.edufit.connection.api.event.ParentStudentLinkChangedEvent;
 
 /** Internal mandatory writer; never starts an independent notification transaction. */
 @Service
@@ -28,5 +29,16 @@ class ConnectionNotificationWriter {
   public void invitationDeclined(LinkInvitationChangedEvent event) {
     repository.save(new Notification(event.inviterUserId(), null, "LINK_DECLINED",
         "Lời mời đã bị từ chối", "Người nhận đã từ chối lời mời", "LINK_INVITATION", event.aggregateId(), event.occurredAt()));
+  }
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void linkRevoked(ParentStudentLinkChangedEvent event) {
+    // Parent can retain this minimal account notification after consent ends.
+    repository.save(new Notification(event.parentUserId(), null, "LINK_REVOKED",
+        "Liên kết đã thu hồi", "Quyền truy cập hồ sơ học sinh đã kết thúc", "PARENT_STUDENT_LINK",
+        event.aggregateId(), event.occurredAt()));
+    if (!event.studentUserId().equals(event.actorUserId()))
+      repository.save(new Notification(event.studentUserId(), event.studentId(), "LINK_REVOKED",
+          "Liên kết đã thu hồi", "Liên kết phụ huynh đã được thu hồi", "PARENT_STUDENT_LINK",
+          event.aggregateId(), event.occurredAt()));
   }
 }

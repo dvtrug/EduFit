@@ -116,11 +116,11 @@ class ConnectionTransactionPostgresTest {
     doAnswer(call -> {
       assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
       return null;
-    }).when(notifications).notify(eq(parent), eq(student), eq("LINK_REVOKED"), anyString(), anyString(), eq("PARENT_STUDENT_LINK"), eq(link));
+    }).when(notifications).notify(eq(parent), isNull(), eq("LINK_REVOKED"), anyString(), anyString(), eq("PARENT_STUDENT_LINK"), eq(link));
     links.revokeLink(actor(admin, "ADMIN"), link, "reason");
     assertEquals("REVOKED", jdbc.queryForObject("select status from parent_student_link where link_id = ?", String.class, link));
     verify(audit).record(argThat((vn.edufit.shared.audit.AuditRecord record) -> record.actorUserId().equals(admin) && record.targetId().equals(link) && record.metadata().get("studentUserId").equals(studentUser.toString())));
-    verify(notifications).notify(eq(parent), eq(student), eq("LINK_REVOKED"), anyString(), anyString(), eq("PARENT_STUDENT_LINK"), eq(link));
+    verify(notifications).notify(eq(parent), isNull(), eq("LINK_REVOKED"), anyString(), anyString(), eq("PARENT_STUDENT_LINK"), eq(link));
   }
 
   @Test void acceptCreatesClassAtomicallyAndQueryHydratesInsideTransaction() {

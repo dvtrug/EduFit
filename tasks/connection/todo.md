@@ -193,7 +193,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** Không tạo commit cha; dùng T11a/T11b.
 - **Kết thúc:** Commit + push + UC3.1/3.2 acceptance report.
 
-### [ ] T12 — Hoàn thiện revoke và audit snapshot
+### [x] T12 — Hoàn thiện revoke và audit snapshot
 
 - **Files:** link service, structured AuditSink input + adapter/entity, migration mới nếu cần, revoke listener branch, tests.
 - **Thực hiện:** Student ownership/Admin mandatory reason; audit snapshot cả hai accounts/time/link/reason cùng transaction; Admin notify Student + Parent, Student revoke notify Parent. Giữ sink API cũ cho verification caller. Chốt migration version trên base thực tế.
@@ -438,7 +438,7 @@ Các nhóm bên dưới **thay thế commit cha**, không còn là gợi ý “n
 | [x] T11b | Invitation event publishers + notification listener/tests | Create/accept/decline events + notifications đúng một lần; rollback atomic | T11a | `refactor(connection): publish invitation transition events` |
 | [x] T12a | Structured audit input + adapter/entity + migration/tests | Old sink API vẫn hoạt động; snapshot đủ accounts/reason; Flyway count/fixtures update, clean+upgrade pass | T11b | `feat(audit): persist structured connection revocation snapshots` |
 | [x] T12b | Link revoke service + DB/authorization tests | Student/Admin đúng quyền; audit failure rollback link; không cascade delete | T12a | `fix(connection): record revocation and audit atomically` |
-| [ ] T12c | Revoke event + listener/tests | Admin notify cả hai, Student notify Parent; reason không lộ, rollback pass | T12b | `fix(notification): complete link revocation recipients` |
+| [x] T12c | Revoke event + listener/tests | Admin notify cả hai, Student notify Parent; reason không lộ, rollback pass | T12b | `fix(notification): complete link revocation recipients` |
 | [ ] T13a | Slot validator + rollout config + request validation DTO/tests | GrammarT01; tests legacy-compatible/strict-v1, legacy read nguyên vẹn; strict chỉ bật sau data/client inventory; message/slot biên pass | T12c, T01 | `fix(connection): validate connection request slots and message` |
 | [ ] T13b | Create/cancel request rules/repository + tests | Owner/goal/tutor/limits/ACTIVE class/cancel guard pass; no unauthorized write | T13a | `fix(connection): enforce request creation and cancellation rules` |
 | [ ] T13c | Request create/cancel events + listener/tests | Tutor/Student notification đúng ma trận, không duplicate direct sink | T13b | `fix(notification): notify request creation and cancellation parties` |
@@ -481,3 +481,5 @@ Dependency của task cha kế tiếp dùng **task con cuối nhóm**: T09 sau T
 - T12a: immutable structured audit input, JSONB persistence and V1.14 metadata migration. 18 audit/Flyway/architecture tests pass, including legacy rows/API and upgrade rerun.
 
 - T12b: current ACTIVE actor/Student ownership/Admin reason guards and structured revoke audit in one transaction. 112 affected tests pass with Docker restored, zero skips.
+
+- T12c: revoke event and mandatory notification consumer; Admin receives no private learner notification, Parent/Student recipient matrix and three-write rollback verified. 131 tests pass, zero skips.

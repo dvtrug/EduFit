@@ -16,7 +16,8 @@ import vn.edufit.shared.audit.AuditRecord;
 import vn.edufit.iam.api.IamFacade;
 import vn.edufit.iam.api.AccountStatus;
 import java.util.Map;
-import vn.edufit.shared.notification.NotificationSink;
+import org.springframework.context.ApplicationEventPublisher;
+import vn.edufit.connection.api.event.ParentStudentLinkChangedEvent;
 import vn.edufit.shared.exception.ForbiddenOperationException;
 import vn.edufit.shared.exception.ResourceConflictException;
 import vn.edufit.shared.exception.EntityNotFoundException;
@@ -30,17 +31,17 @@ public class ParentStudentLinkService {
   private final IamFacade iam;
   private final ConnectionLock lock;
   private final AuditSink audit;
-  private final NotificationSink notifications;
+  private final ApplicationEventPublisher events;
 
   public ParentStudentLinkService(ParentStudentLinkRepository links, ProfileFacade profile,
-      ConnectionLock lock, AuditSink audit, NotificationSink notifications, IamFacade iam, Clock clock) {
+      ConnectionLock lock, AuditSink audit, ApplicationEventPublisher events, IamFacade iam, Clock clock) {
     this.clock = clock;
     this.links = links;
     this.profile = profile;
     this.iam = iam;
     this.lock = lock;
     this.audit = audit;
-    this.notifications = notifications;
+    this.events = events;
   }
 
   private static void requireRole(CurrentUser actor, String... roles) {
@@ -70,8 +71,8 @@ public class ParentStudentLinkService {
     audit.record(new AuditRecord(actor.getUserId(), "LINK_REVOKED", "PARENT_STUDENT_LINK", id, reason, now,
         Map.of("parentUserId", link.getParentUserId().toString(), "studentId", link.getStudentId().toString(),
             "studentUserId", student.userId().toString())));
-    notifications.notify(link.getParentUserId(), link.getStudentId(), "LINK_REVOKED",
-        "Liên kết đã thu hồi", "Quyền truy cập hồ sơ học sinh đã kết thúc", "PARENT_STUDENT_LINK", id);
+    events.publishEvent(new ParentStudentLinkChangedEvent(UUID.randomUUID(), id, actor.getUserId(),
+        link.getStudentId(), "CONFIRMED", "REVOKED", now, link.getParentUserId(), student.userId()));
   }
 
 }
