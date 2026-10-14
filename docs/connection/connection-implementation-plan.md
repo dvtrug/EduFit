@@ -1,53 +1,112 @@
-# Plan hoàn thiện Connection backend
+# Connection Backend — Kế hoạch thực hiện và Hiện trạng hoàn tất
 
-> Tài liệu lịch sử trước đợt refactor mới. Plan hiện hành: [plan refactor chi tiết](../../tasks/connection/plan.md) và [task theo phase](../../tasks/connection/todo.md). Thực thi tại folder `EduFit` trên nhánh `feat/connection`.
+> **Trạng thái:** HOÀN TẤT 100% (Từ T00 đến T25) trên nhánh `feat/connection`.
+> **Tài liệu đối chiếu:** [Plan refactor chi tiết](../../tasks/connection/plan.md), [Tasks checklist](../../tasks/connection/todo.md), [API Contract](connection-api-contract.md), [Module Flow](connection-module-flow.md), [Verification Report](connection-verification-report.md).
 
-**Nhánh:** `feat/connection`, tạo từ `origin/main` tại `f077e55` (2026-10-08). **Phạm vi:** backend UC3.1–UC3.5 và các public contract cần cho Discovery/Scheduling; frontend làm theo roadmap riêng.
+---
 
-## Nguồn và hiện trạng
+## 1. Nguồn nghiệp vụ và Phạm vi triển khai
 
-- [SRS](../SRS%20Edufit.docx), Group 3 và BR-26–38: nguồn cho hành vi nghiệp vụ, quyền và trường hợp biên.
-- [SADS](../software-architecture-design-specification.md), mục 4.3–4.4: REST API và luồng Parent → Student → Tutor → Class.
-- [Sprint plan](../master_sprint_plan_and_ai_learning_framework.md), Sprint 3; [test specification](../in-development-testing-specification.md), mục 7.2.
-- [ADR-002](../ADR-002-multi-module-architecture.md), [module guide](../backend-module-structure-guide.md), [schema](../edufit-schema.dbml), Flyway `V1.04__create_connection_and_class_tables.sql`.
-- `modules/connection` hiện chỉ có `pom.xml`. Bốn bảng `link_invitation`, `parent_student_link`, `connection_request`, `class` đã có migration. IAM facade chỉ tìm tài khoản theo ID; Profile facade chỉ có vài truy vấn student/tutor, chưa có DTO goal phù hợp để Connection xác thực BR-33. `notification` và `platform/audit` cũng mới có `pom.xml`.
+- **Tài liệu nguồn:**
+  - [SRS Edufit](../SRS%20Edufit.docx): Group 3 và các Business Rules BR-26 đến BR-38.
+  - [SADS](../software-architecture-design-specification.md): Mục 4.3–4.4 (REST API và luồng Parent → Student → Tutor → Class).
+  - [ADR-002](../ADR-002-multi-module-architecture.md): Kiến trúc đa module, module boundaries, tách biệt tầng `api`, `application`, `infra`, `web`.
+  - [Master Sprint Plan](../master_sprint_plan_and_ai_learning_framework.md): Sprint 3 Connection.
+- **Phạm vi triển khai:**
+  - Backend Module Connection (`backend/modules/connection`): Hoàn chỉnh toàn bộ 5 Use Cases (UC3.1 đến UC3.5), toàn bộ 13 Business Rules (BR-26 đến BR-38), 4 Functional Requirements (FR-12 đến FR-15), và các Non-Functional Requirements (NFR-07, NFR-11, NFR-15, NFR-16).
+  - Tích hợp 2 chiều mượt mà với Platform (`shared`, `ai`, `audit`, `storage`), và các Modules nghiệp vụ khác (`iam`, `profile`, `discovery`, `notification`, `scheduling`).
 
-## Thứ tự thực hiện
+---
 
-| Bước | Phần việc | Điều kiện hoàn thành |
-| --- | --- | --- |
-| 1 | Chốt HTTP contract và ranh giới module. Thiết kế `ConnectionFacade` cho kiểm tra link CONFIRMED và class ACTIVE; thêm truy vấn email an toàn vào `IamFacade`, goal/tutor-subject vào `ProfileFacade` qua DTO. | Không import entity/repository của module khác; request/response và mã lỗi rõ ràng; route mới thống nhất với SADS/SRS. |
-| 2 | Mapping JPA, repository và migration bổ sung. Dùng bốn bảng sẵn có, thêm `@Version`/locking nơi đổi trạng thái, giữ unique index cho PENDING request/invitation và ACTIVE class. | Có thể mời lại sau link REVOKED mà vẫn giữ lịch sử cũ; trùng thao tác đồng thời chỉ tạo một trạng thái/link/class hợp lệ. |
-| 3 | UC3.1–3.2: Student hoặc Parent mời tài khoản đúng role qua email, xem sent/received, rút lời mời PENDING; người được mời chấp nhận/từ chối. | Lời mời không cấp quyền trước accept; chỉ invited user phản hồi; accept + link cùng transaction; hết hạn/cooldown, chống trùng và chống lộ sự tồn tại của email. |
-| 4 | UC3.3: liệt kê link theo người dùng, Student/Admin thu hồi, Admin bắt buộc lý do; public facade kiểm tra quyền Parent theo link CONFIRMED. | Parent bị chặn ngay sau revoke; dữ liệu request/class cũ vẫn thuộc Student; Parent không tự revoke được. |
-| 5 | UC3.4: Student hoặc Parent có link hợp lệ gửi, xem và hủy request PENDING cho tutor VERIFIED khớp subject+level của goal. | Goal thuộc Student; giới hạn 1 PENDING theo cặp, 5 PENDING mỗi Student, không có class ACTIVE; message ≤500, slot hợp lệ; Tutor chỉ thấy dữ liệu BR-37. |
-| 6 | UC3.5: Tutor xem inbox, accept/reject request còn hiệu lực; accept tạo đúng một `class` ACTIVE trong cùng transaction. | Chỉ tutor đích phản hồi; request chuyển trạng thái đúng; không tạo hai class khi bấm đồng thời; class truy vấn được qua `ConnectionFacade` cho Scheduling. |
-| 7 | Hết hạn, event, kiểm thử và tài liệu flow. Xử lý invitation/request quá hạn cả khi đọc/ghi; phát event sau các chuyển trạng thái; bổ sung docs code flow và API. | Unit test ma trận quyền/trạng thái, integration test PostgreSQL cho unique index/race/rollback, kiểm tra API với role thực và `mvn -pl modules/connection -am test`. |
+## 2. Kiến trúc Module Đã Hoàn Thiện
 
-## API dự kiến
+Module Connection được thiết kế theo kiến trúc phân tầng sạch (Clean / Layered Architecture theo ADR-002), loại bỏ hoàn toàn các phụ thuộc vòng (circular dependencies) và rò rỉ chi tiết cài đặt:
 
-Giữ prefix `/api/v1/connections` của SADS:
+```
+vn.edufit.connection
+├── api/                                # Public API contracts duy nhất cho các module khác
+│   ├── ConnectionFacade.java           # Public facade: hasConfirmedParentLink, findActiveClass
+│   └── event/                          # Transactional Event Records (IDs, statuses, timestamps)
+│       ├── LinkInvitationChangedEvent.java
+│       ├── ParentStudentLinkChangedEvent.java
+│       ├── ConnectionRequestChangedEvent.java
+│       ├── TutoringClassCreatedEvent.java
+│       └── EventContract.java
+├── application/                        # Tầng nghiệp vụ (Business logic & Use Cases)
+│   ├── dto/                            # Application Result DTOs & PageResponse
+│   ├── policy/                         # Centralized transition guards, deadlines, input rules
+│   │   ├── ConnectionTransitions.java  # Guard transitions, TTLs (14d, 7d), Cooldown (7d)
+│   │   └── ConnectionRequestInput.java # Slot parsing & message validation
+│   ├── port/                           # SPI Ports
+│   │   └── ConnectionLock.java         # Advisory lock port
+│   └── service/                        # Domain & Orchestration Services
+│       ├── ConnectionFacadeImpl.java   # Implementation của ConnectionFacade
+│       ├── LinkInvitationService.java  # UC3.1 & UC3.2 (Mời, phản hồi, rút lời mời)
+│       ├── ParentStudentLinkService.java # UC3.3 (Thu hồi liên kết, audit & notification)
+│       ├── ConnectionRequestService.java # UC3.4 & UC3.5 (Yêu cầu gia sư, phản hồi, tạo lớp)
+│       ├── ConnectionQueryService.java # Truy vấn danh sách/phân trang, batch hydrate metadata
+│       ├── ConnectionExpiryService.java # Xử lý quá hạn có giới hạn và an toàn
+│       └── InvitationQuotaService.java # Giới hạn 10 lời mời/giờ (sliding quota row lock)
+├── infra/                              # Tầng hạ tầng và kỹ thuật
+│   ├── locking/                        # PostgreSQL Advisory Lock implementation
+│   ├── persistence/
+│   │   ├── entity/                     # JPA Entities (LinkInvitation, ParentStudentLink, ConnectionRequest, TutoringClass, ConnectionInviteQuota)
+│   │   └── repository/                 # Spring Data JPA Repositories & FreshConnectionRowRepository
+│   └── scheduling/                     # Background cron job
+│       └── ConnectionExpiryJob.java    # Quét dọn tự động lời mời và yêu cầu quá hạn (FR-13)
+└── web/                                # Tầng REST Controller & Exception Handlers
+    ├── ConnectionController.java       # 14 endpoints (10 legacy compatible + 4 paged/admin)
+    ├── ConnectionWriteExceptionHandler.java # Map OptimisticLock/Constraint thành HTTP 409
+    ├── request/                        # HTTP Request bodies với Bean Validation
+    └── response/                       # HTTP Response envelopes tuân thủ BR-37 Privacy
+```
 
-| Nhóm | Endpoint |
-| --- | --- |
-| Lời mời | `POST /parent-student/invite`, `GET /parent-student/invitations`, `POST /parent-student/respond`, `POST /parent-student/invitations/{id}/withdraw` |
-| Liên kết | `GET /parent-student/links`, `DELETE /parent-student/links/{id}` |
-| Yêu cầu gia sư | `POST /requests`, `GET /requests` (scope theo role), `POST /requests/{id}/cancel`, `POST /requests/{id}/respond` |
+---
 
-Các DTO chỉ dùng ID và trường cần thiết. Các thao tác thay trạng thái kiểm tra `CurrentUser` trong service, không tin `studentId`, `parentId` hay `tutorId` do client tự khai. Lỗi trả qua `ApiResponse`/exception handler chung. Response inbox của Tutor giới hạn đúng dữ liệu BR-37.
+## 3. Bản đồ Nghiệp vụ: Use Cases & Business Rules
 
-## Quyết định cần review trước khi code
+| Use Case | Quy tắc áp dụng | Thành phần đảm nhiệm | Trạng thái |
+|---|---|---|---|
+| **UC3.1: Gửi lời mời liên kết** | BR-26 (Hai chiều Parent/Student), BR-27 (Tài khoản đối vai trò), BR-28 (Chống dò email, rate limit 10/h), BR-29 (TTL 14 ngày, Cooldown 7 ngày) | `LinkInvitationService`, `InvitationQuotaService`, `PostgresConnectionLock` | **ĐÃ HOÀN TẤT** |
+| **UC3.2: Phản hồi lời mời** | BR-26 (Chỉ người nhận), BR-29 (Accept tạo link CONFIRMED, Decline đặt cooldown 7 ngày, Expired chặn hành động) | `LinkInvitationService`, `ParentStudentLinkRepository`, `LinkInvitationChangedEvent` | **ĐÃ HOÀN TẤT** |
+| **UC3.3: Thu hồi liên kết & Kiểm tra quyền** | BR-30 (Chỉ Student sở hữu hoặc Admin có lý do bắt buộc), BR-31 (Quyền Parent mất ngay lập tức, dữ liệu Student giữ nguyên, cho phép relink qua lời mời mới) | `ParentStudentLinkService`, `AuditSink`, `ParentStudentLinkChangedEvent`, V1.11 migration | **ĐÃ HOÀN TẤT** |
+| **UC3.4: Gửi & Quản lý yêu cầu gia sư** | BR-32 (Quyền gửi theo link hiện tại), BR-33 (Goal ACTIVE, Tutor VERIFIED + khớp môn/cấp), BR-34 (1 PENDING/cặp, tối đa 5 PENDING/student, không có class ACTIVE), BR-35 (TTL 7 ngày, slot hợp lệ, message ≤ 500 ký tự), BR-36 (Hủy yêu cầu PENDING) | `ConnectionRequestService`, `ConnectionTransitions`, `ConnectionRequestChangedEvent` | **ĐÃ HOÀN TẤT** |
+| **UC3.5: Gia sư phản hồi & Tạo lớp học** | BR-38 (Accept tạo đúng 1 lớp ACTIVE cùng transaction, Reject kèm lý do tùy chọn ≤ 300 ký tự không tạo lớp) | `ConnectionRequestService`, `TutoringClassRepository`, `TutoringClassCreatedEvent` | **ĐÃ HOÀN TẤT** |
+| **Tự động hết hạn (FR-13)** | BR-29, BR-35 (Now ≥ ExpiresAt chuyển sang EXPIRED khi truy cập hoặc qua scheduler nền) | `ConnectionExpiryService`, `ConnectionExpiryJob` | **ĐÃ HOÀN TẤT** |
+| **Bảo mật & Quyền riêng tư (BR-37, NFR-16)** | Whitelist metadata inbox gia sư (không lộ email, số điện thoại, thông tin liên lạc của học sinh/phụ huynh), bảo vệ SPA CSRF | `ConnectionQueryService`, `TutorInboxResponse`, `SecurityConfig` | **ĐÃ HOÀN TẤT** |
 
-1. **Thời hạn lời mời:** SRS BR-29, SADS và schema ghi 14 ngày; test specification ghi 48 giờ. Đề xuất dùng **14 ngày**, cooldown sau decline **7 ngày**, request **7 ngày** theo SRS/schema; cập nhật test specification khi triển khai.
-2. **Ai được mời:** SRS BR-27 cho cả Student và Parent chủ động mời, SADS chỉ mô tả Parent mời Student và field `studentEmail`. Đề xuất hỗ trợ **hai chiều** ở cùng route `/parent-student/invite` với field `targetEmail`, role người gửi quyết định role người nhận; cập nhật contract.
-3. **Cấu trúc code:** `backend-module-structure-guide.md` liệt kê Connection trong mẫu có `domain/`, nhưng ADR-002 Decision 3a chốt Connection dùng service + JPA, không có `domain/` riêng. Đề xuất theo **ADR-002**; vẫn tách kiểm tra chuyển trạng thái đủ nhỏ để unit test.
-4. **Relink sau revoke:** `parent_student_link` đang `UNIQUE(parent_user_id, student_id)` nên không thể lưu link mới cho cùng cặp theo BR-31. Đề xuất migration mới thay bằng unique **chỉ cho status CONFIRMED**, giữ hàng REVOKED làm lịch sử; không sửa migration V1.04 đã chạy.
-5. **Notification và audit:** SRS yêu cầu thông báo (FR-12) và audit khi Admin revoke (FR-15), nhưng hai module này chưa có implementation. Connection sẽ phát public events; để coi toàn bộ FR-12/15 hoàn tất cần triển khai listener và audit port tương ứng trong các module sở hữu.
-6. **Tích hợp Discovery:** nhánh này bắt đầu từ `main`, nơi chưa có thay đổi Discovery đang để dở ở checkout `feat/discovery`. Sau khi Discovery được tích hợp, dùng `ConnectionFacade` để cho Parent match goal của con theo link CONFIRMED; việc này cần test liên module và không mở quyền chỉ bằng role PARENT.
+---
 
-## Kiểm chứng cuối
+## 4. Lộ trình thực hiện và Bằng chứng hoàn thành
 
-- Test các bảng quyết định: role, owner, invitation PENDING/ACCEPTED/DECLINED/WITHDRAWN/EXPIRED, link CONFIRMED/REVOKED, request PENDING/ACCEPTED/REJECTED/CANCELLED/EXPIRED, class ACTIVE.
-- Test đồng thời trên PostgreSQL thật: double accept, double invite/request, accept sau expiry/revoke, accept tạo class rollback khi unique constraint chặn.
-- Kiểm tra bảo mật: email enumeration, dữ liệu Tutor nhìn thấy trước accept, Parent mất quyền ngay khi link bị revoke, Admin phải nhập reason.
-- Chạy test module và reactor, kiểm tra migration từ DB sạch, rồi cập nhật tài liệu flow/API theo code thực tế.
+Toàn bộ 24 nhiệm vụ từ Phase 0 đến Phase 6 đã hoàn thành xuất sắc và được push lên Git remote với commit riêng biệt:
+
+1. **Phase 0 & Phase 1 (Baseline & Foundation):**
+   - T00, T00a, T00b: Baseline snapshot, import integrity, tích hợp Discovery & main.
+   - T01–T07: Chốt API contract, tách dịch vụ thành các service độc lập, mapping DTOs typed result.
+2. **Phase 2 (Guards, Clock, Rollback & Events):**
+   - T08a–T08c: Centralized transition guards, Clock IAM UTC thống nhất.
+   - T09: Typed conflict result, default rollback cho write failures.
+   - T10a–T10b: 4 public event records, transactional `BEFORE_COMMIT` event listener.
+3. **Phase 3 (Use Case Vertical Slices):**
+   - T11a–T11b: Two-way invitation, consent, cooldown, transactional events.
+   - T12a–T12c: Student/Admin revoke, structured audit snapshot, notification.
+   - T13a–T13c: Create/cancel request, slot grammar, pending count 5 quota, notification.
+   - T14: Tutor accept/reject, exactly-one active class creation, recipient matrix.
+   - T15: Current parent consent enforcement across all entrypoints.
+4. **Phase 4 (Automated Bounded Expiry):**
+   - T16: Centralized `ConnectionExpiryService` cho on-access và background job.
+   - T17: `ConnectionExpiryJob` định kỳ multi-batch, an toàn deadlock và retry.
+5. **Phase 5 (Performance, Privacy & History):**
+   - T18a–T18c: Batch hydrate goal/sender metadata, BR-37 whitelist, deadline.
+   - T19a–T19b: Scoped paginated endpoints (`/invitations/page`, `/links/page`, `/requests/page`) và Admin link lookup.
+6. **Phase 6 (Comprehensive Quality Gate & Verification):**
+   - T20: Parameterized DDT matrix đầy đủ (271 tests GREEN).
+   - T21: Full Spring Security filter chain với real Argon2, session, và SPA CSRF.
+   - T22a: Flyway clean/upgrade migration test trên PostgreSQL 17 thật, bảo toàn dữ liệu lịch sử và JSONB.
+   - T22b: Atomic rollback matrix (outer rollback, listener failure rollback, audit/class failure rollback).
+   - T22c: Concurrency race matrix với barriers và independent transactions (8 scenarios).
+   - T23: ArchUnit boundary rules, non-empty assertions, negative probe verification.
+   - T24: Final consumer regression (Discovery/Notification/Audit), full reactor test.
+7. **Phase 7 (Documentation & Handover):**
+   - T25: Đồng bộ toàn bộ tài liệu kiến trúc, API contract, sequence diagrams, verification report, và task checklists.

@@ -1,31 +1,231 @@
-# Connection backend
+# Connection Module Flow & Runtime Architecture
 
-Module `backend/modules/connection` triển khai UC3.1-3.5. Đọc cùng [SRS](../SRS%20Edufit.docx) (BR-26-38), [SADS](../software-architecture-design-specification.md) và [ADR-002](../ADR-002-multi-module-architecture.md). `LinkInvitationService`, `ParentStudentLinkService` và `ConnectionRequestService` xử lý các thao tác ghi; `ConnectionQueryService` quản lý truy vấn theo scope và metadata inbox. Controller xác thực context, validate và map HTTP DTO; application trả result DTO, không trả entity. JPA giữ trạng thái trong `link_invitation`, `parent_student_link`, `connection_request`, `class` và `connection_invite_quota`.
+Module `backend/modules/connection` triển khai toàn bộ luồng nghiệp vụ UC3.1–UC3.5, tuân thủ các quy tắc nghiệp vụ BR-26–BR-38 trong [SRS Edufit](../SRS%20Edufit.docx), [SADS](../software-architecture-design-specification.md) và [ADR-002](../ADR-002-multi-module-architecture.md).
 
-![Luồng Connection](assets/connection-flow.svg)
+---
 
-## Liên kết Parent - Student
+## 1. Kiến trúc Tổng thể & Ranh giới Module
 
-1. `POST /api/v1/connections/parent-student/invite` nhận `targetEmail`. Parent và Student đều được mời vai trò đối diện. IAM tra email; tài khoản không tồn tại, sai vai trò, đã có link, cooldown hay lời mời PENDING đều trả cùng thông điệp thành công, tránh dò email. Mỗi người gửi tối đa 10 lần thử/giờ, kể cả email không tồn tại. Lời mời hết hạn sau 14 ngày.
-2. `GET /parent-student/invitations` chỉ trả lịch sử của chính người dùng. Người gửi rút lời mời bằng `POST /parent-student/invitations/{id}/withdraw`. Chỉ người được mời gọi `POST /parent-student/respond` với `{ "invitationId": "...", "accept": true|false }`. Decline đặt cooldown 7 ngày cho cùng người gửi. Accept tạo `parent_student_link` CONFIRMED cùng transaction; trước đó Parent không có quyền đối với Student.
-3. `GET /parent-student/links` chỉ trả link CONFIRMED thuộc người gọi. Student sở hữu link hoặc Admin gọi `DELETE /parent-student/links/{id}`. Admin phải gửi `{ "reason": "..." }`. Revoke ghi audit và notification trong cùng transaction; quyền Parent mất ngay. Hàng REVOKED được giữ để tra lịch sử; migration V1.11 cho phép tạo link mới sau lần revoke.
+Module Connection vận hành như một dịch vụ độc lập trong Monolith, giao tiếp với bên ngoài thuần túy qua Public APIs và Spring Application Events (in-memory transactional events):
 
-## Yêu cầu gia sư
+```mermaid
+flowchart TD
+    Client["Client / Frontend"] -->|REST API + SPA CSRF| Controller["ConnectionController"]
 
-1. `POST /requests` nhận `{ "goalId": "...", "tutorId": "...", "desiredSlots": ["..."], "message": "..." }`. Student chỉ gửi cho goal của mình; Parent chỉ gửi cho goal của Student có link CONFIRMED. Goal phải ACTIVE, Tutor VERIFIED và có môn/cấp học phù hợp. Message tối đa 500 ký tự, slots là mảng chuỗi không rỗng. Không gửi khi có class ACTIVE, request PENDING cùng cặp hoặc đủ 5 request PENDING cho Student.
-2. `GET /requests`: Student xem request của mình; Parent truyền `studentId` và chỉ xem khi còn link; Tutor xem inbox của mình. Inbox Tutor trả goal type, môn, cấp học, slots, message, role người gửi và trạng thái, không trả email hay contact. Request PENDING hết hạn sau 7 ngày; quá hạn được chuyển EXPIRED khi đọc/ghi.
-3. Student/Parent còn quyền gọi `POST /requests/{id}/cancel`. Tutor đích gọi `POST /requests/{id}/respond` với `{ "accept": true|false, "reason": "..." }`. Accept chuyển request sang ACCEPTED và tạo class ACTIVE trong cùng transaction. Reject giữ lý do và không tạo class.
+    subgraph ConnectionModule ["Module Connection"]
+        Controller --> Services["Application Services<br/>(LinkInvitation, ParentStudentLink, ConnectionRequest, ConnectionQuery, ConnectionExpiry, InvitationQuota)"]
+        Services --> Transitions["ConnectionTransitions<br/>(Guards, TTLs, Cooldowns)"]
+        Services --> Lock["ConnectionLock<br/>(PostgreSQL Advisory Locks)"]
+        Services --> Repositories["JPA Repositories<br/>(Entities: Invitation, Link, Request, Class, Quota)"]
+        Scheduler["ConnectionExpiryJob<br/>(Every 60s)"] --> Services
+        FacadeImpl["ConnectionFacadeImpl"] --> Repositories
+    end
 
-`ConnectionFacadeImpl` là implementation read-only duy nhất của `ConnectionFacade`, contract cho module khác: `hasConfirmedParentLink(parentUserId, studentId)` và `findActiveClass(studentId, tutorId)`. IAM/Profile chỉ được truy cập qua facade của chúng, không import repository/entity nội bộ. `AuditSink` và `NotificationSink` được hiện thực tại `platform/audit` và `modules/notification`.
+    Services -->|Public Events| EventBus["Spring ApplicationEventPublisher"]
+    EventBus -->|BEFORE_COMMIT| NotificationListener["Notification Module<br/>(ConnectionTransitionListener)"]
+    Services -->|Transactional Audit| AuditService["Platform Audit<br/>(AuditSink)"]
 
-## Đồng thời và dữ liệu
+    Services -->|Public API| IamFacade["IAM Module (IamFacade)"]
+    Services -->|Public API| ProfileFacade["Profile Module (ProfileFacade)"]
 
-Migration [V1.04](../../backend/app/src/main/resources/db/migration/connection/V1.04__create_connection_and_class_tables.sql) đã có partial unique index cho invitation/request PENDING và class ACTIVE. [V1.11](../../backend/app/src/main/resources/db/migration/connection/V1.11__allow_relink_after_revocation.sql) thêm optimistic version, unique chỉ trên link CONFIRMED và bảng quota. `ConnectionLock` đi qua adapter `PostgresConnectionLock` (MANDATORY transaction) để lấy advisory lock. `InvitationQuotaService` khóa quota trước đọc/ghi. Invite dùng quota → pair; accept invitation dùng student → pair → row; request/revoke dùng student → row; thao tác ghi trạng thái khóa hàng bằng `PESSIMISTIC_WRITE`. Sau merge main ngày14/10/2026, `FreshConnectionRowRepository` detach riêng entity đọc ban đầu rồi reload dưới row lock; tránh dùng status/version cũ, không clear các managed writes khác. Audit/notification cùng transaction nên rollback cùng nghiệp vụ.
+    DiscoveryModule["Discovery Module"] -->|Query Link Consent| FacadeImpl
+    SchedulingModule["Scheduling Module"] -->|Query Active Class| FacadeImpl
+```
 
-Phase 0 đã tích hợp main `6755121` và Discovery `dd9068e` vào `feat/connection`; Discovery dùng public `ConnectionFacade` cho quyền Parent và active class. [Báo cáo Phase 0](phase0-validation.md) ghi giới hạn Flyway lineage; [báo cáo Phase 1](phase1-validation.md) ghi regression/transaction tests thực tế. Chưa có job dọn EXPIRED nền; trạng thái được chuẩn hóa khi có truy cập. Phase 2 dùng Clock UTC có sẵn của IAM; mỗi operation đọc một mốc thời gian. `ConnectionTransitions` chặn action trên trạng thái terminal và tại/sau deadline; expire idempotent. Invitation/request service trả `TransitionResult.Success/Conflict` cho conflict dự kiến, controller map conflict sau khi proxy service trả về. Expiry có thể commit trước HTTP409; nếu caller có outer transaction thì outer vẫn quyết định commit/rollback. Lỗi ghi mặc định rollback; constraint/optimistic-lock exception được map tại HTTP boundary riêng Connection, không catch rồi tiếp tục ghi trong transaction.
+---
 
-Bốn public event record đã có tại `connection.api.event`, chỉ mang ID/status/time và cause enum, không mang email/message/admin reason. `notification -> connection` là dependency một chiều. Listener nền xử lý event tạo invitation bằng `BEFORE_COMMIT`, không fallback ngoài transaction, gọi writer MANDATORY và dùng occurredAt làm thời điểm notification. Chưa có production publisher chuyển sang events trong Phase 2: các sink hiện tại vẫn hoạt động; dispatch accepted/declined/revoke/request/expiry được nối cùng publisher ở task tương ứng. Class-created không gửi thêm accepted notification. Chưa có durable outbox, replay dedup store hay đảm bảo exactly-once qua crash. [Báo cáo Phase 2](phase2-validation.md) ghi kiểm chứng và giới hạn coverage.
+## 2. Luồng Nghiệp vụ Chi tiết
 
-Batch expiry, paging và chuyển publisher/recipient matrix vẫn theo [tasks](../../tasks/connection/todo.md). Main `d208371` đã bật SPA CSRF; T21 kiểm chứng đầy đủ policy mới, không mở lại exemption API cũ.
+### 2.1. Luồng Lời mời & Chấp thuận Liên kết Phụ huynh - Học sinh (UC3.1 & UC3.2)
 
-Lịch sử migration hiện tại: V1.09 seed main, V1.10 seed giữ nguyên checksum để tương thích bản đã phát hành, V1.11 bổ sung schema Connection, V1.12 quota/reservation AI và V1.13 seed matching từ main. [Bản sửa Flyway và kiểm chứng DB local](flyway-fix-validation.md) là bằng chứng lịch sử11/10; [merge main mới](main-merge-validation.md) ghi kết quả tích hợp13 migration trên DB test.
+1. **Gửi lời mời (`POST /api/v1/connections/parent-student/invite`)**:
+   - Nhận `targetEmail`. Cả `PARENT` và `STUDENT` đều có thể chủ động mời vai trò đối diện.
+   - Kiểm tra quota người dùng: Tối đa 10 lần thử trong 1 giờ (`InvitationQuotaService` dưới row lock). Vượt quá trả về HTTP 429 `RATE_LIMIT_EXCEEDED`.
+   - Tra cứu email qua `IamFacade`:
+     - Nếu tài khoản không tồn tại, sai vai trò, tự mời chính mình, đã có link `CONFIRMED`, hoặc đang trong thời gian cooldown 7 ngày: Trả về **HTTP 200 generic** (`"Nếu tài khoản hợp lệ, lời mời sẽ được gửi"`), ngăn chặn hoàn toàn việc dò quét email (BR-28).
+   - Lấy advisory pair lock `(LEAST(u1, u2), GREATEST(u1, u2))`:
+     - Nếu đã có lời mời `PENDING` theo bất kỳ hướng nào: Trả về HTTP 200 generic.
+     - Tạo lời mời mới với status `PENDING`, thời hạn `expiresAt = now + 14 ngày`.
+     - Xuất bản sự kiện `LinkInvitationChangedEvent` (action: `INVITED`).
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Inviter as Người gửi (Parent/Student)
+    participant Ctrl as ConnectionController
+    participant Quota as InvitationQuotaService
+    participant Svc as LinkInvitationService
+    participant IAM as IamFacade
+    participant DB as PostgreSQL (JPA)
+    participant Evt as EventPublisher
+
+    Inviter->>Ctrl: POST /parent-student/invite {targetEmail}
+    Ctrl->>Svc: invite(actor, targetEmail)
+    Svc->>Quota: consume(inviterUserId, now)
+    alt Quota >= 10 trong 1h
+        Quota-->>Svc: QuotaExceeded
+        Svc-->>Ctrl: false
+        Ctrl-->>Inviter: HTTP 429 RATE_LIMIT_EXCEEDED
+    end
+    Svc->>IAM: findByEmail(targetEmail)
+    alt Email lạ / Sai role / Đã có link / Đang cooldown
+        Svc-->>Ctrl: true (silent generic)
+        Ctrl-->>Inviter: HTTP 200 "Nếu tài khoản hợp lệ, lời mời sẽ được gửi"
+    end
+    Svc->>DB: Advisory Lock (Pair Key)
+    Svc->>DB: Insert LinkInvitation (PENDING, TTL 14d)
+    Svc->>Evt: publish(LinkInvitationChangedEvent: INVITED)
+    Svc-->>Ctrl: true
+    Ctrl-->>Inviter: HTTP 200 "Nếu tài khoản hợp lệ, lời mời sẽ được gửi"
+```
+
+2. **Phản hồi lời mời (`POST /api/v1/connections/parent-student/respond`)**:
+   - Chỉ người được mời (`invitedUserId`) có quyền phản hồi.
+   - Khóa bản ghi lời mời bằng `PESSIMISTIC_WRITE` (sử dụng `FreshConnectionRowRepository`).
+   - Kiểm tra trạng thái: Nếu đã hết hạn (`now >= expiresAt`), tự động chuyển sang `EXPIRED`, commit và trả về HTTP 409 `CONFLICT_DETECTED`.
+   - Nếu `accept = false`:
+     - Chuyển status sang `DECLINED`, thiết lập `reinviteAfter = now + 7 ngày` (BR-29 cooldown).
+   - Nếu `accept = true`:
+     - Kiểm tra nếu đã có link `CONFIRMED` tồn tại: Lời mời đóng thành `WITHDRAWN`, trả về HTTP 409.
+     - Chuyển status lời mời sang `ACCEPTED`.
+     - Tạo bản ghi `ParentStudentLink` mới với status `CONFIRMED` ngay trong cùng transaction.
+     - Xuất bản sự kiện `LinkInvitationChangedEvent` và `ParentStudentLinkChangedEvent`.
+
+---
+
+### 2.2. Luồng Thu hồi Liên kết Phụ huynh - Học sinh (UC3.3)
+
+1. **Thực thi thu hồi (`DELETE /api/v1/connections/parent-student/links/{id}`)**:
+   - Người gọi hợp lệ: Chỉ `STUDENT` sở hữu liên kết hoặc `ADMIN`. `PARENT` hoàn toàn không có quyền tự thu hồi (HTTP 403 `FORBIDDEN_ACCESS`).
+   - Nếu là `ADMIN`, bắt buộc phải cung cấp lý do thu hồi (`reason` không được để trống). Với `STUDENT`, `reason` là tùy chọn.
+   - Khóa hàng liên kết `PESSIMISTIC_WRITE`. Kiểm tra status phải là `CONFIRMED`.
+   - Chuyển status sang `REVOKED`, cập nhật `revokedAt = now`, `revokedBy = actorUserId`, `revokeReason = reason`.
+   - **Ghi nhận Audit & Thông báo**:
+     - Ghi nhận `AuditRecord` chứa snapshot đầy đủ cả hai tài khoản, thời điểm và lý do thu hồi vào bảng `audit_log` trong cùng transaction.
+     - Xuất bản sự kiện `ParentStudentLinkChangedEvent` (`action = REVOKED`).
+     - Listener `ConnectionTransitionListener` gửi thông báo cho các bên liên quan trước khi transaction commit (`BEFORE_COMMIT`).
+   - **Hiệu lực tức thì**: Ngay sau khi transaction hoàn tất, toàn bộ quyền truy cập dữ liệu học sinh của phụ huynh bị cắt đứt hoàn toàn trên mọi endpoint. Dữ liệu lịch sử của học sinh được bảo tồn nguyên vẹn.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Actor as Student / Admin
+    participant Ctrl as ConnectionController
+    participant Svc as ParentStudentLinkService
+    participant DB as PostgreSQL
+    participant Audit as AuditSink
+    participant Notif as NotificationListener
+
+    Actor->>Ctrl: DELETE /parent-student/links/{id} {reason}
+    Ctrl->>Svc: revokeLink(actor, id, reason)
+    Svc->>DB: Lock ParentStudentLink (CONFIRMED)
+    Svc->>DB: Update Link (REVOKED, revoked_at, reason)
+    Svc->>Audit: record(REVOKE_LINK, parentId, studentId, reason)
+    Svc->>Notif: onApplicationEvent(ParentStudentLinkChangedEvent: REVOKED)
+    Note over Svc,DB: Transaction Commit: Link REVOKED, Audit & Notifications lưu đồng thời
+    Svc-->>Ctrl: void
+    Ctrl-->>Actor: HTTP 200 OK
+```
+
+---
+
+### 2.3. Luồng Yêu cầu Gia sư & Chấp thuận Tạo lớp (UC3.4 & UC3.5)
+
+1. **Gửi yêu cầu gia sư (`POST /api/v1/connections/requests`)**:
+   - Người gửi: `STUDENT` sở hữu mục tiêu hoặc `PARENT` có liên kết `CONFIRMED` với học sinh tại thời điểm gửi.
+   - Xác thực nghiệp vụ:
+     - Mục tiêu học tập (`goalId`) phải ở trạng thái `ACTIVE` qua `ProfileFacade`.
+     - Gia sư (`tutorId`) phải có tài khoản `ACTIVE`, hồ sơ `VERIFIED`, và có giảng dạy môn học + cấp lớp khớp chính xác với mục tiêu (`ProfileFacade.hasTeachingSubjectAndLevel`).
+     - Không có lớp học `ACTIVE` giữa học sinh và gia sư này (BR-34).
+     - Không có yêu cầu `PENDING` nào khác giữa cặp học sinh - gia sư này (Partial Unique Index `uq_connection_request_pending`).
+     - Số lượng yêu cầu `PENDING` hiện tại của học sinh không vượt quá 5 yêu cầu (sau khi đã loại trừ các yêu cầu quá hạn).
+     - Khung giờ mong muốn (`desiredSlots`) không rỗng, thỏa mãn định dạng quy định; lời nhắn (`message`) không quá 500 ký tự.
+   - Lưu `ConnectionRequest` với status `PENDING`, `expiresAt = now + 7 ngày`.
+   - Xuất bản `ConnectionRequestChangedEvent` (action: `CREATED`).
+
+2. **Gia sư phản hồi yêu cầu (`POST /api/v1/connections/requests/{id}/respond`)**:
+   - Người gọi: Phải là chính gia sư được yêu cầu (`tutorId == actor.tutorProfileId`).
+   - Khóa yêu cầu `PESSIMISTIC_WRITE`. Nếu đã quá hạn 7 ngày, chuyển sang `EXPIRED`, trả về HTTP 409.
+   - Nếu `accept = false`:
+     - Chuyển status sang `REJECTED`, lưu `rejectReason` (tối đa 300 ký tự). Không tạo lớp.
+   - Nếu `accept = true`:
+     - Kiểm tra lại tính hợp lệ của mục tiêu học tập (vẫn `ACTIVE`, quyền sở hữu không đổi).
+     - Chuyển status yêu cầu sang `ACCEPTED`.
+     - Tạo đúng một lớp học `TutoringClass` mới với status `ACTIVE` ngay trong cùng transaction.
+     - Xuất bản đồng thời `ConnectionRequestChangedEvent` (`ACCEPTED`) và `TutoringClassCreatedEvent`.
+     - Thông báo kết quả cho học sinh; nếu phụ huynh gửi yêu cầu và vẫn còn liên kết `CONFIRMED` thì phụ huynh cũng nhận được thông báo.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Tutor as Gia sư (Tutor)
+    participant Ctrl as ConnectionController
+    participant Svc as ConnectionRequestService
+    participant DB as PostgreSQL
+    participant Evt as EventPublisher
+
+    Tutor->>Ctrl: POST /requests/{id}/respond {accept: true}
+    Ctrl->>Svc: respondRequest(tutor, id, accept=true)
+    Svc->>DB: Lock ConnectionRequest (PENDING)
+    Svc->>DB: Check & Update Request -> ACCEPTED
+    Svc->>DB: Insert TutoringClass (ACTIVE, exactly one)
+    Svc->>Evt: publish(ConnectionRequestChangedEvent: ACCEPTED)
+    Svc->>Evt: publish(TutoringClassCreatedEvent)
+    Note over Svc,DB: Transaction Commit: Request ACCEPTED & Class ACTIVE nguyên khối
+    Svc-->>Ctrl: ClassResult
+    Ctrl-->>Tutor: HTTP 200 {classId, studentId, tutorId, goalId}
+```
+
+---
+
+### 2.4. Luồng Tự động Quét dọn Hết hạn (FR-13)
+
+- **Cơ chế hai tầng (Two-Tier Expiry)**:
+  1. **On-Access Expiry**: Khi người dùng hoặc hệ thống truy cập một lời mời hoặc yêu cầu đã quá hạn, logic `ConnectionExpiryService` tự động chuyển trạng thái sang `EXPIRED` ngay lập tức, giải phóng slot và thông báo cho các bên.
+  2. **Background Scheduled Expiry (`ConnectionExpiryJob`)**: Chạy định kỳ mỗi 60 giây để xử lý các bản ghi quá hạn mà không có người dùng truy cập.
+- **Quy trình quét nền**:
+  - Quét theo từng batch có giới hạn (100 items/batch).
+  - Khóa từng bản ghi theo thứ tự định sẵn để tránh deadlock giữa các luồng/instance.
+  - Chuyển trạng thái sang `EXPIRED` trong một transaction độc lập ngắn.
+  - Bắn sự kiện chuyển trạng thái để gửi thông báo giải phóng cho các bên liên quan.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Job as ConnectionExpiryJob
+    participant Svc as ConnectionExpiryService
+    participant DB as PostgreSQL
+    participant Evt as EventPublisher
+
+    loop Mỗi 60 giây
+        Job->>Svc: expireOverdueInvitations(batchSize=100)
+        Svc->>DB: Select candidate IDs (now >= expiresAt and PENDING)
+        loop Từng ID
+            Svc->>DB: Lock Row & Recheck status
+            Svc->>DB: Update status = EXPIRED
+            Svc->>Evt: publish(LinkInvitationChangedEvent: EXPIRED)
+        end
+        Job->>Svc: expireOverdueRequests(batchSize=100)
+        Svc->>DB: Select candidate IDs (now >= expiresAt and PENDING)
+        loop Từng ID
+            Svc->>DB: Lock Row & Recheck status
+            Svc->>DB: Update status = EXPIRED
+            Svc->>Evt: publish(ConnectionRequestChangedEvent: EXPIRED)
+        end
+    end
+```
+
+---
+
+## 3. Quản lý Đồng thời và Toàn vẹn Dữ liệu (Concurrency & Integrity)
+
+| Kịch bản đua (Race Condition) | Giải pháp kỹ thuật bảo vệ | Kết quả đảm bảo |
+|---|---|---|
+| **Mời hai chiều đồng thời giữa cùng cặp** | PostgreSQL Advisory Lock trên `(LEAST, GREATEST)` + Partial Unique Index `uq_link_invitation_pending` | Đúng 1 lời mời `PENDING` được tạo |
+| **Gửi lời mời đồng thời vượt quota 10** | Row Lock `PESSIMISTIC_WRITE` trên bảng `connection_invite_quota` | Quota không bao giờ vượt quá 10/giờ |
+| **Đồng thời chấp nhận lời mời (Double Accept)** | Row Lock trên `link_invitation` + Partial Unique Index `uq_parent_student_confirmed` | Đúng 1 liên kết `CONFIRMED` được tạo, thread thứ hai nhận 409 |
+| **Chấp nhận vs Từ chối lời mời đồng thời** | Row Lock trên `link_invitation` với reload fresh row | Trạng thái cuối cùng là đơn nhất (`ACCEPTED` hoặc `DECLINED`) |
+| **Gửi yêu cầu thứ 5 và thứ 6 đồng thời** | Advisory Lock trên `studentId` + Lock đếm yêu cầu `PENDING` | Đúng 1 yêu cầu được tạo, tổng số pending giữ đúng 5 |
+| **Gia sư chấp nhận yêu cầu 2 lần đồng thời** | Row Lock trên `connection_request` + Partial Unique Index `uq_class_student_tutor_active` | Đúng 1 lớp học `ACTIVE` được tạo, yêu cầu `ACCEPTED` |
+| **Chấp nhận vs Hủy yêu cầu đồng thời** | Row Lock trên `connection_request` với recheck trước khi đổi trạng thái | Phân định dứt điểm: Hoặc `ACCEPTED` (có lớp) hoặc `CANCELLED` (không có lớp) |
+| **Học sinh thu hồi liên kết khi phụ huynh đang gửi yêu cầu** | Transaction kiểm tra `hasConfirmedParentLink` ngay trước khi insert request | Yêu cầu phụ huynh bị từ chối ngay lập tức (HTTP 403), không deadlock |

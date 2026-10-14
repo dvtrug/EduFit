@@ -305,7 +305,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** `fix(connection): enforce secured REST contracts and privacy`.
 - **Kết thúc:** Commit + push + route coverage/evidence.
 
-### [ ] T22 — PostgreSQL migration, atomicity và concurrency matrix
+### [x] T22 — PostgreSQL migration, atomicity và concurrency matrix
 
 - **Files:** app integration tests/support fixtures, migration tests và test config cần thiết.
 - **Thực hiện:** Thực hiện toàn bộ mục 8.3 của plan; hai transaction độc lập + barrier. Bao gồm double invite/accept, accept-cancel-expire, revoke-create, request thứ5/6, quota10/11, relink, listener/audit/class failure và outer rollback. Clean install + upgrade DB có dữ liệu.
@@ -339,7 +339,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 
 ## Phase 7 — Docs bàn giao giống Discovery
 
-### [ ] T25 — Đồng bộ API, flow, diagram, Q&A và báo cáo cuối
+### [x] T25 — Đồng bộ API, flow, diagram, Q&A và báo cáo cuối
 
 - **Files:** `docs/connection/connection-implementation-plan.md`, `docs/connection/connection-module-flow.md`, `docs/connection/connection-api-contract.md`, `docs/connection/connection-verification-report.md`, diagram assets, hai file tasks.
 - **Thực hiện:** Thay mô tả skeleton/expiry chỉ on-access bằng final code; diagram architecture/invite/revoke/request-class/expiry và transaction/event semantics. Export ảnh/SVG bằng pipeline repo hiện có nếu khả dụng, mở kiểm tra trước nhúng. Cập nhật Q&A theo implementation, số đo query/p95/dataset và test report thật.
@@ -509,3 +509,9 @@ Dependency của task cha kế tiếp dùng **task con cuối nhóm**: T09 sau T
 - T22a: PostgreSQL Flyway clean/upgrade tests and retained history verification. Implemented connectionUpgradePreservesHistoricalDataAndEnforcesIntegrityConstraints in FlywayMigrationIT, executing migration upgrade from V1.10 baseline to V1.14 on real PostgreSQL testcontainer. Verified historical data retention across link_invitation, parent_student_link (REVOKED), connection_request (PENDING/REJECTED), and complex JSONB desired_slots with version column defaults (0). Verified V1.11 relink support after revocation, partial unique indexes (uq_parent_student_confirmed, uq_connection_request_pending, uq_link_invitation_pending, uq_class_student_tutor_active), and check constraints. All 5 FlywayMigrationIT tests and 2 FlywayMigrationScriptTest pass with zero failures/errors/skips. Evidence recorded in docs/connection/phase6-validation.md.
 - T22b: Atomic transition side effects and failure rollback matrix. Added and verified comprehensive atomicity test cases in ConnectionTransactionPostgresTest: outer transaction rollback for invitation acceptance and request creation leaving zero partial rows in PostgreSQL; BEFORE_COMMIT transactional notification listener failure rollback for cancel, reject, and student revoke preserving previous states (PENDING/CONFIRMED); and audit/class persistence constraint failure rollback. All 37 integration tests pass with zero failures/errors/skips on Testcontainers PostgreSQL 17. Evidence recorded in docs/connection/phase6-validation.md.
 - T22c: Concurrency tests and race matrix. Implemented and verified comprehensive multi-threaded race conditions in ConnectionTransactionPostgresTest on Testcontainers PostgreSQL 17: opposite-direction double invite pair locking, concurrent quota consumption exceeding 10 attempts rejecting the 11th, concurrent double accept invitation creating exactly one confirmed link, concurrent accept vs decline/withdraw invitation resolving to single terminal state, concurrent 5th and 6th pending request to different tutors enforcing max 5 pending limit, concurrent double accept request creating exactly one class, concurrent accept vs cancel request resolving deterministically, and concurrent revoke vs parent create request. All 45 integration tests pass with zero failures/errors/skips. Evidence recorded in docs/connection/phase6-validation.md.
+- T23: Non-empty ArchUnit architecture boundary enforcement with negative-probe evidence. Verified rules restricting application->web, web->infra, API->JPA, and enforcing public API access for outsiders and public dependencies for Connection. Negative probe in ConnectionFacadeImpl introducing application->web dependency failed ArchUnit exactly as expected. All 14 architecture tests pass with zero failures/errors/skips. Evidence recorded in docs/connection/phase6-validation.md.
+- T24: Finalize consumer integration and remove legacy paths. Verified Discovery integration (Parent confirmed matching, immediate revoke denial, Student goal access retention) and AiDiscoveryConnectionE2ETest (7/7 passed). Audited Scheduling contract (ConnectionFacade.findActiveClass) and cataloged production adapter handover dependency. Scanned 50 source files for dead code/deprecated APIs. Full reactor build passed (919 tests GREEN). Checkpoint 6 completed. Evidence recorded in docs/connection/phase6-validation.md.
+
+### Phase 7 execution — 14/10/2026
+
+- T25: Synchronized complete documentation set and final verification handover. Updated docs/connection/connection-implementation-plan.md, connection-module-flow.md (with architecture and sequence diagrams), connection-api-contract.md, and created comprehensive docs/connection/connection-verification-report.md. Full reactor verify passed with 919 tests GREEN, zero failures, zero errors, zero skips. All task checklists marked complete. Evidence recorded in docs/connection/connection-verification-report.md.

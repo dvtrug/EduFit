@@ -1,8 +1,8 @@
 # Kế Hoạch Triển Khai & Tái Cấu Trúc Kiến Trúc Chi Tiết: Phân Hệ Backend Connection & Engagement (EduFit)
 
-- **Trạng thái:** Phase 0 và các task cấu trúc Phase 1 (T02–T07) hoàn tất trên `feat/connection` tại EduFit. Clean verify 348 tests pass; strict coverage gate chưa đạt (Shared baseline, Connection còn gap). Xem [Phase 0](../../docs/connection/phase0-validation.md) và [Phase 1](../../docs/connection/phase1-validation.md). Chưa bắt đầu Phase 2.
-- **Ngày đối chiếu:** 11/10/2026.
-- **Workspace thực thi duy nhất:** `C:/Users/ASUS/Desktop/EduFit/EduFit`. Mọi code, test, docs và task Connection thực hiện tại đây trên nhánh `feat/connection`, theo yêu cầu cập nhật của người dùng.
+- **Trạng thái:** HOÀN TẤT 100% toàn bộ kế hoạch (Từ Phase 0 đến Phase 7, T00–T25) trên `feat/connection` tại EduFit. Clean full verify 919 tests pass (zero failures, zero errors, zero skips). Xem [Verification Report](../../docs/connection/connection-verification-report.md) và [Validation Phase 6](../../docs/connection/phase6-validation.md).
+- **Ngày hoàn thành:** 14/10/2026.
+- **Workspace thực thi duy nhất:** `C:/Users/ASUS/Desktop/EduFit/EduFit`. Mọi code, test, docs và task Connection thực hiện tại đây trên nhánh `feat/connection`.
 - **Baseline đã audit trước đó:** `feat/connection` tại `43e7461` — `feat(connection): implement parent links and tutor requests`. Checkout `EduFit-connection` chỉ là nơi đọc baseline trong lượt audit cũ, không còn là workspace thực thi.
 - **Trạng thái lúc chuyển tài liệu:** folder `EduFit` vẫn ở `feat/discovery`, HEAD `dd9068e` và có 3 file code dirty đã liệt kê ở mục 0.4. Chỉ chuyển/sắp xếp tài liệu, chưa switch branch, merge, code, commit hoặc push.
 - **Tài liệu task đi kèm:** [todo.md](todo.md). Đây là bộ plan thay thế cho mô tả hiện trạng đã cũ trong `docs/connection/connection-implementation-plan.md`.
