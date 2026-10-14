@@ -109,3 +109,26 @@ Branch `feat/connection`. Phase 6 comprises 5 comprehensive verification and cle
   - `FlywayMigrationIT`: 5 tests passed (0 failures, 0 errors, 0 skips).
   - `FlywayMigrationScriptTest`: 2 tests passed (0 failures, 0 errors, 0 skips).
   - Reactor test suite GREEN.
+
+---
+
+## T22b — Atomic transition side effects and failure rollback matrix
+
+### 1. Implementation
+- **Outer Transaction Rollback Verification**:
+  - `invitationAcceptRollsBackCompletelyOnOuterRollback`: verified that when `invitations.respondInvitation` executes within an outer transaction marked for rollback (`status.setRollbackOnly()`), the `link_invitation` strictly remains `PENDING` and no `parent_student_link` rows are persisted.
+  - `requestCreationRollsBackCompletelyOnOuterRollback`: verified that when `requests.request` executes within an outer transaction marked for rollback, zero `connection_request` rows are left in the database, preserving pending limits and quotas.
+  - Existing `acceptedRequestStillRollsBackWithOuterTransaction`, `expiredInvitationCommitsBeforeHttpConflictAndOuterRollbackIsRespected`, and `expireRequestCommitsStatusAndNotificationAndHonorsOuterRollback` confirm comprehensive outer rollback compliance.
+- **Transactional Event Listener Failure Rollback (BEFORE_COMMIT)**:
+  - `cancelRequestRollsBackCompletelyWhenNotificationListenerFails`: verified that if notification delivery fails during request cancellation, the transaction rolls back atomically, leaving the request in `PENDING` status.
+  - `rejectRequestRollsBackCompletelyWhenNotificationListenerFails`: verified that if notification delivery fails during tutor rejection, the request remains in `PENDING` status, `reject_reason` remains `null`, and zero class rows are created.
+  - `studentRevokeRollsBackWhenNotificationFails`: verified that if notification delivery fails during link revocation by a student, the `parent_student_link` remains in `CONFIRMED` status with `revoked_at` remaining `null`.
+  - Existing `invitationAndLinkRollbackTogetherWhenNotificationWriteFails` and `acceptCreatesClassAtomicallyAndQueryHydratesInsideTransaction` confirm listener failure rollback for invitation acceptance and tutor acceptance.
+- **Audit & Class Constraint Persistence Failure**:
+  - `revokeRollsBackOnAuditFailureThenCommitsOnSuccess`: verified that audit failure causes full revocation rollback.
+  - `databaseClassFailureRollsBackAcceptedRequestAndMapsAfterTransaction`: verified both immediate `flush` and `deferred` constraint triggers on `class` insert fail atomically, leaving request `PENDING` and mapping to controlled HTTP 409 conflict after transaction rollback.
+
+### 2. Verification
+- **Test Execution**:
+  - `ConnectionTransactionPostgresTest`: **37 tests passed (0 failures, 0 errors, 0 skips)** on Testcontainers PostgreSQL 17.
+  - Reactor test suite GREEN.

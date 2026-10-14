@@ -1061,6 +1061,103 @@ class ConnectionTransactionPostgresTest {
     assertEquals(0, emptyLookup.totalElements());
   }
 
+  @Test
+  void invitationAcceptRollsBackCompletelyOnOuterRollback() {
+    var jdbc = new JdbcTemplate(source);
+    UUID parent = account("PARENT"), studentUser = account("STUDENT"), student = UUID.randomUUID(), invitation = UUID.randomUUID();
+    jdbc.update("insert into student_profile(student_id,user_id) values (?,?)", student, studentUser);
+    jdbc.update("insert into link_invitation(invitation_id,inviter_user_id,invited_user_id,expires_at) values (?,?,?,now()+interval '14 days')", invitation, parent, studentUser);
+    when(profile.findStudentByUserId(studentUser)).thenReturn(Optional.of(new vn.edufit.profile.api.dto.StudentSummaryDto(student, studentUser, 4, null, true)));
+    when(iam.findUserSummaryById(parent)).thenReturn(Optional.of(new vn.edufit.iam.api.dto.UserSummaryView(
+        parent, "parent@test.invalid", "Parent", vn.edufit.iam.api.AccountRole.PARENT, vn.edufit.iam.api.AccountStatus.ACTIVE)));
+
+    new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+      var result = invitations.respondInvitation(actor(studentUser, "STUDENT"), invitation, true);
+      assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class, result);
+      status.setRollbackOnly();
+    });
+
+    // Verification after rollback: invitation remains PENDING, link is NOT created
+    assertEquals("PENDING", jdbc.queryForObject("select status from link_invitation where invitation_id=?", String.class, invitation));
+    assertEquals(0, jdbc.queryForObject("select count(*) from parent_student_link where student_id=? and parent_user_id=?", Integer.class, student, parent));
+  }
+
+  @Test
+  void requestCreationRollsBackCompletelyOnOuterRollback() {
+    var fixture = pendingRequest();
+    var jdbc = new JdbcTemplate(source);
+    UUID goalNew = UUID.randomUUID();
+    jdbc.update("insert into learning_goal(goal_id,student_id,subject_id,current_level,desired_level,goal_type,deadline,mode,budget_max,status) values (?,?,1,1,2,'EXAM_PREPARATION',current_date + 30,'ONLINE',100000,'ACTIVE')", goalNew, fixture.student());
+    when(profile.findGoalForConnection(goalNew)).thenReturn(Optional.of(new ConnectionGoalDto(goalNew, fixture.student(), fixture.studentUser(), 1, 4, "EXAM_PREPARATION", null, "ACTIVE")));
+
+    UUID tutor2User = account("TUTOR"), tutor2 = UUID.randomUUID();
+    actor(tutor2User, "TUTOR");
+    jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'Tutor2','ONLINE',100000,'VERIFIED')", tutor2, tutor2User);
+    when(profile.getTutorIdByUserId(tutor2User)).thenReturn(tutor2);
+    when(profile.findTutorById(tutor2)).thenReturn(Optional.of(new TutorSummaryDto(tutor2, tutor2User, "Tutor2", null, null, null, null, null, null, null, "VERIFIED", Instant.now(), null, 0)));
+    when(profile.tutorTeaches(tutor2, 1, 4)).thenReturn(true);
+
+    int initialCount = jdbc.queryForObject("select count(*) from connection_request where student_id=?", Integer.class, fixture.student());
+
+    new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+      var result = requests.request(actor(fixture.studentUser(), "STUDENT"), goalNew, tutor2, List.of("Tue 19:00"), "Outer test");
+      assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class, result);
+      status.setRollbackOnly();
+    });
+
+    int afterCount = jdbc.queryForObject("select count(*) from connection_request where student_id=?", Integer.class, fixture.student());
+    assertEquals(initialCount, afterCount, "Outer transaction rollback must not leave any inserted request rows");
+  }
+
+  @Test
+  void cancelRequestRollsBackCompletelyWhenNotificationListenerFails() {
+    var fixture = pendingRequest();
+    var jdbc = new JdbcTemplate(source);
+
+    doThrow(new IllegalStateException("injected notification failure on cancel"))
+        .when(notifications).notify(eq(fixture.tutorUser()), eq(fixture.student()), eq("CONNECTION_CANCELLED"), anyString(), anyString(), eq("CONNECTION_REQUEST"), eq(fixture.request()));
+
+    assertThrows(IllegalStateException.class, () -> requests.cancelRequest(actor(fixture.studentUser(), "STUDENT"), fixture.request()));
+
+    // Request must remain PENDING because transaction rolled back
+    assertEquals("PENDING", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
+  }
+
+  @Test
+  void rejectRequestRollsBackCompletelyWhenNotificationListenerFails() {
+    var fixture = pendingRequest();
+    var jdbc = new JdbcTemplate(source);
+
+    doThrow(new IllegalStateException("injected notification failure on reject"))
+        .when(notifications).notify(eq(fixture.studentUser()), eq(fixture.student()), eq("CONNECTION_REJECTED"), anyString(), anyString(), eq("CONNECTION_REQUEST"), eq(fixture.request()));
+
+    assertThrows(IllegalStateException.class, () -> requests.respondRequest(actor(fixture.tutorUser(), "TUTOR"), fixture.request(), false, "Tutor unavailable"));
+
+    // Request must remain PENDING and reject_reason must remain null
+    assertEquals("PENDING", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
+    assertNull(jdbc.queryForObject("select reject_reason from connection_request where request_id=?", String.class, fixture.request()));
+    assertEquals(0, jdbc.queryForObject("select count(*) from class where connection_request_id=?", Integer.class, fixture.request()));
+  }
+
+  @Test
+  void studentRevokeRollsBackWhenNotificationFails() {
+    var jdbc = new JdbcTemplate(source);
+    UUID parent = account("PARENT"), studentUser = account("STUDENT"), student = UUID.randomUUID(), link = UUID.randomUUID();
+    jdbc.update("insert into student_profile(student_id,user_id) values (?,?)", student, studentUser);
+    jdbc.update("insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at,status) values (?,?,?,now(),'CONFIRMED')", link, parent, student);
+
+    when(profile.findStudentById(student)).thenReturn(Optional.of(new StudentSummaryDto(student, studentUser, 4, null, true)));
+
+    doThrow(new IllegalStateException("injected notification failure on student revoke"))
+        .when(notifications).notify(eq(parent), isNull(), eq("LINK_REVOKED"), anyString(), anyString(), eq("PARENT_STUDENT_LINK"), eq(link));
+
+    assertThrows(IllegalStateException.class, () -> links.revokeLink(actor(studentUser, "STUDENT"), link, null));
+
+    // Link must remain CONFIRMED
+    assertEquals("CONFIRMED", jdbc.queryForObject("select status from parent_student_link where link_id=?", String.class, link));
+    assertNull(jdbc.queryForObject("select revoked_at from parent_student_link where link_id=?", java.sql.Timestamp.class, link));
+  }
+
   @Configuration
   @EnableTransactionManagement
   @ComponentScan(basePackages = {"vn.edufit.connection.application", "vn.edufit.connection.infra.locking", "vn.edufit.connection.infra.scheduling"})
