@@ -223,7 +223,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** `fix(connection): enforce atomic tutor response and class creation`.
 - **Kết thúc:** Commit + push + UC3.5/class evidence.
 
-### [ ] T15 — Kiểm tra quyền Parent xuyên các entry point sau revoke
+### [x] T15 — Kiểm tra quyền Parent xuyên các entry point sau revoke
 
 - **Files:** access helper/link/query/request services, notification recipient/read scope có sẵn, authorization tests.
 - **Thực hiện:** Kiểm tra create/list/cancel và read facade scope; không cache link qua request. Parent đã revoke không nhận thông báo học tập mới; kiểm tra API notification read nếu có. Request Parent cũ vẫn xử lý bởi Student/Tutor. Ghi rõ dependency UC6.3 nếu API đọc chưa triển khai.

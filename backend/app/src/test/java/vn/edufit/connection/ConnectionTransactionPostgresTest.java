@@ -60,6 +60,7 @@ class ConnectionTransactionPostgresTest {
   @Autowired LinkInvitationService invitations;
   @Autowired ParentStudentLinkService links;
   @Autowired DataSource source;
+  @Autowired vn.edufit.connection.api.ConnectionFacade facade;
   @Autowired IamFacade iam;
   @Autowired AuditSink audit;
   @Autowired NotificationSink notifications;
@@ -458,6 +459,137 @@ class ConnectionTransactionPostgresTest {
       holder.get(10, TimeUnit.SECONDS);
       transactions.executeWithoutResult(status -> lock.lockInvitationPair(b, a));
     }
+  }
+
+  @Test void parentConsentLifecycleAcrossAllEntrypointsConfirmedRevokedRelinked() {
+    var jdbc = new JdbcTemplate(source);
+    UUID parent = account("PARENT"), studentUser = account("STUDENT"), tutorUser = account("TUTOR");
+    UUID student = UUID.randomUUID(), tutor = UUID.randomUUID(), goal = UUID.randomUUID(), link = UUID.randomUUID();
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", student, studentUser);
+    jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'Tutor','ONLINE',100000,'VERIFIED')", tutor, tutorUser);
+    jdbc.update("insert into learning_goal(goal_id,student_id,subject_id,current_level,desired_level,goal_type,deadline,mode,budget_max,status) values (?,?,1,1,2,'EXAM_PREPARATION',current_date + 30,'ONLINE',100000,'ACTIVE')", goal, student);
+    jdbc.update("insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at,status) values (?,?,?,now(),'CONFIRMED')", link, parent, student);
+
+    when(profile.getTutorIdByUserId(tutorUser)).thenReturn(tutor);
+    when(profile.findTutorById(tutor)).thenReturn(Optional.of(new TutorSummaryDto(tutor,
+        tutorUser, "Tutor", null, null, null, null, null, null, null, "VERIFIED", Instant.now(), null, 0)));
+    when(profile.findStudentById(student)).thenReturn(Optional.of(new StudentSummaryDto(student, studentUser, 4, null, true)));
+    when(profile.getStudentIdByUserId(studentUser)).thenReturn(student);
+    when(profile.findGoalForConnection(goal)).thenReturn(Optional.of(new ConnectionGoalDto(goal, student, studentUser, 1, 4, "EXAM_PREPARATION", null, "ACTIVE")));
+    when(profile.tutorTeaches(tutor, 1, 4)).thenReturn(true);
+    actor(tutorUser, "TUTOR");
+
+    // 1. CONFIRMED state: Parent has full access
+    assertTrue(facade.hasConfirmedParentLink(parent, student));
+    assertEquals(1, queries.links(actor(parent, "PARENT")).size());
+    var requestResult = requests.request(actor(parent, "PARENT"), goal, tutor, java.util.List.of("Tue 19:00"), "Hello tutor");
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class, requestResult);
+    UUID requestId = ((vn.edufit.connection.application.dto.TransitionResult.Success<vn.edufit.connection.application.dto.ConnectionRequestResult>) requestResult).value().requestId();
+    assertEquals(1, queries.requests(actor(parent, "PARENT"), student).size());
+
+    // 2. REVOKED state: Student revokes link
+    links.revokeLink(actor(studentUser, "STUDENT"), link, null);
+    assertFalse(facade.hasConfirmedParentLink(parent, student));
+    assertEquals("REVOKED", jdbc.queryForObject("select status from parent_student_link where link_id=?", String.class, link));
+
+    // Next request by Parent is blocked
+    assertThrows(vn.edufit.shared.exception.ForbiddenOperationException.class,
+        () -> requests.request(actor(parent, "PARENT"), goal, tutor, java.util.List.of("Tue 19:00"), null));
+    // Parent cancel is blocked
+    assertThrows(vn.edufit.shared.exception.ForbiddenOperationException.class,
+        () -> requests.cancelRequest(actor(parent, "PARENT"), requestId));
+    // Parent request listing is blocked
+    assertThrows(vn.edufit.shared.exception.ForbiddenOperationException.class,
+        () -> queries.requests(actor(parent, "PARENT"), student));
+    // Parent link list is now empty
+    assertTrue(queries.links(actor(parent, "PARENT")).isEmpty());
+
+    // Student ownership: data is preserved, student can still query requests
+    assertEquals(1, queries.requests(actor(studentUser, "STUDENT"), student).size());
+    assertEquals("ACTIVE", jdbc.queryForObject("select status from learning_goal where goal_id=?", String.class, goal));
+
+    // Tutor accepts older request created by Parent before revocation
+    reset(notifications);
+    var tutorResult = requests.respondRequest(actor(tutorUser, "TUTOR"), requestId, true, null);
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class, tutorResult);
+    var createdClass = ((vn.edufit.connection.application.dto.TransitionResult.Success<vn.edufit.connection.application.dto.ClassResult>) tutorResult).value();
+    // Notification delivered to student, but NOT to revoked parent!
+    verify(notifications).notify(eq(studentUser), eq(student), eq("CONNECTION_ACCEPTED"), anyString(), anyString(), eq("CLASS"), eq(createdClass.classId()));
+    verify(notifications, never()).notify(eq(parent), any(), anyString(), anyString(), anyString(), anyString(), any());
+
+    // 3. RELINKED state: New invitation creates a new confirmed link
+    UUID newLink = UUID.randomUUID(), goal2 = UUID.randomUUID();
+    jdbc.update("insert into learning_goal(goal_id,student_id,subject_id,current_level,desired_level,goal_type,deadline,mode,budget_max,status) values (?,?,1,1,2,'EXAM_PREPARATION',current_date + 30,'ONLINE',100000,'ACTIVE')", goal2, student);
+    when(profile.findGoalForConnection(goal2)).thenReturn(Optional.of(new ConnectionGoalDto(goal2, student, studentUser, 1, 4, "EXAM_PREPARATION", null, "ACTIVE")));
+    jdbc.update("insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at,status) values (?,?,?,now(),'CONFIRMED')", newLink, parent, student);
+
+    // Parent access is immediately restored
+    assertTrue(facade.hasConfirmedParentLink(parent, student));
+    assertEquals(1, queries.links(actor(parent, "PARENT")).size());
+    UUID tutor2User = account("TUTOR"), tutor2 = UUID.randomUUID();
+    actor(tutor2User, "TUTOR");
+    jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'Tutor2','ONLINE',100000,'VERIFIED')", tutor2, tutor2User);
+    when(profile.getTutorIdByUserId(tutor2User)).thenReturn(tutor2);
+    when(profile.findTutorById(tutor2)).thenReturn(Optional.of(new TutorSummaryDto(tutor2, tutor2User, "Tutor2", null, null, null, null, null, null, null, "VERIFIED", Instant.now(), null, 0)));
+    when(profile.tutorTeaches(tutor2, 1, 4)).thenReturn(true);
+    var request2Result = requests.request(actor(parent, "PARENT"), goal2, tutor2, java.util.List.of("Tue 19:00"), null);
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class, request2Result);
+  }
+
+  @Test void multiStudentParentIsolationEnforcesIndependentConsent() {
+    var jdbc = new JdbcTemplate(source);
+    UUID parent1 = account("PARENT"), parent2 = account("PARENT");
+    UUID student1User = account("STUDENT"), student2User = account("STUDENT");
+    UUID student1 = UUID.randomUUID(), student2 = UUID.randomUUID();
+    UUID tutorUser = account("TUTOR"), tutor = UUID.randomUUID();
+    UUID goal1 = UUID.randomUUID(), goal2 = UUID.randomUUID();
+    UUID link1 = UUID.randomUUID(), link2 = UUID.randomUUID(), link3 = UUID.randomUUID();
+    actor(tutorUser, "TUTOR");
+
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", student1, student1User);
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", student2, student2User);
+    jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'Tutor','ONLINE',100000,'VERIFIED')", tutor, tutorUser);
+    jdbc.update("insert into learning_goal(goal_id,student_id,subject_id,current_level,desired_level,goal_type,deadline,mode,budget_max,status) values (?,?,1,1,2,'EXAM_PREPARATION',current_date + 30,'ONLINE',100000,'ACTIVE')", goal1, student1);
+    jdbc.update("insert into learning_goal(goal_id,student_id,subject_id,current_level,desired_level,goal_type,deadline,mode,budget_max,status) values (?,?,1,1,2,'EXAM_PREPARATION',current_date + 30,'ONLINE',100000,'ACTIVE')", goal2, student2);
+
+    // Parent 1 linked to Student 1 and Student 2; Parent 2 also linked to Student 1
+    jdbc.update("insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at,status) values (?,?,?,now(),'CONFIRMED')", link1, parent1, student1);
+    jdbc.update("insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at,status) values (?,?,?,now(),'CONFIRMED')", link2, parent1, student2);
+    jdbc.update("insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at,status) values (?,?,?,now(),'CONFIRMED')", link3, parent2, student1);
+
+    when(profile.getTutorIdByUserId(tutorUser)).thenReturn(tutor);
+    when(profile.findTutorById(tutor)).thenReturn(Optional.of(new TutorSummaryDto(tutor, tutorUser, "Tutor", null, null, null, null, null, null, null, "VERIFIED", Instant.now(), null, 0)));
+    when(profile.findStudentById(student1)).thenReturn(Optional.of(new StudentSummaryDto(student1, student1User, 4, null, true)));
+    when(profile.findStudentById(student2)).thenReturn(Optional.of(new StudentSummaryDto(student2, student2User, 4, null, true)));
+    when(profile.findGoalForConnection(goal1)).thenReturn(Optional.of(new ConnectionGoalDto(goal1, student1, student1User, 1, 4, "EXAM_PREPARATION", null, "ACTIVE")));
+    when(profile.findGoalForConnection(goal2)).thenReturn(Optional.of(new ConnectionGoalDto(goal2, student2, student2User, 1, 4, "EXAM_PREPARATION", null, "ACTIVE")));
+    when(profile.tutorTeaches(tutor, 1, 4)).thenReturn(true);
+
+    // Parent 1 creates request for Student 1 while link is CONFIRMED
+    var p1s1Result = requests.request(actor(parent1, "PARENT"), goal1, tutor, java.util.List.of("Tue 19:00"), null);
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class, p1s1Result);
+
+    // Student 1 revokes link with Parent 1
+    links.revokeLink(actor(student1User, "STUDENT"), link1, null);
+    assertFalse(facade.hasConfirmedParentLink(parent1, student1));
+
+    // Parent 1 cannot access Student 1
+    assertThrows(vn.edufit.shared.exception.ForbiddenOperationException.class,
+        () -> requests.request(actor(parent1, "PARENT"), goal1, tutor, java.util.List.of("Tue 19:00"), null));
+    assertThrows(vn.edufit.shared.exception.ForbiddenOperationException.class,
+        () -> queries.requests(actor(parent1, "PARENT"), student1));
+
+    // Parent 1 CAN still access Student 2
+    assertTrue(facade.hasConfirmedParentLink(parent1, student2));
+    var p1s2Result = requests.request(actor(parent1, "PARENT"), goal2, tutor, java.util.List.of("Tue 19:00"), null);
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class, p1s2Result);
+    assertEquals(1, queries.requests(actor(parent1, "PARENT"), student2).size());
+    assertEquals(1, queries.links(actor(parent1, "PARENT")).size());
+
+    // Parent 2 CAN still access Student 1 (independent consent)
+    assertTrue(facade.hasConfirmedParentLink(parent2, student1));
+    assertEquals(1, queries.requests(actor(parent2, "PARENT"), student1).size());
+    assertEquals(1, queries.links(actor(parent2, "PARENT")).size());
   }
 
   @Configuration
