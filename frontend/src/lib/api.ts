@@ -59,6 +59,17 @@ export async function fetchApi<T = unknown>(
   };
 
   try {
+    // Spring rotates the token at login/logout. Fetch it per mutation so the
+    // session cookie and token always belong to the same authenticated session.
+    if (!["GET", "HEAD", "OPTIONS"].includes((options.method || "GET").toUpperCase())) {
+      const csrf = await fetchApi<{ token: string; headerName: string }>("/api/v1/auth/csrf", {
+        method: "GET", cache: "no-store", signal: options.signal,
+      });
+      if (!csrf.data?.token || !csrf.data.headerName) {
+        throw new ApiError("Không thể khởi tạo phiên bảo mật. Vui lòng thử lại.", 0, "CSRF_UNAVAILABLE");
+      }
+      headers.set(csrf.data.headerName, csrf.data.token);
+    }
     const response = await fetch(endpoint, config);
     const data: ApiResponse<T> = await response.json().catch(() => ({
       success: response.ok,
@@ -106,4 +117,3 @@ export const apiClient = {
     }),
   delete: <T>(url: string, init?: RequestInit) => fetchApi<T>(url, { ...init, method: "DELETE" }),
 };
-

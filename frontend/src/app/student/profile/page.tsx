@@ -1,12 +1,8 @@
 "use client";
 
 import React from "react";
-import { StudentProfileForm } from "@/features/profile";
+import { SettingsView } from "@/features/settings";
 
 export default function StudentProfilePage() {
-  return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <StudentProfileForm />
-    </div>
-  );
+  return <SettingsView role="STUDENT" defaultTab="profile" />;
 }

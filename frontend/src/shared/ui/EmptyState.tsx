@@ -35,37 +35,37 @@ export interface EmptyStateProps {
 
 const THEME_STYLES = {
   amber: {
-    iconBg: "bg-amber-100/80 text-amber-900 border-amber-200/60",
-    glow: "bg-amber-400/10",
-    badge: "bg-amber-50 text-amber-800 border-amber-200",
+    iconBg: "bg-amber-100/80 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60",
+    glow: "bg-amber-400/10 dark:bg-amber-400/5",
+    badge: "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/60",
     btnPrimary: "bg-amber-500 hover:bg-amber-600 text-neutral-950 shadow-amber-500/20",
     stepBadge: "bg-amber-500 text-neutral-950",
   },
   sky: {
-    iconBg: "bg-sky-100/80 text-sky-900 border-sky-200/60",
-    glow: "bg-sky-400/10",
-    badge: "bg-sky-50 text-sky-800 border-sky-200",
+    iconBg: "bg-sky-100/80 dark:bg-sky-950/70 text-sky-900 dark:text-sky-300 border-sky-200/60 dark:border-sky-800/60",
+    glow: "bg-sky-400/10 dark:bg-sky-400/5",
+    badge: "bg-sky-50 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border-sky-200 dark:border-sky-800/60",
     btnPrimary: "bg-sky-600 hover:bg-sky-700 text-white shadow-sky-600/20",
     stepBadge: "bg-sky-600 text-white",
   },
   purple: {
-    iconBg: "bg-purple-100/80 text-purple-900 border-purple-200/60",
-    glow: "bg-purple-400/10",
-    badge: "bg-purple-50 text-purple-800 border-purple-200",
+    iconBg: "bg-purple-100/80 dark:bg-purple-950/70 text-purple-900 dark:text-purple-300 border-purple-200/60 dark:border-purple-800/60",
+    glow: "bg-purple-400/10 dark:bg-purple-400/5",
+    badge: "bg-purple-50 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800/60",
     btnPrimary: "bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/20",
     stepBadge: "bg-purple-600 text-white",
   },
   emerald: {
-    iconBg: "bg-emerald-100/80 text-emerald-900 border-emerald-200/60",
-    glow: "bg-emerald-400/10",
-    badge: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    iconBg: "bg-emerald-100/80 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/60",
+    glow: "bg-emerald-400/10 dark:bg-emerald-400/5",
+    badge: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60",
     btnPrimary: "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20",
     stepBadge: "bg-emerald-600 text-white",
   },
   neutral: {
-    iconBg: "bg-stone-100 text-stone-700 border-stone-200",
+    iconBg: "bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-700",
     glow: "bg-stone-400/10",
-    badge: "bg-stone-100 text-stone-700 border-stone-200",
+    badge: "bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-700",
     btnPrimary: "bg-stone-900 hover:bg-neutral-800 text-white shadow-stone-900/10",
     stepBadge: "bg-stone-800 text-white",
   },
@@ -88,7 +88,7 @@ export function EmptyState({
   const renderActionBtn = (act: EmptyStateAction, isSecondary = false) => {
     const ActionIcon = act.icon || ArrowRight;
     const btnClasses = isSecondary
-      ? "px-4 py-2 bg-stone-100 hover:bg-stone-200/80 text-neutral-700 rounded-xl text-xs font-bold transition-all border border-stone-200/80 flex items-center justify-center gap-1.5 cursor-pointer"
+      ? "px-4 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200/80 dark:hover:bg-stone-700 text-neutral-700 dark:text-stone-200 rounded-xl text-xs font-bold transition-all border border-stone-200/80 dark:border-stone-700 flex items-center justify-center gap-1.5 cursor-pointer"
       : `px-4 py-2.5 ${currentTheme.btnPrimary} rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]`;
 
     if (act.href) {
@@ -111,16 +111,16 @@ export function EmptyState({
   if (compact) {
     return (
       <div
-        className={`p-6 bg-stone-50/70 border border-dashed border-stone-200/90 rounded-2xl flex flex-col items-center text-center space-y-3 ${className}`}
+        className={`p-6 bg-stone-50/70 dark:bg-stone-900/70 border border-dashed border-stone-200/90 dark:border-stone-700/80 rounded-2xl flex flex-col items-center text-center space-y-3 ${className}`}
       >
         <div
           className={`size-11 rounded-2xl border flex items-center justify-center shadow-xs ${currentTheme.iconBg}`}
         >
           <Icon className="size-5.5" />
         </div>
-        <div className="space-y-1 max-w-sm">
-          <h4 className="text-xs sm:text-sm font-bold text-neutral-900">{title}</h4>
-          <p className="text-[11px] sm:text-xs text-neutral-500 leading-relaxed font-sans">
+        <div className="space-y-1.5 max-w-sm">
+          <h4 className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-stone-100">{title}</h4>
+          <p className="text-[11px] sm:text-xs text-neutral-600 dark:text-stone-300 leading-relaxed font-sans font-medium">
             {description}
           </p>
         </div>
@@ -131,7 +131,7 @@ export function EmptyState({
 
   return (
     <div
-      className={`relative overflow-hidden bg-white rounded-3xl border border-stone-200/90 shadow-xs p-6 sm:p-8 flex flex-col items-center text-center space-y-5 ${className}`}
+      className={`relative overflow-hidden bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-xs p-6 sm:p-8 flex flex-col items-center text-center space-y-5 ${className}`}
     >
       {/* Background Soft Glow */}
       <div
@@ -156,10 +156,10 @@ export function EmptyState({
 
       {/* Typography */}
       <div className="space-y-1.5 max-w-md z-10">
-        <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900">
+        <h3 className="font-heading text-base sm:text-lg font-bold text-neutral-900 dark:text-stone-100">
           {title}
         </h3>
-        <p className="text-xs text-neutral-500 leading-relaxed font-sans">
+        <p className="text-xs text-neutral-600 dark:text-stone-300 leading-relaxed font-sans font-medium">
           {description}
         </p>
       </div>

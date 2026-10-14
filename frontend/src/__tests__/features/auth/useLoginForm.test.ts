@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { loginSchema, evaluatePasswordCriteria, resetPasswordSchema } from "@/features/auth/schemas/authSchemas";
+import { shouldRedirectTutorToOnboarding } from "@/features/auth/hooks/useLoginForm";
 
 describe("Auth Headless Logic & Schemas Unit Tests", () => {
   describe("loginSchema", () => {
@@ -102,6 +103,50 @@ describe("Auth Headless Logic & Schemas Unit Tests", () => {
         confirmPassword: "Password123@",
       });
       expect(result.success).toBe(true);
+    });
+  });
+
+  describe("shouldRedirectTutorToOnboarding (Tutor Onboarding Logic)", () => {
+    it("chuyển về onboarding khi chưa có profile và chưa hoàn tất onboarding", () => {
+      const redirect = shouldRedirectTutorToOnboarding(null, false);
+      expect(redirect).toBe(true);
+    });
+
+    it("không chuyển về onboarding khi người dùng đã có cờ hoàn tất hoặc đã bỏ qua", () => {
+      const redirect = shouldRedirectTutorToOnboarding(null, true);
+      expect(redirect).toBe(false);
+    });
+
+    it("không chuyển về onboarding khi gia sư đã có môn học từ Bước 1", () => {
+      const redirect = shouldRedirectTutorToOnboarding(
+        { subjects: [{ subjectId: 1, educationLevelId: 2 }], bio: null, area: "Hà Nội" },
+        false
+      );
+      expect(redirect).toBe(false);
+    });
+
+    it("không chuyển về onboarding khi gia sư đã có khu vực hoạt động", () => {
+      const redirect = shouldRedirectTutorToOnboarding(
+        { subjects: [], bio: null, area: "TP. Hồ Chí Minh" },
+        false
+      );
+      expect(redirect).toBe(false);
+    });
+
+    it("không chuyển về onboarding khi gia sư đã có Bio", () => {
+      const redirect = shouldRedirectTutorToOnboarding(
+        { subjects: [], bio: "Kinh nghiệm 5 năm sư phạm", area: null },
+        false
+      );
+      expect(redirect).toBe(false);
+    });
+
+    it("chuyển về onboarding khi profile rỗng và chưa từng hoàn tất onboarding", () => {
+      const redirect = shouldRedirectTutorToOnboarding(
+        { subjects: [], bio: null, area: null },
+        false
+      );
+      expect(redirect).toBe(true);
     });
   });
 });

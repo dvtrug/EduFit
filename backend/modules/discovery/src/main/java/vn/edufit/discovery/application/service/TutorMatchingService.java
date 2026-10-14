@@ -83,8 +83,12 @@ public class TutorMatchingService {
         .limit(topN)
         .toList();
 
-    List<TutorMatchResult> results = ranked.stream()
-        .map(score -> toResult(currentUser.getUserId(), score, byTutorId.get(score.tutorId()), score.equals(ranked.getFirst())))
+    var rankedProfiles = ranked.stream().map(score -> byTutorId.get(score.tutorId())).toList();
+    List<MatchExplanationService.Explanation> explanations = ranked.isEmpty() ? List.of()
+        : explanationService.explainMatches(currentUser.getUserId(), goal, ranked, rankedProfiles);
+    List<TutorMatchResult> results = java.util.stream.IntStream.range(0, ranked.size())
+        .mapToObj(i -> new TutorMatchResult(ranked.get(i), rankedProfiles.get(i),
+            explanations.get(i).text(), explanations.get(i).aiGenerated()))
         .toList();
     var log = new MatchingRunLogEntity(
         currentUser.getUserId(), goal.studentId(), goal.goalId(), results.size()
@@ -139,15 +143,4 @@ public class TutorMatchingService {
     return new AvailabilitySlot(slot.dayOfWeek(), slot.startTime(), slot.endTime());
   }
 
-  private TutorMatchResult toResult(
-      UUID userId,
-      MatchScore score,
-      TutorDiscoveryProfileDto profile,
-      boolean topMatch
-  ) {
-    MatchExplanationService.Explanation explanation = topMatch
-        ? explanationService.explainTopMatch(userId, score, profile)
-        : new MatchExplanationService.Explanation(explanationService.ruleBased(score), false);
-    return new TutorMatchResult(score, profile, explanation.text(), explanation.aiGenerated());
-  }
 }

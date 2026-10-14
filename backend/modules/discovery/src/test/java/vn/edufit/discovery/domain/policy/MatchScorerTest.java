@@ -61,10 +61,10 @@ class MatchScorerTest {
   }
 
   @Test
-  void weightedTotalUsesAllFiveComponents() {
+  void weightedTotalUsesFourCriteriaWithNeedSplitBetweenSubjectAndLevel() {
     var result = scorer.score(criteria(List.of(slot(1, "18:00", "21:00"))),
         tutor(80, 345000, "5", 1, List.of(slot(1, "18:00", "19:00")))).orElseThrow();
-    assertEquals(new BigDecimal("69.00"), result.total());
+    assertEquals(new BigDecimal("60.83"), result.total());
     assertEquals(new BigDecimal("33.33"), result.scheduleFit());
     assertEquals(new BigDecimal("60.00"), result.ratingFit());
   }
@@ -124,7 +124,7 @@ class MatchScorerTest {
         List.of(slot(2, "18:00", "20:00")))) {
       var score = scorer.score(criteria(List.of(monday)), tutor(3, 200000, "5", 10, offered)).orElseThrow();
       assertEquals(new BigDecimal("0.00"), score.scheduleFit());
-      assertEquals(new BigDecimal("85.00"), score.total());
+      assertEquals(new BigDecimal("75.00"), score.total());
     }
     assertEquals(new BigDecimal("0.00"), scorer.score(criteria(List.of()),
         tutor(3, 200000, "5", 10, List.of(monday))).orElseThrow().scheduleFit());

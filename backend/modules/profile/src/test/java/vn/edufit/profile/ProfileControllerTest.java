@@ -44,6 +44,9 @@ class ProfileControllerTest {
   private TutorProfileService tutorProfileService;
 
   @Mock
+  private vn.edufit.profile.application.service.TutorBioService tutorBioService;
+
+  @Mock
   private ObjectProvider<CurrentUser> currentUserProvider;
 
   private ProfileController profileController;
@@ -56,6 +59,7 @@ class ProfileControllerTest {
     profileController = new ProfileController(
         studentProfileService,
         tutorProfileService,
+        tutorBioService,
         currentUserProvider
     );
 
@@ -180,5 +184,26 @@ class ProfileControllerTest {
     ResponseEntity<ApiResponse<TutorProfileResponse>> resp = profileController.setAvailabilitySlots(req);
     assertEquals(200, resp.getStatusCode().value());
     verify(tutorProfileService).setAvailabilitySlots(testCurrentUser, req);
+  }
+
+  @Test
+  @DisplayName("Sinh tiểu sử Bio cho gia sư")
+  void shouldGenerateTutorBio() {
+    when(currentUserProvider.getIfAvailable()).thenReturn(testCurrentUser);
+    vn.edufit.profile.web.request.GenerateTutorBioRequest req = new vn.edufit.profile.web.request.GenerateTutorBioRequest(
+        "Thầy Nam", List.of("Toán"), List.of("Cấp 3"), 5, "friendly", "exam", null
+    );
+    vn.edufit.profile.web.response.GenerateTutorBioResponse mockResp = new vn.edufit.profile.web.response.GenerateTutorBioResponse(
+        "Chào các em! Thầy là Nam...", true, 9
+    );
+    when(tutorBioService.generateBio(testCurrentUser, req)).thenReturn(mockResp);
+
+    ResponseEntity<ApiResponse<vn.edufit.profile.web.response.GenerateTutorBioResponse>> resp =
+        profileController.generateTutorBio(req);
+
+    assertEquals(200, resp.getStatusCode().value());
+    assertNotNull(resp.getBody());
+    assertEquals("Chào các em! Thầy là Nam...", resp.getBody().data().bio());
+    verify(tutorBioService).generateBio(testCurrentUser, req);
   }
 }

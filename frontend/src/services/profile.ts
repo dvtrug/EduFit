@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api";
+import { catalogService } from "@/services/catalog";
 
 export interface StudentProfileData {
   studentId: string;
@@ -14,6 +15,52 @@ export interface StudentProfileData {
 export interface UpdateStudentProfilePayload {
   educationLevelId?: number;
   area?: string;
+}
+
+export type LearningGoalType =
+  | "CONSOLIDATE"
+  | "IMPROVE_GRADES"
+  | "ADVANCED_STUDY"
+  | "EXAM_PREPARATION"
+  | "OTHER";
+
+export interface LearningGoalAvailabilitySlot {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}
+
+export interface LearningGoalData {
+  goalId: string;
+  subjectId: number;
+  subjectName: string;
+  educationLevelId: number;
+  educationLevelName: string;
+  currentLevel: number;
+  desiredLevel: number;
+  goalType: LearningGoalType;
+  deadline: string;
+  mode: "ONLINE" | "OFFLINE" | "BOTH";
+  area?: string;
+  budgetMin?: number;
+  budgetMax: number;
+  status: "ACTIVE" | "ARCHIVED";
+  availabilitySlots: LearningGoalAvailabilitySlot[];
+  readyForMatching?: boolean;
+  readinessReasons?: string[];
+}
+
+export interface CreateLearningGoalPayload {
+  subjectId: number;
+  currentLevel: number;
+  desiredLevel: number;
+  goalType: LearningGoalType;
+  deadline: string;
+  mode: "ONLINE" | "OFFLINE" | "BOTH";
+  area?: string;
+  budgetMin?: number;
+  budgetMax: number;
+  availabilitySlots: LearningGoalAvailabilitySlot[];
 }
 
 export interface TutorSubjectItem {
@@ -63,6 +110,23 @@ export interface UpdateTutorProfilePayload {
   teachingMethod?: string;
 }
 
+export interface GenerateTutorBioPayload {
+  displayName?: string;
+  subjects?: string[];
+  educationLevels?: string[];
+  experienceYears?: number;
+  tone?: "friendly" | "professional" | "concise";
+  focusArea?: string;
+  customPrompt?: string;
+  currentBio?: string;
+}
+
+export interface GenerateTutorBioResult {
+  bio: string;
+  isAiGenerated: boolean;
+  remainingQuota: number;
+}
+
 export interface MyProfileComposite {
   userId: string;
   email: string;
@@ -94,6 +158,42 @@ export const profileService = {
   async updateStudentProfile(payload: UpdateStudentProfilePayload): Promise<StudentProfileData> {
     const res = await apiClient.put<StudentProfileData>("/api/v1/profiles/students/me", payload);
     return res.data as StudentProfileData;
+  },
+
+  async getMyLearningGoals(): Promise<LearningGoalData[]> {
+    const res = await apiClient.get<LearningGoalData[]>("/api/v1/profiles/students/me/goals");
+    return profileService.labelGoals(res.data || []);
+  },
+
+  async getLinkedStudentGoals(studentId: string): Promise<LearningGoalData[]> {
+    const res = await apiClient.get<LearningGoalData[]>(`/api/v1/discovery/students/${encodeURIComponent(studentId)}/goals`);
+    return profileService.labelGoals(res.data || []);
+  },
+
+  async labelGoals(goals: LearningGoalData[]): Promise<LearningGoalData[]> {
+    try {
+      const catalog = await catalogService.getCatalog();
+      return goals.map(goal => ({
+        ...goal,
+        subjectName: catalog.subjects.find(s => s.subjectId === goal.subjectId)?.name || `Môn ${goal.subjectId}`,
+        educationLevelName: catalog.educationLevels.find(l => l.levelId === goal.educationLevelId)?.name || "Chưa chọn khối lớp",
+      }));
+    } catch {
+      return goals;
+    }
+  },
+
+  async createLearningGoal(payload: CreateLearningGoalPayload): Promise<LearningGoalData> {
+    const { availabilitySlots, ...goal } = payload;
+    const res = await apiClient.post<LearningGoalData>("/api/v1/profiles/students/me/goals", goal);
+    const saved = res.data as LearningGoalData;
+    try {
+      const ready = await apiClient.put<LearningGoalData>(`/api/v1/profiles/students/me/goals/${saved.goalId}/availability`, { slots: availabilitySlots });
+      return ready.data as LearningGoalData;
+    } catch (error) {
+      await apiClient.post(`/api/v1/profiles/students/me/goals/${saved.goalId}/archive`).catch(() => undefined);
+      throw error;
+    }
   },
 
   /**
@@ -143,5 +243,16 @@ export const profileService = {
       slots,
     });
     return res.data as TutorProfileData;
+  },
+
+  /**
+   * Sinh bản thảo tiểu sử gia sư (Bio) thông qua AI Assistant
+   */
+  async generateTutorBio(payload: GenerateTutorBioPayload): Promise<GenerateTutorBioResult> {
+    const res = await apiClient.post<GenerateTutorBioResult>(
+      "/api/v1/profiles/tutors/me/generate-bio",
+      payload
+    );
+    return res.data as GenerateTutorBioResult;
   },
 };

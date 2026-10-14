@@ -63,6 +63,11 @@ class AiDeadlineTest {
     context.registerBean(OutputSanitizer.class);
     context.registerBean(AiRequestLogger.class, () -> mock(AiRequestLogger.class));
     context.registerBean(AiRequestLogRepository.class, () -> mock(AiRequestLogRepository.class));
+    context.registerBean(AiMatchQuotaService.class, () -> {
+      var quota = mock(AiMatchQuotaService.class);
+      when(quota.tryReserve(any())).thenReturn(java.util.Optional.of(UUID.randomUUID()));
+      return quota;
+    });
     context.register(AiClientConfig.class, AiGatewayService.class);
     context.refresh();
     return context;
