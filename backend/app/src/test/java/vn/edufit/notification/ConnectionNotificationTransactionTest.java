@@ -41,9 +41,16 @@ class ConnectionNotificationTransactionTest {
   @Autowired ApplicationEventPublisher events;
   @Autowired ConnectionNotificationWriter writer;
   @Autowired CommitProbe probe;
+  @Autowired vn.edufit.connection.application.service.LinkInvitationService invitationService;
+  @Autowired vn.edufit.iam.api.IamFacade iam;
+  @Autowired vn.edufit.profile.api.ProfileFacade profile;
+  @Autowired vn.edufit.shared.notification.NotificationSink oldSink;
   @PersistenceContext EntityManager em;
 
-  @BeforeEach void resetProbe() { probe.gate = null; probe.sawTransaction.set(false); }
+  @BeforeEach void resetProbe() {
+    probe.gate = null; probe.sawTransaction.set(false);
+    org.mockito.Mockito.reset(iam, profile, oldSink);
+  }
   private record Fixture(UUID inviter, UUID invited, UUID student, UUID invitation) {}
   private Fixture fixture() {
     var jdbc = new JdbcTemplate(source);
@@ -152,6 +159,61 @@ class ConnectionNotificationTransactionTest {
     assertEquals(1, notifications(fixture));
   }
 
+  private vn.edufit.shared.auth.CurrentUser actor(UUID userId, String role) {
+    var user = org.mockito.Mockito.mock(vn.edufit.shared.auth.CurrentUser.class);
+    org.mockito.Mockito.when(user.getUserId()).thenReturn(userId);
+    org.mockito.Mockito.when(user.hasRole(org.mockito.ArgumentMatchers.anyString())).thenAnswer(call -> role.equals(call.getArgument(0)));
+    return user;
+  }
+  private void accountMetadata(Fixture fixture) {
+    org.mockito.Mockito.when(iam.findUserSummaryById(fixture.inviter())).thenReturn(java.util.Optional.of(
+        new vn.edufit.iam.api.dto.UserSummaryView(fixture.inviter(), "parent@test.invalid", "Parent", vn.edufit.iam.api.AccountRole.PARENT, vn.edufit.iam.api.AccountStatus.ACTIVE)));
+    var student = new vn.edufit.iam.api.dto.UserSummaryView(fixture.invited(), "student@test.invalid", "Student", vn.edufit.iam.api.AccountRole.STUDENT, vn.edufit.iam.api.AccountStatus.ACTIVE);
+    org.mockito.Mockito.when(iam.findUserSummaryById(fixture.invited())).thenReturn(java.util.Optional.of(student));
+    org.mockito.Mockito.when(iam.findUserSummaryByEmail("student@test.invalid")).thenReturn(java.util.Optional.of(student));
+    org.mockito.Mockito.when(profile.findStudentByUserId(fixture.invited())).thenReturn(java.util.Optional.of(
+        new vn.edufit.profile.api.dto.StudentSummaryDto(fixture.student(), fixture.invited(), 4, null, false)));
+  }
+  @Test void realInvitationEntryPointsDeliverCreatedAcceptedExactlyOnce() {
+    var fixture = fixture(); accountMetadata(fixture); var jdbc = new JdbcTemplate(source);
+    assertTrue(invitationService.invite(actor(fixture.inviter(), "PARENT"), "student@test.invalid"));
+    UUID invitation = jdbc.queryForObject("select invitation_id from link_invitation where inviter_user_id=? and invited_user_id=?", UUID.class, fixture.inviter(), fixture.invited());
+    assertEquals(1, jdbc.queryForObject("select count(*) from notification where target_id=? and type='LINK_INVITED'", Integer.class, invitation));
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class,
+        invitationService.respondInvitation(actor(fixture.invited(), "STUDENT"), invitation, true));
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Conflict.class,
+        invitationService.respondInvitation(actor(fixture.invited(), "STUDENT"), invitation, true));
+    assertEquals(1, jdbc.queryForObject("select count(*) from parent_student_link where student_id=? and parent_user_id=?", Integer.class, fixture.student(), fixture.inviter()));
+    assertEquals(1, jdbc.queryForObject("select count(*) from notification where user_id=? and about_student_id=? and type='LINK_CONFIRMED'", Integer.class, fixture.inviter(), fixture.student()));
+    org.mockito.Mockito.verifyNoInteractions(oldSink);
+  }
+  @Test void realInvitationDeclineDeliversOnceAndCooldownIsRetained() {
+    var fixture = fixture(); accountMetadata(fixture); insertInvitation(fixture);
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class,
+        invitationService.respondInvitation(actor(fixture.invited(), "STUDENT"), fixture.invitation(), false));
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Conflict.class,
+        invitationService.respondInvitation(actor(fixture.invited(), "STUDENT"), fixture.invitation(), false));
+    assertEquals(1, notifications(fixture));
+    var jdbc = new JdbcTemplate(source);
+    assertEquals("LINK_DECLINED", jdbc.queryForObject("select type from notification where target_id=?", String.class, fixture.invitation()));
+    assertEquals(fixture.inviter(), jdbc.queryForObject("select user_id from notification where target_id=?", UUID.class, fixture.invitation()));
+    assertEquals(NOW.plusSeconds(7 * 86400), jdbc.queryForObject("select reinvite_after from link_invitation where invitation_id=?", java.sql.Timestamp.class, fixture.invitation()).toInstant());
+    org.mockito.Mockito.verifyNoInteractions(oldSink);
+  }
+  @Test void realAcceptRollsBackInvitationAndLinkWhenListenerInsertFails() {
+    var fixture = fixture(); accountMetadata(fixture); insertInvitation(fixture); var jdbc = new JdbcTemplate(source);
+    jdbc.execute("create function connection_test_reject_confirmed_notification() returns trigger language plpgsql as $$ begin if new.type='LINK_CONFIRMED' then raise exception 'notification rejected' using errcode='23514'; end if; return new; end; $$");
+    jdbc.execute("create trigger connection_test_reject_confirmed_notification before insert on notification for each row execute function connection_test_reject_confirmed_notification()");
+    try {
+      assertThrows(RuntimeException.class, () -> invitationService.respondInvitation(actor(fixture.invited(), "STUDENT"), fixture.invitation(), true));
+      assertEquals("PENDING", jdbc.queryForObject("select status from link_invitation where invitation_id=?", String.class, fixture.invitation()));
+      assertEquals(0, jdbc.queryForObject("select count(*) from parent_student_link where student_id=? and parent_user_id=?", Integer.class, fixture.student(), fixture.inviter()));
+    } finally {
+      jdbc.execute("drop trigger connection_test_reject_confirmed_notification on notification");
+      jdbc.execute("drop function connection_test_reject_confirmed_notification()");
+    }
+  }
+
   private String sqlState(Throwable failure) {
     for (Throwable cause = failure; cause != null; cause = cause.getCause())
       if (cause instanceof SQLException sql) return sql.getSQLState();
@@ -177,8 +239,11 @@ class ConnectionNotificationTransactionTest {
 
   @Configuration
   @EnableTransactionManagement
-  @org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackageClasses = NotificationRepository.class)
-  @Import({ConnectionTransitionListener.class, ConnectionNotificationWriter.class})
+  @org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackageClasses = {NotificationRepository.class, vn.edufit.connection.infra.persistence.repository.LinkInvitationRepository.class})
+  @Import({ConnectionTransitionListener.class, ConnectionNotificationWriter.class,
+      vn.edufit.connection.application.service.LinkInvitationService.class,
+      vn.edufit.connection.application.service.InvitationQuotaService.class,
+      vn.edufit.connection.infra.locking.PostgresConnectionLock.class})
   static class Config {
     @Bean DataSource dataSource() {
       var source = new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
@@ -191,6 +256,11 @@ class ConnectionNotificationTransactionTest {
       factory.setJpaPropertyMap(Map.of("hibernate.hbm2ddl.auto", "validate")); return factory;
     }
     @Bean JpaTransactionManager transactionManager(EntityManagerFactory factory) { return new JpaTransactionManager(factory); }
+    @Bean java.time.Clock clock() { return java.time.Clock.fixed(NOW, java.time.ZoneOffset.UTC); }
+    @Bean @Primary EntityManager entityManager(EntityManagerFactory factory) { return SharedEntityManagerCreator.createSharedEntityManager(factory); }
+    @Bean vn.edufit.iam.api.IamFacade iam() { return org.mockito.Mockito.mock(vn.edufit.iam.api.IamFacade.class); }
+    @Bean vn.edufit.profile.api.ProfileFacade profile() { return org.mockito.Mockito.mock(vn.edufit.profile.api.ProfileFacade.class); }
+    @Bean vn.edufit.shared.notification.NotificationSink oldSink() { return org.mockito.Mockito.mock(vn.edufit.shared.notification.NotificationSink.class); }
     @Bean CommitProbe probe() { return new CommitProbe(); }
   }
 }

@@ -16,4 +16,17 @@ class ConnectionNotificationWriter {
     repository.save(new Notification(event.invitedUserId(), event.studentId(), "LINK_INVITED",
         "Lời mời liên kết", "Bạn có lời mời liên kết mới", "LINK_INVITATION", event.aggregateId(), event.occurredAt()));
   }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void invitationAccepted(LinkInvitationChangedEvent event) {
+    repository.save(new Notification(event.inviterUserId(), event.studentId(), "LINK_CONFIRMED",
+        "Liên kết đã xác nhận", "Người nhận đã chấp nhận lời mời", "PARENT_STUDENT_LINK",
+        java.util.Objects.requireNonNull(event.linkId()), event.occurredAt()));
+  }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void invitationDeclined(LinkInvitationChangedEvent event) {
+    repository.save(new Notification(event.inviterUserId(), null, "LINK_DECLINED",
+        "Lời mời đã bị từ chối", "Người nhận đã từ chối lời mời", "LINK_INVITATION", event.aggregateId(), event.occurredAt()));
+  }
 }

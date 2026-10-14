@@ -18,3 +18,11 @@ Current Discovery frontend formats desiredSlots as localized display strings; re
 - Scoped invitation history adds reinviteAfter when present, allowing known-history cooldown visibility. Existing fields and pending/no-cooldown JSON shape stay unchanged; names/roles and batch hydrate remain T18c. This additive field fulfills T11a's cooldown acceptance and will be retained in T18c.
 - RED:6 consent cases ran,3 failures for inactive recipient, inactive actor and missing system closure (`phase3-T11a-red.log`). GREEN affected reactor verify:182 tests (Connection143, Notification6, App33), no failures/errors/skips (`phase3-T11a-green.log`). Includes18 focused invitation cases,19 PostgreSQL Connection tests and7 main E2E tests.
 - No publisher migration or new schema in T11a. Clock, lock order, default rollback and HTTP route shapes retained. Strict coverage remains a separately tracked gate; checkpoint verification follows the remaining slices.
+
+## T11b — invitation transition events
+
+- Invitation create/accept/decline now publish ID-only events. System already-linked closure publishes WITHDRAWN with a null actor; user withdraw/expiry dispatch remain their later task scope. No direct invitation notification writes remain.
+- Mandatory BEFORE_COMMIT consumers create exactly one notification per transition; accepted notifications target the confirmed link, and declined notifications carry no student scope.
+- Functional RED: three real PostgreSQL entrypoint cases failed before publisher migration (`phase3-T11b-red-functional.log`). An earlier test-context wiring failure was corrected separately; it is not functional RED evidence.
+- GREEN:194 tests (Connection143, Notification6, App45), zero failures/errors/skips (`phase3-T11b-green.log`). Real PostgreSQL tests prove invitation create/accept/decline delivery, terminal retry deduplication, and link/invitation rollback when notification insertion fails. Existing business transaction tests use the production listener/writer through a test-only repository bridge; actual notification persistence is covered separately.
+- Affected reactor verify succeeded. Coverage warnings remain tracked for the final checkpoint; this focused run does not establish the strict coverage gate.

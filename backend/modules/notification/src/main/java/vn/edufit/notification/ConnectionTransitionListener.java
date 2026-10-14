@@ -5,9 +5,8 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import vn.edufit.connection.api.event.LinkInvitationChangedEvent;
 
-/** Foundation for incremental publisher migration. No Connection publisher emits these yet.
- * Expand recipient/transition dispatch with its publisher task; retain existing sinks until then.
- * Class-created events intentionally do not produce an accepted notification.
+/** Mandatory notification transitions are consumed before business commit.
+ * Class-created events never produce an additional accepted notification.
  */
 @Component
 class ConnectionTransitionListener {
@@ -16,6 +15,11 @@ class ConnectionTransitionListener {
 
   @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = false)
   public void onInvitationChanged(LinkInvitationChangedEvent event) {
-    if (event.oldStatus() == null && "PENDING".equals(event.newStatus())) writer.invitationCreated(event);
+    switch (event.newStatus()) {
+      case "PENDING" -> { if (event.oldStatus() == null) writer.invitationCreated(event); }
+      case "ACCEPTED" -> writer.invitationAccepted(event);
+      case "DECLINED" -> writer.invitationDeclined(event);
+      default -> { } // Withdraw/system closure unchanged; expiry dispatch follows its publisher task.
+    }
   }
 }

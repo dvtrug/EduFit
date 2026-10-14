@@ -183,7 +183,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 
 ## Phase 3 — Hoàn thiện từng use case theo chiều dọc
 
-### [ ] T11 — Hoàn thiện invitation hai chiều, consent và privacy
+### [x] T11 — Hoàn thiện invitation hai chiều, consent và privacy
 
 - **Files:** invitation service/repository, listener invitation branch, contract và service/HTTP tests.
 - **Thực hiện:** ACTIVE opposite role/self/unknown; pending pair/cooldown queries bounded; accept revalidate hai account; system closure khi link đã tồn tại theo T01. Chuyển create/accept/decline notification từ direct sink sang events, giữ withdraw behavior.
@@ -435,7 +435,7 @@ Các nhóm bên dưới **thay thế commit cha**, không còn là gợi ý “n
 | [x] T10a | Public event records + contract tests | Payload Java/public IDs, no PII, compile all callers | T09 | `feat(connection): define public transition event records` |
 | [x] T10b | Notification listener/wiring/pom + transactional tests | BEFORE_COMMIT failure rollback, no outside-transaction execution, graph acyclic | T10a | `feat(notification): consume connection transitions transactionally` |
 | [x] T11a | Invitation service/repository + tests | Two-way consent, ACTIVE/DEACTIVATED, generic response, known-history cooldown, closure | T10b | `fix(connection): enforce invitation consent and privacy` |
-| [ ] T11b | Invitation event publishers + notification listener/tests | Create/accept/decline events + notifications đúng một lần; rollback atomic | T11a | `refactor(connection): publish invitation transition events` |
+| [x] T11b | Invitation event publishers + notification listener/tests | Create/accept/decline events + notifications đúng một lần; rollback atomic | T11a | `refactor(connection): publish invitation transition events` |
 | [ ] T12a | Structured audit input + adapter/entity + migration/tests | Old sink API vẫn hoạt động; snapshot đủ accounts/reason; Flyway count/fixtures update, clean+upgrade pass | T11b | `feat(audit): persist structured connection revocation snapshots` |
 | [ ] T12b | Link revoke service + DB/authorization tests | Student/Admin đúng quyền; audit failure rollback link; không cascade delete | T12a | `fix(connection): record revocation and audit atomically` |
 | [ ] T12c | Revoke event + listener/tests | Admin notify cả hai, Student notify Parent; reason không lộ, rollback pass | T12b | `fix(notification): complete link revocation recipients` |
@@ -475,3 +475,5 @@ Dependency của task cha kế tiếp dùng **task con cuối nhóm**: T09 sau T
 ### Phase3 execution — 14/10/2026
 
 - T11a: consent/privacy, bounded pending/cooldown and system closure implemented;182 focused verify tests pass. [Phase3 validation](../../docs/connection/phase3-validation.md) records audit, RED/GREEN and scope.
+
+- T11b: invitation create/accept/decline publish events; BEFORE_COMMIT notification consumer replaces direct writes. 194 focused tests pass, including real entrypoint and database rollback checks; see Phase3 validation.

@@ -29,11 +29,19 @@ class ConnectionTransitionListenerTest {
     assertEquals("LINK_INVITED", field(notification, "type"));
     assertEquals("LINK_INVITATION", field(notification, "targetType"));
   }
-  @ParameterizedTest @ValueSource(strings = {"ACCEPTED", "DECLINED", "WITHDRAWN", "EXPIRED"})
+  @ParameterizedTest @ValueSource(strings = {"WITHDRAWN", "EXPIRED"})
   void unmigratedTransitionsCannotDuplicateExistingDirectNotifications(String status) {
     var writer = mock(ConnectionNotificationWriter.class);
     new ConnectionTransitionListener(writer).onInvitationChanged(event("PENDING", status));
     verifyNoInteractions(writer);
+  }
+  @ParameterizedTest @ValueSource(strings = {"ACCEPTED", "DECLINED"})
+  void completedInvitationDispatchesExactlyOneWriter(String status) {
+    var writer = mock(ConnectionNotificationWriter.class);
+    new ConnectionTransitionListener(writer).onInvitationChanged(event("PENDING", status));
+    if (status.equals("ACCEPTED")) verify(writer).invitationAccepted(any());
+    else verify(writer).invitationDeclined(any());
+    verifyNoMoreInteractions(writer);
   }
   @Test void pendingToPendingIsNotAnEvent() {
     assertThrows(IllegalArgumentException.class, () -> event("PENDING", "PENDING"));

@@ -22,7 +22,8 @@ import vn.edufit.iam.api.dto.UserSummaryView;
 import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.shared.auth.CurrentUser;
-import vn.edufit.shared.notification.NotificationSink;
+import org.springframework.context.ApplicationEventPublisher;
+import vn.edufit.connection.api.event.LinkInvitationChangedEvent;
 import vn.edufit.shared.exception.ForbiddenOperationException;
 import vn.edufit.shared.exception.EntityNotFoundException;
 import vn.edufit.shared.exception.InvalidOperationException;
@@ -36,11 +37,11 @@ public class LinkInvitationService {
   private final ProfileFacade profile;
   private final ConnectionLock lock;
   private final InvitationQuotaService quotaService;
-  private final NotificationSink notifications;
+  private final ApplicationEventPublisher events;
 
   public LinkInvitationService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
       IamFacade iam, ProfileFacade profile, ConnectionLock lock, InvitationQuotaService quotaService,
-      NotificationSink notifications, Clock clock) {
+      ApplicationEventPublisher events, Clock clock) {
     this.clock = clock;
     this.invitations = invitations;
     this.links = links;
@@ -48,7 +49,7 @@ public class LinkInvitationService {
     this.profile = profile;
     this.lock = lock;
     this.quotaService = quotaService;
-    this.notifications = notifications;
+    this.events = events;
   }
 
   private static void requireRole(CurrentUser actor, String... roles) {
@@ -90,8 +91,8 @@ public class LinkInvitationService {
     if (student.isEmpty() || links.existsByParentUserIdAndStudentIdAndStatus(
         parent, student.get().studentId(), "CONFIRMED")) return true;
     LinkInvitation invitation = invitations.save(new LinkInvitation(a, b, now));
-    notifications.notify(b, student.get().studentId(), "LINK_INVITED", "Lời mời liên kết",
-        "Bạn có lời mời liên kết mới", "LINK_INVITATION", invitation.getId());
+    publish(invitation, actor.getUserId(), student.get().studentId(), null, null,
+        LinkInvitationChangedEvent.Cause.USER_ACTION, now);
     return true;
   }
 
@@ -113,8 +114,8 @@ public class LinkInvitationService {
       return TransitionResult.conflict(invitation.getStatus(), "Không còn ở trạng thái chờ xử lý");
     if (!accept) {
       invitation.decline(now);
-      notifications.notify(a, null, "LINK_DECLINED", "Lời mời đã bị từ chối",
-          "Người nhận đã từ chối lời mời", "LINK_INVITATION", id);
+      publish(invitation, actor.getUserId(), null, "PENDING", null,
+          LinkInvitationChangedEvent.Cause.USER_ACTION, now);
       return TransitionResult.success(null);
     }
     UserSummaryView inviter = iam.findUserSummaryById(a)
@@ -129,13 +130,21 @@ public class LinkInvitationService {
         .orElseThrow(() -> new InvalidOperationException("Hồ sơ học sinh không còn hợp lệ"));
     if (links.existsByParentUserIdAndStudentIdAndStatus(parent, student.studentId(), "CONFIRMED")) {
       invitation.withdraw(now);
+      publish(invitation, null, student.studentId(), "PENDING", null,
+          LinkInvitationChangedEvent.Cause.SYSTEM_ALREADY_LINKED, now);
       return TransitionResult.conflict("WITHDRAWN", "Liên kết đã tồn tại; lời mời đã được đóng");
     }
     invitation.accept(now);
     ParentStudentLink link = links.save(new ParentStudentLink(parent, student.studentId(), now));
-    notifications.notify(a, student.studentId(), "LINK_CONFIRMED", "Liên kết đã xác nhận",
-        "Người nhận đã chấp nhận lời mời", "PARENT_STUDENT_LINK", link.getId());
+    publish(invitation, actor.getUserId(), student.studentId(), "PENDING", link.getId(),
+        LinkInvitationChangedEvent.Cause.USER_ACTION, now);
     return TransitionResult.success(ParentStudentLinkResult.from(link));
+  }
+
+  private void publish(LinkInvitation invitation, UUID actor, UUID student, String oldStatus, UUID linkId,
+      LinkInvitationChangedEvent.Cause cause, Instant now) {
+    events.publishEvent(new LinkInvitationChangedEvent(UUID.randomUUID(), invitation.getId(), actor, student,
+        oldStatus, invitation.getStatus(), now, invitation.getInviterUserId(), invitation.getInvitedUserId(), linkId, cause));
   }
 
   @Transactional

@@ -31,8 +31,9 @@ class InvitationConsentTest {
   private final ConnectionLock locks = mock(ConnectionLock.class);
   private final InvitationQuotaService quota = mock(InvitationQuotaService.class);
   private final NotificationSink notifications = mock(NotificationSink.class);
+  private final org.springframework.context.ApplicationEventPublisher events = mock(org.springframework.context.ApplicationEventPublisher.class);
   private final LinkInvitationService service = new LinkInvitationService(invitations, links, iam, profile, locks,
-      quota, notifications, Clock.fixed(NOW, ZoneOffset.UTC));
+      quota, events, Clock.fixed(NOW, ZoneOffset.UTC));
 
   @BeforeEach void accounts() {
     when(iam.findUserSummaryById(parent)).thenReturn(Optional.of(summary(parent, AccountRole.PARENT, AccountStatus.ACTIVE)));
@@ -82,6 +83,10 @@ class InvitationConsentTest {
     var result = service.respondInvitation(actor(studentUser, "STUDENT"), id, true);
     assertInstanceOf(TransitionResult.Conflict.class, result); assertEquals("WITHDRAWN", row.getStatus());
     assertEquals(NOW, row.getRespondedAt()); verify(links, never()).save(any()); verifyNoInteractions(notifications);
+    var capture = org.mockito.ArgumentCaptor.forClass(vn.edufit.connection.api.event.LinkInvitationChangedEvent.class);
+    verify(events).publishEvent(capture.capture());
+    assertEquals(vn.edufit.connection.api.event.LinkInvitationChangedEvent.Cause.SYSTEM_ALREADY_LINKED, capture.getValue().cause());
+    assertNull(capture.getValue().actorUserId());
   }
   @ParameterizedTest @ValueSource(strings = {"unknown", "inactive", "same-role", "self", "pending", "cooldown", "confirmed"})
   void ineligibleTargetAlwaysKeepsGenericSuccessAndDoesNotWrite(String condition) {

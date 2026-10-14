@@ -440,7 +440,7 @@ class ConnectionTransactionPostgresTest {
   @EnableTransactionManagement
   @ComponentScan(basePackages = {"vn.edufit.connection.application", "vn.edufit.connection.infra.locking"})
   @org.springframework.data.jpa.repository.config.EnableJpaRepositories("vn.edufit.connection.infra.persistence.repository")
-  @org.springframework.context.annotation.Import(vn.edufit.iam.infra.config.IamClockConfig.class)
+  @org.springframework.context.annotation.Import({vn.edufit.iam.infra.config.IamClockConfig.class, vn.edufit.notification.NotificationSinkTestBridge.class})
   static class Config {
     @Bean DataSource dataSource() {
       var source = new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
