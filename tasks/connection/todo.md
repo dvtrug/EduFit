@@ -440,7 +440,7 @@ Các nhóm bên dưới **thay thế commit cha**, không còn là gợi ý “n
 | [x] T12b | Link revoke service + DB/authorization tests | Student/Admin đúng quyền; audit failure rollback link; không cascade delete | T12a | `fix(connection): record revocation and audit atomically` |
 | [x] T12c | Revoke event + listener/tests | Admin notify cả hai, Student notify Parent; reason không lộ, rollback pass | T12b | `fix(notification): complete link revocation recipients` |
 | [x] T13a | Slot validator + rollout config + request validation DTO/tests | GrammarT01; tests legacy-compatible/strict-v1, legacy read nguyên vẹn; strict chỉ bật sau data/client inventory; message/slot biên pass | T12c, T01 | `fix(connection): validate connection request slots and message` |
-| [ ] T13b | Create/cancel request rules/repository + tests | Owner/goal/tutor/limits/ACTIVE class/cancel guard pass; no unauthorized write | T13a | `fix(connection): enforce request creation and cancellation rules` |
+| [x] T13b | Create/cancel request rules/repository + tests | Owner/goal/tutor/limits/ACTIVE class/cancel guard pass; no unauthorized write | T13a | `fix(connection): enforce request creation and cancellation rules` |
 | [ ] T13c | Request create/cancel events + listener/tests | Tutor/Student notification đúng ma trận, không duplicate direct sink | T13b | `fix(notification): notify request creation and cancellation parties` |
 | [ ] T18a | Profile public batch goal method + implementation/repo/tests | Additive API, giữ bounded candidates/catalog; sửa constructor fixtures cùng commit nếu cần; Profile tests | T17 | `feat(profile): expose batch goal metadata for connection` |
 | [ ] T18b | IAM public batch summaries + implementation/repo/tests | Additive API; không đổi auth/enum; IDs chỉ trả summary cần thiết; IAM regression | T18a | `feat(iam): expose batch sender summaries for connection` |
@@ -485,3 +485,5 @@ Dependency của task cha kế tiếp dùng **task con cuối nhóm**: T09 sau T
 - T12c: revoke event and mandatory notification consumer; Admin receives no private learner notification, Parent/Student recipient matrix and three-write rollback verified. 131 tests pass, zero skips.
 
 - T13a: strict-v1 parser + default legacy-compatible rollout and HTTP/service validation. 291 focused tests pass, including localized/legacy writers and Discovery-AI E2E.
+
+- T13b: ACTIVE actor/tutor account, current goal account ownership, COUNT-based pending limit and cancel guards. 121 tests pass, including PostgreSQL sixth request/expiry quota and Discovery-AI E2E.

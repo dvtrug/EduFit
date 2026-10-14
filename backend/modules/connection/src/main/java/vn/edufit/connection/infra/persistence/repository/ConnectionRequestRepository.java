@@ -12,6 +12,7 @@ public interface ConnectionRequestRepository extends JpaRepository<ConnectionReq
     return lockFresh(ConnectionRequest.class, id);
   }
 
+  long countByStudentIdAndStatus(UUID studentId, String status);
   List<ConnectionRequest> findByStudentIdAndStatus(UUID studentId, String status);
   List<ConnectionRequest> findByTutorIdAndStatus(UUID tutorId, String status);
   boolean existsByStudentIdAndTutorIdAndStatus(UUID studentId, UUID tutorId, String status);

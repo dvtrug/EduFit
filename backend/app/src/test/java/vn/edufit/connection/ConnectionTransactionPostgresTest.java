@@ -181,7 +181,28 @@ class ConnectionTransactionPostgresTest {
     lenient().when(profile.findGoalForConnection(goal)).thenReturn(Optional.of(
         new ConnectionGoalDto(goal, student, studentUser, 1, 4, "EXAM_PREPARATION", null, "ACTIVE")));
     lenient().when(profile.tutorTeaches(tutor, 1, 4)).thenReturn(true);
+    lenient().when(iam.findUserSummaryById(tutorUser)).thenReturn(Optional.of(new vn.edufit.iam.api.dto.UserSummaryView(tutorUser,
+        "tutor@test.invalid", "Tutor", vn.edufit.iam.api.AccountRole.TUTOR, vn.edufit.iam.api.AccountStatus.ACTIVE)));
+    lenient().when(profile.findStudentById(student)).thenReturn(Optional.of(new vn.edufit.profile.api.dto.StudentSummaryDto(student,studentUser,4,null,true)));
     return new RequestFixture(request, student, tutor, goal, studentUser, tutorUser);
+  }
+
+  @Test void sixthPendingRequestIsBlockedButExpiredRequestReleasesTheQuota() {
+    var fixture=pendingRequest();var destination=pendingRequest();var jdbc=new JdbcTemplate(source);
+    for(int i=0;i<4;i++) {
+      UUID tutorUser=account("TUTOR"),tutor=UUID.randomUUID();
+      jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'Tutor','ONLINE',100000,'VERIFIED')",tutor,tutorUser);
+      jdbc.update("insert into connection_request(request_id,student_id,tutor_id,goal_id,sent_by_user_id,desired_slots,expires_at) values (?,?,?,?,?,'[]'::jsonb,now()+interval '7 days')",UUID.randomUUID(),fixture.student(),tutor,fixture.goal(),fixture.studentUser());
+    }
+    var actor=actor(fixture.studentUser(),"STUDENT");
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Conflict.class,
+        requests.request(actor,fixture.goal(),destination.tutor(),java.util.List.of("Tue 19:00"),null));
+    assertEquals(5L,requestRows.countByStudentIdAndStatus(fixture.student(),"PENDING"));
+    jdbc.update("update connection_request set expires_at=now()-interval '1 day' where request_id=?",fixture.request());
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class,
+        requests.request(actor,fixture.goal(),destination.tutor(),java.util.List.of("Tue 19:00"),null));
+    assertEquals(5L,requestRows.countByStudentIdAndStatus(fixture.student(),"PENDING"));
+    assertEquals("EXPIRED",jdbc.queryForObject("select status from connection_request where request_id=?",String.class,fixture.request()));
   }
 
   @Test void conflictExceptionFromRequiredWriteRollsBackAcceptedRequestAndClass() {

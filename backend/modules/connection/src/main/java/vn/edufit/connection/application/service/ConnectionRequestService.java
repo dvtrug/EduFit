@@ -17,6 +17,9 @@ import vn.edufit.connection.infra.persistence.entity.TutoringClass;
 import vn.edufit.connection.infra.persistence.repository.ConnectionRequestRepository;
 import vn.edufit.connection.infra.persistence.repository.TutoringClassRepository;
 import vn.edufit.profile.api.ProfileFacade;
+import vn.edufit.iam.api.IamFacade;
+import vn.edufit.iam.api.AccountRole;
+import vn.edufit.iam.api.AccountStatus;
 import vn.edufit.profile.api.dto.ConnectionGoalDto;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
 import vn.edufit.shared.auth.CurrentUser;
@@ -31,17 +34,19 @@ public class ConnectionRequestService {
   private final ConnectionRequestRepository requests;
   private final TutoringClassRepository classes;
   private final ProfileFacade profile;
+  private final IamFacade iam;
   private final ConnectionLock lock;
   private final NotificationSink notifications;
   private final ConnectionFacade facade;
   private final ConnectionRequestInput input;
 
   public ConnectionRequestService(ConnectionRequestRepository requests, TutoringClassRepository classes,
-      ProfileFacade profile, ConnectionLock lock, NotificationSink notifications, ConnectionFacade facade, ConnectionRequestInput input, Clock clock) {
+      ProfileFacade profile, IamFacade iam, ConnectionLock lock, NotificationSink notifications, ConnectionFacade facade, ConnectionRequestInput input, Clock clock) {
     this.clock = clock;
     this.requests = requests;
     this.classes = classes;
     this.profile = profile;
+    this.iam = iam;
     this.lock = lock;
     this.notifications = notifications;
     this.facade = facade;
@@ -51,6 +56,14 @@ public class ConnectionRequestService {
   private static void requireRole(CurrentUser actor, String... roles) {
     for (String role : roles) if (actor.hasRole(role)) return;
     throw new ForbiddenOperationException("Không có quyền thực hiện thao tác này");
+  }
+
+  private void requireActiveActor(CurrentUser actor) {
+    AccountRole expected = actor.hasRole("TUTOR") ? AccountRole.TUTOR
+        : actor.hasRole("PARENT") ? AccountRole.PARENT : AccountRole.STUDENT;
+    iam.findUserSummaryById(actor.getUserId())
+        .filter(user -> user.id().equals(actor.getUserId()) && user.status() == AccountStatus.ACTIVE && user.role() == expected)
+        .orElseThrow(() -> new ForbiddenOperationException("Tài khoản không còn quyền thực hiện thao tác"));
   }
 
   private void requireStudentAccess(CurrentUser actor, UUID studentId) {
@@ -64,15 +77,22 @@ public class ConnectionRequestService {
   public TransitionResult<ConnectionRequestResult> request(CurrentUser actor, UUID goalId, UUID tutorId,
       List<String> desiredSlots, String message) {
     requireRole(actor, "STUDENT", "PARENT");
+    requireActiveActor(actor);
     ConnectionGoalDto goal = profile.findGoalForConnection(goalId)
         .orElseThrow(() -> EntityNotFoundException.of("LearningGoal", goalId));
     lock.lockStudent(goal.studentId());
     requireStudentAccess(actor, goal.studentId());
+    if (!goalId.equals(goal.goalId()) || profile.findStudentById(goal.studentId())
+        .filter(student -> goal.studentId().equals(student.studentId()) && goal.studentUserId().equals(student.userId())).isEmpty())
+      throw new InvalidOperationException("Tài khoản sở hữu mục tiêu không còn hợp lệ");
     if (!"ACTIVE".equals(goal.status())) throw new InvalidOperationException("Mục tiêu không còn hoạt động");
     input.validate(desiredSlots, message);
     TutorSummaryDto tutor = profile.findTutorById(tutorId)
         .orElseThrow(() -> EntityNotFoundException.of("Tutor", tutorId));
-    if (!"VERIFIED".equals(tutor.status()) || !profile.tutorTeaches(tutorId,
+    if (!tutorId.equals(tutor.tutorId()) || !"VERIFIED".equals(tutor.status())
+        || iam.findUserSummaryById(tutor.userId()).filter(user -> tutor.userId().equals(user.id())
+            && user.role() == AccountRole.TUTOR && user.status() == AccountStatus.ACTIVE).isEmpty()
+        || !profile.tutorTeaches(tutorId,
         goal.subjectId(), goal.educationLevelId()))
       throw new InvalidOperationException("Gia sư không phù hợp mục tiêu");
     Instant now = clock.instant();
@@ -80,7 +100,7 @@ public class ConnectionRequestService {
     requests.flush();
     if (requests.existsByStudentIdAndTutorIdAndStatus(goal.studentId(), tutorId, "PENDING"))
       return TransitionResult.conflict("PENDING", "Đã có yêu cầu chờ gia sư này");
-    if (requests.findByStudentIdAndStatus(goal.studentId(), "PENDING").size() >= 5)
+    if (requests.countByStudentIdAndStatus(goal.studentId(), "PENDING") >= 5)
       return TransitionResult.conflict("PENDING", "Đã đạt giới hạn 5 yêu cầu chờ");
     if (classes.existsByStudentIdAndTutorIdAndStatus(goal.studentId(), tutorId, "ACTIVE"))
       return TransitionResult.conflict("ACTIVE", "Đã có lớp đang hoạt động");
@@ -97,6 +117,7 @@ public class ConnectionRequestService {
     ConnectionRequest initial = requests.findById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
     lock.lockStudent(initial.getStudentId());
     ConnectionRequest request = requests.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
+    requireActiveActor(actor);
     requireStudentAccess(actor, request.getStudentId());
     Instant now = clock.instant();
     request.expire(now);
