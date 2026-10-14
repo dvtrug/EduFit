@@ -31,7 +31,7 @@ export const ReviewList: React.FC<ReviewListProps> = ({
   return (
     <div className={`space-y-4 ${className}`}>
       {reviews.map((review) => {
-        const isAuthor = currentUserId && review.reviewerUserId === currentUserId;
+        const isAuthor = review.isAuthor ?? (Boolean(currentUserId) && review.reviewerUserId === currentUserId);
         const formattedDate = new Date(review.createdAt).toLocaleDateString("vi-VN", {
           day: "2-digit",
           month: "2-digit",

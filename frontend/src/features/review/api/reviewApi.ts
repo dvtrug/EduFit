@@ -27,6 +27,17 @@ export const reviewApi = {
   },
 
   /**
+   * Lấy đánh giá của chính người dùng hiện tại đối với gia sư (nếu có)
+   * GET /api/v1/reviews/tutors/{tutorId}/my-review
+   */
+  async getMyReview(tutorId: string): Promise<ApiResponse<ReviewItem | null>> {
+    return fetchApi<ReviewItem | null>(
+      `/api/v1/reviews/tutors/${encodeURIComponent(tutorId)}/my-review`,
+      { method: "GET" }
+    );
+  },
+
+  /**
    * Lấy tóm tắt điểm đánh giá và phân bổ sao của gia sư (GET /api/v1/reviews/tutors/{tutorId}/summary)
    */
   async getTutorRatingSummary(tutorId: string): Promise<ApiResponse<TutorRatingSummary>> {

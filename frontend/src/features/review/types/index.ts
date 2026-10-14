@@ -4,13 +4,14 @@ export interface ReviewItem {
   reviewId: string;
   tutorId: string;
   studentId: string;
-  reviewerUserId: string;
+  reviewerUserId?: string;
   reviewerName: string;
   reviewerType: ReviewerType;
   rating: number;
   comment: string;
   isEdited: boolean;
   completedSessionsAtReview: number;
+  isAuthor?: boolean;
   createdAt: string;
   updatedAt: string;
 }
