@@ -64,10 +64,10 @@ class ConnectionUseCaseTest {
     return user;
   }
 
-  @Test void unknownEmailDoesNotRevealAccountAndDoesNotWrite() {
+  @Test void unknownEmailThrowsNotFoundAndDoesNotWrite() {
     CurrentUser parent = actor(UUID.randomUUID(), "PARENT");
     when(iam.findUserSummaryByEmail("missing@example.com")).thenReturn(Optional.empty());
-    assertDoesNotThrow(() -> invitationService.invite(parent, "missing@example.com"));
+    assertThrows(EntityNotFoundException.class, () -> invitationService.invite(parent, "missing@example.com"));
     verify(invitations, never()).save(any());
   }
 

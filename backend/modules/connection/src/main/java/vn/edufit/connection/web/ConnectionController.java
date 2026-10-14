@@ -50,7 +50,7 @@ public class ConnectionController {
     if (!invitationService.invite(user(), body.targetEmail()))
       throw new ResourceConflictException(ErrorCode.RATE_LIMIT_EXCEEDED,
           "Đã đạt giới hạn 10 lời mời trong một giờ");
-    return ApiResponse.ok("Nếu tài khoản hợp lệ, lời mời sẽ được gửi");
+    return ApiResponse.ok("Gửi lời mời liên kết thành công");
   }
 
   @GetMapping("/parent-student/invitations")

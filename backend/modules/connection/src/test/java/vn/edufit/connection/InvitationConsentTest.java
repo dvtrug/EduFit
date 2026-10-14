@@ -89,7 +89,7 @@ class InvitationConsentTest {
     assertNull(capture.getValue().actorUserId());
   }
   @ParameterizedTest @ValueSource(strings = {"unknown", "inactive", "same-role", "self", "pending", "cooldown", "confirmed"})
-  void ineligibleTargetAlwaysKeepsGenericSuccessAndDoesNotWrite(String condition) {
+  void ineligibleTargetThrowsExplicitDomainExceptionAndDoesNotWrite(String condition) {
     when(iam.findUserSummaryByEmail("target@test.invalid")).thenReturn(Optional.of(summary(studentUser, AccountRole.STUDENT, AccountStatus.ACTIVE)));
     switch (condition) {
       case "unknown" -> when(iam.findUserSummaryByEmail("target@test.invalid")).thenReturn(Optional.empty());
@@ -103,7 +103,13 @@ class InvitationConsentTest {
       }
       case "confirmed" -> when(links.existsByParentUserIdAndStudentIdAndStatus(parent, student, "CONFIRMED")).thenReturn(true);
     }
-    assertTrue(service.invite(actor(parent, "PARENT"), "target@test.invalid"));
+    Class<? extends Exception> expected = switch (condition) {
+      case "unknown" -> EntityNotFoundException.class;
+      case "inactive", "same-role", "self" -> InvalidOperationException.class;
+      case "pending", "cooldown", "confirmed" -> ResourceConflictException.class;
+      default -> throw new IllegalArgumentException();
+    };
+    assertThrows(expected, () -> service.invite(actor(parent, "PARENT"), "target@test.invalid"));
     verify(invitations, never()).save(any()); verifyNoInteractions(notifications);
     verify(invitations, never()).findPair(any(), any());
   }
@@ -125,8 +131,13 @@ class InvitationConsentTest {
     declined.decline(NOW.minusSeconds(7 * 86400).plusNanos(offset));
     when(iam.findUserSummaryByEmail("target@test.invalid")).thenReturn(Optional.of(summary(studentUser, AccountRole.STUDENT, AccountStatus.ACTIVE)));
     when(invitations.findFirstByInviterUserIdAndInvitedUserIdAndStatusOrderByReinviteAfterDesc(parent, studentUser, "DECLINED")).thenReturn(Optional.of(declined));
-    assertTrue(service.invite(actor(parent, "PARENT"), "target@test.invalid"));
-    verify(invitations, times(offset > 0 ? 0 : 1)).save(any());
+    if (offset > 0) {
+      assertThrows(ResourceConflictException.class, () -> service.invite(actor(parent, "PARENT"), "target@test.invalid"));
+      verify(invitations, never()).save(any());
+    } else {
+      assertTrue(service.invite(actor(parent, "PARENT"), "target@test.invalid"));
+      verify(invitations, times(1)).save(any());
+    }
     assertEquals(NOW.plusNanos(offset), vn.edufit.connection.application.dto.InvitationResult.from(declined).reinviteAfter());
   }
 

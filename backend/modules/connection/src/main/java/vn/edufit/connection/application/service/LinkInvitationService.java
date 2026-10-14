@@ -27,6 +27,7 @@ import vn.edufit.connection.api.event.LinkInvitationChangedEvent;
 import vn.edufit.shared.exception.ForbiddenOperationException;
 import vn.edufit.shared.exception.EntityNotFoundException;
 import vn.edufit.shared.exception.InvalidOperationException;
+import vn.edufit.shared.exception.ResourceConflictException;
 
 @Service
 public class LinkInvitationService {
@@ -73,7 +74,7 @@ public class LinkInvitationService {
         .orElseThrow(() -> new ForbiddenOperationException("Tài khoản không còn quyền thực hiện thao tác"));
   }
 
-  @Transactional
+  @Transactional(noRollbackFor = {EntityNotFoundException.class, InvalidOperationException.class, ResourceConflictException.class})
   public boolean invite(CurrentUser actor, String targetEmail) {
     requireRole(actor, "PARENT", "STUDENT");
     requireActiveActor(actor);
@@ -81,12 +82,19 @@ public class LinkInvitationService {
     if (!consumption.allowed()) return false;
     Instant now = consumption.checkedAt();
     AccountRole opposite = actor.hasRole("PARENT") ? AccountRole.STUDENT : AccountRole.PARENT;
-    Optional<UserSummaryView> target = iam.findUserSummaryByEmail(targetEmail)
-        .filter(u -> u.status() == AccountStatus.ACTIVE && u.role() == opposite
-            && !u.id().equals(actor.getUserId()));
-    // Unknown and ineligible addresses intentionally have the same public result.
-    if (target.isEmpty()) return true;
-    UUID a = actor.getUserId(), b = target.get().id();
+    UserSummaryView target = iam.findUserSummaryByEmail(targetEmail)
+        .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy tài khoản với email: " + targetEmail));
+    if (target.id().equals(actor.getUserId())) {
+      throw new InvalidOperationException("Không thể gửi lời mời liên kết cho chính mình");
+    }
+    if (target.status() != AccountStatus.ACTIVE) {
+      throw new InvalidOperationException("Tài khoản đối phương đang bị khóa hoặc chưa kích hoạt");
+    }
+    if (target.role() != opposite) {
+      String expectedRole = (opposite == AccountRole.STUDENT) ? "Học sinh" : "Phụ huynh";
+      throw new InvalidOperationException("Tài khoản đối phương không phải vai trò " + expectedRole);
+    }
+    UUID a = actor.getUserId(), b = target.id();
     lock.lockInvitationPair(a, b);
     List<LinkInvitation> history = invitations.findPendingPair(a, b);
     for (LinkInvitation i : history) {
@@ -96,14 +104,22 @@ public class LinkInvitationService {
       }
     }
     invitations.flush();
-    if (invitations.findPendingPair(a, b).stream().anyMatch(i -> "PENDING".equals(i.getStatus()))) return true;
+    if (invitations.findPendingPair(a, b).stream().anyMatch(i -> "PENDING".equals(i.getStatus()))) {
+      throw new ResourceConflictException("Đã có lời mời đang chờ phản hồi giữa hai tài khoản");
+    }
     if (invitations.findFirstByInviterUserIdAndInvitedUserIdAndStatusOrderByReinviteAfterDesc(a, b, "DECLINED")
-        .filter(i -> ConnectionTransitions.cooldownActive(i.getReinviteAfter(), now)).isPresent()) return true;
+        .filter(i -> ConnectionTransitions.cooldownActive(i.getReinviteAfter(), now)).isPresent()) {
+      throw new ResourceConflictException("Lời mời vừa bị từ chối gần đây. Vui lòng thử lại sau thời gian chờ");
+    }
     UUID parent = actor.hasRole("PARENT") ? a : b;
     UUID studentUser = actor.hasRole("STUDENT") ? a : b;
     Optional<StudentSummaryDto> student = profile.findStudentByUserId(studentUser);
-    if (student.isEmpty() || links.existsByParentUserIdAndStudentIdAndStatus(
-        parent, student.get().studentId(), "CONFIRMED")) return true;
+    if (student.isEmpty()) {
+      throw new InvalidOperationException("Hồ sơ học sinh chưa được khởi tạo hoặc không hợp lệ");
+    }
+    if (links.existsByParentUserIdAndStudentIdAndStatus(parent, student.get().studentId(), "CONFIRMED")) {
+      throw new ResourceConflictException("Hai tài khoản đã được liên kết với nhau từ trước");
+    }
     LinkInvitation invitation = invitations.save(new LinkInvitation(a, b, now));
     publish(invitation, actor.getUserId(), student.get().studentId(), null, null,
         LinkInvitationChangedEvent.Cause.USER_ACTION, now);
