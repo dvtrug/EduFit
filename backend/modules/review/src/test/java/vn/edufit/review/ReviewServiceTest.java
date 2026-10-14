@@ -3,9 +3,11 @@ package vn.edufit.review;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,6 +21,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvFileSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -28,10 +32,15 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import vn.edufit.connection.api.ConnectionFacade;
+import vn.edufit.iam.api.AccountRole;
+import vn.edufit.iam.api.AccountStatus;
+import vn.edufit.iam.api.IamFacade;
+import vn.edufit.iam.api.dto.UserSummaryView;
 import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
 import vn.edufit.review.api.event.ReviewSubmittedEvent;
+import vn.edufit.review.api.event.ReviewUpdatedEvent;
 import vn.edufit.review.application.service.ReviewService;
 import vn.edufit.review.infra.persistence.entity.ReviewEntity;
 import vn.edufit.review.infra.persistence.repository.ReviewRepository;
@@ -57,6 +66,9 @@ class ReviewServiceTest {
 
   @Mock
   private ConnectionFacade connectionFacade;
+
+  @Mock
+  private IamFacade iamFacade;
 
   @Mock
   private ApplicationEventPublisher eventPublisher;
@@ -95,9 +107,13 @@ class ReviewServiceTest {
     );
   }
 
+  private UserSummaryView createDummyUser(UUID id, String fullName, AccountRole role) {
+    return new UserSummaryView(id, "user@edufit.vn", fullName, role, AccountStatus.ACTIVE);
+  }
+
   @BeforeEach
   void setUp() {
-    reviewService = new ReviewService(reviewRepository, profileFacade, connectionFacade, eventPublisher);
+    reviewService = new ReviewService(reviewRepository, profileFacade, connectionFacade, iamFacade, eventPublisher);
 
     testTutorId = UUID.randomUUID();
     testStudentId = UUID.randomUUID();
@@ -108,7 +124,7 @@ class ReviewServiceTest {
   }
 
   @Test
-  @DisplayName("Học sinh tạo đánh giá gia sư thành công (UC6.1)")
+  @DisplayName("Học sinh tạo đánh giá gia sư thành công (UC6.1, FR-28, BR-59)")
   void createReview_success_asStudent() {
     CreateReviewRequest request = new CreateReviewRequest(
         testTutorId,
@@ -130,14 +146,25 @@ class ReviewServiceTest {
     ReviewEntity savedEntity = new ReviewEntity(testTutorId, testStudentId, testUserId, "STUDENT", 5, request.comment(), 1);
     savedEntity.setReviewId(UUID.randomUUID());
     when(reviewRepository.saveAndFlush(any(ReviewEntity.class))).thenReturn(savedEntity);
+    when(iamFacade.findUserSummaryById(testUserId))
+        .thenReturn(Optional.of(createDummyUser(testUserId, "Nguyễn Văn Học Sinh", AccountRole.STUDENT)));
+
+    when(reviewRepository.findAverageRatingByTutorId(testTutorId)).thenReturn(5.0);
+    when(reviewRepository.countByTutorId(testTutorId)).thenReturn(1);
 
     ReviewResponse response = reviewService.createReview(studentUser, request);
 
     assertNotNull(response);
     assertEquals(5, response.rating());
+    assertEquals("Nguyễn Văn Học Sinh", response.reviewerName());
     assertEquals("STUDENT", response.reviewerType());
+    assertTrue(response.isAuthor());
     assertFalse(response.isEdited());
 
+    // Verify rating stats synchronized with tutor profile (FR-29)
+    verify(profileFacade).updateTutorRatingStats(testTutorId, 5.0, 1);
+
+    // Verify ReviewSubmittedEvent published
     ArgumentCaptor<ReviewSubmittedEvent> eventCaptor = ArgumentCaptor.forClass(ReviewSubmittedEvent.class);
     verify(eventPublisher).publishEvent(eventCaptor.capture());
     ReviewSubmittedEvent publishedEvent = eventCaptor.getValue();
@@ -168,28 +195,54 @@ class ReviewServiceTest {
     ReviewEntity savedEntity = new ReviewEntity(testTutorId, testStudentId, parentUser.getUserId(), "PARENT", 4, request.comment(), 1);
     savedEntity.setReviewId(UUID.randomUUID());
     when(reviewRepository.saveAndFlush(any(ReviewEntity.class))).thenReturn(savedEntity);
+    when(iamFacade.findUserSummaryById(parentUser.getUserId()))
+        .thenReturn(Optional.of(createDummyUser(parentUser.getUserId(), "Trần Thị Phụ Huynh", AccountRole.PARENT)));
 
     ReviewResponse response = reviewService.createReview(parentUser, request);
 
     assertNotNull(response);
     assertEquals(4, response.rating());
+    assertEquals("Trần Thị Phụ Huynh", response.reviewerName());
     assertEquals("PARENT", response.reviewerType());
+    assertTrue(response.isAuthor());
   }
 
-  @Test
-  @DisplayName("Đánh giá với điểm rating ngoài khoảng 1..5 báo lỗi INVALID_RATING")
-  void createReview_invalidRating_throwsException() {
+  @ParameterizedTest(name = "Kiểm tra giá trị biên rating: {0} (hợp lệ: {1}) - {2}")
+  @CsvFileSource(resources = "/testdata/review-rating-validation.csv", numLinesToSkip = 1)
+  @DisplayName("Kiểm thử giá trị biên (BVA) cho rating 1..5 sao từ CSV dataset")
+  void createReview_ratingBoundaryValidation(int rating, boolean expectedValid, String description) {
     CreateReviewRequest request = new CreateReviewRequest(
         testTutorId,
         testStudentId,
-        6,
-        "Đánh giá vượt số sao quy định."
+        rating,
+        "Đánh giá kiểm thử giá trị biên."
     );
 
-    InvalidOperationException ex = assertThrows(InvalidOperationException.class, () ->
-        reviewService.createReview(studentUser, request));
+    if (expectedValid) {
+      TutorSummaryDto tutorDto = createDummyTutor(testTutorId);
+      StudentSummaryDto studentDto = new StudentSummaryDto(testStudentId, testUserId, 1, "HN", true);
 
-    assertEquals(ErrorCode.INVALID_RATING, ex.getErrorCode());
+      when(profileFacade.findTutorById(testTutorId)).thenReturn(Optional.of(tutorDto));
+      when(profileFacade.findStudentById(testStudentId)).thenReturn(Optional.of(studentDto));
+      when(profileFacade.getStudentIdByUserId(testUserId)).thenReturn(testStudentId);
+      when(connectionFacade.findActiveClass(testStudentId, testTutorId))
+          .thenReturn(Optional.of(new ConnectionFacade.ActiveClassView(UUID.randomUUID(), testStudentId, testTutorId, UUID.randomUUID())));
+      when(reviewRepository.existsByTutorIdAndStudentId(testTutorId, testStudentId)).thenReturn(false);
+
+      ReviewEntity savedEntity = new ReviewEntity(testTutorId, testStudentId, testUserId, "STUDENT", rating, request.comment(), 1);
+      savedEntity.setReviewId(UUID.randomUUID());
+      when(reviewRepository.saveAndFlush(any(ReviewEntity.class))).thenReturn(savedEntity);
+      when(iamFacade.findUserSummaryById(testUserId))
+          .thenReturn(Optional.of(createDummyUser(testUserId, "Học sinh A", AccountRole.STUDENT)));
+
+      ReviewResponse response = reviewService.createReview(studentUser, request);
+      assertNotNull(response);
+      assertEquals(rating, response.rating());
+    } else {
+      InvalidOperationException ex = assertThrows(InvalidOperationException.class, () ->
+          reviewService.createReview(studentUser, request));
+      assertEquals(ErrorCode.INVALID_RATING, ex.getErrorCode());
+    }
   }
 
   @Test
@@ -259,7 +312,7 @@ class ReviewServiceTest {
   }
 
   @Test
-  @DisplayName("Tác giả chỉnh sửa đánh giá thành công (BR-57)")
+  @DisplayName("Tác giả chỉnh sửa đánh giá thành công và cập nhật thống kê hồ sơ (BR-57, FR-28, FR-29)")
   void updateReview_success() {
     UUID reviewId = UUID.randomUUID();
     UpdateReviewRequest request = new UpdateReviewRequest(4, "Cập nhật nhận xét sau một tháng học tập.");
@@ -269,6 +322,11 @@ class ReviewServiceTest {
 
     when(reviewRepository.findById(reviewId)).thenReturn(Optional.of(existingReview));
     when(reviewRepository.save(any(ReviewEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(iamFacade.findUserSummaryById(testUserId))
+        .thenReturn(Optional.of(createDummyUser(testUserId, "Nguyễn Văn Học Sinh", AccountRole.STUDENT)));
+
+    when(reviewRepository.findAverageRatingByTutorId(testTutorId)).thenReturn(4.0);
+    when(reviewRepository.countByTutorId(testTutorId)).thenReturn(1);
 
     ReviewResponse response = reviewService.updateReview(studentUser, reviewId, request);
 
@@ -276,6 +334,18 @@ class ReviewServiceTest {
     assertEquals(4, response.rating());
     assertEquals("Cập nhật nhận xét sau một tháng học tập.", response.comment());
     assertTrue(response.isEdited());
+    assertTrue(response.isAuthor());
+
+    // Verify rating stats synchronized with tutor profile
+    verify(profileFacade).updateTutorRatingStats(testTutorId, 4.0, 1);
+
+    // Verify ReviewUpdatedEvent published
+    ArgumentCaptor<ReviewUpdatedEvent> eventCaptor = ArgumentCaptor.forClass(ReviewUpdatedEvent.class);
+    verify(eventPublisher).publishEvent(eventCaptor.capture());
+    ReviewUpdatedEvent updatedEvent = eventCaptor.getValue();
+    assertEquals(reviewId, updatedEvent.reviewId());
+    assertEquals(testTutorId, updatedEvent.tutorId());
+    assertEquals(4, updatedEvent.rating());
   }
 
   @Test
@@ -297,7 +367,36 @@ class ReviewServiceTest {
   }
 
   @Test
-  @DisplayName("Xem danh sách đánh giá của gia sư phân trang (UC6.2)")
+  @DisplayName("Lấy đánh giá của chính người dùng hiện tại (getMyReview) thành công")
+  void getMyReview_success() {
+    ReviewEntity existingReview = new ReviewEntity(testTutorId, testStudentId, testUserId, "STUDENT", 5, "Bài đánh giá của tôi", 1);
+    existingReview.setReviewId(UUID.randomUUID());
+
+    when(reviewRepository.findByTutorIdAndReviewerUserId(testTutorId, testUserId))
+        .thenReturn(Optional.of(existingReview));
+    when(iamFacade.findUserSummaryById(testUserId))
+        .thenReturn(Optional.of(createDummyUser(testUserId, "Nguyễn Văn A", AccountRole.STUDENT)));
+
+    ReviewResponse response = reviewService.getMyReview(studentUser, testTutorId);
+
+    assertNotNull(response);
+    assertEquals(5, response.rating());
+    assertEquals("Nguyễn Văn A", response.reviewerName());
+    assertTrue(response.isAuthor());
+  }
+
+  @Test
+  @DisplayName("Lấy đánh giá của chính mình khi chưa từng đánh giá sẽ trả về null")
+  void getMyReview_notFound_returnsNull() {
+    when(reviewRepository.findByTutorIdAndReviewerUserId(testTutorId, testUserId))
+        .thenReturn(Optional.empty());
+
+    ReviewResponse response = reviewService.getMyReview(studentUser, testTutorId);
+    assertNull(response);
+  }
+
+  @Test
+  @DisplayName("Xem danh sách đánh giá của gia sư phân trang với context người dùng (UC6.2, BR-59)")
   void getTutorReviews_success() {
     Pageable pageable = PageRequest.of(0, 10);
     TutorSummaryDto tutorDto = createDummyTutor(testTutorId);
@@ -307,12 +406,17 @@ class ReviewServiceTest {
     review1.setReviewId(UUID.randomUUID());
     Page<ReviewEntity> page = new PageImpl<>(List.of(review1), pageable, 1);
     when(reviewRepository.findByTutorId(testTutorId, pageable)).thenReturn(page);
+    when(iamFacade.findUserSummaryById(testUserId))
+        .thenReturn(Optional.of(createDummyUser(testUserId, "Người Học Sinh", AccountRole.STUDENT)));
 
-    Page<ReviewResponse> result = reviewService.getTutorReviews(testTutorId, pageable);
+    Page<ReviewResponse> result = reviewService.getTutorReviews(testTutorId, pageable, studentUser);
 
     assertNotNull(result);
     assertEquals(1, result.getTotalElements());
-    assertEquals(5, result.getContent().get(0).rating());
+    ReviewResponse item = result.getContent().get(0);
+    assertEquals(5, item.rating());
+    assertEquals("Người Học Sinh", item.reviewerName());
+    assertTrue(item.isAuthor());
   }
 
   @Test

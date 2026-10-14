@@ -19,6 +19,8 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, UUID> {
 
   Optional<ReviewEntity> findByTutorIdAndStudentId(UUID tutorId, UUID studentId);
 
+  Optional<ReviewEntity> findByTutorIdAndReviewerUserId(UUID tutorId, UUID reviewerUserId);
+
   Page<ReviewEntity> findByTutorId(UUID tutorId, Pageable pageable);
 
   List<ReviewEntity> findByTutorId(UUID tutorId);
@@ -33,5 +35,7 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, UUID> {
 
   @Query("SELECT r.rating, COUNT(r) FROM ReviewEntity r WHERE r.tutorId = :tutorId GROUP BY r.rating")
   List<Object[]> countRatingsByStar(@Param("tutorId") UUID tutorId);
-}
 
+  @Query("SELECT r.tutorId, AVG(r.rating), COUNT(r) FROM ReviewEntity r WHERE r.tutorId IN :tutorIds GROUP BY r.tutorId")
+  List<Object[]> findRatingSummariesByTutorIds(@Param("tutorIds") Collection<UUID> tutorIds);
+}

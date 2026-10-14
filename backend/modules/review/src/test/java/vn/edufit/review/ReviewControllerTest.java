@@ -3,9 +3,9 @@ package vn.edufit.review;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
@@ -84,13 +84,13 @@ class ReviewControllerTest {
         UUID.randomUUID(),
         testTutorId,
         testStudentId,
-        testUserId,
-        "Học sinh",
+        "Nguyễn Văn A",
         "STUDENT",
         5,
         request.comment(),
         false,
         1,
+        true,
         Instant.now(),
         Instant.now()
     );
@@ -102,6 +102,7 @@ class ReviewControllerTest {
     assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
     assertNotNull(responseEntity.getBody());
     assertEquals(5, responseEntity.getBody().data().rating());
+    assertTrue(responseEntity.getBody().data().isAuthor());
   }
 
   @Test
@@ -116,13 +117,13 @@ class ReviewControllerTest {
         reviewId,
         testTutorId,
         testStudentId,
-        testUserId,
-        "Học sinh",
+        "Nguyễn Văn A",
         "STUDENT",
         4,
         request.comment(),
         true,
         1,
+        true,
         Instant.now(),
         Instant.now()
     );
@@ -138,25 +139,57 @@ class ReviewControllerTest {
   }
 
   @Test
+  @DisplayName("GET /api/v1/reviews/tutors/{tutorId}/my-review trả về đánh giá của người dùng hiện tại")
+  void getMyReview_returnsReview() {
+    when(currentUserProvider.getIfAvailable()).thenReturn(testUser);
+
+    ReviewResponse mockResponse = new ReviewResponse(
+        UUID.randomUUID(),
+        testTutorId,
+        testStudentId,
+        "Nguyễn Văn A",
+        "STUDENT",
+        5,
+        "Đánh giá của tôi",
+        false,
+        1,
+        true,
+        Instant.now(),
+        Instant.now()
+    );
+    when(reviewService.getMyReview(testUser, testTutorId)).thenReturn(mockResponse);
+
+    ResponseEntity<ApiResponse<ReviewResponse>> responseEntity = reviewController.getMyReview(testTutorId);
+
+    assertNotNull(responseEntity);
+    assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+    assertNotNull(responseEntity.getBody());
+    assertEquals(5, responseEntity.getBody().data().rating());
+    assertTrue(responseEntity.getBody().data().isAuthor());
+  }
+
+  @Test
   @DisplayName("GET /api/v1/reviews/tutors/{tutorId} trả về danh sách đánh giá phân trang")
   void getTutorReviews_returnsPage() {
     Pageable pageable = PageRequest.of(0, 10);
+    when(currentUserProvider.getIfAvailable()).thenReturn(testUser);
+
     ReviewResponse reviewResponse = new ReviewResponse(
         UUID.randomUUID(),
         testTutorId,
         testStudentId,
-        testUserId,
-        "Học sinh",
+        "Nguyễn Văn B",
         "STUDENT",
         5,
         "Tuyệt vời",
         false,
         1,
+        false,
         Instant.now(),
         Instant.now()
     );
     Page<ReviewResponse> page = new PageImpl<>(List.of(reviewResponse), pageable, 1);
-    when(reviewService.getTutorReviews(testTutorId, pageable)).thenReturn(page);
+    when(reviewService.getTutorReviews(eq(testTutorId), eq(pageable), eq(testUser))).thenReturn(page);
 
     ResponseEntity<ApiResponse<Page<ReviewResponse>>> responseEntity =
         reviewController.getTutorReviews(testTutorId, pageable);

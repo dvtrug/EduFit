@@ -72,6 +72,19 @@ public class ReviewController {
   }
 
   /**
+   * Lấy đánh giá của chính người dùng hiện tại đối với gia sư (nếu có).
+   * Phân quyền: Cần đăng nhập (STUDENT hoặc PARENT).
+   */
+  @GetMapping("/tutors/{tutorId}/my-review")
+  public ResponseEntity<ApiResponse<ReviewResponse>> getMyReview(
+      @PathVariable("tutorId") UUID tutorId
+  ) {
+    CurrentUser currentUser = getCurrentUser();
+    ReviewResponse response = reviewService.getMyReview(currentUser, tutorId);
+    return ResponseEntity.ok(ApiResponse.success(response, "Lấy đánh giá của bạn thành công"));
+  }
+
+  /**
    * Lấy danh sách đánh giá của gia sư với phân trang (UC6.2).
    * Phân quyền: Public (tất cả người dùng).
    */
@@ -80,7 +93,8 @@ public class ReviewController {
       @PathVariable("tutorId") UUID tutorId,
       @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
   ) {
-    Page<ReviewResponse> response = reviewService.getTutorReviews(tutorId, pageable);
+    CurrentUser currentUser = currentUserProvider.getIfAvailable();
+    Page<ReviewResponse> response = reviewService.getTutorReviews(tutorId, pageable, currentUser);
     return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách đánh giá thành công"));
   }
 

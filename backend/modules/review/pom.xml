@@ -21,6 +21,10 @@
     </dependency>
     <dependency>
       <groupId>vn.edufit</groupId>
+      <artifactId>iam</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>vn.edufit</groupId>
       <artifactId>profile</artifactId>
     </dependency>
     <dependency>

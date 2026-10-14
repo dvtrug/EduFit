@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edufit.review.api.ReviewFacade;
 import vn.edufit.review.api.dto.TutorRatingSummaryDto;
-import vn.edufit.review.infra.persistence.entity.ReviewEntity;
 import vn.edufit.review.infra.persistence.repository.ReviewRepository;
 
 /**
@@ -60,21 +59,23 @@ public class ReviewFacadeImpl implements ReviewFacade {
       return resultMap;
     }
 
-    List<ReviewEntity> reviews = reviewRepository.findByTutorIdIn(tutorIds);
-    Map<UUID, Long> countMap = new HashMap<>();
-    Map<UUID, Long> sumMap = new HashMap<>();
-
-    for (ReviewEntity review : reviews) {
-      UUID tid = review.getTutorId();
-      countMap.put(tid, countMap.getOrDefault(tid, 0L) + 1L);
-      sumMap.put(tid, sumMap.getOrDefault(tid, 0L) + review.getRating());
+    for (UUID tutorId : tutorIds) {
+      resultMap.put(tutorId, new TutorRatingSummaryDto(tutorId, 0.0, 0));
     }
 
-    for (UUID tutorId : tutorIds) {
-      long count = countMap.getOrDefault(tutorId, 0L);
-      long sum = sumMap.getOrDefault(tutorId, 0L);
-      double avg = count > 0 ? Math.round(((double) sum / count) * 10.0) / 10.0 : 0.0;
-      resultMap.put(tutorId, new TutorRatingSummaryDto(tutorId, avg, (int) count));
+    List<Object[]> rows = reviewRepository.findRatingSummariesByTutorIds(tutorIds);
+    for (Object[] row : rows) {
+      if (row.length >= 3 && row[0] instanceof UUID tid) {
+        double avg = 0.0;
+        if (row[1] instanceof Number avgNum) {
+          avg = Math.round(avgNum.doubleValue() * 10.0) / 10.0;
+        }
+        int count = 0;
+        if (row[2] instanceof Number countNum) {
+          count = countNum.intValue();
+        }
+        resultMap.put(tid, new TutorRatingSummaryDto(tid, avg, count));
+      }
     }
 
     return resultMap;
@@ -88,4 +89,3 @@ public class ReviewFacadeImpl implements ReviewFacade {
     return reviewRepository.existsByTutorIdAndStudentId(tutorId, studentId);
   }
 }
-

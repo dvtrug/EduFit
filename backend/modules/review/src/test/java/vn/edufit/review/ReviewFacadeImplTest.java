@@ -55,11 +55,11 @@ class ReviewFacadeImplTest {
     UUID tutor2 = UUID.randomUUID();
     UUID student1 = UUID.randomUUID();
 
-    ReviewEntity r1 = new ReviewEntity(tutor1, student1, UUID.randomUUID(), "STUDENT", 5, "Tốt", 1);
-    ReviewEntity r2 = new ReviewEntity(tutor1, UUID.randomUUID(), UUID.randomUUID(), "STUDENT", 4, "Khá", 1);
-    ReviewEntity r3 = new ReviewEntity(tutor2, UUID.randomUUID(), UUID.randomUUID(), "STUDENT", 3, "Bình thường", 1);
-
-    when(reviewRepository.findByTutorIdIn(List.of(tutor1, tutor2))).thenReturn(List.of(r1, r2, r3));
+    List<Object[]> rows = List.of(
+        new Object[]{tutor1, 4.5, 2L},
+        new Object[]{tutor2, 3.0, 1L}
+    );
+    when(reviewRepository.findRatingSummariesByTutorIds(List.of(tutor1, tutor2))).thenReturn(rows);
 
     Map<UUID, TutorRatingSummaryDto> summaries = reviewFacade.getTutorRatingSummaries(List.of(tutor1, tutor2));
 
