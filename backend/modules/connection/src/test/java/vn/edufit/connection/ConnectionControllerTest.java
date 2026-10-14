@@ -132,6 +132,24 @@ class ConnectionControllerTest {
     data(mvc.perform(get(BASE + "/requests")), "[{\"requestId\":\"%s\",\"goalType\":\"EXAM\",\"subjectId\":1,\"educationLevelId\":4,\"desiredSlots\":[\"Tue 19:00\"],\"message\":null,\"senderRole\":\"PARENT\",\"status\":\"PENDING\",\"expiresAt\":\"2026-10-18T03:00:00Z\"}]".formatted(ID));
   }
 
+  @Test void tutorInboxHydratesDeadlineToJson() throws Exception {
+    when(actor.hasRole("TUTOR")).thenReturn(true);
+    when(queries.tutorInbox(actor)).thenReturn(List.of(new TutorInboxResult(UUID_ID, "EXAM", 1, 4,
+        List.of("MONDAY 18:00-19:00"), null, "PARENT", "PENDING", EXPIRES, java.time.LocalDate.parse("2027-01-01"))));
+    data(mvc.perform(get(BASE + "/requests")),
+        "[{\"requestId\":\"%s\",\"goalType\":\"EXAM\",\"subjectId\":1,\"educationLevelId\":4,\"desiredSlots\":[\"MONDAY 18:00-19:00\"],\"message\":null,\"senderRole\":\"PARENT\",\"status\":\"PENDING\",\"expiresAt\":\"2026-10-18T03:00:00Z\",\"deadline\":\"2027-01-01\"}]".formatted(ID));
+  }
+
+  @Test void invitationsHydrateInviterMetadataAndCooldownToJson() throws Exception {
+    Instant created = Instant.parse("2026-10-01T03:00:00Z");
+    Instant expires = Instant.parse("2026-10-15T03:00:00Z");
+    Instant reinvite = Instant.parse("2026-10-11T03:00:00Z");
+    when(queries.invitations(actor)).thenReturn(List.of(new InvitationResult(UUID_ID, UUID_ID, UUID_ID,
+        "DECLINED", created, expires, reinvite, "Phụ huynh mẫu", "PARENT")));
+    data(mvc.perform(get(BASE + "/parent-student/invitations")),
+        "[{\"invitationId\":\"%s\",\"inviterUserId\":\"%s\",\"invitedUserId\":\"%s\",\"status\":\"DECLINED\",\"createdAt\":\"2026-10-01T03:00:00Z\",\"expiresAt\":\"2026-10-15T03:00:00Z\",\"reinviteAfter\":\"2026-10-11T03:00:00Z\",\"inviterName\":\"Phụ huynh mẫu\",\"inviterRole\":\"PARENT\"}]".formatted(ID, ID, ID));
+  }
+
   @Test void cancelKeepsNullEnvelope() throws Exception {
     when(service.cancelRequest(actor, UUID_ID)).thenReturn(TransitionResult.success(null));
     data(mvc.perform(post(BASE + "/requests/" + ID + "/cancel")), "null");

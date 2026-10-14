@@ -3,6 +3,7 @@ package vn.edufit.connection.application.service;
 import java.time.Instant;
 import java.time.Clock;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,12 +19,15 @@ import vn.edufit.connection.infra.persistence.repository.ParentStudentLinkReposi
 import vn.edufit.connection.infra.persistence.repository.ConnectionRequestRepository;
 import vn.edufit.iam.api.AccountRole;
 import vn.edufit.iam.api.IamFacade;
+import vn.edufit.iam.api.dto.UserSummaryView;
 import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.profile.api.dto.ConnectionGoalDto;
 import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.exception.ForbiddenOperationException;
 import vn.edufit.shared.exception.InvalidOperationException;
 import vn.edufit.shared.exception.EntityNotFoundException;
+import vn.edufit.shared.exception.ResourceConflictException;
+import vn.edufit.shared.exception.ErrorCode;
 
 @Service
 public class ConnectionQueryService {
@@ -79,7 +83,17 @@ public class ConnectionQueryService {
         i.expire(now);
       }
     }
-    return result.stream().map(InvitationResult::from).toList();
+    if (result.isEmpty()) {
+      return List.of();
+    }
+    List<UUID> inviterUserIds = result.stream().map(LinkInvitation::getInviterUserId).distinct().toList();
+    Map<UUID, UserSummaryView> inviterSummaries = iam.findUserSummariesByIds(inviterUserIds);
+    return result.stream().map(i -> {
+      UserSummaryView inviter = inviterSummaries.get(i.getInviterUserId());
+      String inviterName = inviter != null ? inviter.fullName() : null;
+      String inviterRole = (inviter != null && inviter.role() != null) ? inviter.role().name() : null;
+      return InvitationResult.from(i, inviterName, inviterRole);
+    }).toList();
   }
 
   @Transactional(readOnly = true)
@@ -119,14 +133,29 @@ public class ConnectionQueryService {
         r.expire(now);
       }
     }
+    if (result.isEmpty()) {
+      return List.of();
+    }
+    List<UUID> goalIds = result.stream().map(ConnectionRequest::getGoalId).distinct().toList();
+    List<UUID> sentByUserIds = result.stream().map(ConnectionRequest::getSentByUserId).distinct().toList();
+    Map<UUID, ConnectionGoalDto> goalsMap = profile.findGoalsForConnection(goalIds);
+    Map<UUID, UserSummaryView> usersMap = iam.findUserSummariesByIds(sentByUserIds);
+
     return result.stream().map(r -> {
-      ConnectionGoalDto goal = profile.findGoalForConnection(r.getGoalId())
-          .orElseThrow(() -> EntityNotFoundException.of("LearningGoal", r.getGoalId()));
-      String senderRole = iam.findUserSummaryById(r.getSentByUserId())
-          .map(u -> u.role() == AccountRole.PARENT ? "PARENT" : "STUDENT").orElse("STUDENT");
+      ConnectionGoalDto goal = goalsMap.get(r.getGoalId());
+      if (goal == null) {
+        throw new ResourceConflictException(ErrorCode.CONFLICT_DETECTED,
+            "Không tìm thấy dữ liệu mục tiêu học tập liên quan");
+      }
+      UserSummaryView sender = usersMap.get(r.getSentByUserId());
+      if (sender == null) {
+        throw new ResourceConflictException(ErrorCode.CONFLICT_DETECTED,
+            "Không tìm thấy thông tin người gửi yêu cầu");
+      }
+      String senderRole = sender.role() == AccountRole.PARENT ? "PARENT" : "STUDENT";
       return new TutorInboxResult(r.getId(), goal.goalType(), goal.subjectId(),
           goal.educationLevelId(), r.getDesiredSlots(), r.getMessage(), senderRole,
-          r.getStatus(), r.getExpiresAt());
+          r.getStatus(), r.getExpiresAt(), goal.deadline());
     }).toList();
   }
 }

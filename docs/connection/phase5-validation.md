@@ -55,3 +55,44 @@ Branch `feat/connection`, base `1ea58da`. Phase 5 comprises 5 executable slices:
   - `findUserSummaryByEmailNormalizesAndReturnsSummary` & `findUserSummaryByEmailReturnsEmptyWhenBlankOrNotFound`.
   - `existsByIdReturnsTrueOrFalse`.
 - **IAM Module Regression**: 39 tests passed with zero failures/errors/skips.
+
+---
+
+## T18c — Batch inbox and invitation metadata, deadline, and privacy
+
+### 1. Implementation
+- **DTOs & Response Serialization**:
+  - `TutorInboxResult`: added `LocalDate deadline` component with backward-compatible 9-argument constructor.
+  - `TutorInboxResponse`: added `@JsonInclude(JsonInclude.Include.NON_NULL) LocalDate deadline` with backward-compatible 9-argument constructor.
+  - `InvitationResult`: added `String inviterName, String inviterRole` components, static helper `from(LinkInvitation r, String inviterName, String inviterRole)`, and backward-compatible constructors (6 and 7 arguments).
+  - `InvitationResponse`: added `@JsonInclude(JsonInclude.Include.NON_NULL) String inviterName, @JsonInclude(JsonInclude.Include.NON_NULL) String inviterRole` with backward-compatible constructors.
+- **Service Optimization (`ConnectionQueryService`)**:
+  - `tutorInbox(CurrentUser actor)`:
+    - Extracts distinct `goalIds` and `sentByUserIds` from all scoped requests.
+    - Hydrates metadata in exactly 2 batch queries: `profile.findGoalsForConnection(goalIds)` and `iam.findUserSummariesByIds(sentByUserIds)`.
+    - Controlled 409 Conflict: Throws `ResourceConflictException(ErrorCode.CONFLICT_DETECTED)` when goal or sender account metadata is missing, preventing dropped items or fake roles.
+    - BR-37 Privacy Compliance: Whitelists only permitted fields (`requestId`, `goalType`, `subjectId`, `educationLevelId`, `desiredSlots`, `message`, `senderRole`, `status`, `expiresAt`, `deadline`). Zero exposure of learner/parent profiles, emails, contacts, or unrequested goals.
+    - Nullable `deadline` from `ConnectionGoalDto` is mapped without synthesis.
+  - `invitations(CurrentUser actor)`:
+    - Extracts distinct `inviterUserIds` from scoped invitations.
+    - Hydrates `inviterName` and `inviterRole` in a single batch query via `iam.findUserSummariesByIds(inviterUserIds)`.
+    - Missing or deleted inviters resolve cleanly to `null` name/role without falling back to a fake student identity.
+    - Retains `reinviteAfter` cooldown calculation on `DECLINED` invitations.
+
+### 2. Verification
+- **Unit & Contract Tests**:
+  - `ConnectionQueryServiceTest`: 19 tests passed (0 failures, 0 errors, 0 skips), including:
+    - `tutorInboxScopesExpiresAndMapsBatchMetadata`: verifies expiry on-access, batch metadata mapping, sender role, and deadline.
+    - `tutorInboxMissingGoalThrowsConflict409` & `tutorInboxMissingSenderThrowsConflict409`: verifies controlled 409 `CONFLICT_DETECTED`.
+    - `tutorInboxBatchesDistinctIdsWithoutNPlusOne`: verifies distinct ID aggregation across multiple requests and single-invocation batch queries.
+    - `invitationsHydrateInviterNameAndRoleViaBatch`: verifies batch hydration of inviter name and role, handling missing/deleted accounts gracefully.
+  - `ConnectionControllerTest`: 24 tests passed, including:
+    - `tutorInboxHydratesDeadlineToJson`: verifies exact JSON shape matching contract fixture (`deadline: "2027-01-01"`).
+    - `invitationsHydrateInviterMetadataAndCooldownToJson`: verifies exact JSON shape matching contract fixture (`reinviteAfter`, `inviterName`, `inviterRole`).
+  - `connection` module: 222 tests passed with zero failures/errors/skips.
+- **PostgreSQL Integration Tests (`ConnectionTransactionPostgresTest`)**: 30 tests passed with zero failures/errors/skips:
+  - `tutorInboxMetadataQueryCountIsConstantForBatchesOf1And20And100`: inserts 100 requests across distinct student profiles, verifying exact hydration of 100 items with only 1 batch call to Profile and 1 batch call to IAM ($O(1)$ queries, zero N+1).
+  - `acceptCreatesClassAtomicallyAndQueryHydratesInsideTransaction`: verified with batch queries inside transaction.
+- **Cross-module Regression**:
+  - IAM module: 39 tests passed.
+  - Profile module: 55 tests passed (including 6 PostgreSQL integration tests).

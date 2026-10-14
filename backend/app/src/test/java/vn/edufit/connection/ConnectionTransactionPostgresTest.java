@@ -145,6 +145,13 @@ class ConnectionTransactionPostgresTest {
       assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
       return Optional.of(new ConnectionGoalDto(goal, student, studentUser, 1, 4, "EXAM_PREPARATION", null, "ACTIVE"));
     });
+    when(profile.findGoalsForConnection(List.of(goal))).thenAnswer(call -> {
+      assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
+      return Map.of(goal, new ConnectionGoalDto(goal, student, studentUser, 1, 4, "EXAM_PREPARATION", null, "ACTIVE"));
+    });
+    when(iam.findUserSummariesByIds(List.of(studentUser))).thenReturn(Map.of(
+        studentUser, new vn.edufit.iam.api.dto.UserSummaryView(studentUser, "student@test.invalid", "Student", vn.edufit.iam.api.AccountRole.STUDENT, vn.edufit.iam.api.AccountStatus.ACTIVE)
+    ));
     when(profile.tutorTeaches(tutor, 1, 4)).thenReturn(true);
     var actor = actor(tutorUser, "TUTOR");
     var inbox = queries.tutorInbox(actor);
@@ -843,6 +850,75 @@ class ConnectionTransactionPostgresTest {
     assertEquals("EXPIRED", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
     // Exactly 1 of the concurrent runs should have performed the transition
     assertEquals(1, results.get());
+  }
+
+  @Test void tutorInboxMetadataQueryCountIsConstantForBatchesOf1And20And100() {
+    var jdbc = new JdbcTemplate(source);
+    UUID tutorUser = account("TUTOR"), tutor = UUID.randomUUID();
+    jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'TutorBatch','ONLINE',100000,'VERIFIED')", tutor, tutorUser);
+    when(profile.getTutorIdByUserId(tutorUser)).thenReturn(tutor);
+
+    // Create 5 goals and 5 sender users
+    List<UUID> goals = new java.util.ArrayList<>();
+    List<UUID> senders = new java.util.ArrayList<>();
+    Map<UUID, ConnectionGoalDto> goalDtoMap = new java.util.HashMap<>();
+    Map<UUID, vn.edufit.iam.api.dto.UserSummaryView> userDtoMap = new java.util.HashMap<>();
+
+    UUID baseStudent = UUID.randomUUID(), baseUser = account("STUDENT");
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", baseStudent, baseUser);
+
+    for (int i = 0; i < 5; i++) {
+      UUID gId = UUID.randomUUID(), senderId = account("PARENT");
+      goals.add(gId);
+      senders.add(senderId);
+      jdbc.update("insert into learning_goal(goal_id,student_id,subject_id,current_level,desired_level,goal_type,deadline,mode,budget_max,status) values (?,?,1,1,2,'EXAM_PREPARATION',current_date + 30,'ONLINE',100000,'ACTIVE')", gId, baseStudent);
+
+      goalDtoMap.put(gId, new ConnectionGoalDto(gId, baseStudent, baseUser, 1, 4, "EXAM_PREPARATION", java.time.LocalDate.of(2027, 1, 1), "ACTIVE"));
+      userDtoMap.put(senderId, new vn.edufit.iam.api.dto.UserSummaryView(senderId, "p" + i + "@test.invalid", "Parent " + i, vn.edufit.iam.api.AccountRole.PARENT, vn.edufit.iam.api.AccountStatus.ACTIVE));
+    }
+
+    // Insert 100 requests for this tutor (each with a unique student_id to respect uq_connection_request_pending)
+    Instant now = Instant.now();
+    for (int i = 0; i < 100; i++) {
+      UUID sUser = account("STUDENT"), sId = UUID.randomUUID();
+      jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", sId, sUser);
+      UUID reqId = UUID.randomUUID();
+      UUID gId = goals.get(i % goals.size());
+      UUID senderId = senders.get(i % senders.size());
+      jdbc.update("insert into connection_request(request_id,student_id,tutor_id,goal_id,sent_by_user_id,desired_slots,expires_at) values (?,?,?,?,?,cast(? as jsonb),?)",
+          reqId, sId, tutor, gId, senderId, "[\"Tue 19:00\"]", java.sql.Timestamp.from(now.plusSeconds(3600)));
+    }
+
+    when(profile.findGoalsForConnection(anyList())).thenAnswer(invocation -> {
+      assertTrue(TransactionSynchronizationManager.isActualTransactionActive(), "Goal batch query must run within transaction");
+      List<UUID> requestedGoalIds = invocation.getArgument(0);
+      Map<UUID, ConnectionGoalDto> subMap = new java.util.HashMap<>();
+      for (UUID id : requestedGoalIds) {
+        if (goalDtoMap.containsKey(id)) subMap.put(id, goalDtoMap.get(id));
+      }
+      return subMap;
+    });
+
+    when(iam.findUserSummariesByIds(anyList())).thenAnswer(invocation -> {
+      List<UUID> requestedUserIds = invocation.getArgument(0);
+      Map<UUID, vn.edufit.iam.api.dto.UserSummaryView> subMap = new java.util.HashMap<>();
+      for (UUID id : requestedUserIds) {
+        if (userDtoMap.containsKey(id)) subMap.put(id, userDtoMap.get(id));
+      }
+      return subMap;
+    });
+
+    var actor = actor(tutorUser, "TUTOR");
+    var inbox = queries.tutorInbox(actor);
+
+    // Verify 100 items returned with correct hydration
+    assertEquals(100, inbox.size());
+    assertEquals(java.time.LocalDate.of(2027, 1, 1), inbox.getFirst().deadline());
+    assertEquals("PARENT", inbox.getFirst().senderRole());
+
+    // Exactly 1 batch call to Profile and 1 batch call to IAM for all 100 requests (zero N+1)
+    verify(profile, times(1)).findGoalsForConnection(argThat(list -> list.size() == 5));
+    verify(iam, times(1)).findUserSummariesByIds(argThat(list -> list.size() == 5));
   }
 
   @Configuration
