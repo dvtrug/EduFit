@@ -20,7 +20,7 @@ import vn.edufit.ai.application.AiMatchQuotaService;
 import vn.edufit.ai.infra.config.AiProperties;
 import vn.edufit.ai.infra.persistence.AiMatchReservationRepository;
 
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 class AiQuotaPostgresTest {
   @Container
   static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine");

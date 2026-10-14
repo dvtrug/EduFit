@@ -60,7 +60,7 @@ import vn.edufit.iam.infra.security.Argon2PasswordService;
       "edufit.ai.gemini.model=test-model",
       "spring.session.jdbc.initialize-schema=never"
     })
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DirtiesContext
 class AiDiscoveryConnectionE2ETest {
   private static final String PASSWORD = "Password123@";
