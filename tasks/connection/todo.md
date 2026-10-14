@@ -315,7 +315,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** Không tạo commit cha; dùng T22a–T22c.
 - **Kết thúc:** Commit + push + DB version/results; môi trường chưa chạy thì task chưa xong.
 
-### [ ] T23 — ArchUnit đúng package và chống pass rỗng
+### [x] T23 — ArchUnit đúng package và chống pass rỗng
 
 - **Files:** Connection boundary test, app ArchitectureTest trên base mới nhất, test dependency pom nếu cần.
 - **Thực hiện:** Reuse/fix rule đang có, không ghi đè Discovery rule đã hoàn thiện. Target `vn.edufit.connection..` và package modules thực tế; assert imported classes >0; cấm web->infra/application->web/API->JPA và cross-module non-api/cycle.

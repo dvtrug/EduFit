@@ -163,3 +163,34 @@ Branch `feat/connection`. Phase 6 comprises 5 comprehensive verification and cle
 - **Test Execution**:
   - `ConnectionTransactionPostgresTest`: **45 tests passed (0 failures, 0 errors, 0 skips)** on Testcontainers PostgreSQL 17.
   - Reactor test suite GREEN.
+
+---
+
+## T23 — ArchUnit nonempty architecture boundaries
+
+### 1. Implementation
+- **Boundary Rules for Connection Module (`ArchitectureBoundaryTest`)**:
+  - `connection_application_does_not_depend_on_web`: `vn.edufit.connection.application..` strictly forbidden from depending on `vn.edufit.connection.web..` (`allowEmptyShould(false)`).
+  - `connection_web_does_not_depend_on_infra`: `vn.edufit.connection.web..` strictly forbidden from depending on `vn.edufit.connection.infra..` (`allowEmptyShould(false)`).
+  - `connection_api_does_not_expose_implementation`: `vn.edufit.connection.api..` only depends on `java..`, `vn.edufit.connection.api..`, and `vn.edufit.shared..` (`allowEmptyShould(false)`), strictly preventing any leakage of JPA/Hibernate, infrastructure, or web adapters.
+  - `outsiders_use_connection_public_api`: classes outside `vn.edufit.connection..` must not access internal packages (`application..`, `infra..`, `web..`) (`allowEmptyShould(false)`).
+  - `connection_uses_only_public_edufit_dependencies`: `vn.edufit.connection..` only depends on its own types, `vn.edufit.shared..`, or public module APIs (`vn.edufit.*.api..`) (`allowEmptyShould(false)`).
+  - `production_import_contains_expected_layers`: asserts production imports include core layers across Discovery and Connection (`ConnectionFacade`, `LinkInvitationChangedEvent`, `ConnectionRequestChangedEvent`, `ConnectionFacadeImpl`, `LinkInvitationService`, `ConnectionRequestService`, `ParentStudentLinkService`, `ConnectionExpiryService`, `ConnectionQueryService`, `ConnectionController`, `LinkInvitationRepository`, `ConnectionRequestRepository`, `ParentStudentLinkRepository`, `TutoringClassRepository`, `ConnectionExpiryJob`), and explicitly asserts `connectionClassesCount >= 20` to guarantee rules never pass vacuously on empty classes.
+  - Package acyclic enforcement: `ArchitectureTest.root_packages_should_have_no_dependency_cycles` verifies acyclic dependencies among all root packages `vn.edufit.(*)..`.
+- **Negative Probe Evidence**:
+  - Injected temporary architectural violation into `ConnectionFacadeImpl` (`private vn.edufit.connection.web.request.InviteBody probeViolation;`), introducing an illegal `application -> web` dependency.
+  - Executed `mvn test -pl app "-Dtest=ArchitectureBoundaryTest"`.
+  - ArchUnit immediately detected the violation and failed the build with exact diagnostics:
+    ```
+    [ERROR] Architecture Violation [Priority: MEDIUM] - Rule 'no classes that reside in a package 'vn.edufit.connection.application..' should depend on classes that reside in a package 'vn.edufit.connection.web..'' was violated (1 times):
+    Field <vn.edufit.connection.application.service.ConnectionFacadeImpl.probeViolation> has type <vn.edufit.connection.web.request.InviteBody> in (ConnectionFacadeImpl.java:0)
+    ```
+  - Reverted probe violation; clean build restored 100% GREEN status.
+
+### 2. Verification
+- **Test Execution**:
+  - `ArchitectureBoundaryTest`: 11 tests passed (0 failures, 0 errors, 0 skips).
+  - `ArchitectureTest`: 3 tests passed (0 failures, 0 errors, 0 skips).
+  - Total: 14 architecture tests passed (0 failures, 0 errors, 0 skips).
+  - Reactor test suite GREEN.
+

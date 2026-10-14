@@ -12,7 +12,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Discovery's domain and interface contracts must not leak adapter dependencies. */
+/** Discovery and Connection interface and boundary contracts must not leak adapter dependencies. */
 @AnalyzeClasses(packages = "vn.edufit", importOptions = ImportOption.DoNotIncludeTests.class)
 public class ArchitectureBoundaryTest {
   @ArchTest
@@ -55,6 +55,45 @@ public class ArchitectureBoundaryTest {
       }).allowEmptyShould(false);
 
   @ArchTest
+  static final ArchRule connection_application_does_not_depend_on_web = noClasses()
+      .that().resideInAPackage("vn.edufit.connection.application..")
+      .should().dependOnClassesThat().resideInAPackage("vn.edufit.connection.web..")
+      .allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule connection_web_does_not_depend_on_infra = noClasses()
+      .that().resideInAPackage("vn.edufit.connection.web..")
+      .should().dependOnClassesThat().resideInAPackage("vn.edufit.connection.infra..")
+      .allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule connection_api_does_not_expose_implementation = classes()
+      .that().resideInAPackage("vn.edufit.connection.api..")
+      .should().onlyDependOnClassesThat()
+      .resideInAnyPackage("java..", "vn.edufit.connection.api..", "vn.edufit.shared..")
+      .allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule outsiders_use_connection_public_api = noClasses()
+      .that().resideOutsideOfPackage("vn.edufit.connection..")
+      .should().dependOnClassesThat().resideInAnyPackage(
+          "vn.edufit.connection.application..", "vn.edufit.connection.infra..", "vn.edufit.connection.web..")
+      .allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule connection_uses_only_public_edufit_dependencies = classes()
+      .that().resideInAPackage("vn.edufit.connection..")
+      .should().onlyDependOnClassesThat(new DescribedPredicate<JavaClass>("are own types, shared kernel or public module/platform APIs") {
+        @Override public boolean test(JavaClass target) {
+          String pkg = target.getPackageName();
+          if (!pkg.startsWith("vn.edufit.")) return true;
+          if (pkg.startsWith("vn.edufit.connection.") || pkg.startsWith("vn.edufit.shared.")) return true;
+          String[] parts = pkg.split("\\.");
+          return parts.length >= 4 && parts[3].equals("api");
+        }
+      }).allowEmptyShould(false);
+
+  @ArchTest
   static void production_import_contains_expected_layers(JavaClasses imported) {
     for (String name : new String[] {
         "vn.edufit.discovery.domain.policy.MatchScorer",
@@ -62,9 +101,28 @@ public class ArchitectureBoundaryTest {
         "vn.edufit.discovery.application.service.DiscoveryFacadeImpl",
         "vn.edufit.discovery.api.DiscoveryFacade",
         "vn.edufit.discovery.web.DiscoveryController",
+        "vn.edufit.connection.api.ConnectionFacade",
+        "vn.edufit.connection.api.event.LinkInvitationChangedEvent",
+        "vn.edufit.connection.api.event.ConnectionRequestChangedEvent",
         "vn.edufit.connection.application.service.ConnectionFacadeImpl",
+        "vn.edufit.connection.application.service.LinkInvitationService",
+        "vn.edufit.connection.application.service.ConnectionRequestService",
+        "vn.edufit.connection.application.service.ParentStudentLinkService",
+        "vn.edufit.connection.application.service.ConnectionExpiryService",
+        "vn.edufit.connection.application.service.ConnectionQueryService",
+        "vn.edufit.connection.web.ConnectionController",
+        "vn.edufit.connection.infra.persistence.repository.LinkInvitationRepository",
+        "vn.edufit.connection.infra.persistence.repository.ConnectionRequestRepository",
+        "vn.edufit.connection.infra.persistence.repository.ParentStudentLinkRepository",
+        "vn.edufit.connection.infra.persistence.repository.TutoringClassRepository",
+        "vn.edufit.connection.infra.scheduling.ConnectionExpiryJob",
         "vn.edufit.profile.application.service.ProfileFacadeImpl"}) {
       assertTrue(imported.contain(name), "Architecture import must include " + name);
     }
+
+    long connectionClassesCount = imported.stream()
+        .filter(c -> c.getPackageName().startsWith("vn.edufit.connection"))
+        .count();
+    assertTrue(connectionClassesCount >= 20, "Architecture import must include non-empty connection classes, found: " + connectionClassesCount);
   }
 }
