@@ -691,6 +691,8 @@ class LearningGoalPostgresTest {
   void actor(UUID id, String role) {
     when(user.getUserId()).thenReturn(role.equals("GUEST") ? null : id);
     when(user.hasRole(anyString())).thenAnswer(call -> role.equals(call.getArgument(0)));
+    if (!role.equals("GUEST")) when(context.getBean(vn.edufit.iam.api.IamFacade.class).findUserSummaryById(id))
+        .thenReturn(java.util.Optional.of(new vn.edufit.iam.api.dto.UserSummaryView(id,"actor@test.invalid","Actor",vn.edufit.iam.api.AccountRole.valueOf(role),vn.edufit.iam.api.AccountStatus.ACTIVE)));
   }
 
   @Configuration

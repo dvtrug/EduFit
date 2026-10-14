@@ -104,10 +104,11 @@ class ConnectionTransactionPostgresTest {
     UUID student = UUID.randomUUID(), link = UUID.randomUUID();
     jdbc.update("insert into student_profile(student_id,user_id) values (?,?)", student, studentUser);
     jdbc.update("insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at) values (?,?,?,now())", link, parent, student);
+    when(profile.findStudentById(student)).thenReturn(Optional.of(new vn.edufit.profile.api.dto.StudentSummaryDto(student, studentUser, 4, null, true)));
     doAnswer(call -> {
       assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
       throw new IllegalStateException("injected audit failure");
-    }).when(audit).record(admin, "LINK_REVOKED", "PARENT_STUDENT_LINK", link, "reason");
+    }).when(audit).record(any(vn.edufit.shared.audit.AuditRecord.class));
     assertThrows(IllegalStateException.class, () -> links.revokeLink(actor(admin, "ADMIN"), link, "reason"));
     assertEquals("CONFIRMED", jdbc.queryForObject("select status from parent_student_link where link_id = ?", String.class, link));
     verifyNoInteractions(notifications);
@@ -118,7 +119,7 @@ class ConnectionTransactionPostgresTest {
     }).when(notifications).notify(eq(parent), eq(student), eq("LINK_REVOKED"), anyString(), anyString(), eq("PARENT_STUDENT_LINK"), eq(link));
     links.revokeLink(actor(admin, "ADMIN"), link, "reason");
     assertEquals("REVOKED", jdbc.queryForObject("select status from parent_student_link where link_id = ?", String.class, link));
-    verify(audit).record(admin, "LINK_REVOKED", "PARENT_STUDENT_LINK", link, "reason");
+    verify(audit).record(argThat((vn.edufit.shared.audit.AuditRecord record) -> record.actorUserId().equals(admin) && record.targetId().equals(link) && record.metadata().get("studentUserId").equals(studentUser.toString())));
     verify(notifications).notify(eq(parent), eq(student), eq("LINK_REVOKED"), anyString(), anyString(), eq("PARENT_STUDENT_LINK"), eq(link));
   }
 

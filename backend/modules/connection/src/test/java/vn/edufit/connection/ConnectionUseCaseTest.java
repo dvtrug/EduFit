@@ -52,7 +52,7 @@ class ConnectionUseCaseTest {
   @BeforeEach void setup() {
     service = new ConnectionRequestService(requests, classes, profile, lock, notifications, new ConnectionFacadeImpl(links, classes), Clock.systemUTC());
     invitationService = new LinkInvitationService(invitations, links, iam, profile, lock, new InvitationQuotaService(quotas, lock, Clock.systemUTC()), events, Clock.systemUTC());
-    linkService = new ParentStudentLinkService(links, profile, lock, audit, notifications, Clock.systemUTC());
+    linkService = new ParentStudentLinkService(links, profile, lock, audit, notifications, iam, Clock.systemUTC());
   }
 
   private CurrentUser actor(UUID id, String role) {
@@ -98,9 +98,10 @@ class ConnectionUseCaseTest {
     when(links.lockById(id)).thenReturn(Optional.of(link));
     CurrentUser admin = actor(UUID.randomUUID(), "ADMIN");
     assertThrows(InvalidOperationException.class, () -> linkService.revokeLink(admin, id, " "));
+    when(profile.findStudentById(student)).thenReturn(Optional.of(new StudentSummaryDto(student, UUID.randomUUID(), 1, null, true)));
     linkService.revokeLink(admin, id, "violation");
     assertEquals("REVOKED", link.getStatus());
-    verify(audit).record(eq(admin.getUserId()), eq("LINK_REVOKED"), anyString(), eq(id), eq("violation"));
+    verify(audit).record(argThat((vn.edufit.shared.audit.AuditRecord record) -> record.actorUserId().equals(admin.getUserId()) && record.targetId().equals(id) && "violation".equals(record.reason())));
     when(links.existsByParentUserIdAndStudentIdAndStatus(parent, student, "CONFIRMED")).thenReturn(false);
     assertFalse(new ConnectionFacadeImpl(links, classes).hasConfirmedParentLink(parent, student));
   }

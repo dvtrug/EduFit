@@ -1,6 +1,7 @@
 package vn.edufit.audit;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -31,6 +32,9 @@ class AuditPersistenceTest {
   @Autowired AuditSink sink;
   @Autowired DataSource source;
   @Autowired JpaTransactionManager manager;
+  @Autowired vn.edufit.connection.application.service.ParentStudentLinkService links;
+  @Autowired vn.edufit.profile.api.ProfileFacade profile;
+  @Autowired vn.edufit.iam.api.IamFacade iam;
   private static final UUID ACTOR = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
   @Test void structuredSnapshotRetainsAccountsReasonAndBusinessTime() {
@@ -61,9 +65,42 @@ class AuditPersistenceTest {
     });
     assertEquals(0,new JdbcTemplate(source).queryForObject("select count(*) from audit_log where target_id=?",Integer.class,target));
   }
+  private record LinkFixture(UUID link, UUID parent, UUID student, UUID studentUser, UUID admin) {}
+  private LinkFixture linkFixture() {
+    var fixture = new LinkFixture(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID());
+    var jdbc = new JdbcTemplate(source);
+    for (UUID id : java.util.List.of(fixture.parent(),fixture.studentUser(),fixture.admin()))
+      jdbc.update("insert into account(user_id,email,password_hash,full_name,role) values (?,?,'test-only','Audit fixture',?)",id,id+"@test.invalid",id.equals(fixture.parent())?"PARENT":id.equals(fixture.admin())?"ADMIN":"STUDENT");
+    jdbc.update("insert into student_profile(student_id,user_id) values (?,?)",fixture.student(),fixture.studentUser());
+    jdbc.update("insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at) values (?,?,?,now())",fixture.link(),fixture.parent(),fixture.student());
+    when(profile.findStudentById(fixture.student())).thenReturn(java.util.Optional.of(new vn.edufit.profile.api.dto.StudentSummaryDto(fixture.student(),fixture.studentUser(),4,null,true)));
+    when(iam.findUserSummaryById(fixture.admin())).thenReturn(java.util.Optional.of(new vn.edufit.iam.api.dto.UserSummaryView(fixture.admin(),"admin@test.invalid","Admin",vn.edufit.iam.api.AccountRole.ADMIN,vn.edufit.iam.api.AccountStatus.ACTIVE)));
+    return fixture;
+  }
+  private vn.edufit.shared.auth.CurrentUser admin(LinkFixture fixture) {
+    var actor=mock(vn.edufit.shared.auth.CurrentUser.class);when(actor.getUserId()).thenReturn(fixture.admin());
+    when(actor.hasRole(anyString())).thenAnswer(call -> "ADMIN".equals(call.getArgument(0)));return actor;
+  }
+  @Test void realRevokeAndSnapshotCommitTogetherWithoutDeletingStudentData() {
+    var fixture=linkFixture();links.revokeLink(admin(fixture),fixture.link(),"private reason");
+    var jdbc=new JdbcTemplate(source);
+    assertEquals("REVOKED",jdbc.queryForObject("select status from parent_student_link where link_id=?",String.class,fixture.link()));
+    assertEquals(fixture.studentUser().toString(),jdbc.queryForObject("select metadata ->> 'studentUserId' from audit_log where target_id=?",String.class,fixture.link()));
+    assertEquals(1,jdbc.queryForObject("select count(*) from student_profile where student_id=?",Integer.class,fixture.student()));
+  }
+  @Test void databaseAuditFailureRollsBackRealRevocation() {
+    var fixture=linkFixture();var jdbc=new JdbcTemplate(source);
+    jdbc.execute("create function reject_connection_audit() returns trigger language plpgsql as $$ begin raise exception 'audit rejected' using errcode='23514'; end; $$");
+    jdbc.execute("create trigger reject_connection_audit before insert on audit_log for each row execute function reject_connection_audit()");
+    try {
+      assertThrows(RuntimeException.class,()->links.revokeLink(admin(fixture),fixture.link(),"reason"));
+      assertEquals("CONFIRMED",jdbc.queryForObject("select status from parent_student_link where link_id=?",String.class,fixture.link()));
+      assertEquals(0,jdbc.queryForObject("select count(*) from audit_log where target_id=?",Integer.class,fixture.link()));
+    } finally { jdbc.execute("drop trigger reject_connection_audit on audit_log");jdbc.execute("drop function reject_connection_audit()"); }
+  }
   @Configuration @EnableTransactionManagement
-  @EnableJpaRepositories(basePackageClasses = AuditLogRepository.class)
-  @Import(JpaAuditSink.class)
+  @EnableJpaRepositories(basePackageClasses = {AuditLogRepository.class, vn.edufit.connection.infra.persistence.repository.ParentStudentLinkRepository.class})
+  @Import({JpaAuditSink.class,vn.edufit.connection.application.service.ParentStudentLinkService.class,vn.edufit.connection.infra.locking.PostgresConnectionLock.class})
   static class Config {
     @Bean DataSource dataSource() {
       var source = new DriverManagerDataSource(postgres.getJdbcUrl(),postgres.getUsername(),postgres.getPassword());
@@ -71,9 +108,14 @@ class AuditPersistenceTest {
     }
     @Bean LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource source) {
       var factory = new LocalContainerEntityManagerFactoryBean();factory.setDataSource(source);
-      factory.setPackagesToScan("vn.edufit.audit");factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
+      factory.setPackagesToScan("vn.edufit.audit","vn.edufit.connection.infra.persistence.entity");factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
       factory.setJpaPropertyMap(Map.of("hibernate.hbm2ddl.auto","validate"));return factory;
     }
+    @Bean java.time.Clock clock() { return java.time.Clock.systemUTC(); }
+    @Bean @Primary jakarta.persistence.EntityManager entityManager(EntityManagerFactory factory) { return SharedEntityManagerCreator.createSharedEntityManager(factory); }
+    @Bean vn.edufit.iam.api.IamFacade iam() { return mock(vn.edufit.iam.api.IamFacade.class); }
+    @Bean vn.edufit.profile.api.ProfileFacade profile() { return mock(vn.edufit.profile.api.ProfileFacade.class); }
+    @Bean vn.edufit.shared.notification.NotificationSink notifications() { return mock(vn.edufit.shared.notification.NotificationSink.class); }
     @Bean JpaTransactionManager transactionManager(EntityManagerFactory factory) { return new JpaTransactionManager(factory); }
   }
 }

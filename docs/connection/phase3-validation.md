@@ -33,3 +33,11 @@ Current Discovery frontend formats desiredSlots as localized display strings; re
 - V1.14 adds JSONB metadata with empty-object default to existing audit rows; actor/reason/time columns are retained. Earlier migration bytes/checksums remain unchanged. Updated all migration count/upgrade assertions in this same slice.
 - RED:3 audit tests produced1 failure and1 error before adapter/schema support (`phase3-T12a-red.log`). GREEN affected verify:18 tests, zero failures/errors/skips (`phase3-T12a-green.log`):audit3, migration scripts2, Flyway PostgreSQL4, architecture9.
 - PostgreSQL verifies structured account IDs/reason/business time, defensive snapshot copy, legacy API, outer rollback, upgrade from V1.13 preserving historical audit rows and from V1.09 preserving seeded/user-edited data. Flyway validates and rerun is no-op. No local user DB was migrated.
+
+## T12b — revocation authorization and atomic audit
+
+- Student owner or Admin with a nonblank reason may revoke; actor must still have an ACTIVE account with the current role. Current Student metadata is required for both roles so audit cannot silently omit one party.
+- Link and structured audit use one Clock instant in the existing required transaction; no business rows are deleted. Snapshot stores parentUserId/studentId/studentUserId, with actor/link/reason/time in existing audit fields.
+- RED:8 unit cases,5 failures before changes (`phase3-T12b-red.log`). The first affected verify passed unit cases but lost Docker, producing infrastructure errors and skipped PostgreSQL cases (`phase3-T12b-green.log`); it is not acceptance evidence. Docker is being restarted before rerunning.
+
+- GREEN rerun with Docker restored:112 tests, zero failures/errors/skips (`phase3-T12b-green-rerun.log`):Connection17, App95 including real audit5, Connection PostgreSQL19, Profile PostgreSQL62 and architecture9. Real database trigger failure rolls back the link; successful service revocation persists the structured snapshot while retaining Student data.

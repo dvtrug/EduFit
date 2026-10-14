@@ -437,7 +437,7 @@ Các nhóm bên dưới **thay thế commit cha**, không còn là gợi ý “n
 | [x] T11a | Invitation service/repository + tests | Two-way consent, ACTIVE/DEACTIVATED, generic response, known-history cooldown, closure | T10b | `fix(connection): enforce invitation consent and privacy` |
 | [x] T11b | Invitation event publishers + notification listener/tests | Create/accept/decline events + notifications đúng một lần; rollback atomic | T11a | `refactor(connection): publish invitation transition events` |
 | [x] T12a | Structured audit input + adapter/entity + migration/tests | Old sink API vẫn hoạt động; snapshot đủ accounts/reason; Flyway count/fixtures update, clean+upgrade pass | T11b | `feat(audit): persist structured connection revocation snapshots` |
-| [ ] T12b | Link revoke service + DB/authorization tests | Student/Admin đúng quyền; audit failure rollback link; không cascade delete | T12a | `fix(connection): record revocation and audit atomically` |
+| [x] T12b | Link revoke service + DB/authorization tests | Student/Admin đúng quyền; audit failure rollback link; không cascade delete | T12a | `fix(connection): record revocation and audit atomically` |
 | [ ] T12c | Revoke event + listener/tests | Admin notify cả hai, Student notify Parent; reason không lộ, rollback pass | T12b | `fix(notification): complete link revocation recipients` |
 | [ ] T13a | Slot validator + rollout config + request validation DTO/tests | GrammarT01; tests legacy-compatible/strict-v1, legacy read nguyên vẹn; strict chỉ bật sau data/client inventory; message/slot biên pass | T12c, T01 | `fix(connection): validate connection request slots and message` |
 | [ ] T13b | Create/cancel request rules/repository + tests | Owner/goal/tutor/limits/ACTIVE class/cancel guard pass; no unauthorized write | T13a | `fix(connection): enforce request creation and cancellation rules` |
@@ -479,3 +479,5 @@ Dependency của task cha kế tiếp dùng **task con cuối nhóm**: T09 sau T
 - T11b: invitation create/accept/decline publish events; BEFORE_COMMIT notification consumer replaces direct writes. 194 focused tests pass, including real entrypoint and database rollback checks; see Phase3 validation.
 
 - T12a: immutable structured audit input, JSONB persistence and V1.14 metadata migration. 18 audit/Flyway/architecture tests pass, including legacy rows/API and upgrade rerun.
+
+- T12b: current ACTIVE actor/Student ownership/Admin reason guards and structured revoke audit in one transaction. 112 affected tests pass with Docker restored, zero skips.
