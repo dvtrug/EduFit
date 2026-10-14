@@ -27,6 +27,7 @@ import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.notification.NotificationSink;
 import org.springframework.context.ApplicationEventPublisher;
 import vn.edufit.connection.api.event.ConnectionRequestChangedEvent;
+import vn.edufit.connection.api.event.TutoringClassCreatedEvent;
 import vn.edufit.shared.exception.ForbiddenOperationException;
 import vn.edufit.shared.exception.EntityNotFoundException;
 import vn.edufit.shared.exception.InvalidOperationException;
@@ -146,35 +147,58 @@ public class ConnectionRequestService {
   @Transactional
   public TransitionResult<ClassResult> respondRequest(CurrentUser actor, UUID id, boolean accept, String reason) {
     requireRole(actor, "TUTOR");
+    requireActiveActor(actor);
     ConnectionRequest initial = requests.findById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
     UUID tutorId = profile.getTutorIdByUserId(actor.getUserId());
-    if (!initial.getTutorId().equals(tutorId)) throw new ForbiddenOperationException("Không phải gia sư nhận yêu cầu");
+    if (tutorId == null || !initial.getTutorId().equals(tutorId))
+      throw new ForbiddenOperationException("Không phải gia sư nhận yêu cầu");
     lock.lockStudent(initial.getStudentId());
     ConnectionRequest request = requests.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Request", id));
+    if (!request.getTutorId().equals(tutorId))
+      throw new ForbiddenOperationException("Không phải gia sư nhận yêu cầu");
     Instant now = clock.instant();
     request.expire(now);
     if (!"PENDING".equals(request.getStatus()))
       return TransitionResult.conflict(request.getStatus(), "Không còn ở trạng thái chờ xử lý");
+
+    TutorSummaryDto tutor = profile.findTutorById(tutorId)
+        .orElseThrow(() -> new InvalidOperationException("Gia sư không tồn tại"));
+    if (!tutorId.equals(tutor.tutorId()) || !"VERIFIED".equals(tutor.status())
+        || !actor.getUserId().equals(tutor.userId()))
+      throw new InvalidOperationException("Gia sư chưa được xác minh");
+
+    UUID studentUserId = profile.findStudentById(request.getStudentId())
+        .map(StudentSummaryDto::userId)
+        .orElseThrow(() -> new InvalidOperationException("Không thể xác định tài khoản học sinh"));
+
     if (!accept) {
+      if (reason != null && reason.length() > 300)
+        throw new InvalidOperationException("Lý do từ chối không được vượt quá 300 ký tự");
       request.reject(reason, now);
-      notifications.notify(request.getSentByUserId(), request.getStudentId(), "CONNECTION_REJECTED",
-          "Yêu cầu đã bị từ chối", "Gia sư đã từ chối yêu cầu", "CONNECTION_REQUEST", id);
+      events.publishEvent(new ConnectionRequestChangedEvent(UUID.randomUUID(), id, actor.getUserId(),
+          request.getStudentId(), "PENDING", "REJECTED", now, request.getSentByUserId(),
+          studentUserId, actor.getUserId(), null));
       return TransitionResult.success(null);
     }
+
     if (classes.existsByStudentIdAndTutorIdAndStatus(request.getStudentId(), tutorId, "ACTIVE"))
       return TransitionResult.conflict("ACTIVE", "Đã có lớp đang hoạt động");
-    if (!"VERIFIED".equals(profile.findTutorById(tutorId).map(TutorSummaryDto::status).orElse(null)))
-      throw new InvalidOperationException("Gia sư chưa được xác minh");
+
     ConnectionGoalDto goal = profile.findGoalForConnection(request.getGoalId())
         .orElseThrow(() -> new InvalidOperationException("Mục tiêu không còn hợp lệ"));
-    if (!"ACTIVE".equals(goal.status()) || !profile.tutorTeaches(tutorId,
-        goal.subjectId(), goal.educationLevelId()))
+    if (!request.getStudentId().equals(goal.studentId())
+        || !"ACTIVE".equals(goal.status())
+        || !profile.tutorTeaches(tutorId, goal.subjectId(), goal.educationLevelId()))
       throw new InvalidOperationException("Mục tiêu hoặc chuyên môn gia sư đã thay đổi");
+
     request.accept(now);
     requests.flush();
     TutoringClass created = classes.save(new TutoringClass(request, now));
-    notifications.notify(request.getSentByUserId(), request.getStudentId(), "CONNECTION_ACCEPTED",
-        "Yêu cầu đã được chấp nhận", "Gia sư đã chấp nhận yêu cầu", "CLASS", created.getId());
+    events.publishEvent(new ConnectionRequestChangedEvent(UUID.randomUUID(), id, actor.getUserId(),
+        request.getStudentId(), "PENDING", "ACCEPTED", now, request.getSentByUserId(),
+        studentUserId, actor.getUserId(), created.getId()));
+    events.publishEvent(new TutoringClassCreatedEvent(UUID.randomUUID(), created.getId(), actor.getUserId(),
+        request.getStudentId(), null, "ACTIVE", now, id, tutorId, request.getGoalId()));
     return TransitionResult.success(ClassResult.from(created));
   }
 }

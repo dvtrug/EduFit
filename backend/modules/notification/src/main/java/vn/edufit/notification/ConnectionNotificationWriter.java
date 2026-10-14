@@ -3,6 +3,7 @@ package vn.edufit.notification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import vn.edufit.connection.api.ConnectionFacade;
 import vn.edufit.connection.api.event.ConnectionRequestChangedEvent;
 import vn.edufit.connection.api.event.LinkInvitationChangedEvent;
 import vn.edufit.connection.api.event.ParentStudentLinkChangedEvent;
@@ -11,7 +12,12 @@ import vn.edufit.connection.api.event.ParentStudentLinkChangedEvent;
 @Service
 class ConnectionNotificationWriter {
   private final NotificationRepository repository;
-  ConnectionNotificationWriter(NotificationRepository repository) { this.repository = repository; }
+  private final ConnectionFacade facade;
+
+  ConnectionNotificationWriter(NotificationRepository repository, ConnectionFacade facade) {
+    this.repository = repository;
+    this.facade = facade;
+  }
 
   @Transactional(propagation = Propagation.MANDATORY)
   public void invitationCreated(LinkInvitationChangedEvent event) {
@@ -63,6 +69,32 @@ class ConnectionNotificationWriter {
     if (!event.studentUserId().equals(event.actorUserId())) {
       repository.save(new Notification(event.studentUserId(), event.studentId(), "CONNECTION_CANCELLED",
           "Yêu cầu đã bị hủy", "Yêu cầu kết nối đã bị hủy", "CONNECTION_REQUEST",
+          event.aggregateId(), event.occurredAt()));
+    }
+  }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void requestAccepted(ConnectionRequestChangedEvent event) {
+    repository.save(new Notification(event.studentUserId(), event.studentId(), "CONNECTION_ACCEPTED",
+        "Yêu cầu đã được chấp nhận", "Gia sư đã chấp nhận yêu cầu", "CLASS",
+        java.util.Objects.requireNonNull(event.classId(), "classId"), event.occurredAt()));
+    if (!event.studentUserId().equals(event.sentByUserId())
+        && facade != null && facade.hasConfirmedParentLink(event.sentByUserId(), event.studentId())) {
+      repository.save(new Notification(event.sentByUserId(), event.studentId(), "CONNECTION_ACCEPTED",
+          "Yêu cầu đã được chấp nhận", "Gia sư đã chấp nhận yêu cầu", "CLASS",
+          event.classId(), event.occurredAt()));
+    }
+  }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void requestRejected(ConnectionRequestChangedEvent event) {
+    repository.save(new Notification(event.studentUserId(), event.studentId(), "CONNECTION_REJECTED",
+        "Yêu cầu đã bị từ chối", "Gia sư đã từ chối yêu cầu", "CONNECTION_REQUEST",
+        event.aggregateId(), event.occurredAt()));
+    if (!event.studentUserId().equals(event.sentByUserId())
+        && facade != null && facade.hasConfirmedParentLink(event.sentByUserId(), event.studentId())) {
+      repository.save(new Notification(event.sentByUserId(), event.studentId(), "CONNECTION_REJECTED",
+          "Yêu cầu đã bị từ chối", "Gia sư đã từ chối yêu cầu", "CONNECTION_REQUEST",
           event.aggregateId(), event.occurredAt()));
     }
   }

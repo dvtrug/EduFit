@@ -22,5 +22,10 @@ public class NotificationSinkTestBridge {
     });
     return repository;
   }
+  @Bean
+  @org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean(vn.edufit.connection.api.ConnectionFacade.class)
+  vn.edufit.connection.api.ConnectionFacade connectionFacade() {
+    return mock(vn.edufit.connection.api.ConnectionFacade.class);
+  }
   private Object field(Notification row, String name) { return ReflectionTestUtils.getField(row, name); }
 }

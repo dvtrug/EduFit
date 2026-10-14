@@ -22,6 +22,7 @@ import vn.edufit.connection.application.service.ConnectionRequestService;
 import vn.edufit.connection.application.service.ConnectionQueryService;
 import vn.edufit.profile.api.dto.ConnectionGoalDto;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
+import vn.edufit.profile.api.dto.StudentSummaryDto;
 import java.time.Instant;
 import vn.edufit.connection.application.service.ParentStudentLinkService;
 import vn.edufit.shared.auth.CurrentUser;
@@ -135,6 +136,7 @@ class ConnectionTransactionPostgresTest {
     when(profile.getTutorIdByUserId(tutorUser)).thenReturn(tutor);
     when(profile.findTutorById(tutor)).thenReturn(Optional.of(new TutorSummaryDto(tutor,
         tutorUser, "Tutor", null, null, null, null, null, null, null, "VERIFIED", Instant.now(), null, 0)));
+    when(profile.findStudentById(student)).thenReturn(Optional.of(new StudentSummaryDto(student, studentUser, 4, null, true)));
     when(profile.findGoalForConnection(goal)).thenAnswer(call -> {
       assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
       return Optional.of(new ConnectionGoalDto(goal, student, studentUser, 1, 4, "EXAM_PREPARATION", null, "ACTIVE"));

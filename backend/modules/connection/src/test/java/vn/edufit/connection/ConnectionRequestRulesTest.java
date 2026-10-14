@@ -39,6 +39,7 @@ class ConnectionRequestRulesTest {
     when(profile.findGoalForConnection(goal)).thenReturn(Optional.of(new ConnectionGoalDto(goal,student,studentUser,1,4,"EXAM",null,"ACTIVE")));
     tutorStatus("VERIFIED");account(tutorUser,"TUTOR",AccountStatus.ACTIVE);
     when(profile.tutorTeaches(tutor,1,4)).thenReturn(true);
+    when(profile.getTutorIdByUserId(tutorUser)).thenReturn(tutor);
     when(rows.save(any())).thenAnswer(call -> {var row=(ConnectionRequest)call.getArgument(0);org.springframework.test.util.ReflectionTestUtils.setField(row,"id",id);return row;});
     service=new ConnectionRequestService(rows,classes,profile,iam,lock,sink,facade,new ConnectionRequestInput("legacy-compatible"),events,Clock.fixed(now,ZoneOffset.UTC));
   }
@@ -122,5 +123,81 @@ class ConnectionRequestRulesTest {
     verify(events).publishEvent(argThat((vn.edufit.connection.api.event.ConnectionRequestChangedEvent e) ->
         e.aggregateId().equals(id) && e.actorUserId().equals(studentUser) && e.studentId().equals(student)
             && "PENDING".equals(e.oldStatus()) && "CANCELLED".equals(e.newStatus()) && e.classId() == null));
+  }
+  @Test void inactiveTutorAccountCannotRespond() {
+    pending(studentUser);
+    var actor = actor(tutorUser, "TUTOR");
+    account(tutorUser, "TUTOR", AccountStatus.DEACTIVATED);
+    assertThrows(ForbiddenOperationException.class, () -> service.respondRequest(actor, id, true, null));
+    assertThrows(ForbiddenOperationException.class, () -> service.respondRequest(actor, id, false, null));
+    verify(classes, never()).save(any());
+  }
+  @Test void unverifiedTutorCannotRespond() {
+    pending(studentUser);
+    tutorStatus("PENDING");
+    assertThrows(InvalidOperationException.class, () -> service.respondRequest(actor(tutorUser, "TUTOR"), id, true, null));
+    assertThrows(InvalidOperationException.class, () -> service.respondRequest(actor(tutorUser, "TUTOR"), id, false, null));
+    verify(classes, never()).save(any());
+  }
+  @Test void changedGoalOwnerCannotBeAccepted() {
+    pending(studentUser);
+    when(profile.findGoalForConnection(goal)).thenReturn(Optional.of(new ConnectionGoalDto(goal, UUID.randomUUID(), studentUser, 1, 4, "EXAM", null, "ACTIVE")));
+    assertThrows(InvalidOperationException.class, () -> service.respondRequest(actor(tutorUser, "TUTOR"), id, true, null));
+    verify(classes, never()).save(any());
+  }
+  @Test void inactiveGoalCannotBeAccepted() {
+    pending(studentUser);
+    when(profile.findGoalForConnection(goal)).thenReturn(Optional.of(new ConnectionGoalDto(goal, student, studentUser, 1, 4, "EXAM", null, "ARCHIVED")));
+    assertThrows(InvalidOperationException.class, () -> service.respondRequest(actor(tutorUser, "TUTOR"), id, true, null));
+    verify(classes, never()).save(any());
+  }
+  @Test void mismatchedExpertiseCannotBeAccepted() {
+    pending(studentUser);
+    when(profile.tutorTeaches(tutor, 1, 4)).thenReturn(false);
+    assertThrows(InvalidOperationException.class, () -> service.respondRequest(actor(tutorUser, "TUTOR"), id, true, null));
+    verify(classes, never()).save(any());
+  }
+  @Test void rejectReasonLengthBoundaryEnforced() {
+    pending(studentUser);
+    String tooLong301 = "a".repeat(301);
+    assertThrows(InvalidOperationException.class, () -> service.respondRequest(actor(tutorUser, "TUTOR"), id, false, tooLong301));
+    UUID classId = UUID.randomUUID();
+    when(classes.save(any())).thenAnswer(call -> {
+      var row = (TutoringClass) call.getArgument(0);
+      org.springframework.test.util.ReflectionTestUtils.setField(row, "id", classId);
+      return row;
+    });
+    assertDoesNotThrow(() -> service.respondRequest(actor(tutorUser, "TUTOR"), id, true, tooLong301));
+  }
+  @Test void tutorRejectPublishesEventAndDoesNotCreateClass() {
+    var row = pending(studentUser);
+    assertInstanceOf(TransitionResult.Success.class, service.respondRequest(actor(tutorUser, "TUTOR"), id, false, "Busy"));
+    assertEquals("REJECTED", row.getStatus());
+    assertEquals("Busy", row.getRejectReason());
+    verify(classes, never()).save(any());
+    verify(events).publishEvent(argThat((vn.edufit.connection.api.event.ConnectionRequestChangedEvent e) ->
+        e.aggregateId().equals(id) && e.actorUserId().equals(tutorUser) && e.studentId().equals(student)
+            && "PENDING".equals(e.oldStatus()) && "REJECTED".equals(e.newStatus()) && e.classId() == null));
+    verifyNoInteractions(sink);
+  }
+  @Test void tutorAcceptCreatesExactlyOneClassAndPublishesBothEvents() {
+    var row = pending(studentUser);
+    UUID classId = UUID.randomUUID();
+    when(classes.save(any())).thenAnswer(call -> {
+      var c = (TutoringClass) call.getArgument(0);
+      org.springframework.test.util.ReflectionTestUtils.setField(c, "id", classId);
+      return c;
+    });
+    var res = service.respondRequest(actor(tutorUser, "TUTOR"), id, true, null);
+    assertInstanceOf(TransitionResult.Success.class, res);
+    assertEquals("ACCEPTED", row.getStatus());
+    verify(classes, times(1)).save(any());
+    verify(events).publishEvent(argThat((Object obj) -> obj instanceof vn.edufit.connection.api.event.ConnectionRequestChangedEvent e
+        && e.aggregateId().equals(id) && e.actorUserId().equals(tutorUser) && e.studentId().equals(student)
+        && "PENDING".equals(e.oldStatus()) && "ACCEPTED".equals(e.newStatus()) && classId.equals(e.classId())));
+    verify(events).publishEvent(argThat((Object obj) -> obj instanceof vn.edufit.connection.api.event.TutoringClassCreatedEvent e
+        && e.aggregateId().equals(classId) && e.actorUserId().equals(tutorUser) && e.studentId().equals(student)
+        && "ACTIVE".equals(e.newStatus()) && id.equals(e.requestId()) && tutor.equals(e.tutorId()) && goal.equals(e.goalId())));
+    verifyNoInteractions(sink);
   }
 }

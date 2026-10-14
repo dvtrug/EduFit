@@ -149,12 +149,19 @@ class ConnectionUseCaseTest {
     when(profile.findGoalForConnection(goalId)).thenReturn(Optional.of(new ConnectionGoalDto(
         goalId, studentId, UUID.randomUUID(), 1, 2, "EXAM", null, "ACTIVE")));
     when(profile.tutorTeaches(tutorId, 1, 2)).thenReturn(true);
-    when(classes.save(any())).thenAnswer(i -> i.getArgument(0));
+    UUID classId = UUID.randomUUID();
+    when(profile.findStudentById(studentId)).thenReturn(Optional.of(new StudentSummaryDto(studentId, UUID.randomUUID(), 4, null, true)));
+    when(classes.save(any())).thenAnswer(i -> {
+      var row = (TutoringClass) i.getArgument(0);
+      org.springframework.test.util.ReflectionTestUtils.setField(row, "id", classId);
+      return row;
+    });
     assertNotNull(service.respondRequest(actor(tutorUser, "TUTOR"), id, true, null));
     assertEquals("ACCEPTED", request.getStatus());
     verify(classes, times(1)).save(any());
-    verify(notifications).notify(eq(request.getSentByUserId()), eq(studentId),
-        eq("CONNECTION_ACCEPTED"), anyString(), anyString(), eq("CLASS"), nullable(UUID.class));
+    verify(events).publishEvent(isA(vn.edufit.connection.api.event.ConnectionRequestChangedEvent.class));
+    verify(events).publishEvent(isA(vn.edufit.connection.api.event.TutoringClassCreatedEvent.class));
+    verifyNoInteractions(notifications);
   }
 
   @Test void acceptingInvitationLocksStudentBeforePairAndRow() {

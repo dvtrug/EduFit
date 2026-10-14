@@ -142,6 +142,7 @@ class AuditPersistenceTest {
     @Bean @Primary jakarta.persistence.EntityManager entityManager(EntityManagerFactory factory) { return SharedEntityManagerCreator.createSharedEntityManager(factory); }
     @Bean vn.edufit.iam.api.IamFacade iam() { return mock(vn.edufit.iam.api.IamFacade.class); }
     @Bean vn.edufit.profile.api.ProfileFacade profile() { return mock(vn.edufit.profile.api.ProfileFacade.class); }
+    @Bean vn.edufit.connection.api.ConnectionFacade connectionFacade() { return mock(vn.edufit.connection.api.ConnectionFacade.class); }
     @Bean vn.edufit.shared.notification.NotificationSink notifications() { return mock(vn.edufit.shared.notification.NotificationSink.class); }
     @Bean JpaTransactionManager transactionManager(EntityManagerFactory factory) { return new JpaTransactionManager(factory); }
   }

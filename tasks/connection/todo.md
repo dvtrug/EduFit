@@ -213,7 +213,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** Không tạo commit cha; dùng T13a–T13c.
 - **Kết thúc:** Commit + push + UC3.4/validation evidence.
 
-### [ ] T14 — Hoàn thiện accept/reject và tạo đúng một class
+### [x] T14 — Hoàn thiện accept/reject và tạo đúng một class
 
 - **Files:** request service, class repository, respond DTO, event listener branch, tests.
 - **Thực hiện:** Tutor đích ACTIVE/VERIFIED; request PENDING/còn hạn; revalidate goal.studentId == request.studentId, ACTIVE và expertise. Reject optional reason ≤300. Accept + class cùng transaction, publish request transition và class-created; chỉ một nguồn accepted notification.

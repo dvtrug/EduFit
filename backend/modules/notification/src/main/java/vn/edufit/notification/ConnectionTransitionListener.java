@@ -33,6 +33,8 @@ class ConnectionTransitionListener {
     switch (event.newStatus()) {
       case "PENDING" -> { if (event.oldStatus() == null) writer.requestCreated(event); }
       case "CANCELLED" -> writer.requestCancelled(event);
+      case "ACCEPTED" -> writer.requestAccepted(event);
+      case "REJECTED" -> writer.requestRejected(event);
       default -> { }
     }
   }
