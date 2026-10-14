@@ -1158,6 +1158,400 @@ class ConnectionTransactionPostgresTest {
     assertNull(jdbc.queryForObject("select revoked_at from parent_student_link where link_id=?", java.sql.Timestamp.class, link));
   }
 
+  @Test
+  void concurrentDoubleInviteBetweenSamePairCreatesOnlyOnePendingInvitation() throws Exception {
+    var jdbc = new JdbcTemplate(source);
+    UUID parent = account("PARENT"), studentUser = account("STUDENT");
+    UUID student = UUID.randomUUID();
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", student, studentUser);
+    when(profile.findStudentByUserId(studentUser)).thenReturn(Optional.of(new StudentSummaryDto(student, studentUser, 4, null, true)));
+    when(iam.findUserSummaryByEmail(studentUser + "@test.invalid")).thenReturn(Optional.of(
+        new vn.edufit.iam.api.dto.UserSummaryView(studentUser, studentUser + "@test.invalid", "Student", vn.edufit.iam.api.AccountRole.STUDENT, vn.edufit.iam.api.AccountStatus.ACTIVE)
+    ));
+    when(iam.findUserSummaryByEmail(parent + "@test.invalid")).thenReturn(Optional.of(
+        new vn.edufit.iam.api.dto.UserSummaryView(parent, parent + "@test.invalid", "Parent", vn.edufit.iam.api.AccountRole.PARENT, vn.edufit.iam.api.AccountStatus.ACTIVE)
+    ));
+
+    int threads = 2;
+    var latch = new CountDownLatch(threads);
+    var startBarrier = new CountDownLatch(1);
+    var successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+    try (var pool = Executors.newFixedThreadPool(threads)) {
+      // Thread 1: Parent invites Student
+      pool.submit(() -> {
+        try {
+          startBarrier.await();
+          boolean res = invitations.invite(actor(parent, "PARENT"), studentUser + "@test.invalid");
+          if (res) successCount.incrementAndGet();
+        } catch (Exception ignored) {
+        } finally {
+          latch.countDown();
+        }
+      });
+      // Thread 2: Student invites Parent (opposite direction)
+      pool.submit(() -> {
+        try {
+          startBarrier.await();
+          boolean res = invitations.invite(actor(studentUser, "STUDENT"), parent + "@test.invalid");
+          if (res) successCount.incrementAndGet();
+        } catch (Exception ignored) {
+        } finally {
+          latch.countDown();
+        }
+      });
+      startBarrier.countDown();
+      assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    // Invariant: Exactly one invitation can be in PENDING status for the pair
+    int pendingCount = jdbc.queryForObject(
+        "select count(*) from link_invitation where status = 'PENDING' and ((inviter_user_id=? and invited_user_id=?) or (inviter_user_id=? and invited_user_id=?))",
+        Integer.class, parent, studentUser, studentUser, parent);
+    assertEquals(1, pendingCount, "Concurrency control must enforce at most one PENDING invitation between the pair");
+  }
+
+  @Test
+  void concurrentQuotaConsumptionExceedingTenRejectsEleventhAttempt() throws Exception {
+    UUID parent = account("PARENT");
+    var jdbc = new JdbcTemplate(source);
+    // Seed 9 attempts
+    jdbc.update("insert into connection_invite_quota(user_id, window_started_at, attempts) values (?, now(), 9)", parent);
+
+    int threads = 2;
+    var latch = new CountDownLatch(threads);
+    var startBarrier = new CountDownLatch(1);
+    var successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+    var conflictCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+    try (var pool = Executors.newFixedThreadPool(threads)) {
+      for (int i = 0; i < threads; i++) {
+        pool.submit(() -> {
+          try {
+            startBarrier.await();
+            new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+              var consumption = quota.consume(parent);
+              if (consumption.allowed()) {
+                successCount.incrementAndGet();
+              } else {
+                conflictCount.incrementAndGet();
+              }
+            });
+          } catch (Exception ignored) {
+          } finally {
+            latch.countDown();
+          }
+        });
+      }
+      startBarrier.countDown();
+      assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    // Exactly one attempt allowed to reach 10, the other rejected
+    assertEquals(1, successCount.get(), "Only attempt 10 should succeed");
+    assertEquals(1, conflictCount.get(), "Attempt 11 must be rejected by quota constraint");
+    int finalAttempts = jdbc.queryForObject("select attempts from connection_invite_quota where user_id=?", Integer.class, parent);
+    assertEquals(10, finalAttempts);
+  }
+
+  @Test
+  void concurrentDoubleAcceptInvitationCreatesOnlyOneConfirmedLink() throws Exception {
+    var jdbc = new JdbcTemplate(source);
+    UUID parent = account("PARENT"), studentUser = account("STUDENT"), student = UUID.randomUUID(), invitation = UUID.randomUUID();
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", student, studentUser);
+    jdbc.update("insert into link_invitation(invitation_id,inviter_user_id,invited_user_id,expires_at) values (?,?,?,now()+interval '14 days')", invitation, parent, studentUser);
+    when(profile.findStudentByUserId(studentUser)).thenReturn(Optional.of(new StudentSummaryDto(student, studentUser, 4, null, true)));
+    when(iam.findUserSummaryById(parent)).thenReturn(Optional.of(new vn.edufit.iam.api.dto.UserSummaryView(
+        parent, "parent@test.invalid", "Parent", vn.edufit.iam.api.AccountRole.PARENT, vn.edufit.iam.api.AccountStatus.ACTIVE)));
+
+    int threads = 2;
+    var latch = new CountDownLatch(threads);
+    var startBarrier = new CountDownLatch(1);
+    var successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+    var conflictCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+    try (var pool = Executors.newFixedThreadPool(threads)) {
+      for (int i = 0; i < threads; i++) {
+        pool.submit(() -> {
+          try {
+            startBarrier.await();
+            var res = invitations.respondInvitation(actor(studentUser, "STUDENT"), invitation, true);
+            if (res instanceof vn.edufit.connection.application.dto.TransitionResult.Success) {
+              successCount.incrementAndGet();
+            } else if (res instanceof vn.edufit.connection.application.dto.TransitionResult.Conflict) {
+              conflictCount.incrementAndGet();
+            }
+          } catch (Exception ignored) {
+          } finally {
+            latch.countDown();
+          }
+        });
+      }
+      startBarrier.countDown();
+      assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    assertEquals(1, successCount.get(), "Exactly one accept must succeed");
+    assertEquals(1, conflictCount.get(), "Second accept must encounter conflict");
+    assertEquals(1, jdbc.queryForObject("select count(*) from parent_student_link where student_id=? and parent_user_id=? and status='CONFIRMED'", Integer.class, student, parent));
+    assertEquals("ACCEPTED", jdbc.queryForObject("select status from link_invitation where invitation_id=?", String.class, invitation));
+  }
+
+  @Test
+  void concurrentAcceptVsDeclineInvitationResultsInDeterministicTerminalState() throws Exception {
+    var jdbc = new JdbcTemplate(source);
+    UUID parent = account("PARENT"), studentUser = account("STUDENT"), student = UUID.randomUUID(), invitation = UUID.randomUUID();
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", student, studentUser);
+    jdbc.update("insert into link_invitation(invitation_id,inviter_user_id,invited_user_id,expires_at) values (?,?,?,now()+interval '14 days')", invitation, parent, studentUser);
+    when(profile.findStudentByUserId(studentUser)).thenReturn(Optional.of(new StudentSummaryDto(student, studentUser, 4, null, true)));
+    when(iam.findUserSummaryById(parent)).thenReturn(Optional.of(new vn.edufit.iam.api.dto.UserSummaryView(
+        parent, "parent@test.invalid", "Parent", vn.edufit.iam.api.AccountRole.PARENT, vn.edufit.iam.api.AccountStatus.ACTIVE)));
+
+    int threads = 2;
+    var latch = new CountDownLatch(threads);
+    var startBarrier = new CountDownLatch(1);
+    var terminalCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+    try (var pool = Executors.newFixedThreadPool(threads)) {
+      pool.submit(() -> {
+        try {
+          startBarrier.await();
+          var res = invitations.respondInvitation(actor(studentUser, "STUDENT"), invitation, true);
+          if (res instanceof vn.edufit.connection.application.dto.TransitionResult.Success) terminalCount.incrementAndGet();
+        } catch (Exception ignored) {
+        } finally {
+          latch.countDown();
+        }
+      });
+      pool.submit(() -> {
+        try {
+          startBarrier.await();
+          var res = invitations.respondInvitation(actor(studentUser, "STUDENT"), invitation, false);
+          if (res instanceof vn.edufit.connection.application.dto.TransitionResult.Success) terminalCount.incrementAndGet();
+        } catch (Exception ignored) {
+        } finally {
+          latch.countDown();
+        }
+      });
+      startBarrier.countDown();
+      assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    assertEquals(1, terminalCount.get(), "Exactly one terminal transition must win");
+    String status = jdbc.queryForObject("select status from link_invitation where invitation_id=?", String.class, invitation);
+    assertTrue("ACCEPTED".equals(status) || "DECLINED".equals(status));
+    int linkCount = jdbc.queryForObject("select count(*) from parent_student_link where student_id=? and parent_user_id=? and status='CONFIRMED'", Integer.class, student, parent);
+    if ("ACCEPTED".equals(status)) {
+      assertEquals(1, linkCount);
+    } else {
+      assertEquals(0, linkCount);
+    }
+  }
+
+  @Test
+  void concurrentSixthPendingRequestsToDifferentTutorsAllowsOnlyFive() throws Exception {
+    var fixture = pendingRequest();
+    var jdbc = new JdbcTemplate(source);
+
+    // Add 3 more pending requests to other tutors so fixture student has 4 pending requests total
+    for (int i = 0; i < 3; i++) {
+      UUID otherTutorUser = account("TUTOR"), otherTutor = UUID.randomUUID();
+      jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'Tutor" + i + "','ONLINE',100000,'VERIFIED')", otherTutor, otherTutorUser);
+      jdbc.update("insert into connection_request(request_id,student_id,tutor_id,goal_id,sent_by_user_id,desired_slots,expires_at) values (?,?,?,?,?,cast(? as jsonb),now()+interval '7 days')",
+          UUID.randomUUID(), fixture.student(), otherTutor, fixture.goal(), fixture.studentUser(), "[]");
+    }
+    assertEquals(4, jdbc.queryForObject("select count(*) from connection_request where student_id=? and status='PENDING'", Integer.class, fixture.student()));
+
+    // Create 2 candidate tutors for the 5th and 6th slots
+    UUID tutorAUser = account("TUTOR"), tutorA = UUID.randomUUID();
+    actor(tutorAUser, "TUTOR");
+    jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'TutorA','ONLINE',100000,'VERIFIED')", tutorA, tutorAUser);
+    when(profile.getTutorIdByUserId(tutorAUser)).thenReturn(tutorA);
+    when(profile.findTutorById(tutorA)).thenReturn(Optional.of(new TutorSummaryDto(tutorA, tutorAUser, "TutorA", null, null, null, null, null, null, null, "VERIFIED", Instant.now(), null, 0)));
+    when(profile.tutorTeaches(tutorA, 1, 4)).thenReturn(true);
+
+    UUID tutorBUser = account("TUTOR"), tutorB = UUID.randomUUID();
+    actor(tutorBUser, "TUTOR");
+    jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'TutorB','ONLINE',100000,'VERIFIED')", tutorB, tutorBUser);
+    when(profile.getTutorIdByUserId(tutorBUser)).thenReturn(tutorB);
+    when(profile.findTutorById(tutorB)).thenReturn(Optional.of(new TutorSummaryDto(tutorB, tutorBUser, "TutorB", null, null, null, null, null, null, null, "VERIFIED", Instant.now(), null, 0)));
+    when(profile.tutorTeaches(tutorB, 1, 4)).thenReturn(true);
+
+    int threads = 2;
+    var latch = new CountDownLatch(threads);
+    var startBarrier = new CountDownLatch(1);
+    var successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+    var conflictCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+    try (var pool = Executors.newFixedThreadPool(threads)) {
+      pool.submit(() -> {
+        try {
+          startBarrier.await();
+          var res = requests.request(actor(fixture.studentUser(), "STUDENT"), fixture.goal(), tutorA, List.of("Tue 19:00"), null);
+          if (res instanceof vn.edufit.connection.application.dto.TransitionResult.Success) successCount.incrementAndGet();
+          else if (res instanceof vn.edufit.connection.application.dto.TransitionResult.Conflict) conflictCount.incrementAndGet();
+        } catch (Exception ignored) {
+        } finally {
+          latch.countDown();
+        }
+      });
+      pool.submit(() -> {
+        try {
+          startBarrier.await();
+          var res = requests.request(actor(fixture.studentUser(), "STUDENT"), fixture.goal(), tutorB, List.of("Tue 19:00"), null);
+          if (res instanceof vn.edufit.connection.application.dto.TransitionResult.Success) successCount.incrementAndGet();
+          else if (res instanceof vn.edufit.connection.application.dto.TransitionResult.Conflict) conflictCount.incrementAndGet();
+        } catch (Exception ignored) {
+        } finally {
+          latch.countDown();
+        }
+      });
+      startBarrier.countDown();
+      assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    assertEquals(1, successCount.get(), "Exactly one 5th pending request should succeed");
+    assertEquals(1, conflictCount.get(), "The 6th concurrent pending request must be rejected with Conflict");
+    assertEquals(5, jdbc.queryForObject("select count(*) from connection_request where student_id=? and status='PENDING'", Integer.class, fixture.student()));
+  }
+
+  @Test
+  void concurrentDoubleAcceptRequestCreatesExactlyOneClass() throws Exception {
+    var fixture = pendingRequest();
+    var jdbc = new JdbcTemplate(source);
+    actor(fixture.tutorUser(), "TUTOR");
+
+    int threads = 2;
+    var latch = new CountDownLatch(threads);
+    var startBarrier = new CountDownLatch(1);
+    var successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+    var conflictCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+    try (var pool = Executors.newFixedThreadPool(threads)) {
+      for (int i = 0; i < threads; i++) {
+        pool.submit(() -> {
+          try {
+            startBarrier.await();
+            var res = requests.respondRequest(actor(fixture.tutorUser(), "TUTOR"), fixture.request(), true, null);
+            if (res instanceof vn.edufit.connection.application.dto.TransitionResult.Success) {
+              successCount.incrementAndGet();
+            } else if (res instanceof vn.edufit.connection.application.dto.TransitionResult.Conflict) {
+              conflictCount.incrementAndGet();
+            }
+          } catch (Exception ignored) {
+          } finally {
+            latch.countDown();
+          }
+        });
+      }
+      startBarrier.countDown();
+      assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    assertEquals(1, successCount.get(), "Exactly one accept must succeed and create class");
+    assertEquals(1, conflictCount.get(), "Second accept must encounter conflict");
+    assertEquals("ACCEPTED", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
+    assertEquals(1, jdbc.queryForObject("select count(*) from class where connection_request_id=?", Integer.class, fixture.request()));
+  }
+
+  @Test
+  void concurrentAcceptVsCancelRequestResolvesToSingleTerminalState() throws Exception {
+    var fixture = pendingRequest();
+    var jdbc = new JdbcTemplate(source);
+    actor(fixture.tutorUser(), "TUTOR");
+
+    int threads = 2;
+    var latch = new CountDownLatch(threads);
+    var startBarrier = new CountDownLatch(1);
+    var terminalCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+    try (var pool = Executors.newFixedThreadPool(threads)) {
+      pool.submit(() -> {
+        try {
+          startBarrier.await();
+          var res = requests.respondRequest(actor(fixture.tutorUser(), "TUTOR"), fixture.request(), true, null);
+          if (res instanceof vn.edufit.connection.application.dto.TransitionResult.Success) terminalCount.incrementAndGet();
+        } catch (Exception ignored) {
+        } finally {
+          latch.countDown();
+        }
+      });
+      pool.submit(() -> {
+        try {
+          startBarrier.await();
+          var res = requests.cancelRequest(actor(fixture.studentUser(), "STUDENT"), fixture.request());
+          if (res instanceof vn.edufit.connection.application.dto.TransitionResult.Success) terminalCount.incrementAndGet();
+        } catch (Exception ignored) {
+        } finally {
+          latch.countDown();
+        }
+      });
+      startBarrier.countDown();
+      assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    assertEquals(1, terminalCount.get(), "Exactly one action (accept or cancel) must succeed");
+    String status = jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request());
+    assertTrue("ACCEPTED".equals(status) || "CANCELLED".equals(status));
+    int classCount = jdbc.queryForObject("select count(*) from class where connection_request_id=?", Integer.class, fixture.request());
+    if ("ACCEPTED".equals(status)) {
+      assertEquals(1, classCount);
+    } else {
+      assertEquals(0, classCount);
+    }
+  }
+
+  @Test
+  void concurrentRevokeVsParentCreateRequestPreservesDataIntegrity() throws Exception {
+    var jdbc = new JdbcTemplate(source);
+    UUID parent = account("PARENT"), studentUser = account("STUDENT");
+    UUID student = UUID.randomUUID(), link = UUID.randomUUID(), goal = UUID.randomUUID();
+    UUID tutorUser = account("TUTOR"), tutor = UUID.randomUUID();
+    actor(tutorUser, "TUTOR");
+
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", student, studentUser);
+    jdbc.update("insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at,status) values (?,?,?,now(),'CONFIRMED')", link, parent, student);
+    jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'TutorRevoke','ONLINE',100000,'VERIFIED')", tutor, tutorUser);
+    jdbc.update("insert into learning_goal(goal_id,student_id,subject_id,current_level,desired_level,goal_type,deadline,mode,budget_max,status) values (?,?,1,1,2,'EXAM_PREPARATION',current_date + 30,'ONLINE',100000,'ACTIVE')", goal, student);
+
+    when(profile.getTutorIdByUserId(tutorUser)).thenReturn(tutor);
+    when(profile.findTutorById(tutor)).thenReturn(Optional.of(new TutorSummaryDto(tutor, tutorUser, "TutorRevoke", null, null, null, null, null, null, null, "VERIFIED", Instant.now(), null, 0)));
+    when(profile.findStudentById(student)).thenReturn(Optional.of(new StudentSummaryDto(student, studentUser, 4, null, true)));
+    when(profile.findGoalForConnection(goal)).thenReturn(Optional.of(new ConnectionGoalDto(goal, student, studentUser, 1, 4, "EXAM_PREPARATION", null, "ACTIVE")));
+    when(profile.tutorTeaches(tutor, 1, 4)).thenReturn(true);
+
+    int threads = 2;
+    var latch = new CountDownLatch(threads);
+    var startBarrier = new CountDownLatch(1);
+
+    try (var pool = Executors.newFixedThreadPool(threads)) {
+      pool.submit(() -> {
+        try {
+          startBarrier.await();
+          links.revokeLink(actor(studentUser, "STUDENT"), link, null);
+        } catch (Exception ignored) {
+        } finally {
+          latch.countDown();
+        }
+      });
+      pool.submit(() -> {
+        try {
+          startBarrier.await();
+          requests.request(actor(parent, "PARENT"), goal, tutor, List.of("Tue 19:00"), null);
+        } catch (Exception ignored) {
+        } finally {
+          latch.countDown();
+        }
+      });
+      startBarrier.countDown();
+      assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    // Link must end up in REVOKED status regardless of concurrency interleaving
+    assertEquals("REVOKED", jdbc.queryForObject("select status from parent_student_link where link_id=?", String.class, link));
+    assertFalse(facade.hasConfirmedParentLink(parent, student));
+  }
+
   @Configuration
   @EnableTransactionManagement
   @ComponentScan(basePackages = {"vn.edufit.connection.application", "vn.edufit.connection.infra.locking", "vn.edufit.connection.infra.scheduling"})

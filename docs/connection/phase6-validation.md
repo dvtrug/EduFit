@@ -132,3 +132,34 @@ Branch `feat/connection`. Phase 6 comprises 5 comprehensive verification and cle
 - **Test Execution**:
   - `ConnectionTransactionPostgresTest`: **37 tests passed (0 failures, 0 errors, 0 skips)** on Testcontainers PostgreSQL 17.
   - Reactor test suite GREEN.
+
+---
+
+## T22c — Concurrency tests and race matrix
+
+### 1. Implementation
+- **Full Race Matrix Implementation (`ConnectionTransactionPostgresTest`)**:
+  - Tested concurrently via multiple threads running in separate transactions with barriers (`CountDownLatch`), bounded timeouts (10s), zero random sleeps, against real PostgreSQL 17.
+  - **Double invite đối chiều (Opposite-direction invite race)**:
+    - `concurrentDoubleInviteBetweenSamePairCreatesOnlyOnePendingInvitation`: Parent and Student concurrently invite each other. Advisory pair lock and partial unique index `uq_link_invitation_pending` guarantee exactly 1 PENDING invitation exists.
+  - **Quota 10/11 đồng thời (Concurrent quota consumption)**:
+    - `concurrentQuotaConsumptionExceedingTenRejectsEleventhAttempt`: 2 concurrent threads attempt quota consumption when 9 attempts have been made. Exactly 1 thread consumes attempt 10, the other is rejected, attempts never exceed 10.
+  - **Double accept invitation**:
+    - `concurrentDoubleAcceptInvitationCreatesOnlyOneConfirmedLink`: 2 concurrent threads call `respondInvitation` with accept=true. Exactly 1 succeeds, second receives `Conflict`, exactly 1 `CONFIRMED` link is created.
+  - **Accept vs decline / withdraw invitation**:
+    - `concurrentAcceptVsDeclineInvitationResultsInDeterministicTerminalState`: 1 thread accepts, 1 thread declines concurrently. Exactly 1 terminal state wins (`ACCEPTED` or `DECLINED`), zero orphan links.
+  - **Pending request thứ 5/6 đồng thời (Pending limit 5 race)**:
+    - `concurrentSixthPendingRequestsToDifferentTutorsAllowsOnlyFive`: Student has 4 pending requests, 2 concurrent threads attempt to create requests to Tutor A and Tutor B. Exactly 1 succeeds (5th slot), the other receives `Conflict` ("Đã đạt giới hạn 5 yêu cầu chờ"). Total pending requests in database strictly equals 5.
+  - **Accept hai lần chỉ một class (Double accept request)**:
+    - `concurrentDoubleAcceptRequestCreatesExactlyOneClass`: 2 concurrent calls to accept the same request. Row lock and class unique constraint ensure exactly 1 class created, request status `ACCEPTED`, second call receives `Conflict`.
+  - **Accept vs cancel request**:
+    - `concurrentAcceptVsCancelRequestResolvesToSingleTerminalState`: Tutor accept vs Student cancel concurrently. Resolves deterministically to either `ACCEPTED` (classCount=1) or `CANCELLED` (classCount=0). Zero half-state.
+  - **Revoke vs Parent create request**:
+    - `concurrentRevokeVsParentCreateRequestPreservesDataIntegrity`: Student revokes link while Parent concurrently creates request. Resolves safely without deadlocks, link ends in `REVOKED`, revoked parent denied further access.
+  - **Accept vs Expiry race & Concurrent schedulers**:
+    - Verified via existing `accessVsExpiryRaceBetweenTutorAcceptAndSystemExpiry` and `concurrentSchedulersDoNotDuplicateExpiryOrNotifications`.
+
+### 2. Verification
+- **Test Execution**:
+  - `ConnectionTransactionPostgresTest`: **45 tests passed (0 failures, 0 errors, 0 skips)** on Testcontainers PostgreSQL 17.
+  - Reactor test suite GREEN.
