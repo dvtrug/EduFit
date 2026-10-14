@@ -95,6 +95,15 @@ public enum ErrorCode {
   /** Học sinh đã đánh giá gia sư này cho khóa học hiện tại rồi, không được đánh giá lại (NFR-24). */
   REVIEW_ALREADY_EXISTS,
 
+  /** Chưa hoàn thành đủ số buổi học quy định để được đánh giá gia sư (UC6.1). */
+  NOT_ENOUGH_SESSIONS,
+
+  /** Chỉ tác giả tạo đánh giá mới có quyền chỉnh sửa đánh giá này (BR-57). */
+  ONLY_AUTHOR_CAN_EDIT,
+
+  /** Điểm đánh giá (rating) không hợp lệ, phải là số nguyên từ 1 đến 5 (BR-58). */
+  INVALID_RATING,
+
   // --- Module AI Platform (Cổng gọi LLM - FR-05, NFR-10) ---
   /** Dịch vụ AI bên ngoài không khả dụng hoặc trả về lỗi kết nối. */
   AI_SERVICE_UNAVAILABLE,
