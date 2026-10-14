@@ -310,4 +310,74 @@ class ConnectionQueryServiceTest {
     assertEquals(0, page.totalElements());
     assertEquals(0, page.totalPages());
   }
+
+  @Test void adminLinksPageRequiresAdminRole() {
+    UUID user = UUID.randomUUID();
+    assertThrows(ForbiddenOperationException.class, () -> service.adminLinksPage(actor(user, "PARENT"), "test@example.com", 0, 20));
+    assertThrows(ForbiddenOperationException.class, () -> service.adminLinksPage(actor(user, "STUDENT"), "test@example.com", 0, 20));
+    assertThrows(ForbiddenOperationException.class, () -> service.adminLinksPage(actor(user, "TUTOR"), "test@example.com", 0, 20));
+  }
+
+  @ParameterizedTest @ValueSource(strings = {"", "   "})
+  @org.junit.jupiter.params.provider.NullSource
+  void adminLinksPageRequiresNonBlankEmail(String email) {
+    UUID admin = UUID.randomUUID();
+    assertThrows(InvalidOperationException.class, () -> service.adminLinksPage(actor(admin, "ADMIN"), email, 0, 20));
+  }
+
+  @Test void adminLinksPageReturnsEmptyWhenEmailNotFound() {
+    UUID admin = UUID.randomUUID();
+    when(iam.findUserSummaryByEmail("missing@example.com")).thenReturn(Optional.empty());
+
+    var page = service.adminLinksPage(actor(admin, "ADMIN"), "missing@example.com", 0, 20);
+    assertTrue(page.items().isEmpty());
+    assertEquals(0, page.totalElements());
+  }
+
+  @Test void adminLinksPageLookupByParentEmailReturnsConfirmedLinks() {
+    UUID admin = UUID.randomUUID(), parentId = UUID.randomUUID(), studentId = UUID.randomUUID();
+    when(iam.findUserSummaryByEmail("parent@example.com")).thenReturn(Optional.of(
+        new vn.edufit.iam.api.dto.UserSummaryView(parentId, "parent@example.com", "Parent Name",
+            vn.edufit.iam.api.AccountRole.PARENT, vn.edufit.iam.api.AccountStatus.ACTIVE)
+    ));
+    var link = new ParentStudentLink(parentId, studentId, Instant.now());
+    when(links.findByParentUserIdAndStatusConfirmed(eq(parentId), any(org.springframework.data.domain.Pageable.class)))
+        .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(link), org.springframework.data.domain.PageRequest.of(0, 20), 1));
+
+    var page = service.adminLinksPage(actor(admin, "ADMIN"), "parent@example.com", 0, 20);
+    assertEquals(1, page.items().size());
+    assertEquals(parentId, page.items().getFirst().parentUserId());
+    assertEquals(studentId, page.items().getFirst().studentId());
+  }
+
+  @Test void adminLinksPageLookupByStudentEmailReturnsConfirmedLinks() {
+    UUID admin = UUID.randomUUID(), studentUserId = UUID.randomUUID(), studentId = UUID.randomUUID(), parentId = UUID.randomUUID();
+    when(iam.findUserSummaryByEmail("student@example.com")).thenReturn(Optional.of(
+        new vn.edufit.iam.api.dto.UserSummaryView(studentUserId, "student@example.com", "Student Name",
+            vn.edufit.iam.api.AccountRole.STUDENT, vn.edufit.iam.api.AccountStatus.ACTIVE)
+    ));
+    when(profile.findStudentByUserId(studentUserId)).thenReturn(Optional.of(
+        new StudentSummaryDto(studentId, studentUserId, 3, null, true)
+    ));
+    var link = new ParentStudentLink(parentId, studentId, Instant.now());
+    when(links.findByStudentIdAndStatusConfirmed(eq(studentId), any(org.springframework.data.domain.Pageable.class)))
+        .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(link), org.springframework.data.domain.PageRequest.of(0, 20), 1));
+
+    var page = service.adminLinksPage(actor(admin, "ADMIN"), "student@example.com", 0, 20);
+    assertEquals(1, page.items().size());
+    assertEquals(parentId, page.items().getFirst().parentUserId());
+    assertEquals(studentId, page.items().getFirst().studentId());
+  }
+
+  @Test void adminLinksPageLookupByOtherRoleReturnsEmptyPage() {
+    UUID admin = UUID.randomUUID(), tutorUserId = UUID.randomUUID();
+    when(iam.findUserSummaryByEmail("tutor@example.com")).thenReturn(Optional.of(
+        new vn.edufit.iam.api.dto.UserSummaryView(tutorUserId, "tutor@example.com", "Tutor Name",
+            vn.edufit.iam.api.AccountRole.TUTOR, vn.edufit.iam.api.AccountStatus.ACTIVE)
+    ));
+
+    var page = service.adminLinksPage(actor(admin, "ADMIN"), "tutor@example.com", 0, 20);
+    assertTrue(page.items().isEmpty());
+    assertEquals(0, page.totalElements());
+  }
 }

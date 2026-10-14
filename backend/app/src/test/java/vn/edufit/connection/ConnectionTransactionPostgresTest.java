@@ -993,6 +993,74 @@ class ConnectionTransactionPostgresTest {
     assertEquals(3, page3.totalPages());
   }
 
+  @Test
+  void adminLinksLookupByEitherEmailReturnsOnlyConfirmedLinks() {
+    var jdbc = new JdbcTemplate(source);
+    UUID adminUser = account("ADMIN");
+    UUID parentUser = account("PARENT");
+    String parentEmail = "parent_lookup@test.invalid";
+
+    UUID studentUser = account("STUDENT");
+    UUID studentId = UUID.randomUUID();
+    String studentEmail = "student_lookup@test.invalid";
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", studentId, studentUser);
+
+    UUID otherStudentUser = account("STUDENT");
+    UUID otherStudentId = UUID.randomUUID();
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", otherStudentId, otherStudentUser);
+
+    // Seed 1 CONFIRMED link and 1 REVOKED link for this parent
+    UUID confirmedLinkId = UUID.randomUUID();
+    Instant now = Instant.parse("2026-10-14T10:00:00Z");
+    jdbc.update(
+        "insert into parent_student_link(link_id, parent_user_id, student_id, status, confirmed_at, version) values (?, ?, ?, 'CONFIRMED', ?, 0)",
+        confirmedLinkId, parentUser, studentId, java.sql.Timestamp.from(now)
+    );
+
+    UUID revokedLinkId = UUID.randomUUID();
+    jdbc.update(
+        "insert into parent_student_link(link_id, parent_user_id, student_id, status, confirmed_at, revoked_at, revoked_by, revoke_reason, version) values (?, ?, ?, 'REVOKED', ?, ?, ?, 'Sensitive Reason', 0)",
+        revokedLinkId, parentUser, otherStudentId, java.sql.Timestamp.from(now.minusSeconds(3600)),
+        java.sql.Timestamp.from(now), adminUser
+    );
+
+    when(iam.findUserSummaryByEmail(parentEmail)).thenReturn(Optional.of(
+        new vn.edufit.iam.api.dto.UserSummaryView(parentUser, parentEmail, "Parent User", vn.edufit.iam.api.AccountRole.PARENT, vn.edufit.iam.api.AccountStatus.ACTIVE)
+    ));
+    when(iam.findUserSummaryByEmail(studentEmail)).thenReturn(Optional.of(
+        new vn.edufit.iam.api.dto.UserSummaryView(studentUser, studentEmail, "Student User", vn.edufit.iam.api.AccountRole.STUDENT, vn.edufit.iam.api.AccountStatus.ACTIVE)
+    ));
+    when(iam.findUserSummaryByEmail("unknown@test.invalid")).thenReturn(Optional.empty());
+    when(profile.findStudentByUserId(studentUser)).thenReturn(Optional.of(
+        new StudentSummaryDto(studentId, studentUser, 4, null, true)
+    ));
+
+    var adminActor = actor(adminUser, "ADMIN");
+    var parentActor = actor(parentUser, "PARENT");
+
+    // 1. Non-admin is strictly forbidden
+    assertThrows(vn.edufit.shared.exception.ForbiddenOperationException.class,
+        () -> queries.adminLinksPage(parentActor, parentEmail, 0, 20));
+
+    // 2. Lookup by parent email returns only CONFIRMED link (excludes REVOKED)
+    var parentLookup = queries.adminLinksPage(adminActor, parentEmail, 0, 20);
+    assertEquals(1, parentLookup.items().size());
+    assertEquals(confirmedLinkId, parentLookup.items().getFirst().linkId());
+    assertEquals(parentUser, parentLookup.items().getFirst().parentUserId());
+    assertEquals(studentId, parentLookup.items().getFirst().studentId());
+    assertEquals("CONFIRMED", parentLookup.items().getFirst().status());
+
+    // 3. Lookup by student email returns the same CONFIRMED link
+    var studentLookup = queries.adminLinksPage(adminActor, studentEmail, 0, 20);
+    assertEquals(1, studentLookup.items().size());
+    assertEquals(confirmedLinkId, studentLookup.items().getFirst().linkId());
+
+    // 4. Lookup non-existent email returns clean empty page (zero enumeration leak)
+    var emptyLookup = queries.adminLinksPage(adminActor, "unknown@test.invalid", 0, 20);
+    assertTrue(emptyLookup.items().isEmpty());
+    assertEquals(0, emptyLookup.totalElements());
+  }
+
   @Configuration
   @EnableTransactionManagement
   @ComponentScan(basePackages = {"vn.edufit.connection.application", "vn.edufit.connection.infra.locking", "vn.edufit.connection.infra.scheduling"})

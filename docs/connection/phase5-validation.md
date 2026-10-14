@@ -127,3 +127,49 @@ Branch `feat/connection`, base `1ea58da`. Phase 5 comprises 5 executable slices:
 - **PostgreSQL Integration Tests (`ConnectionTransactionPostgresTest`)**:
   - 31 tests passed with zero failures, errors, or skips.
   - `pagedQueriesProvideStableOrderingAndDeterministicPagination`: inserts sequential connection requests in PostgreSQL testcontainer, verifying deterministic DESC ordering across pages 0, 1, 2, and empty items on out-of-bounds page 3 with preserved total elements and page counts.
+
+---
+
+## T19b — Authorized Admin link lookup
+
+### 1. Implementation
+- **Query Service (`ConnectionQueryService.adminLinksPage`)**:
+  - Role Guard: strictly requires `ADMIN` role via `requireRole(actor, "ADMIN")`, throwing `ForbiddenOperationException` (403 Forbidden) for any non-admin callers.
+  - Input Validation: requires non-null, non-blank `email`, and validates `page >= 0` and `1 <= size <= 100` via `validatePageAndSize`.
+  - Privacy-preserving & Anti-Enumeration: looks up user account via `iam.findUserSummaryByEmail(email)`. If the email is unknown, returns an empty `PageResponse` (zero items, `totalElements = 0`) instead of throwing 404, preventing account enumeration.
+  - Two-way Lookup:
+    - If user is `PARENT`: queries `ParentStudentLinkRepository.findByParentUserIdAndStatusConfirmed(user.id(), pageable)`.
+    - If user is `STUDENT`: queries `profile.findStudentByUserId(user.id())` to retrieve `studentId`, then queries `ParentStudentLinkRepository.findByStudentIdAndStatusConfirmed(studentId, pageable)`.
+    - If user has another role (`TUTOR`, `ADMIN`): safely returns an empty page.
+  - Minimal Output: maps to `ParentStudentLinkResult` containing only `linkId`, `parentUserId`, `studentId`, `status`, and `confirmedAt`. Never exposes revoked links, internal audit reasons, or contact details.
+- **REST Endpoint (`ConnectionController.adminLinksPage`)**:
+  - Route: `GET /api/v1/connections/admin/parent-student/links?email=...&page=0&size=20`.
+  - Serializes response to `ApiResponse<PageResponse<LinkResponse>>`.
+
+### 2. Verification
+- **Unit & Security Tests (`ConnectionQueryServiceTest`)**:
+  - 38 tests passed (including 6 new tests for T19b):
+    - `adminLinksPageRequiresAdminRole`: non-admin roles (`PARENT`, `STUDENT`, `TUTOR`) are rejected with `ForbiddenOperationException` (403).
+    - `adminLinksPageRequiresNonBlankEmail`: empty or blank emails are rejected with `InvalidOperationException` (400).
+    - `adminLinksPageReturnsEmptyWhenEmailNotFound`: missing email returns empty page without error (anti-enumeration).
+    - `adminLinksPageLookupByParentEmailReturnsConfirmedLinks`: returns confirmed links for parent.
+    - `adminLinksPageLookupByStudentEmailReturnsConfirmedLinks`: resolves student profile and returns confirmed links for student.
+    - `adminLinksPageLookupByOtherRoleReturnsEmptyPage`: returns empty page for non-link roles.
+- **HTTP Contract Tests (`ConnectionControllerTest`)**:
+  - 30 tests passed (including 2 new tests for T19b):
+    - `adminLinksPageKeepsExactPagedShape`: asserts exact JSON envelope and link shape.
+    - `adminLinksPageMissingEmailReturns400`: asserts 400 Bad Request when query parameter `email` is absent.
+  - `connection` module suite: 247 tests passed with zero failures, errors, or skips.
+- **PostgreSQL Integration Tests (`ConnectionTransactionPostgresTest`)**:
+  - 32 tests passed with zero failures, errors, or skips.
+  - `adminLinksLookupByEitherEmailReturnsOnlyConfirmedLinks`: verifies against real PostgreSQL testcontainer that lookup by either parent or student email returns only `CONFIRMED` links, excludes `REVOKED` links, hides sensitive revocation reason, rejects non-admin callers, and returns clean empty page on missing email.
+
+---
+
+## Checkpoint 5 — Full Validation Summary
+
+1. **BR-37 Compliant**: Whitelists only permitted fields in inbox and query outputs. Sensitive learner and parent profiles, unrequested goals, and audit reasons remain strictly hidden.
+2. **Zero N+1 Metadata Queries**: Hydrates inbox goals and senders across arbitrary page/list sizes in exactly 2 batch facade queries. Verified in PostgreSQL test with 100 requests.
+3. **Deterministic Pagination**: Compatible scoped paging added across all connection entities (`invitations/page`, `linksPage`, `requestsPage`, `tutorInboxPage`, `admin/parent-student/links`) with deterministic DESC tie-breakers (`createdAt DESC, id DESC` and `confirmedAt DESC, id DESC`).
+4. **Authorized Admin Link Lookup**: Admin lookup by either party email with minimal output and anti-enumeration protections.
+5. **Full Backward Compatibility**: All legacy unpaged endpoints remain intact and unaltered.

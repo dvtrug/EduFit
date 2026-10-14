@@ -93,6 +93,16 @@ public class ConnectionController {
     return ApiResponse.success(new PageResponse<>(responses, p.page(), p.size(), p.totalElements(), p.totalPages()));
   }
 
+  @GetMapping("/admin/parent-student/links")
+  public ApiResponse<PageResponse<LinkResponse>> adminLinksPage(
+      @RequestParam("email") String email,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    PageResponse<ParentStudentLinkResult> p = queries.adminLinksPage(user(), email, page, size);
+    List<LinkResponse> responses = p.items().stream().map(LinkResponse::of).toList();
+    return ApiResponse.success(new PageResponse<>(responses, p.page(), p.size(), p.totalElements(), p.totalPages()));
+  }
+
   @DeleteMapping("/parent-student/links/{id}")
   public ApiResponse<Void> revoke(@PathVariable UUID id, @RequestBody(required = false) RevokeBody body) {
     linkService.revokeLink(user(), id, body == null ? null : body.reason());

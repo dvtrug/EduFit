@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ import vn.edufit.iam.api.IamFacade;
 import vn.edufit.iam.api.dto.UserSummaryView;
 import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.profile.api.dto.ConnectionGoalDto;
+import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.exception.ForbiddenOperationException;
 import vn.edufit.shared.exception.InvalidOperationException;
@@ -208,6 +210,39 @@ public class ConnectionQueryService {
     }
     List<ParentStudentLinkResult> items = p.getContent().stream().map(ParentStudentLinkResult::from).toList();
     return PageResponse.of(items, page, size, p.getTotalElements());
+  }
+
+  @Transactional(readOnly = true)
+  public PageResponse<ParentStudentLinkResult> adminLinksPage(CurrentUser actor, String email, int page, int size) {
+    requireRole(actor, "ADMIN");
+    if (email == null || email.isBlank()) {
+      throw new InvalidOperationException("Email không được để trống");
+    }
+    validatePageAndSize(page, size);
+
+    Optional<UserSummaryView> userOpt = iam.findUserSummaryByEmail(email.trim());
+    if (userOpt.isEmpty()) {
+      return PageResponse.of(List.of(), page, size, 0L);
+    }
+    UserSummaryView targetUser = userOpt.get();
+    org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+
+    if (targetUser.role() == AccountRole.PARENT) {
+      org.springframework.data.domain.Page<ParentStudentLink> p = links.findByParentUserIdAndStatusConfirmed(targetUser.id(), pageable);
+      List<ParentStudentLinkResult> items = p.getContent().stream().map(ParentStudentLinkResult::from).toList();
+      return PageResponse.of(items, page, size, p.getTotalElements());
+    } else if (targetUser.role() == AccountRole.STUDENT) {
+      Optional<StudentSummaryDto> studentOpt = profile.findStudentByUserId(targetUser.id());
+      if (studentOpt.isEmpty()) {
+        return PageResponse.of(List.of(), page, size, 0L);
+      }
+      UUID studentId = studentOpt.get().studentId();
+      org.springframework.data.domain.Page<ParentStudentLink> p = links.findByStudentIdAndStatusConfirmed(studentId, pageable);
+      List<ParentStudentLinkResult> items = p.getContent().stream().map(ParentStudentLinkResult::from).toList();
+      return PageResponse.of(items, page, size, p.getTotalElements());
+    } else {
+      return PageResponse.of(List.of(), page, size, 0L);
+    }
   }
 
   @Transactional

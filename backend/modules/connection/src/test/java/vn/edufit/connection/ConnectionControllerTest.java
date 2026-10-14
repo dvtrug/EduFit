@@ -202,4 +202,17 @@ class ConnectionControllerTest {
     String expected = "{\"items\":[%s],\"page\":0,\"size\":20,\"totalElements\":1,\"totalPages\":1}".formatted(item);
     data(mvc.perform(get(BASE + "/requests/page")), expected);
   }
+
+  @Test void adminLinksPageKeepsExactPagedShape() throws Exception {
+    when(actor.hasRole("ADMIN")).thenReturn(true);
+    when(queries.adminLinksPage(actor, "parent@example.com", 0, 20))
+        .thenReturn(PageResponse.of(List.of(new ParentStudentLinkResult(UUID_ID, UUID_ID, UUID_ID, "CONFIRMED", NOW)), 0, 20, 1));
+    String expected = "{\"items\":[%s],\"page\":0,\"size\":20,\"totalElements\":1,\"totalPages\":1}".formatted(LINK);
+    data(mvc.perform(get(BASE + "/admin/parent-student/links").param("email", "parent@example.com")), expected);
+  }
+
+  @Test void adminLinksPageMissingEmailReturns400() throws Exception {
+    mvc.perform(get(BASE + "/admin/parent-student/links"))
+        .andExpect(status().isBadRequest());
+  }
 }
