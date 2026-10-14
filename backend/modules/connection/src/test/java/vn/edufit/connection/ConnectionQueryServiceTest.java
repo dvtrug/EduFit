@@ -218,4 +218,96 @@ class ConnectionQueryServiceTest {
     if (role.equals("PARENT")) verify(links).findByParentUserIdAndStatus(user, "CONFIRMED");
     else verify(links).findByStudentIdAndStatus(student, "CONFIRMED");
   }
+
+  @Test void invitationsPageValidatesBoundsAndHydratesData() {
+    UUID user = UUID.randomUUID(), inviter = UUID.randomUUID();
+    var inv = new LinkInvitation(inviter, user, Instant.now());
+    when(invitations.findScopedInvitations(eq(user), any(org.springframework.data.domain.Pageable.class)))
+        .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(inv), org.springframework.data.domain.PageRequest.of(0, 10), 25));
+    when(iam.findUserSummariesByIds(List.of(inviter))).thenReturn(Map.of(
+        inviter, new UserSummaryView(inviter, "p@t.i", "Parent Name", AccountRole.PARENT, AccountStatus.ACTIVE)));
+
+    var page = service.invitationsPage(actor(user, "STUDENT"), 0, 10);
+    assertEquals(1, page.items().size());
+    assertEquals(0, page.page());
+    assertEquals(10, page.size());
+    assertEquals(25, page.totalElements());
+    assertEquals(3, page.totalPages());
+    assertEquals("Parent Name", page.items().getFirst().inviterName());
+    assertEquals("PARENT", page.items().getFirst().inviterRole());
+  }
+
+  @Test void linksPageReturnsPagedConfirmedLinks() {
+    UUID user = UUID.randomUUID(), student = UUID.randomUUID();
+    var link = new ParentStudentLink(user, student, Instant.now());
+    when(links.findByParentUserIdAndStatusConfirmed(eq(user), any(org.springframework.data.domain.Pageable.class)))
+        .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(link), org.springframework.data.domain.PageRequest.of(0, 20), 1));
+
+    var page = service.linksPage(actor(user, "PARENT"), 0, 20);
+    assertEquals(1, page.items().size());
+    assertEquals(0, page.page());
+    assertEquals(20, page.size());
+    assertEquals(1, page.totalElements());
+    assertEquals(1, page.totalPages());
+  }
+
+  @Test void requestsPageReturnsPagedRequestsForLearner() {
+    UUID user = UUID.randomUUID(), student = UUID.randomUUID(), tutor = UUID.randomUUID(), goal = UUID.randomUUID();
+    when(profile.getStudentIdByUserId(user)).thenReturn(student);
+    when(profile.findStudentById(student)).thenReturn(Optional.of(new StudentSummaryDto(student, user, 4, null, true)));
+    var req = new ConnectionRequest(student, tutor, goal, user, List.of("Tue 19:00"), null, Instant.now().plusSeconds(3600));
+    when(requests.findByStudentIdScoped(eq(student), any(org.springframework.data.domain.Pageable.class)))
+        .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(req), org.springframework.data.domain.PageRequest.of(0, 10), 15));
+
+    var page = service.requestsPage(actor(user, "STUDENT"), null, 0, 10);
+    assertEquals(1, page.items().size());
+    assertEquals(0, page.page());
+    assertEquals(10, page.size());
+    assertEquals(15, page.totalElements());
+    assertEquals(2, page.totalPages());
+  }
+
+  @Test void tutorInboxPageReturnsPagedInboxWithMetadata() {
+    UUID user = UUID.randomUUID(), tutor = UUID.randomUUID(), student = UUID.randomUUID(), goal = UUID.randomUUID(), sentBy = UUID.randomUUID();
+    when(profile.getTutorIdByUserId(user)).thenReturn(tutor);
+    var req = new ConnectionRequest(student, tutor, goal, sentBy, List.of("Tue 19:00"), null, Instant.now().plusSeconds(3600));
+    when(requests.findByTutorIdScoped(eq(tutor), any(org.springframework.data.domain.Pageable.class)))
+        .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(req), org.springframework.data.domain.PageRequest.of(0, 20), 1));
+    when(profile.findGoalsForConnection(List.of(goal))).thenReturn(Map.of(
+        goal, new ConnectionGoalDto(goal, student, UUID.randomUUID(), 1, 4, "EXAM", java.time.LocalDate.of(2027, 1, 1), "ACTIVE")));
+    when(iam.findUserSummariesByIds(List.of(sentBy))).thenReturn(Map.of(
+        sentBy, new UserSummaryView(sentBy, "p@t.i", "Parent", AccountRole.PARENT, AccountStatus.ACTIVE)));
+
+    var page = service.tutorInboxPage(actor(user, "TUTOR"), 0, 20);
+    assertEquals(1, page.items().size());
+    assertEquals(0, page.page());
+    assertEquals(20, page.size());
+    assertEquals(1, page.totalElements());
+    assertEquals(1, page.totalPages());
+    assertEquals("PARENT", page.items().getFirst().senderRole());
+    assertEquals(java.time.LocalDate.of(2027, 1, 1), page.items().getFirst().deadline());
+  }
+
+  @ParameterizedTest @ValueSource(ints = {-1, -10})
+  void paginationRejectsNegativePage(int page) {
+    assertThrows(InvalidOperationException.class, () -> service.invitationsPage(actor(UUID.randomUUID(), "PARENT"), page, 20));
+  }
+
+  @ParameterizedTest @ValueSource(ints = {0, -1, 101, 200})
+  void paginationRejectsInvalidSize(int size) {
+    assertThrows(InvalidOperationException.class, () -> service.invitationsPage(actor(UUID.randomUUID(), "PARENT"), 0, size));
+  }
+
+  @Test void paginationHandlesPageBeyondEndGracefully() {
+    UUID user = UUID.randomUUID();
+    when(invitations.findScopedInvitations(eq(user), any(org.springframework.data.domain.Pageable.class)))
+        .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(), org.springframework.data.domain.PageRequest.of(5, 10), 0));
+
+    var page = service.invitationsPage(actor(user, "PARENT"), 5, 10);
+    assertTrue(page.items().isEmpty());
+    assertEquals(5, page.page());
+    assertEquals(10, page.size());
+    assertEquals(0, page.totalElements());
+    assertEquals(0, page.totalPages());
+  }
 }

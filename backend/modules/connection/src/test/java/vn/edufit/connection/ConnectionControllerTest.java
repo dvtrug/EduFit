@@ -176,4 +176,30 @@ class ConnectionControllerTest {
     verifyNoInteractions(service);
   }
 
+  @Test void invitationsPageKeepsExactPagedShape() throws Exception {
+    when(queries.invitationsPage(actor, 0, 20)).thenReturn(PageResponse.of(List.of(new InvitationResult(UUID_ID, UUID_ID, UUID_ID, "PENDING", NOW, EXPIRES)), 0, 20, 1));
+    String expected = "{\"items\":[{\"invitationId\":\"%s\",\"inviterUserId\":\"%s\",\"invitedUserId\":\"%s\",\"status\":\"PENDING\",\"createdAt\":\"2026-10-11T03:00:00Z\",\"expiresAt\":\"2026-10-18T03:00:00Z\"}],\"page\":0,\"size\":20,\"totalElements\":1,\"totalPages\":1}".formatted(ID, ID, ID);
+    data(mvc.perform(get(BASE + "/parent-student/invitations/page")), expected);
+  }
+
+  @Test void linksPageKeepsExactPagedShape() throws Exception {
+    when(queries.linksPage(actor, 0, 20)).thenReturn(PageResponse.of(List.of(new ParentStudentLinkResult(UUID_ID, UUID_ID, UUID_ID, "CONFIRMED", NOW)), 0, 20, 1));
+    String expected = "{\"items\":[%s],\"page\":0,\"size\":20,\"totalElements\":1,\"totalPages\":1}".formatted(LINK);
+    data(mvc.perform(get(BASE + "/parent-student/links/page")), expected);
+  }
+
+  @Test void requestsPageLearnerKeepsExactPagedShape() throws Exception {
+    when(queries.requestsPage(actor, UUID_ID, 0, 20)).thenReturn(PageResponse.of(List.of(requestResult()), 0, 20, 1));
+    String expected = "{\"items\":[%s],\"page\":0,\"size\":20,\"totalElements\":1,\"totalPages\":1}".formatted(REQUEST);
+    data(mvc.perform(get(BASE + "/requests/page").param("studentId", ID)), expected);
+  }
+
+  @Test void requestsPageTutorKeepsExactPagedShape() throws Exception {
+    when(actor.hasRole("TUTOR")).thenReturn(true);
+    when(queries.tutorInboxPage(actor, 0, 20)).thenReturn(PageResponse.of(List.of(new TutorInboxResult(UUID_ID, "EXAM", 1, 4,
+        List.of("Tue 19:00"), null, "PARENT", "PENDING", EXPIRES)), 0, 20, 1));
+    String item = "{\"requestId\":\"%s\",\"goalType\":\"EXAM\",\"subjectId\":1,\"educationLevelId\":4,\"desiredSlots\":[\"Tue 19:00\"],\"message\":null,\"senderRole\":\"PARENT\",\"status\":\"PENDING\",\"expiresAt\":\"2026-10-18T03:00:00Z\"}".formatted(ID);
+    String expected = "{\"items\":[%s],\"page\":0,\"size\":20,\"totalElements\":1,\"totalPages\":1}".formatted(item);
+    data(mvc.perform(get(BASE + "/requests/page")), expected);
+  }
 }

@@ -921,6 +921,78 @@ class ConnectionTransactionPostgresTest {
     verify(iam, times(1)).findUserSummariesByIds(argThat(list -> list.size() == 5));
   }
 
+  @Test
+  void pagedQueriesProvideStableOrderingAndDeterministicPagination() {
+    var jdbc = new JdbcTemplate(source);
+    UUID studentUser = account("STUDENT");
+    UUID studentId = UUID.randomUUID();
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", studentId, studentUser);
+
+    UUID tutorUser = account("TUTOR");
+    UUID tutorId = UUID.randomUUID();
+    jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'TutorPaged','ONLINE',100000,'VERIFIED')", tutorId, tutorUser);
+
+    UUID goalId = UUID.randomUUID();
+    jdbc.update("insert into learning_goal(goal_id,student_id,subject_id,current_level,desired_level,goal_type,deadline,mode,budget_max,status) values (?,?,1,1,2,'EXAM_PREPARATION',current_date + 30,'ONLINE',100000,'ACTIVE')", goalId, studentId);
+
+    when(profile.getStudentIdByUserId(studentUser)).thenReturn(studentId);
+    when(profile.findStudentById(studentId)).thenReturn(Optional.of(new StudentSummaryDto(studentId, studentUser, 3, null, true)));
+
+    // Seed 5 connection requests with sequential timestamps
+    Instant baseTime = Instant.parse("2026-10-14T10:00:00Z");
+    UUID[] requestIds = new UUID[5];
+    for (int i = 0; i < 5; i++) {
+      UUID tid = UUID.randomUUID();
+      UUID tUser = account("TUTOR");
+      jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'TutorPaged" + i + "','ONLINE',100000,'VERIFIED')", tid, tUser);
+      UUID reqId = UUID.randomUUID();
+      requestIds[i] = reqId;
+      Instant createdAt = baseTime.plusSeconds(i * 60);
+      jdbc.update(
+          "insert into connection_request(request_id,student_id,tutor_id,goal_id,sent_by_user_id,desired_slots,status,expires_at,created_at) " +
+          "values (?,?,?,?,?,cast(? as jsonb),'PENDING',?,?)",
+          reqId, studentId, tid, goalId, studentUser, "[\"Tue 19:00\"]",
+          java.sql.Timestamp.from(createdAt.plusSeconds(86400)),
+          java.sql.Timestamp.from(createdAt)
+      );
+    }
+
+    var actor = actor(studentUser, "STUDENT");
+
+    // Page 0, size 2 -> elements 4 and 3 (DESC order)
+    var page0 = queries.requestsPage(actor, null, 0, 2);
+    assertEquals(2, page0.items().size());
+    assertEquals(0, page0.page());
+    assertEquals(2, page0.size());
+    assertEquals(5, page0.totalElements());
+    assertEquals(3, page0.totalPages());
+    assertEquals(requestIds[4], page0.items().get(0).requestId());
+    assertEquals(requestIds[3], page0.items().get(1).requestId());
+
+    // Page 1, size 2 -> elements 2 and 1
+    var page1 = queries.requestsPage(actor, null, 1, 2);
+    assertEquals(2, page1.items().size());
+    assertEquals(1, page1.page());
+    assertEquals(2, page1.size());
+    assertEquals(5, page1.totalElements());
+    assertEquals(3, page1.totalPages());
+    assertEquals(requestIds[2], page1.items().get(0).requestId());
+    assertEquals(requestIds[1], page1.items().get(1).requestId());
+
+    // Page 2, size 2 -> element 0
+    var page2 = queries.requestsPage(actor, null, 2, 2);
+    assertEquals(1, page2.items().size());
+    assertEquals(2, page2.page());
+    assertEquals(requestIds[0], page2.items().get(0).requestId());
+
+    // Page 3, size 2 -> out of bounds, returns empty items
+    var page3 = queries.requestsPage(actor, null, 3, 2);
+    assertTrue(page3.items().isEmpty());
+    assertEquals(3, page3.page());
+    assertEquals(5, page3.totalElements());
+    assertEquals(3, page3.totalPages());
+  }
+
   @Configuration
   @EnableTransactionManagement
   @ComponentScan(basePackages = {"vn.edufit.connection.application", "vn.edufit.connection.infra.locking", "vn.edufit.connection.infra.scheduling"})

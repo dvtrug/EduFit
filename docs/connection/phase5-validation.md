@@ -96,3 +96,34 @@ Branch `feat/connection`, base `1ea58da`. Phase 5 comprises 5 executable slices:
 - **Cross-module Regression**:
   - IAM module: 39 tests passed.
   - Profile module: 55 tests passed (including 6 PostgreSQL integration tests).
+
+---
+
+## T19a — Compatible scoped history paging
+
+### 1. Implementation
+- **Application DTO (`PageResponse<T>`)**:
+  - Implemented record `vn.edufit.connection.application.dto.PageResponse<T>(List<T> items, int page, int size, long totalElements, int totalPages)`.
+  - Static factory `from(Page<T> page, List<R> items)` and `from(Page<T> page, Function<T, R> mapper)`.
+  - Located in `application.dto` to enforce strict architectural decoupling (no web-to-persistence or application-to-web dependency).
+- **Paged Repository Queries**:
+  - `LinkInvitationRepository`: added `findScopedInvitations(@Param("inviterId") UUID inviterId, @Param("recipientEmail") String recipientEmail, Pageable pageable)` with stable ordering `ORDER BY i.createdAt DESC, i.id DESC`.
+  - `ParentStudentLinkRepository`: added `findByParentUserIdAndStatusConfirmed` and `findByStudentIdAndStatusConfirmed` with stable ordering `ORDER BY l.confirmedAt DESC, l.id DESC`.
+  - `ConnectionRequestRepository`: added `findByStudentIdScoped` and `findByTutorIdScoped` with stable ordering `ORDER BY r.createdAt DESC, r.id DESC`.
+- **Query Service (`ConnectionQueryService`)**:
+  - Added `validatePageAndSize(int page, int size)`: validates `page >= 0` and `1 <= size <= 50`, throwing `BadRequestException(ErrorCode.BAD_REQUEST, ...)` for invalid parameters.
+  - Implemented `invitationsPage`, `linksPage`, `requestsPage`, and `tutorInboxPage` reusing batch metadata hydration and on-access expiry without N+1.
+- **REST Endpoints (`ConnectionController`)**:
+  - `GET /api/v1/connections/parent-student/invitations/page?page=0&size=20`: returns `PageResponse<InvitationResponse>`.
+  - `GET /api/v1/connections/parent-student/links/page?page=0&size=20`: returns `PageResponse<ParentStudentLinkResponse>`.
+  - `GET /api/v1/connections/requests/page?page=0&size=20`: returns `PageResponse<?>` branching to `tutorInboxPage` for `TUTOR` and `requestsPage` for `STUDENT`/`PARENT`.
+  - Fully backward-compatible: all legacy unpaged endpoints (`/invitations`, `/links`, `/requests`, `/tutor-inbox`) remain intact with identical response contracts.
+
+### 2. Verification
+- **Unit & Contract Tests**:
+  - `ConnectionQueryServiceTest`: 30 tests passed (including `invitationsPageReturnsPagedInvitationsWithBatchMetadata`, `linksPageReturnsPagedLinks`, `requestsPageReturnsPagedRequestsForLearner`, `tutorInboxPageReturnsPagedInboxWithMetadata`, and validation tests for negative page / size exceeding 50).
+  - `ConnectionControllerTest`: 28 tests passed (including paged HTTP endpoint tests asserting exact JSON structure, HTTP 200, and HTTP 400 on invalid page/size).
+  - `connection` module suite: 237 tests passed with zero failures, errors, or skips.
+- **PostgreSQL Integration Tests (`ConnectionTransactionPostgresTest`)**:
+  - 31 tests passed with zero failures, errors, or skips.
+  - `pagedQueriesProvideStableOrderingAndDeterministicPagination`: inserts sequential connection requests in PostgreSQL testcontainer, verifying deterministic DESC ordering across pages 0, 1, 2, and empty items on out-of-bounds page 3 with preserved total elements and page counts.

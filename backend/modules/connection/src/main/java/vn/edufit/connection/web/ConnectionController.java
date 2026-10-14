@@ -58,6 +58,15 @@ public class ConnectionController {
     return ApiResponse.success(queries.invitations(user()).stream().map(InvitationResponse::of).toList());
   }
 
+  @GetMapping("/parent-student/invitations/page")
+  public ApiResponse<PageResponse<InvitationResponse>> invitationsPage(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    PageResponse<InvitationResult> p = queries.invitationsPage(user(), page, size);
+    List<InvitationResponse> responses = p.items().stream().map(InvitationResponse::of).toList();
+    return ApiResponse.success(new PageResponse<>(responses, p.page(), p.size(), p.totalElements(), p.totalPages()));
+  }
+
   @PostMapping("/parent-student/respond")
   public ApiResponse<LinkResponse> respond(@Valid @RequestBody RespondBody body) {
     ParentStudentLinkResult link = value(invitationService.respondInvitation(user(), body.invitationId(), body.accept()));
@@ -73,6 +82,15 @@ public class ConnectionController {
   @GetMapping("/parent-student/links")
   public ApiResponse<List<LinkResponse>> links() {
     return ApiResponse.success(queries.links(user()).stream().map(LinkResponse::of).toList());
+  }
+
+  @GetMapping("/parent-student/links/page")
+  public ApiResponse<PageResponse<LinkResponse>> linksPage(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    PageResponse<ParentStudentLinkResult> p = queries.linksPage(user(), page, size);
+    List<LinkResponse> responses = p.items().stream().map(LinkResponse::of).toList();
+    return ApiResponse.success(new PageResponse<>(responses, p.page(), p.size(), p.totalElements(), p.totalPages()));
   }
 
   @DeleteMapping("/parent-student/links/{id}")
@@ -93,6 +111,22 @@ public class ConnectionController {
     if (actor.hasRole("TUTOR")) return ApiResponse.success(queries.tutorInbox(actor).stream()
         .map(TutorInboxResponse::of).toList());
     return ApiResponse.success(queries.requests(actor, studentId).stream().map(RequestResponse::of).toList());
+  }
+
+  @GetMapping("/requests/page")
+  public ApiResponse<?> requestsPage(
+      @RequestParam(required = false) UUID studentId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    CurrentUser actor = user();
+    if (actor.hasRole("TUTOR")) {
+      PageResponse<TutorInboxResult> p = queries.tutorInboxPage(actor, page, size);
+      List<TutorInboxResponse> responses = p.items().stream().map(TutorInboxResponse::of).toList();
+      return ApiResponse.success(new PageResponse<>(responses, p.page(), p.size(), p.totalElements(), p.totalPages()));
+    }
+    PageResponse<ConnectionRequestResult> p = queries.requestsPage(actor, studentId, page, size);
+    List<RequestResponse> responses = p.items().stream().map(RequestResponse::of).toList();
+    return ApiResponse.success(new PageResponse<>(responses, p.page(), p.size(), p.totalElements(), p.totalPages()));
   }
 
   @PostMapping("/requests/{id}/cancel")

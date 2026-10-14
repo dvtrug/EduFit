@@ -12,8 +12,10 @@ import vn.edufit.connection.application.dto.InvitationResult;
 import vn.edufit.connection.application.dto.ParentStudentLinkResult;
 import vn.edufit.connection.application.dto.ConnectionRequestResult;
 import vn.edufit.connection.application.dto.TutorInboxResult;
+import vn.edufit.connection.application.dto.PageResponse;
 import vn.edufit.connection.infra.persistence.entity.LinkInvitation;
 import vn.edufit.connection.infra.persistence.entity.ConnectionRequest;
+import vn.edufit.connection.infra.persistence.entity.ParentStudentLink;
 import vn.edufit.connection.infra.persistence.repository.LinkInvitationRepository;
 import vn.edufit.connection.infra.persistence.repository.ParentStudentLinkRepository;
 import vn.edufit.connection.infra.persistence.repository.ConnectionRequestRepository;
@@ -157,5 +159,117 @@ public class ConnectionQueryService {
           goal.educationLevelId(), r.getDesiredSlots(), r.getMessage(), senderRole,
           r.getStatus(), r.getExpiresAt(), goal.deadline());
     }).toList();
+  }
+
+  private static void validatePageAndSize(int page, int size) {
+    if (page < 0) throw new InvalidOperationException("Số trang không hợp lệ: page phải >= 0");
+    if (size < 1 || size > 100) throw new InvalidOperationException("Kích thước trang không hợp lệ: size phải từ 1 đến 100");
+  }
+
+  @Transactional
+  public PageResponse<InvitationResult> invitationsPage(CurrentUser actor, int page, int size) {
+    requireRole(actor, "PARENT", "STUDENT");
+    validatePageAndSize(page, size);
+    org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+    org.springframework.data.domain.Page<LinkInvitation> p = invitations.findScopedInvitations(actor.getUserId(), pageable);
+    List<LinkInvitation> content = p.getContent();
+    Instant now = clock.instant();
+    for (LinkInvitation i : content) {
+      if ("PENDING".equals(i.getStatus()) && vn.edufit.connection.application.policy.ConnectionTransitions.isDue(i.getExpiresAt(), now)) {
+        if (expiryService != null) expiryService.expireInvitation(i.getId(), now);
+        i.expire(now);
+      }
+    }
+    if (content.isEmpty()) {
+      return PageResponse.of(List.of(), page, size, p.getTotalElements());
+    }
+    List<UUID> inviterUserIds = content.stream().map(LinkInvitation::getInviterUserId).distinct().toList();
+    Map<UUID, UserSummaryView> inviterSummaries = iam.findUserSummariesByIds(inviterUserIds);
+    List<InvitationResult> items = content.stream().map(i -> {
+      UserSummaryView inviter = inviterSummaries.get(i.getInviterUserId());
+      String inviterName = inviter != null ? inviter.fullName() : null;
+      String inviterRole = (inviter != null && inviter.role() != null) ? inviter.role().name() : null;
+      return InvitationResult.from(i, inviterName, inviterRole);
+    }).toList();
+    return PageResponse.of(items, page, size, p.getTotalElements());
+  }
+
+  @Transactional(readOnly = true)
+  public PageResponse<ParentStudentLinkResult> linksPage(CurrentUser actor, int page, int size) {
+    requireRole(actor, "PARENT", "STUDENT");
+    validatePageAndSize(page, size);
+    org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+    org.springframework.data.domain.Page<ParentStudentLink> p;
+    if (actor.hasRole("PARENT")) {
+      p = links.findByParentUserIdAndStatusConfirmed(actor.getUserId(), pageable);
+    } else {
+      UUID studentId = profile.getStudentIdByUserId(actor.getUserId());
+      p = links.findByStudentIdAndStatusConfirmed(studentId, pageable);
+    }
+    List<ParentStudentLinkResult> items = p.getContent().stream().map(ParentStudentLinkResult::from).toList();
+    return PageResponse.of(items, page, size, p.getTotalElements());
+  }
+
+  @Transactional
+  public PageResponse<ConnectionRequestResult> requestsPage(CurrentUser actor, UUID studentId, int page, int size) {
+    requireRole(actor, "STUDENT", "PARENT");
+    validatePageAndSize(page, size);
+    UUID scope = actor.hasRole("STUDENT") ? profile.getStudentIdByUserId(actor.getUserId()) : studentId;
+    if (scope == null) throw new InvalidOperationException("Cần chỉ định học sinh");
+    requireStudentAccess(actor, scope);
+    org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+    org.springframework.data.domain.Page<ConnectionRequest> p = requests.findByStudentIdScoped(scope, pageable);
+    List<ConnectionRequest> content = p.getContent();
+    Instant now = clock.instant();
+    for (ConnectionRequest r : content) {
+      if ("PENDING".equals(r.getStatus()) && vn.edufit.connection.application.policy.ConnectionTransitions.isDue(r.getExpiresAt(), now)) {
+        if (expiryService != null) expiryService.expireRequest(r.getId(), now);
+        r.expire(now);
+      }
+    }
+    List<ConnectionRequestResult> items = content.stream().map(ConnectionRequestResult::from).toList();
+    return PageResponse.of(items, page, size, p.getTotalElements());
+  }
+
+  @Transactional
+  public PageResponse<TutorInboxResult> tutorInboxPage(CurrentUser actor, int page, int size) {
+    requireRole(actor, "TUTOR");
+    validatePageAndSize(page, size);
+    UUID tutorId = profile.getTutorIdByUserId(actor.getUserId());
+    org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+    org.springframework.data.domain.Page<ConnectionRequest> p = requests.findByTutorIdScoped(tutorId, pageable);
+    List<ConnectionRequest> content = p.getContent();
+    Instant now = clock.instant();
+    for (ConnectionRequest r : content) {
+      if ("PENDING".equals(r.getStatus()) && vn.edufit.connection.application.policy.ConnectionTransitions.isDue(r.getExpiresAt(), now)) {
+        if (expiryService != null) expiryService.expireRequest(r.getId(), now);
+        r.expire(now);
+      }
+    }
+    if (content.isEmpty()) {
+      return PageResponse.of(List.of(), page, size, p.getTotalElements());
+    }
+    List<UUID> goalIds = content.stream().map(ConnectionRequest::getGoalId).distinct().toList();
+    List<UUID> sentByUserIds = content.stream().map(ConnectionRequest::getSentByUserId).distinct().toList();
+    Map<UUID, ConnectionGoalDto> goalsMap = profile.findGoalsForConnection(goalIds);
+    Map<UUID, UserSummaryView> usersMap = iam.findUserSummariesByIds(sentByUserIds);
+
+    List<TutorInboxResult> items = content.stream().map(r -> {
+      ConnectionGoalDto goal = goalsMap.get(r.getGoalId());
+      if (goal == null) {
+        throw new ResourceConflictException(ErrorCode.CONFLICT_DETECTED,
+            "Không tìm thấy dữ liệu mục tiêu học tập liên quan");
+      }
+      UserSummaryView sender = usersMap.get(r.getSentByUserId());
+      if (sender == null) {
+        throw new ResourceConflictException(ErrorCode.CONFLICT_DETECTED,
+            "Không tìm thấy thông tin người gửi yêu cầu");
+      }
+      String senderRole = sender.role() == AccountRole.PARENT ? "PARENT" : "STUDENT";
+      return new TutorInboxResult(r.getId(), goal.goalType(), goal.subjectId(),
+          goal.educationLevelId(), r.getDesiredSlots(), r.getMessage(), senderRole,
+          r.getStatus(), r.getExpiresAt(), goal.deadline());
+    }).toList();
+    return PageResponse.of(items, page, size, p.getTotalElements());
   }
 }
