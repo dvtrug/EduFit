@@ -16,5 +16,10 @@ public interface LinkInvitationRepository extends JpaRepository<LinkInvitation, 
   @Query("select i from LinkInvitation i where (i.inviterUserId = :a and i.invitedUserId = :b) or (i.inviterUserId = :b and i.invitedUserId = :a) order by i.createdAt desc")
   List<LinkInvitation> findPair(UUID a, UUID b);
 
+  @Query("select i from LinkInvitation i where i.status = 'PENDING' and ((i.inviterUserId = :a and i.invitedUserId = :b) or (i.inviterUserId = :b and i.invitedUserId = :a))")
+  List<LinkInvitation> findPendingPair(UUID a, UUID b);
+
+  Optional<LinkInvitation> findFirstByInviterUserIdAndInvitedUserIdAndStatusOrderByReinviteAfterDesc(UUID inviter, UUID invited, String status);
+
   List<LinkInvitation> findByInviterUserIdOrInvitedUserIdOrderByCreatedAtDesc(UUID inviter, UUID invited);
 }

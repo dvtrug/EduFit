@@ -73,6 +73,8 @@ class ConnectionTransactionPostgresTest {
     CurrentUser actor = mock(CurrentUser.class);
     lenient().when(actor.getUserId()).thenReturn(id);
     when(actor.hasRole(anyString())).thenAnswer(i -> role.equals(i.getArgument(0)));
+    lenient().when(iam.findUserSummaryById(id)).thenReturn(Optional.of(new vn.edufit.iam.api.dto.UserSummaryView(id,
+        "actor@test.invalid", "Fixture", vn.edufit.iam.api.AccountRole.valueOf(role), vn.edufit.iam.api.AccountStatus.ACTIVE)));
     return actor;
   }
 
@@ -377,6 +379,28 @@ class ConnectionTransactionPostgresTest {
       assertTrue(requestRows.lockById(missing).isEmpty());
       assertTrue(linkRows.lockById(missing).isEmpty());
     });
+  }
+
+  @Test void existingLinkClosureCommitsBeforeHttp409AndHonorsOuterRollback() throws Exception {
+    var jdbc = new JdbcTemplate(source);
+    UUID parent = account("PARENT"), studentUser = account("STUDENT"), student = UUID.randomUUID(), invitation = UUID.randomUUID();
+    jdbc.update("insert into student_profile(student_id,user_id) values (?,?)", student, studentUser);
+    jdbc.update("insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at) values (?,?,?,now())", UUID.randomUUID(), parent, student);
+    jdbc.update("insert into link_invitation(invitation_id,inviter_user_id,invited_user_id,expires_at) values (?,?,?,now()+interval '14 days')", invitation, parent, studentUser);
+    when(profile.findStudentByUserId(studentUser)).thenReturn(Optional.of(new vn.edufit.profile.api.dto.StudentSummaryDto(student, studentUser, 4, null, false)));
+    when(iam.findUserSummaryById(parent)).thenReturn(Optional.of(new vn.edufit.iam.api.dto.UserSummaryView(parent, "parent@test.invalid", "Fixture", vn.edufit.iam.api.AccountRole.PARENT, vn.edufit.iam.api.AccountStatus.ACTIVE)));
+    var recipient = actor(studentUser, "STUDENT");
+    new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+      assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Conflict.class, invitations.respondInvitation(recipient, invitation, true));
+      tx.setRollbackOnly();
+    });
+    assertEquals("PENDING", jdbc.queryForObject("select status from link_invitation where invitation_id=?", String.class, invitation));
+    http(recipient).perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/connections/parent-student/respond")
+        .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content("{\"invitationId\":\"" + invitation + "\",\"accept\":true}"))
+        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isConflict());
+    assertEquals("WITHDRAWN", jdbc.queryForObject("select status from link_invitation where invitation_id=?", String.class, invitation));
+    assertEquals(1, jdbc.queryForObject("select count(*) from parent_student_link where student_id=?", Integer.class, student));
+    verifyNoInteractions(notifications);
   }
 
   @Test void adaptersRequireAnExistingTransaction() {

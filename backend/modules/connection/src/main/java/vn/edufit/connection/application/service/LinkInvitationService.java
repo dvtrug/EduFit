@@ -56,9 +56,17 @@ public class LinkInvitationService {
     throw new ForbiddenOperationException("Không có quyền thực hiện thao tác này");
   }
 
+  private void requireActiveActor(CurrentUser actor) {
+    AccountRole expected = actor.hasRole("PARENT") ? AccountRole.PARENT : AccountRole.STUDENT;
+    iam.findUserSummaryById(actor.getUserId())
+        .filter(user -> user.status() == AccountStatus.ACTIVE && user.role() == expected)
+        .orElseThrow(() -> new ForbiddenOperationException("Tài khoản không còn quyền thực hiện thao tác"));
+  }
+
   @Transactional
   public boolean invite(CurrentUser actor, String targetEmail) {
     requireRole(actor, "PARENT", "STUDENT");
+    requireActiveActor(actor);
     var consumption = quotaService.consume(actor.getUserId());
     if (!consumption.allowed()) return false;
     Instant now = consumption.checkedAt();
@@ -70,12 +78,12 @@ public class LinkInvitationService {
     if (target.isEmpty()) return true;
     UUID a = actor.getUserId(), b = target.get().id();
     lock.lockInvitationPair(a, b);
-    List<LinkInvitation> history = invitations.findPair(a, b);
+    List<LinkInvitation> history = invitations.findPendingPair(a, b);
     history.forEach(i -> i.expire(now));
     invitations.flush();
     if (history.stream().anyMatch(i -> "PENDING".equals(i.getStatus()))) return true;
-    if (history.stream().anyMatch(i -> i.getInviterUserId().equals(a) && "DECLINED".equals(i.getStatus())
-        && ConnectionTransitions.cooldownActive(i.getReinviteAfter(), now))) return true;
+    if (invitations.findFirstByInviterUserIdAndInvitedUserIdAndStatusOrderByReinviteAfterDesc(a, b, "DECLINED")
+        .filter(i -> ConnectionTransitions.cooldownActive(i.getReinviteAfter(), now)).isPresent()) return true;
     UUID parent = actor.hasRole("PARENT") ? a : b;
     UUID studentUser = actor.hasRole("STUDENT") ? a : b;
     Optional<StudentSummaryDto> student = profile.findStudentByUserId(studentUser);
@@ -98,6 +106,7 @@ public class LinkInvitationService {
     studentScope.ifPresent(student -> lock.lockStudent(student.studentId()));
     lock.lockInvitationPair(a, b);
     LinkInvitation invitation = invitations.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
+    requireActiveActor(actor);
     Instant now = clock.instant();
     invitation.expire(now);
     if (!"PENDING".equals(invitation.getStatus()))
@@ -115,10 +124,13 @@ public class LinkInvitationService {
       throw new InvalidOperationException("Tài khoản gửi không còn hợp lệ");
     UUID parent = actor.hasRole("PARENT") ? b : a;
     StudentSummaryDto student = profile.findStudentByUserId(studentUser)
-        .filter(current -> studentScope.map(before -> before.studentId().equals(current.studentId())).orElse(false))
+        .filter(current -> current.userId().equals(studentUser)
+            && studentScope.map(before -> before.studentId().equals(current.studentId())).orElse(false))
         .orElseThrow(() -> new InvalidOperationException("Hồ sơ học sinh không còn hợp lệ"));
-    if (links.existsByParentUserIdAndStudentIdAndStatus(parent, student.studentId(), "CONFIRMED"))
-      return TransitionResult.conflict("CONFIRMED", "Liên kết đã tồn tại");
+    if (links.existsByParentUserIdAndStudentIdAndStatus(parent, student.studentId(), "CONFIRMED")) {
+      invitation.withdraw(now);
+      return TransitionResult.conflict("WITHDRAWN", "Liên kết đã tồn tại; lời mời đã được đóng");
+    }
     invitation.accept(now);
     ParentStudentLink link = links.save(new ParentStudentLink(parent, student.studentId(), now));
     notifications.notify(a, student.studentId(), "LINK_CONFIRMED", "Liên kết đã xác nhận",
@@ -137,6 +149,7 @@ public class LinkInvitationService {
         .orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
     if (!invitation.getInviterUserId().equals(actor.getUserId()))
       throw new ForbiddenOperationException("Không phải người gửi lời mời");
+    requireActiveActor(actor);
     Instant now = clock.instant();
     invitation.expire(now);
     if (!"PENDING".equals(invitation.getStatus()))

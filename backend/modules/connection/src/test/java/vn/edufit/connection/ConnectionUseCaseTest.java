@@ -58,6 +58,8 @@ class ConnectionUseCaseTest {
     CurrentUser user = mock(CurrentUser.class);
     lenient().when(user.getUserId()).thenReturn(id);
     when(user.hasRole(anyString())).thenAnswer(i -> role.equals(i.getArgument(0)));
+    lenient().when(iam.findUserSummaryById(id)).thenReturn(Optional.of(new UserSummaryView(id,
+        "actor@test.invalid", "Fixture", AccountRole.valueOf(role), AccountStatus.ACTIVE)));
     return user;
   }
 
@@ -128,7 +130,7 @@ class ConnectionUseCaseTest {
     for (int i = 0; i < 10; i++) assertTrue(quota.consume(Instant.now()));
     when(quotas.findById(id)).thenReturn(Optional.of(quota));
     assertFalse(invitationService.invite(actor(id, "PARENT"), "nobody@example.com"));
-    verifyNoInteractions(iam);
+    verify(iam, never()).findUserSummaryByEmail(anyString());
   }
 
   @Test void tutorAcceptCreatesOneActiveClass() {

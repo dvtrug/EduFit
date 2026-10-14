@@ -434,7 +434,7 @@ Các nhóm bên dưới **thay thế commit cha**, không còn là gợi ý “n
 | [x] T08c | Request mutator guard/policy và tests | Request terminal/action matrix và expiry boundary pass | T08b | `fix(connection): guard request transitions` |
 | [x] T10a | Public event records + contract tests | Payload Java/public IDs, no PII, compile all callers | T09 | `feat(connection): define public transition event records` |
 | [x] T10b | Notification listener/wiring/pom + transactional tests | BEFORE_COMMIT failure rollback, no outside-transaction execution, graph acyclic | T10a | `feat(notification): consume connection transitions transactionally` |
-| [ ] T11a | Invitation service/repository + tests | Two-way consent, ACTIVE/DEACTIVATED, generic response, known-history cooldown, closure | T10b | `fix(connection): enforce invitation consent and privacy` |
+| [x] T11a | Invitation service/repository + tests | Two-way consent, ACTIVE/DEACTIVATED, generic response, known-history cooldown, closure | T10b | `fix(connection): enforce invitation consent and privacy` |
 | [ ] T11b | Invitation event publishers + notification listener/tests | Create/accept/decline events + notifications đúng một lần; rollback atomic | T11a | `refactor(connection): publish invitation transition events` |
 | [ ] T12a | Structured audit input + adapter/entity + migration/tests | Old sink API vẫn hoạt động; snapshot đủ accounts/reason; Flyway count/fixtures update, clean+upgrade pass | T11b | `feat(audit): persist structured connection revocation snapshots` |
 | [ ] T12b | Link revoke service + DB/authorization tests | Student/Admin đúng quyền; audit failure rollback link; không cascade delete | T12a | `fix(connection): record revocation and audit atomically` |
@@ -471,3 +471,7 @@ Dependency của task cha kế tiếp dùng **task con cuối nhóm**: T09 sau T
 - [x] M01 — Tích hợp main `d208371`; resolve4 conflicts theo main security/manifest13 và giữ Connection service decomposition. Port detach/reload vào persistence fragment, thích nghi LearningGoal integration wiring.
 - Focused verify pass; full clean Test/IT verify **656 tests pass, zero failure/error/skip**, Connection PostgreSQL18, Flyway IT3 và main E2E7. Strict coverage vẫn fail tại Shared75.73%/71.43%; Connection77.94%/50.51%, Notification73.91%/75.00% còn gap, không hạ ngưỡng.
 - T21 cập nhật theo SPA CSRF của main mới, vẫn pending; Phase3 chưa bắt đầu. [Merge main validation](../../docs/connection/main-merge-validation.md) ghi chi tiết/review/logs/giới hạn. M01 nằm trong merge commit và push feat/connection.
+
+### Phase3 execution — 14/10/2026
+
+- T11a: consent/privacy, bounded pending/cooldown and system closure implemented;182 focused verify tests pass. [Phase3 validation](../../docs/connection/phase3-validation.md) records audit, RED/GREEN and scope.
