@@ -115,4 +115,21 @@ export const verificationService = {
     );
     return res.data as VerificationRequestDetail;
   },
+
+  /**
+   * Lấy chi tiết hồ sơ xác minh KYC bao gồm danh sách bằng cấp và file (ADMIN)
+   */
+  async getVerificationDetail(requestId: string): Promise<VerificationRequestDetail> {
+    const res = await apiClient.get<VerificationRequestDetail>(
+      `/api/v1/admin/verifications/${requestId}`
+    );
+    return res.data as VerificationRequestDetail;
+  },
+
+  /**
+   * Tạo URL xem/tải trực tiếp file bằng cấp trên trình duyệt (ADMIN / TUTOR)
+   */
+  getCredentialFileUrl(fileId: string): string {
+    return `/api/v1/verifications/credentials/files/${fileId}`;
+  },
 };
