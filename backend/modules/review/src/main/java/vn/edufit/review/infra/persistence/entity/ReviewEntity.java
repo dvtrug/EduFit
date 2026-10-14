@@ -43,7 +43,7 @@ public class ReviewEntity {
   private String reviewerType;
 
   @Column(name = "rating", nullable = false)
-  private Integer rating;
+  private Short rating;
 
   @Column(name = "comment", nullable = false, length = 1000)
   private String comment;
@@ -75,7 +75,7 @@ public class ReviewEntity {
     this.studentId = studentId;
     this.reviewerUserId = reviewerUserId;
     this.reviewerType = reviewerType;
-    this.rating = rating;
+    this.rating = rating != null ? rating.shortValue() : null;
     this.comment = comment;
     this.completedSessionsAtReview = completedSessionsAtReview;
     this.isEdited = false;
@@ -139,10 +139,14 @@ public class ReviewEntity {
   }
 
   public Integer getRating() {
-    return rating;
+    return rating != null ? rating.intValue() : null;
   }
 
   public void setRating(Integer rating) {
+    this.rating = rating != null ? rating.shortValue() : null;
+  }
+
+  public void setRating(Short rating) {
     this.rating = rating;
   }
 
