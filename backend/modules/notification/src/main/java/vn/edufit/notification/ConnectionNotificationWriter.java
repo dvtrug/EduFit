@@ -98,4 +98,31 @@ class ConnectionNotificationWriter {
           event.aggregateId(), event.occurredAt()));
     }
   }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void invitationExpired(LinkInvitationChangedEvent event) {
+    repository.save(new Notification(event.inviterUserId(), event.studentId(), "LINK_EXPIRED",
+        "Lời mời đã hết hạn", "Lời mời liên kết đã hết hạn", "LINK_INVITATION",
+        event.aggregateId(), event.occurredAt()));
+  }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void requestExpired(ConnectionRequestChangedEvent event) {
+    repository.save(new Notification(event.tutorUserId(), event.studentId(), "CONNECTION_EXPIRED",
+        "Yêu cầu đã hết hạn", "Yêu cầu kết nối đã hết hạn", "CONNECTION_REQUEST",
+        event.aggregateId(), event.occurredAt()));
+    if (event.studentUserId().equals(event.sentByUserId())) {
+      repository.save(new Notification(event.studentUserId(), event.studentId(), "CONNECTION_EXPIRED",
+          "Yêu cầu đã hết hạn", "Yêu cầu kết nối đã hết hạn", "CONNECTION_REQUEST",
+          event.aggregateId(), event.occurredAt()));
+    } else if (facade != null && facade.hasConfirmedParentLink(event.sentByUserId(), event.studentId())) {
+      repository.save(new Notification(event.sentByUserId(), event.studentId(), "CONNECTION_EXPIRED",
+          "Yêu cầu đã hết hạn", "Yêu cầu kết nối đã hết hạn", "CONNECTION_REQUEST",
+          event.aggregateId(), event.occurredAt()));
+    } else {
+      repository.save(new Notification(event.studentUserId(), event.studentId(), "CONNECTION_EXPIRED",
+          "Yêu cầu đã hết hạn", "Yêu cầu kết nối đã hết hạn", "CONNECTION_REQUEST",
+          event.aggregateId(), event.occurredAt()));
+    }
+  }
 }

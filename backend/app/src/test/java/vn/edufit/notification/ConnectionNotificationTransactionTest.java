@@ -482,6 +482,7 @@ class ConnectionNotificationTransactionTest {
       vn.edufit.connection.application.service.LinkInvitationService.class,
       vn.edufit.connection.application.service.InvitationQuotaService.class,
       vn.edufit.connection.infra.locking.PostgresConnectionLock.class,
+      vn.edufit.connection.application.service.ConnectionExpiryService.class,
       vn.edufit.connection.application.service.ConnectionRequestService.class,
       vn.edufit.connection.application.service.ConnectionFacadeImpl.class})
   static class Config {

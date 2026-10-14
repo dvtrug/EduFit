@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 public interface ConnectionRequestRepository extends JpaRepository<ConnectionRequest, UUID>, FreshConnectionRowRepository {
   default Optional<ConnectionRequest> lockById(UUID id) {
@@ -18,4 +19,7 @@ public interface ConnectionRequestRepository extends JpaRepository<ConnectionReq
   boolean existsByStudentIdAndTutorIdAndStatus(UUID studentId, UUID tutorId, String status);
   List<ConnectionRequest> findByStudentIdOrderByCreatedAtDesc(UUID studentId);
   List<ConnectionRequest> findByTutorIdOrderByCreatedAtDesc(UUID tutorId);
+
+  @Query("select r.id from ConnectionRequest r where r.status = 'PENDING' and r.expiresAt <= :now order by r.expiresAt asc, r.id asc")
+  List<UUID> findCandidateExpiredIds(@org.springframework.data.repository.query.Param("now") java.time.Instant now, org.springframework.data.domain.Pageable pageable);
 }

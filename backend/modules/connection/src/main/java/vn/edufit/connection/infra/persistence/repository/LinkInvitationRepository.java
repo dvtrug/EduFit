@@ -22,4 +22,7 @@ public interface LinkInvitationRepository extends JpaRepository<LinkInvitation, 
   Optional<LinkInvitation> findFirstByInviterUserIdAndInvitedUserIdAndStatusOrderByReinviteAfterDesc(UUID inviter, UUID invited, String status);
 
   List<LinkInvitation> findByInviterUserIdOrInvitedUserIdOrderByCreatedAtDesc(UUID inviter, UUID invited);
+
+  @Query("select i.id from LinkInvitation i where i.status = 'PENDING' and i.expiresAt <= :now order by i.expiresAt asc, i.id asc")
+  List<UUID> findCandidateExpiredIds(@org.springframework.data.repository.query.Param("now") java.time.Instant now, org.springframework.data.domain.Pageable pageable);
 }

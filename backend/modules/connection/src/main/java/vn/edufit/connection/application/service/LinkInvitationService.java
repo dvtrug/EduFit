@@ -38,10 +38,12 @@ public class LinkInvitationService {
   private final ConnectionLock lock;
   private final InvitationQuotaService quotaService;
   private final ApplicationEventPublisher events;
+  private final ConnectionExpiryService expiryService;
 
+  @org.springframework.beans.factory.annotation.Autowired
   public LinkInvitationService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
       IamFacade iam, ProfileFacade profile, ConnectionLock lock, InvitationQuotaService quotaService,
-      ApplicationEventPublisher events, Clock clock) {
+      ApplicationEventPublisher events, ConnectionExpiryService expiryService, Clock clock) {
     this.clock = clock;
     this.invitations = invitations;
     this.links = links;
@@ -50,6 +52,13 @@ public class LinkInvitationService {
     this.lock = lock;
     this.quotaService = quotaService;
     this.events = events;
+    this.expiryService = expiryService;
+  }
+
+  public LinkInvitationService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
+      IamFacade iam, ProfileFacade profile, ConnectionLock lock, InvitationQuotaService quotaService,
+      ApplicationEventPublisher events, Clock clock) {
+    this(invitations, links, iam, profile, lock, quotaService, events, null, clock);
   }
 
   private static void requireRole(CurrentUser actor, String... roles) {
@@ -80,9 +89,14 @@ public class LinkInvitationService {
     UUID a = actor.getUserId(), b = target.get().id();
     lock.lockInvitationPair(a, b);
     List<LinkInvitation> history = invitations.findPendingPair(a, b);
-    history.forEach(i -> i.expire(now));
+    for (LinkInvitation i : history) {
+      if (ConnectionTransitions.isDue(i.getExpiresAt(), now)) {
+        if (expiryService != null) expiryService.expireInvitation(i.getId(), now);
+        else i.expire(now);
+      }
+    }
     invitations.flush();
-    if (history.stream().anyMatch(i -> "PENDING".equals(i.getStatus()))) return true;
+    if (invitations.findPendingPair(a, b).stream().anyMatch(i -> "PENDING".equals(i.getStatus()))) return true;
     if (invitations.findFirstByInviterUserIdAndInvitedUserIdAndStatusOrderByReinviteAfterDesc(a, b, "DECLINED")
         .filter(i -> ConnectionTransitions.cooldownActive(i.getReinviteAfter(), now)).isPresent()) return true;
     UUID parent = actor.hasRole("PARENT") ? a : b;
@@ -109,7 +123,11 @@ public class LinkInvitationService {
     LinkInvitation invitation = invitations.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Invitation", id));
     requireActiveActor(actor);
     Instant now = clock.instant();
-    invitation.expire(now);
+    if (ConnectionTransitions.isDue(invitation.getExpiresAt(), now)) {
+      if (expiryService != null) expiryService.expireInvitation(id, now);
+      else invitation.expire(now);
+      return TransitionResult.conflict("EXPIRED", "Không còn ở trạng thái chờ xử lý");
+    }
     if (!"PENDING".equals(invitation.getStatus()))
       return TransitionResult.conflict(invitation.getStatus(), "Không còn ở trạng thái chờ xử lý");
     if (!accept) {
@@ -160,11 +178,14 @@ public class LinkInvitationService {
       throw new ForbiddenOperationException("Không phải người gửi lời mời");
     requireActiveActor(actor);
     Instant now = clock.instant();
-    invitation.expire(now);
+    if (ConnectionTransitions.isDue(invitation.getExpiresAt(), now)) {
+      if (expiryService != null) expiryService.expireInvitation(id, now);
+      else invitation.expire(now);
+      return TransitionResult.conflict("EXPIRED", "Không còn ở trạng thái chờ xử lý");
+    }
     if (!"PENDING".equals(invitation.getStatus()))
       return TransitionResult.conflict(invitation.getStatus(), "Không còn ở trạng thái chờ xử lý");
     invitation.withdraw(now);
     return TransitionResult.success(null);
   }
-
 }

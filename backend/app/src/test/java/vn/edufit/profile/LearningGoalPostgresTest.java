@@ -712,6 +712,7 @@ class LearningGoalPostgresTest {
     vn.edufit.discovery.web.StudentGoalsController.class,
     vn.edufit.discovery.application.service.StudentGoalQueryService.class,
     vn.edufit.connection.application.service.ConnectionFacadeImpl.class,
+    vn.edufit.connection.application.service.ConnectionExpiryService.class,
     vn.edufit.connection.application.service.ConnectionRequestService.class,
     vn.edufit.connection.application.policy.ConnectionRequestInput.class,
     vn.edufit.connection.application.service.ParentStudentLinkService.class,

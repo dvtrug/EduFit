@@ -34,9 +34,12 @@ public class ConnectionQueryService {
   private final ProfileFacade profile;
   private final IamFacade iam;
   private final ConnectionFacade facade;
+  private final ConnectionExpiryService expiryService;
 
+  @org.springframework.beans.factory.annotation.Autowired
   public ConnectionQueryService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
-      ConnectionRequestRepository requests, ProfileFacade profile, IamFacade iam, ConnectionFacade facade, Clock clock) {
+      ConnectionRequestRepository requests, ProfileFacade profile, IamFacade iam, ConnectionFacade facade,
+      ConnectionExpiryService expiryService, Clock clock) {
     this.clock = clock;
     this.invitations = invitations;
     this.links = links;
@@ -44,6 +47,12 @@ public class ConnectionQueryService {
     this.profile = profile;
     this.iam = iam;
     this.facade = facade;
+    this.expiryService = expiryService;
+  }
+
+  public ConnectionQueryService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
+      ConnectionRequestRepository requests, ProfileFacade profile, IamFacade iam, ConnectionFacade facade, Clock clock) {
+    this(invitations, links, requests, profile, iam, facade, null, clock);
   }
 
   private static void requireRole(CurrentUser actor, String... roles) {
@@ -64,7 +73,12 @@ public class ConnectionQueryService {
     List<LinkInvitation> result = invitations.findByInviterUserIdOrInvitedUserIdOrderByCreatedAtDesc(
         actor.getUserId(), actor.getUserId());
     Instant now = clock.instant();
-    result.forEach(i -> i.expire(now));
+    for (LinkInvitation i : result) {
+      if ("PENDING".equals(i.getStatus()) && vn.edufit.connection.application.policy.ConnectionTransitions.isDue(i.getExpiresAt(), now)) {
+        if (expiryService != null) expiryService.expireInvitation(i.getId(), now);
+        i.expire(now);
+      }
+    }
     return result.stream().map(InvitationResult::from).toList();
   }
 
@@ -84,7 +98,12 @@ public class ConnectionQueryService {
     requireStudentAccess(actor, scope);
     List<ConnectionRequest> result = requests.findByStudentIdOrderByCreatedAtDesc(scope);
     Instant now = clock.instant();
-    result.forEach(r -> r.expire(now));
+    for (ConnectionRequest r : result) {
+      if ("PENDING".equals(r.getStatus()) && vn.edufit.connection.application.policy.ConnectionTransitions.isDue(r.getExpiresAt(), now)) {
+        if (expiryService != null) expiryService.expireRequest(r.getId(), now);
+        r.expire(now);
+      }
+    }
     return result.stream().map(ConnectionRequestResult::from).toList();
   }
 
@@ -94,7 +113,12 @@ public class ConnectionQueryService {
     UUID tutorId = profile.getTutorIdByUserId(actor.getUserId());
     List<ConnectionRequest> result = requests.findByTutorIdOrderByCreatedAtDesc(tutorId);
     Instant now = clock.instant();
-    result.forEach(r -> r.expire(now));
+    for (ConnectionRequest r : result) {
+      if ("PENDING".equals(r.getStatus()) && vn.edufit.connection.application.policy.ConnectionTransitions.isDue(r.getExpiresAt(), now)) {
+        if (expiryService != null) expiryService.expireRequest(r.getId(), now);
+        r.expire(now);
+      }
+    }
     return result.stream().map(r -> {
       ConnectionGoalDto goal = profile.findGoalForConnection(r.getGoalId())
           .orElseThrow(() -> EntityNotFoundException.of("LearningGoal", r.getGoalId()));

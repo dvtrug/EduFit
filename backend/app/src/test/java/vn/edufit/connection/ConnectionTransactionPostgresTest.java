@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -58,6 +59,7 @@ class ConnectionTransactionPostgresTest {
   @Autowired ConnectionQueryService queries;
   @Autowired ProfileFacade profile;
   @Autowired LinkInvitationService invitations;
+  @Autowired vn.edufit.connection.application.service.ConnectionExpiryService expiryService;
   @Autowired ParentStudentLinkService links;
   @Autowired DataSource source;
   @Autowired vn.edufit.connection.api.ConnectionFacade facade;
@@ -246,7 +248,7 @@ class ConnectionTransactionPostgresTest {
         .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.code").value("CONFLICT_DETECTED"));
     assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
     assertEquals("EXPIRED", jdbc.queryForObject("select status from link_invitation where invitation_id=?", String.class, invitation));
-    verifyNoInteractions(notifications);
+    verify(notifications).notify(eq(actor.getUserId()), any(), eq("LINK_EXPIRED"), any(), any(), any(), any());
   }
 
   @Test void expiredRequestCommitsBeforeHttpConflictAndOuterRollbackIsRespected() throws Exception {
@@ -265,7 +267,7 @@ class ConnectionTransactionPostgresTest {
         .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isConflict());
     assertEquals("EXPIRED", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
     assertEquals(0, jdbc.queryForObject("select count(*) from class where connection_request_id=?", Integer.class, fixture.request()));
-    verifyNoInteractions(notifications);
+    verify(notifications, atLeastOnce()).notify(any(), any(), eq("CONNECTION_EXPIRED"), any(), any(), any(), any());
   }
 
   @Test void createConflictCommitsOldRequestExpiry() {
@@ -278,7 +280,7 @@ class ConnectionTransactionPostgresTest {
     var result = requests.request(actor(expired.studentUser(), "STUDENT"), expired.goal(), other.tutor(), java.util.List.of("Tue 19:00"), null);
     assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Conflict.class, result);
     assertEquals("EXPIRED", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, expired.request()));
-    verifyNoInteractions(notifications);
+    verify(notifications, atLeastOnce()).notify(any(), any(), eq("CONNECTION_EXPIRED"), any(), any(), any(), any());
   }
 
   @org.junit.jupiter.params.ParameterizedTest
@@ -590,6 +592,157 @@ class ConnectionTransactionPostgresTest {
     assertTrue(facade.hasConfirmedParentLink(parent2, student1));
     assertEquals(1, queries.requests(actor(parent2, "PARENT"), student1).size());
     assertEquals(1, queries.links(actor(parent2, "PARENT")).size());
+  }
+
+  @Test void candidateExpiredQueriesReturnBoundedAndOrderedRows() {
+    var jdbc = new JdbcTemplate(source);
+    Instant now = Instant.now();
+    UUID p1 = account("PARENT"), s1 = account("STUDENT");
+    UUID p2 = account("PARENT"), s2 = account("STUDENT");
+    UUID p3 = account("PARENT"), s3 = account("STUDENT");
+    UUID inv1 = UUID.randomUUID(), inv2 = UUID.randomUUID(), inv3 = UUID.randomUUID();
+    // inv1: expired 2 hours ago
+    jdbc.update("insert into link_invitation(invitation_id,inviter_user_id,invited_user_id,expires_at) values (?,?,?,?)",
+        inv1, p1, s1, java.sql.Timestamp.from(now.minusSeconds(7200)));
+    // inv2: expired 1 hour ago
+    jdbc.update("insert into link_invitation(invitation_id,inviter_user_id,invited_user_id,expires_at) values (?,?,?,?)",
+        inv2, p2, s2, java.sql.Timestamp.from(now.minusSeconds(3600)));
+    // inv3: not yet expired (future)
+    jdbc.update("insert into link_invitation(invitation_id,inviter_user_id,invited_user_id,expires_at) values (?,?,?,?)",
+        inv3, p3, s3, java.sql.Timestamp.from(now.plusSeconds(3600)));
+
+    var candidates = expiryService.findExpiredInvitationCandidateIds(now, 2);
+    assertEquals(2, candidates.size());
+    assertEquals(inv1, candidates.get(0), "Should order by expiresAt ASC");
+    assertEquals(inv2, candidates.get(1));
+    assertFalse(candidates.contains(inv3));
+  }
+
+  @Test void expireRequestCommitsStatusAndNotificationAndHonorsOuterRollback() {
+    var fixture = pendingRequest();
+    var jdbc = new JdbcTemplate(source);
+    Instant now = Instant.now();
+    // set request expires_at to 1 hour ago
+    jdbc.update("update connection_request set expires_at = ? where request_id = ?",
+        java.sql.Timestamp.from(now.minusSeconds(3600)), fixture.request());
+
+    when(profile.findStudentById(fixture.student())).thenReturn(Optional.of(new StudentSummaryDto(fixture.student(), fixture.studentUser(), 4, null, true)));
+    when(profile.findTutorById(fixture.tutor())).thenReturn(Optional.of(new TutorSummaryDto(fixture.tutor(), fixture.tutorUser(), "Tutor", null, null, null, null, null, null, null, "VERIFIED", now, null, 0)));
+
+    // Outer rollback honors transaction boundary
+    new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+      assertTrue(expiryService.expireRequest(fixture.request(), now));
+      tx.setRollbackOnly();
+    });
+    assertEquals("PENDING", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
+    verifyNoInteractions(notifications);
+
+    // Commit persists EXPIRED and notifications
+    assertTrue(expiryService.expireRequest(fixture.request(), now));
+    assertEquals("EXPIRED", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
+    verify(notifications).notify(eq(fixture.tutorUser()), eq(fixture.student()), eq("CONNECTION_EXPIRED"), anyString(), anyString(), eq("CONNECTION_REQUEST"), eq(fixture.request()));
+    verify(notifications).notify(eq(fixture.studentUser()), eq(fixture.student()), eq("CONNECTION_EXPIRED"), anyString(), anyString(), eq("CONNECTION_REQUEST"), eq(fixture.request()));
+
+    // Idempotent terminal no-op: second call returns false, does not notify again
+    reset(notifications);
+    assertFalse(expiryService.expireRequest(fixture.request(), now));
+    verifyNoInteractions(notifications);
+  }
+
+  @Test void onAccessRequestCreationExpiresOverdueRowAndReleasesQuota() {
+    var jdbc = new JdbcTemplate(source);
+    UUID studentUser = account("STUDENT");
+    UUID student = UUID.randomUUID(), goal = UUID.randomUUID(), goalNew = UUID.randomUUID();
+    UUID tutorUser = account("TUTOR"), tutor = UUID.randomUUID();
+    actor(tutorUser, "TUTOR");
+
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", student, studentUser);
+    jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'Tutor','ONLINE',100000,'VERIFIED')", tutor, tutorUser);
+    jdbc.update("insert into learning_goal(goal_id,student_id,subject_id,current_level,desired_level,goal_type,deadline,mode,budget_max,status) values (?,?,1,1,2,'EXAM_PREPARATION',current_date + 30,'ONLINE',100000,'ACTIVE')", goal, student);
+    jdbc.update("insert into learning_goal(goal_id,student_id,subject_id,current_level,desired_level,goal_type,deadline,mode,budget_max,status) values (?,?,1,1,2,'EXAM_PREPARATION',current_date + 30,'ONLINE',100000,'ACTIVE')", goalNew, student);
+
+    when(profile.getTutorIdByUserId(tutorUser)).thenReturn(tutor);
+    when(profile.findTutorById(tutor)).thenReturn(Optional.of(new TutorSummaryDto(tutor, tutorUser, "Tutor", null, null, null, null, null, null, null, "VERIFIED", Instant.now(), null, 0)));
+    when(profile.findStudentById(student)).thenReturn(Optional.of(new StudentSummaryDto(student, studentUser, 4, null, true)));
+    when(profile.getStudentIdByUserId(studentUser)).thenReturn(student);
+    when(profile.findGoalForConnection(goalNew)).thenReturn(Optional.of(new ConnectionGoalDto(goalNew, student, studentUser, 1, 4, "EXAM_PREPARATION", null, "ACTIVE")));
+    when(profile.tutorTeaches(tutor, 1, 4)).thenReturn(true);
+
+    // Insert 4 pending requests that are fresh, and 1 that is overdue
+    for (int i = 0; i < 4; i++) {
+      UUID otherTutorUser = account("TUTOR"), otherTutor = UUID.randomUUID();
+      jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'Tutor','ONLINE',100000,'VERIFIED')", otherTutor, otherTutorUser);
+      jdbc.update("insert into connection_request(request_id,student_id,tutor_id,goal_id,sent_by_user_id,desired_slots,expires_at) values (?,?,?,?,?,cast(? as jsonb),now() + interval '7 days')",
+          UUID.randomUUID(), student, otherTutor, goal, studentUser, "[\"Tue 19:00\"]");
+    }
+    UUID overdueReq = UUID.randomUUID(), overdueTutorUser = account("TUTOR"), overdueTutor = UUID.randomUUID();
+    jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'Tutor','ONLINE',100000,'VERIFIED')", overdueTutor, overdueTutorUser);
+    jdbc.update("insert into connection_request(request_id,student_id,tutor_id,goal_id,sent_by_user_id,desired_slots,expires_at) values (?,?,?,?,?,cast(? as jsonb),now() - interval '1 hour')",
+        overdueReq, student, overdueTutor, goal, studentUser, "[\"Tue 19:00\"]");
+    when(profile.findTutorById(overdueTutor)).thenReturn(Optional.of(new TutorSummaryDto(overdueTutor, overdueTutorUser, "Tutor", null, null, null, null, null, null, null, "VERIFIED", Instant.now(), null, 0)));
+
+    assertEquals(5, jdbc.queryForObject("select count(*) from connection_request where student_id=? and status='PENDING'", Integer.class, student));
+
+    // Creating request succeeds because overdue request is expired on-access, dropping pending count from 5 to 4
+    var result = requests.request(actor(studentUser, "STUDENT"), goalNew, tutor, List.of("Tue 19:00"), null);
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class, result);
+    assertEquals("EXPIRED", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, overdueReq));
+    assertEquals(5, jdbc.queryForObject("select count(*) from connection_request where student_id=? and status='PENDING'", Integer.class, student));
+  }
+
+  @Test void accessVsExpiryRaceBetweenTutorAcceptAndSystemExpiry() throws Exception {
+    var fixture = pendingRequest();
+    var jdbc = new JdbcTemplate(source);
+    Instant now = Instant.now();
+    // set request to just expired
+    jdbc.update("update connection_request set expires_at = ? where request_id = ?",
+        java.sql.Timestamp.from(now.minusSeconds(1)), fixture.request());
+
+    when(profile.getTutorIdByUserId(fixture.tutorUser())).thenReturn(fixture.tutor());
+    when(profile.findTutorById(fixture.tutor())).thenReturn(Optional.of(new TutorSummaryDto(fixture.tutor(), fixture.tutorUser(), "Tutor", null, null, null, null, null, null, null, "VERIFIED", now, null, 0)));
+    when(profile.findStudentById(fixture.student())).thenReturn(Optional.of(new StudentSummaryDto(fixture.student(), fixture.studentUser(), 4, null, true)));
+    when(profile.findGoalForConnection(fixture.goal())).thenReturn(Optional.of(new ConnectionGoalDto(fixture.goal(), fixture.student(), fixture.studentUser(), 1, 4, "EXAM", null, "ACTIVE")));
+    when(profile.tutorTeaches(fixture.tutor(), 1, 4)).thenReturn(true);
+    actor(fixture.tutorUser(), "TUTOR");
+
+    var latch = new CountDownLatch(2);
+    var startBarrier = new CountDownLatch(1);
+    var results = new java.util.concurrent.atomic.AtomicInteger(0);
+
+    try (var pool = Executors.newFixedThreadPool(2)) {
+      pool.submit(() -> {
+        try {
+          startBarrier.await();
+          var res = requests.respondRequest(actor(fixture.tutorUser(), "TUTOR"), fixture.request(), true, null);
+          if (res instanceof vn.edufit.connection.application.dto.TransitionResult.Success) results.incrementAndGet();
+        } catch (Exception ignored) {
+        } finally {
+          latch.countDown();
+        }
+      });
+      pool.submit(() -> {
+        try {
+          startBarrier.await();
+          boolean expired = expiryService.expireRequest(fixture.request(), now);
+          if (expired) results.incrementAndGet();
+        } catch (Exception ignored) {
+        } finally {
+          latch.countDown();
+        }
+      });
+
+      startBarrier.countDown();
+      assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    String finalStatus = jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request());
+    assertTrue("ACCEPTED".equals(finalStatus) || "EXPIRED".equals(finalStatus));
+    int classCount = jdbc.queryForObject("select count(*) from class where connection_request_id=?", Integer.class, fixture.request());
+    if ("ACCEPTED".equals(finalStatus)) {
+      assertEquals(1, classCount);
+    } else {
+      assertEquals(0, classCount);
+    }
   }
 
   @Configuration

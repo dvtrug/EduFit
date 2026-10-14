@@ -21,7 +21,8 @@ class ConnectionTransitionListener {
       case "PENDING" -> { if (event.oldStatus() == null) writer.invitationCreated(event); }
       case "ACCEPTED" -> writer.invitationAccepted(event);
       case "DECLINED" -> writer.invitationDeclined(event);
-      default -> { } // Withdraw/system closure unchanged; expiry dispatch follows its publisher task.
+      case "EXPIRED" -> writer.invitationExpired(event);
+      default -> { } // Withdraw/system closure unchanged.
     }
   }
   @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = false)
@@ -35,6 +36,7 @@ class ConnectionTransitionListener {
       case "CANCELLED" -> writer.requestCancelled(event);
       case "ACCEPTED" -> writer.requestAccepted(event);
       case "REJECTED" -> writer.requestRejected(event);
+      case "EXPIRED" -> writer.requestExpired(event);
       default -> { }
     }
   }

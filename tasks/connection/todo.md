@@ -237,7 +237,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 
 ## Phase 4 — Expiry tự động và xử lý song song với người dùng
 
-### [ ] T16 — Shared expiry service và on-access guards
+### [x] T16 — Shared expiry service và on-access guards
 
 - **Files:** `ConnectionExpiryService`, expiry repository queries, invitation/request integrations, event tests.
 - **Thực hiện:** Expire invitation/request qua cùng guard/lock order, bounded IDs; recheck sau lock. Listener expiry báo sender/current-authorized parties; chỉ transition mới publish. On-access gọi cùng logic, không nhiều version expiry khác nhau.
@@ -489,3 +489,9 @@ Dependency của task cha kế tiếp dùng **task con cuối nhóm**: T09 sau T
 - T13b: ACTIVE actor/tutor account, current goal account ownership, COUNT-based pending limit and cancel guards. 121 tests pass, including PostgreSQL sixth request/expiry quota and Discovery-AI E2E.
 
 - T13c: Request create and cancel publish ConnectionRequestChangedEvent with complete ID metadata, removing direct notification on create. BEFORE_COMMIT listener/writer delivers CONNECTION_REQUESTED to Tutor and Student (if Parent sent), and CONNECTION_CANCELLED to Tutor and Student (if Parent cancelled, without notifying Student about their own cancellation of older Parent requests). 323 focused verify tests pass (Connection 192, App 131), zero failures/errors/skips.
+- T14: Tutor response (accept/reject) enforced atomically with class creation and current-authorized recipients; 344 tests pass with zero skips.
+- T15: Current parent consent enforced across all connection access entrypoints; 457 tests pass with zero skips. Checkpoint 3 full clean verify 763 tests pass.
+
+### Phase 4 execution — 14/10/2026
+
+- T16: Centralized bounded invitation and request expiry service with stable ordering candidate IDs, lock recheck, and on-access integration. BEFORE_COMMIT listener delivers LINK_EXPIRED to inviter and CONNECTION_EXPIRED to tutor and current-authorized sender. 112 focused tests pass, 26 PostgreSQL tests pass with zero failures/errors/skips. Evidence recorded in docs/connection/phase4-validation.md.

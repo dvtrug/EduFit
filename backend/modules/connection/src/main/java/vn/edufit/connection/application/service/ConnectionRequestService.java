@@ -28,6 +28,7 @@ import vn.edufit.shared.notification.NotificationSink;
 import org.springframework.context.ApplicationEventPublisher;
 import vn.edufit.connection.api.event.ConnectionRequestChangedEvent;
 import vn.edufit.connection.api.event.TutoringClassCreatedEvent;
+import vn.edufit.connection.application.policy.ConnectionTransitions;
 import vn.edufit.shared.exception.ForbiddenOperationException;
 import vn.edufit.shared.exception.EntityNotFoundException;
 import vn.edufit.shared.exception.InvalidOperationException;
@@ -44,10 +45,13 @@ public class ConnectionRequestService {
   private final ConnectionFacade facade;
   private final ConnectionRequestInput input;
   private final ApplicationEventPublisher events;
+  private final ConnectionExpiryService expiryService;
 
+  @org.springframework.beans.factory.annotation.Autowired
   public ConnectionRequestService(ConnectionRequestRepository requests, TutoringClassRepository classes,
       ProfileFacade profile, IamFacade iam, ConnectionLock lock, NotificationSink notifications,
-      ConnectionFacade facade, ConnectionRequestInput input, ApplicationEventPublisher events, Clock clock) {
+      ConnectionFacade facade, ConnectionRequestInput input, ApplicationEventPublisher events,
+      ConnectionExpiryService expiryService, Clock clock) {
     this.clock = clock;
     this.requests = requests;
     this.classes = classes;
@@ -58,6 +62,13 @@ public class ConnectionRequestService {
     this.facade = facade;
     this.input = input;
     this.events = events;
+    this.expiryService = expiryService;
+  }
+
+  public ConnectionRequestService(ConnectionRequestRepository requests, TutoringClassRepository classes,
+      ProfileFacade profile, IamFacade iam, ConnectionLock lock, NotificationSink notifications,
+      ConnectionFacade facade, ConnectionRequestInput input, ApplicationEventPublisher events, Clock clock) {
+    this(requests, classes, profile, iam, lock, notifications, facade, input, events, null, clock);
   }
 
   private static void requireRole(CurrentUser actor, String... roles) {
@@ -103,7 +114,12 @@ public class ConnectionRequestService {
         goal.subjectId(), goal.educationLevelId()))
       throw new InvalidOperationException("Gia sư không phù hợp mục tiêu");
     Instant now = clock.instant();
-    requests.findByStudentIdAndStatus(goal.studentId(), "PENDING").forEach(r -> r.expire(now));
+    for (ConnectionRequest r : requests.findByStudentIdAndStatus(goal.studentId(), "PENDING")) {
+      if (ConnectionTransitions.isDue(r.getExpiresAt(), now)) {
+        if (expiryService != null) expiryService.expireRequest(r.getId(), now);
+        else r.expire(now);
+      }
+    }
     requests.flush();
     if (requests.existsByStudentIdAndTutorIdAndStatus(goal.studentId(), tutorId, "PENDING"))
       return TransitionResult.conflict("PENDING", "Đã có yêu cầu chờ gia sư này");
@@ -128,7 +144,11 @@ public class ConnectionRequestService {
     requireActiveActor(actor);
     requireStudentAccess(actor, request.getStudentId());
     Instant now = clock.instant();
-    request.expire(now);
+    if (ConnectionTransitions.isDue(request.getExpiresAt(), now)) {
+      if (expiryService != null) expiryService.expireRequest(id, now);
+      else request.expire(now);
+      return TransitionResult.conflict("EXPIRED", "Không còn ở trạng thái chờ xử lý");
+    }
     if (!"PENDING".equals(request.getStatus()))
       return TransitionResult.conflict(request.getStatus(), "Không còn ở trạng thái chờ xử lý");
     UUID studentUserId = profile.findStudentById(request.getStudentId())
@@ -157,7 +177,11 @@ public class ConnectionRequestService {
     if (!request.getTutorId().equals(tutorId))
       throw new ForbiddenOperationException("Không phải gia sư nhận yêu cầu");
     Instant now = clock.instant();
-    request.expire(now);
+    if (ConnectionTransitions.isDue(request.getExpiresAt(), now)) {
+      if (expiryService != null) expiryService.expireRequest(id, now);
+      else request.expire(now);
+      return TransitionResult.conflict("EXPIRED", "Không còn ở trạng thái chờ xử lý");
+    }
     if (!"PENDING".equals(request.getStatus()))
       return TransitionResult.conflict(request.getStatus(), "Không còn ở trạng thái chờ xử lý");
 
