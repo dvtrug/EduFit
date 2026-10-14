@@ -368,20 +368,25 @@ gantt
 
 #### 1. Nhiệm vụ Backend
 - [x] **`platform/storage`:** `CredentialStorageService` (lưu file local disk trong dev, bảo mật Private storage).
-- [x] **`modules/verification`:**
+- [x] **`modules/verification` (Production Ready):**
   - Gia sư nộp chứng chỉ (`POST /api/v1/verifications`, multipart/form-data).
-  - Kiểm tra Magic Bytes tệp tin (Apache Tika) chống giả mạo đuôi file (.pdf, .png, .jpg).
-  - Admin duyệt/từ chối hồ sơ kèm lý do (`POST /api/v1/verifications/{id}/approve`, `/reject`).
+  - Kiểm tra Magic Bytes tệp tin (Apache Tika) chống giả mạo đuôi file (.pdf, .png, .jpg) & chống Path Traversal (`CredentialFileValidationSecurityTest`).
+  - Admin duyệt/từ chối hồ sơ kèm lý do (`POST /api/v1/admin/verifications/{id}/approve`, `/reject`).
+  - Admin xem chi tiết hồ sơ nộp bằng cấp (`GET /api/v1/admin/verifications/{id}`).
+  - Tải/xem tệp bằng cấp an toàn qua streaming API (`GET /api/v1/verifications/credentials/files/{fileId}`) với header inline và phân quyền chặt chẽ (Admin hoặc chính chủ Gia sư).
+  - Kiểm thử nâng cao: CSV DDT Parameterized tests (`VerificationDecisionMatrixCsvTest`), Integration Test vòng đời KYC với Testcontainers PostgreSQL 17 (`VerificationWorkflowPostgresTest`), ranh giới module được kiểm soát bởi ArchUnit (`ArchitectureBoundaryTest`).
 - [ ] **`modules/discovery`:**
   - `GET /api/v1/tutors`: Tìm kiếm gia sư công khai kèm phân trang (Pageable).
   - Bộ lọc đa tiêu chí: theo môn học (`subjectId`), cấp lớp (`levelId`), mức giá tối đa/tối thiểu (`minPrice`, `maxPrice`), rating tối thiểu.
   - Tích hợp `MatchScorer` tính điểm tương thích.
 
 #### 2. Nhiệm vụ Frontend
-- [ ] **`features/verification`:**
+- [x] **`features/verification` (Production Ready):**
   - `TutorVerificationBanner.tsx`: Hiển thị trạng thái hồ sơ của Gia sư (VERIFIED, PENDING, REJECTED).
   - `UploadCredentialModal.tsx`: Form nộp bằng cấp kèm preview file và kiểm tra dung lượng (< 10MB).
-  - `admin/verification-queue/page.tsx`: Bảng danh sách hồ sơ chờ duyệt cho Admin kèm modal xem trước ảnh và nút Duyệt/Từ chối.
+  - `admin/verification-queue/page.tsx`: Bảng danh sách hồ sơ chờ duyệt cho Admin.
+  - `ReviewKycModal.tsx`: Modal xem chi tiết hồ sơ gia sư, danh sách văn bằng đính kèm, link xem/tải trực tiếp file bằng cấp từ streaming API an toàn, xử lý duyệt/từ chối.
+  - Vitest Component Suite: `AdminKycQueueView.test.tsx`, `ReviewKycModal.test.tsx` đạt 100% pass rate.
 - [ ] **`features/discovery`:**
   - `(public)/tutors/page.tsx`: Giao diện tìm kiếm gia sư công khai với thanh lọc bên trái và danh sách thẻ gia sư bên phải.
   - `(public)/tutors/[id]/page.tsx`: Trang chi tiết gia sư (tiểu sử, các môn dạy, bằng cấp đã xác minh, lịch rảnh trong tuần).
