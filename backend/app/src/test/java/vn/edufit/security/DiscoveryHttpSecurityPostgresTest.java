@@ -31,7 +31,7 @@ import vn.edufit.iam.infra.security.Argon2PasswordService;
  */
 @SpringBootTest(
     properties = {"edufit.ai.provider=stub", "spring.session.jdbc.initialize-schema=never"})
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DirtiesContext
 class DiscoveryHttpSecurityPostgresTest {
   @Container

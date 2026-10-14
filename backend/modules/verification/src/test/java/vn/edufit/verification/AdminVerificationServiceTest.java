@@ -180,4 +180,17 @@ class AdminVerificationServiceTest {
     );
     assertEquals(ErrorCode.FORBIDDEN, ex.getErrorCode());
   }
+
+  @Test
+  @DisplayName("Admin lấy chi tiết yêu cầu xác minh kèm danh sách bằng cấp")
+  void shouldGetDetailSuccessfully() {
+    UUID requestId = UUID.randomUUID();
+    VerificationRequest req = VerificationRequest.pending(UUID.randomUUID(), Instant.now());
+    when(verificationRequestRepository.findWithCredentialsByRequestId(requestId))
+        .thenReturn(Optional.of(req));
+
+    VerificationRequestDetailResponse detail = adminVerificationService.getDetail(adminUser, requestId);
+    assertNotNull(detail);
+    assertEquals("PENDING", detail.status());
+  }
 }

@@ -30,6 +30,7 @@ import vn.edufit.storage.api.CredentialStorageService;
 import vn.edufit.storage.api.StoredCredentialFile;
 import vn.edufit.verification.application.service.TutorVerificationService;
 import vn.edufit.verification.infra.persistence.entity.Credential;
+import vn.edufit.verification.infra.persistence.entity.CredentialFile;
 import vn.edufit.verification.infra.persistence.entity.VerificationRequest;
 import vn.edufit.verification.infra.persistence.repository.VerificationRequestRepository;
 import vn.edufit.verification.web.request.SubmitVerificationRequest;
@@ -47,6 +48,9 @@ class TutorVerificationServiceTest {
   @Mock
   private ProfileFacade profileFacade;
 
+  @Mock
+  private vn.edufit.verification.infra.persistence.repository.CredentialFileRepository credentialFileRepository;
+
   private TutorVerificationService tutorVerificationService;
 
   private CurrentUser tutorUser;
@@ -58,7 +62,8 @@ class TutorVerificationServiceTest {
     tutorVerificationService = new TutorVerificationService(
         verificationRequestRepository,
         credentialStorageService,
-        profileFacade
+        profileFacade,
+        credentialFileRepository
     );
 
     userId = UUID.randomUUID();
@@ -223,5 +228,47 @@ class TutorVerificationServiceTest {
         EntityNotFoundException.class,
         () -> tutorVerificationService.getMyLatestRequest(tutorUser)
     );
+  }
+
+  @Test
+  @DisplayName("Gia sư chính chủ tải file bằng cấp thành công")
+  void shouldGetCredentialFileForOwnerTutor() {
+    UUID fileId = UUID.randomUUID();
+    VerificationRequest request = VerificationRequest.pending(tutorId, Instant.now());
+    Credential cred = Credential.create(Credential.Type.DEGREE, "ĐHBK", (short) 2023, null);
+    request.addCredential(cred);
+    CredentialFile credFile = CredentialFile.create("degree.pdf", "key-xyz", "application/pdf", 100L, Instant.now());
+    cred.addFile(credFile);
+
+    when(credentialFileRepository.findWithRequestByFileId(fileId)).thenReturn(Optional.of(credFile));
+    when(profileFacade.getTutorIdByUserId(userId)).thenReturn(tutorId);
+    org.springframework.core.io.Resource resource = new org.springframework.core.io.ByteArrayResource("content".getBytes());
+    when(credentialStorageService.load("key-xyz")).thenReturn(new vn.edufit.storage.api.StoredCredentialResource("key-xyz", resource));
+
+    TutorVerificationService.CredentialFileDownload download = tutorVerificationService.getCredentialFile(tutorUser, fileId);
+    assertNotNull(download);
+    assertEquals("degree.pdf", download.fileName());
+    assertEquals("application/pdf", download.contentType());
+  }
+
+  @Test
+  @DisplayName("Từ chối khi gia sư truy cập file bằng cấp của gia sư khác")
+  void shouldThrowWhenTutorAccessesOtherTutorsFile() {
+    UUID fileId = UUID.randomUUID();
+    UUID otherTutorId = UUID.randomUUID();
+    VerificationRequest request = VerificationRequest.pending(otherTutorId, Instant.now());
+    Credential cred = Credential.create(Credential.Type.DEGREE, "ĐHBK", (short) 2023, null);
+    request.addCredential(cred);
+    CredentialFile credFile = CredentialFile.create("degree.pdf", "key-xyz", "application/pdf", 100L, Instant.now());
+    cred.addFile(credFile);
+
+    when(credentialFileRepository.findWithRequestByFileId(fileId)).thenReturn(Optional.of(credFile));
+    when(profileFacade.getTutorIdByUserId(userId)).thenReturn(tutorId);
+
+    InvalidOperationException ex = assertThrows(
+        InvalidOperationException.class,
+        () -> tutorVerificationService.getCredentialFile(tutorUser, fileId)
+    );
+    assertEquals(ErrorCode.FORBIDDEN, ex.getErrorCode());
   }
 }

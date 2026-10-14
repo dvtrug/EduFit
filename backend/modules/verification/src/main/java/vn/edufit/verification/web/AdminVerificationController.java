@@ -64,6 +64,18 @@ public class AdminVerificationController {
     return ResponseEntity.ok(ApiResponse.success(response, "Duyệt hồ sơ xác minh thành công"));
   }
 
+  @GetMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<ApiResponse<VerificationRequestDetailResponse>> getDetail(
+      @PathVariable("id") UUID requestId
+  ) {
+    VerificationRequestDetailResponse response = adminVerificationService.getDetail(
+        currentUser(),
+        requestId
+    );
+    return ResponseEntity.ok(ApiResponse.success(response, "Lấy chi tiết hồ sơ xác minh thành công"));
+  }
+
   private CurrentUser currentUser() {
     CurrentUser currentUser = currentUserProvider.getIfAvailable();
     if (currentUser == null || currentUser.getUserId() == null) {

@@ -115,6 +115,26 @@ class AdminVerificationControllerTest {
   }
 
   @Test
+  @DisplayName("GET /api/v1/admin/verifications/{id} - Trả về HTTP 200 OK chi tiết hồ sơ xác minh")
+  void shouldGetDetailSuccessfully() {
+    when(currentUserProvider.getIfAvailable()).thenReturn(adminUser);
+
+    UUID requestId = UUID.randomUUID();
+    VerificationRequestDetailResponse detail = new VerificationRequestDetailResponse(
+        requestId, UUID.randomUUID(), "PENDING", null, Instant.now(), null, null, List.of()
+    );
+    when(adminVerificationService.getDetail(adminUser, requestId)).thenReturn(detail);
+
+    ResponseEntity<ApiResponse<VerificationRequestDetailResponse>> response =
+        controller.getDetail(requestId);
+
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertNotNull(response.getBody());
+    assertTrue(response.getBody().success());
+    assertEquals(requestId, response.getBody().data().requestId());
+  }
+
+  @Test
   @DisplayName("Từ chối khi phiên làm việc chưa xác thực (CurrentUser null)")
   void shouldThrowWhenUnauthenticated() {
     when(currentUserProvider.getIfAvailable()).thenReturn(null);

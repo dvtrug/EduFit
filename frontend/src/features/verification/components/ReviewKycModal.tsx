@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { verificationService, PendingQueueItem } from "@/services/verification";
+import React, { useState, useEffect } from "react";
+import { verificationService, PendingQueueItem, VerificationRequestDetail } from "@/services/verification";
 import { useToast } from "@/shared/ui/Toast";
 import {
   ShieldCheck,
@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Loader2,
   Calendar,
+  ExternalLink,
 } from "lucide-react";
 
 /**
@@ -39,6 +40,30 @@ export function ReviewKycModal({ item, isOpen, onClose, onReviewed }: ReviewKycM
   const [decision, setDecision] = useState<"APPROVED" | "REJECTED">("APPROVED");
   const [rejectionReason, setRejectionReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [detail, setDetail] = useState<VerificationRequestDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !item) {
+      setDetail(null);
+      return;
+    }
+    let active = true;
+    setLoadingDetail(true);
+    verificationService.getVerificationDetail(item.requestId)
+      .then((data) => {
+        if (active) setDetail(data);
+      })
+      .catch((err) => {
+        console.error("Lỗi khi tải chi tiết hồ sơ KYC:", err);
+      })
+      .finally(() => {
+        if (active) setLoadingDetail(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isOpen, item]);
 
   if (!isOpen || !item) return null;
 
@@ -119,6 +144,52 @@ export function ReviewKycModal({ item, isOpen, onClose, onReviewed }: ReviewKycM
             </span>
           </div>
         </div>
+
+        {/* Chi tiết bằng cấp & tài liệu tải lên */}
+        {loadingDetail ? (
+          <div className="flex items-center justify-center p-4 gap-2 text-xs text-neutral-500 bg-stone-50 rounded-2xl border border-stone-200/60">
+            <Loader2 className="size-4 animate-spin text-purple-600" />
+            <span>Đang tải thông tin bằng cấp & tệp đính kèm...</span>
+          </div>
+        ) : detail && detail.credentials && detail.credentials.length > 0 ? (
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold text-neutral-700 flex items-center gap-1.5">
+              <FileText className="size-3.5 text-purple-600" />
+              <span>Văn bằng & Chứng chỉ đã nộp ({detail.credentials.length}):</span>
+            </h4>
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+              {detail.credentials.map((cred, idx) => (
+                <div key={cred.credentialId || idx} className="p-3 bg-stone-50 rounded-2xl border border-stone-200/80 text-xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-neutral-900">{cred.institution}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-800">
+                      {cred.type} {cred.year ? `(${cred.year})` : ""}
+                    </span>
+                  </div>
+                  {cred.note && <p className="text-[11px] text-neutral-500 italic">"{cred.note}"</p>}
+                  {cred.files && cred.files.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-1.5 border-t border-stone-200/60">
+                      {cred.files.map((f) => (
+                        <a
+                          key={f.fileId}
+                          href={verificationService.getCredentialFileUrl(f.fileId)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-stone-100 text-neutral-700 rounded-xl border border-stone-200 text-[11px] font-medium transition-colors shadow-2xs"
+                        >
+                          <FileText className="size-3 text-purple-600" />
+                          <span className="truncate max-w-[140px]">{f.fileName}</span>
+                          <span className="text-[10px] text-neutral-400">({Math.round(f.sizeBytes / 1024)} KB)</span>
+                          <ExternalLink className="size-2.5 text-neutral-400" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

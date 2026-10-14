@@ -22,21 +22,89 @@ import vn.edufit.verification.infra.persistence.repository.VerificationRequestRe
 import vn.edufit.verification.web.request.SubmitVerificationRequest;
 import vn.edufit.verification.web.response.VerificationRequestDetailResponse;
 
+import org.springframework.core.io.Resource;
+import vn.edufit.storage.api.StoredCredentialResource;
+import vn.edufit.verification.infra.persistence.repository.CredentialFileRepository;
+
 @Service
 public class TutorVerificationService {
+
+  public record CredentialFileDownload(
+      String fileName,
+      String contentType,
+      long sizeBytes,
+      Resource resource
+  ) {}
 
   private final VerificationRequestRepository verificationRequestRepository;
   private final CredentialStorageService credentialStorageService;
   private final ProfileFacade profileFacade;
+  private final CredentialFileRepository credentialFileRepository;
 
   public TutorVerificationService(
       VerificationRequestRepository verificationRequestRepository,
       CredentialStorageService credentialStorageService,
       ProfileFacade profileFacade
   ) {
+    this(verificationRequestRepository, credentialStorageService, profileFacade, null);
+  }
+
+  @org.springframework.beans.factory.annotation.Autowired
+  public TutorVerificationService(
+      VerificationRequestRepository verificationRequestRepository,
+      CredentialStorageService credentialStorageService,
+      ProfileFacade profileFacade,
+      CredentialFileRepository credentialFileRepository
+  ) {
     this.verificationRequestRepository = verificationRequestRepository;
     this.credentialStorageService = credentialStorageService;
     this.profileFacade = profileFacade;
+    this.credentialFileRepository = credentialFileRepository;
+  }
+
+  @Transactional(readOnly = true)
+  public CredentialFileDownload getCredentialFile(CurrentUser currentUser, UUID fileId) {
+    if (currentUser == null || currentUser.getUserId() == null) {
+      throw new InvalidOperationException(
+          ErrorCode.UNAUTHORIZED,
+          "Phiên làm việc chưa được xác thực hoặc đã hết hạn"
+      );
+    }
+    if (credentialFileRepository == null) {
+      throw new InvalidOperationException(
+          ErrorCode.INVALID_OPERATION,
+          "CredentialFileRepository chưa được cấu hình"
+      );
+    }
+
+    CredentialFile credentialFile = credentialFileRepository.findWithRequestByFileId(fileId)
+        .orElseThrow(() -> EntityNotFoundException.of("CredentialFile", fileId));
+
+    boolean isAdmin = currentUser.hasRole("ADMIN");
+    if (!isAdmin) {
+      if (!currentUser.hasRole("TUTOR")) {
+        throw new InvalidOperationException(
+            ErrorCode.FORBIDDEN,
+            "Bạn không có quyền truy cập file bằng cấp này"
+        );
+      }
+      UUID currentTutorId = profileFacade.getTutorIdByUserId(currentUser.getUserId());
+      UUID fileOwnerTutorId = credentialFile.getCredential().getVerificationRequest().getTutorId();
+      if (!currentTutorId.equals(fileOwnerTutorId)) {
+        throw new InvalidOperationException(
+            ErrorCode.FORBIDDEN,
+            "Bạn không có quyền truy cập file bằng cấp của gia sư khác"
+        );
+      }
+    }
+
+    StoredCredentialResource stored = credentialStorageService.load(credentialFile.getStorageKey());
+    return new CredentialFileDownload(
+        credentialFile.getFileName(),
+        credentialFile.getContentType(),
+        credentialFile.getSizeBytes(),
+        stored.resource()
+    );
   }
 
   @Transactional

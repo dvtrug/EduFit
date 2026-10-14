@@ -124,6 +124,27 @@ class TutorVerificationControllerTest {
   }
 
   @Test
+  @DisplayName("GET /api/v1/verifications/credentials/files/{fileId} - Trả về HTTP 200 OK kèm byte resource")
+  void shouldDownloadFileSuccessfully() {
+    when(currentUserProvider.getIfAvailable()).thenReturn(tutorUser);
+
+    UUID fileId = UUID.randomUUID();
+    org.springframework.core.io.Resource resource = new org.springframework.core.io.ByteArrayResource("dummy content".getBytes());
+    TutorVerificationService.CredentialFileDownload download = new TutorVerificationService.CredentialFileDownload(
+        "degree.pdf", "application/pdf", 13L, resource
+    );
+    when(tutorVerificationService.getCredentialFile(tutorUser, fileId)).thenReturn(download);
+
+    ResponseEntity<org.springframework.core.io.Resource> response = controller.downloadFile(fileId);
+
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertNotNull(response.getBody());
+    assertEquals("application/pdf", response.getHeaders().getContentType().toString());
+    assertEquals(13L, response.getHeaders().getContentLength());
+    assertTrue(response.getHeaders().getFirst("Content-Disposition").contains("inline"));
+  }
+
+  @Test
   @DisplayName("Từ chối khi phiên làm việc chưa xác thực (CurrentUser null)")
   void shouldThrowWhenUnauthenticated() {
     when(currentUserProvider.getIfAvailable()).thenReturn(null);

@@ -45,7 +45,7 @@ import vn.edufit.shared.auth.CurrentUser;
 /**
  * Actual scorer/ranking, Gemini HTTP adapter, audit/reservation stores and matching transaction.
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @SpringJUnitConfig(AiMatchingPostgresTest.Config.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class AiMatchingPostgresTest {

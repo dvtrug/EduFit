@@ -1,0 +1,6 @@
+# testCaseId,initialStatus,adminAction,rejectionReason,expectedFinalStatus,shouldUpdateTutorStatus,expectedErrorCode
+TC_VER_01,PENDING,APPROVE,,APPROVED,true,NONE
+TC_VER_02,PENDING,REJECT,Bằng cấp mờ không rõ số hiệu văn bằng,REJECTED,false,NONE
+TC_VER_03,PENDING,REJECT,,REJECTED,false,VALIDATION_FAILED
+TC_VER_04,APPROVED,APPROVE,,APPROVED,false,INVALID_OPERATION
+TC_VER_05,REJECTED,APPROVE,,REJECTED,false,INVALID_OPERATION

@@ -16,8 +16,8 @@ public interface VerificationRequestRepository extends JpaRepository<Verificatio
 
   Optional<VerificationRequest> findFirstByTutorIdOrderBySubmittedAtDesc(UUID tutorId);
 
-  @EntityGraph(attributePaths = {"credentials", "credentials.files"})
-  Optional<VerificationRequest> findWithCredentialsByRequestId(UUID requestId);
+  @org.springframework.data.jpa.repository.Query("SELECT r FROM VerificationRequest r WHERE r.id = :requestId")
+  Optional<VerificationRequest> findWithCredentialsByRequestId(@org.springframework.data.repository.query.Param("requestId") UUID requestId);
 
   Page<VerificationRequest> findByStatusOrderBySubmittedAtAsc(
       VerificationRequest.Status status,
