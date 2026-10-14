@@ -1,5 +1,6 @@
 package vn.edufit.connection.infra.persistence;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,4 +9,7 @@ public interface TutoringClassRepository extends JpaRepository<TutoringClass, UU
   boolean existsByStudentIdAndTutorIdAndStatus(UUID studentId, UUID tutorId, String status);
   Optional<TutoringClass> findByConnectionRequestId(UUID requestId);
   Optional<TutoringClass> findByStudentIdAndTutorIdAndStatus(UUID studentId, UUID tutorId, String status);
+  List<TutoringClass> findByStudentIdOrderByStartedAtDesc(UUID studentId);
+  List<TutoringClass> findByTutorIdOrderByStartedAtDesc(UUID tutorId);
 }
+

@@ -34,4 +34,19 @@ public interface TutoringSessionDomainRepository {
   List<TutoringSession> findUpcomingSessions(Instant windowStart, Instant windowEnd);
 
   List<TutoringSession> findOverdueOutcomeSessions(Instant cutoff);
+
+  // ── Thêm cho Progress ──────────────────────────────────────────────────────
+
+  /**
+   * Lấy danh sách buổi học của lớp trong khoảng thời gian (dùng cho timeline/notes của Progress).
+   * from và to có thể null để bỏ giới hạn một phía.
+   */
+  List<TutoringSession> findByClassId(UUID classId, Instant from, Instant to);
+
+  /**
+   * Lấy tất cả buổi học của nhiều lớp học cùng lúc (batch query, tránh N+1).
+   * from và to có thể null để bỏ giới hạn một phía.
+   */
+  List<TutoringSession> findByClassIdIn(List<UUID> classIds, Instant from, Instant to);
 }
+

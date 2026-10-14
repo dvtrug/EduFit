@@ -11,6 +11,7 @@ public record RecordOutcomeRequest(
     @NotNull(message = "outcome không được để trống (COMPLETED hoặc ABSENT)")
     SessionStatus outcome,
 
-    @Size(max = 1000, message = "noteContent không được vượt quá 1000 ký tự")
+    @Size(max = 5000, message = "noteContent không được vượt quá 5000 ký tự")
     String noteContent
 ) {}
+

@@ -206,6 +206,40 @@ public class ConnectionService implements ConnectionFacade {
         .map(c -> new ActiveClassView(c.getId(), c.getStudentId(), c.getTutorId(), c.getGoalId()));
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public Optional<ClassDetailView> findClassById(UUID classId) {
+    return classes.findById(classId).map(this::toClassDetailView);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ClassDetailView> findClassesByStudent(UUID studentId) {
+    return classes.findByStudentIdOrderByStartedAtDesc(studentId)
+        .stream().map(this::toClassDetailView).toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ClassDetailView> findClassesByTutor(UUID tutorId) {
+    return classes.findByTutorIdOrderByStartedAtDesc(tutorId)
+        .stream().map(this::toClassDetailView).toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<UUID> findConfirmedParentUserIds(UUID studentId) {
+    return links.findByStudentIdAndStatus(studentId, "CONFIRMED")
+        .stream().map(ParentStudentLink::getParentUserId).toList();
+  }
+
+  private ClassDetailView toClassDetailView(TutoringClass c) {
+    return new ClassDetailView(
+        c.getId(), c.getStudentId(), c.getTutorId(), c.getGoalId(),
+        c.getStatus(), c.getStartedAt(), c.getEndedAt()
+    );
+  }
+
   private void requireStudentAccess(CurrentUser actor, UUID studentId) {
     if (actor.hasRole("STUDENT") && profile.findStudentById(studentId)
         .map(s -> s.userId().equals(actor.getUserId())).orElse(false)) return;

@@ -137,4 +137,41 @@ public interface SpringDataTutoringSessionRepository extends JpaRepository<Tutor
       ORDER BY s.endAt ASC
   """)
   List<TutoringSessionJpaEntity> findOverdueOutcomeSessions(@Param("cutoff") Instant cutoff);
+
+  // ── Thêm cho module Progress ──────────────────────────────────────────────
+
+  /**
+   * Lấy buổi học của một lớp trong khoảng thời gian (dùng cho notes timeline của Progress).
+   * from/to có thể null để không giới hạn.
+   */
+  @Query("""
+      SELECT s FROM TutoringSessionJpaEntity s
+      WHERE s.classId = :classId
+        AND (:from IS NULL OR s.startAt >= :from)
+        AND (:to IS NULL OR s.startAt <= :to)
+      ORDER BY s.startAt DESC
+  """)
+  List<TutoringSessionJpaEntity> findByClassId(
+      @Param("classId") UUID classId,
+      @Param("from") Instant from,
+      @Param("to") Instant to
+  );
+
+  /**
+   * Batch query lấy tất cả buổi học của nhiều lớp cùng lúc (tránh N+1 cho Progress dashboard).
+   * from/to có thể null để không giới hạn.
+   */
+  @Query("""
+      SELECT s FROM TutoringSessionJpaEntity s
+      WHERE s.classId IN :classIds
+        AND (:from IS NULL OR s.startAt >= :from)
+        AND (:to IS NULL OR s.startAt <= :to)
+      ORDER BY s.classId, s.startAt DESC
+  """)
+  List<TutoringSessionJpaEntity> findByClassIdIn(
+      @Param("classIds") List<UUID> classIds,
+      @Param("from") Instant from,
+      @Param("to") Instant to
+  );
 }
+

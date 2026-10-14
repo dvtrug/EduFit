@@ -2,10 +2,13 @@ package vn.edufit.scheduling.api;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import vn.edufit.scheduling.api.dto.ClassSessionStatsView;
 import vn.edufit.scheduling.api.dto.CompletedSessionStatsView;
 import vn.edufit.scheduling.api.dto.SessionSummaryView;
+import vn.edufit.scheduling.api.dto.SessionTimelineView;
 import vn.edufit.scheduling.api.dto.TutorBusySlotView;
 
 /**
@@ -69,4 +72,29 @@ public interface SessionFacade {
    * @return {@code true} nếu có buổi học SCHEDULED bị trùng.
    */
   boolean hasActiveSessionAt(UUID tutorId, Instant startAt, Instant endAt);
+
+  // ── Phương thức bổ sung cho module Progress ─────────────────────────────
+
+  /**
+   * Lấy danh sách buổi học của một lớp trong khoảng thời gian cho timeline hiển thị.
+   * Dùng cho endpoint GET /progress/classes/{classId}/notes.
+   *
+   * @param classId Mã lớp học.
+   * @param from    Thời điểm bắt đầu (UTC), null = không giới hạn từ.
+   * @param to      Thời điểm kết thúc (UTC), null = không giới hạn đến.
+   * @return Danh sách buổi học sắp xếp giảm dần theo startAt.
+   */
+  List<SessionTimelineView> findSessionsByClassId(UUID classId, Instant from, Instant to);
+
+  /**
+   * Lấy số liệu thống kê buổi học theo batch cho nhiều lớp học cùng lúc.
+   * Tránh N+1 query khi Progress cần stats của nhiều lớp (dashboard/teaching history).
+   *
+   * @param classIds Danh sách mã lớp học.
+   * @param from     Thời điểm bắt đầu khoảng thống kê (UTC), null = toàn bộ.
+   * @param to       Thời điểm kết thúc khoảng thống kê (UTC), null = toàn bộ.
+   * @return Map từ classId → {@link ClassSessionStatsView}.
+   */
+  Map<UUID, ClassSessionStatsView> getSessionStatsByClassIds(List<UUID> classIds, Instant from, Instant to);
 }
+

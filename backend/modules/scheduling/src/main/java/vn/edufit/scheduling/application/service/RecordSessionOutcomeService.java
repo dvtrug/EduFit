@@ -10,7 +10,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edufit.scheduling.api.event.SessionOutcomeRecordedEvent;
-import vn.edufit.scheduling.application.port.ProgressSyncPort;
 import vn.edufit.scheduling.domain.model.SessionHistory;
 import vn.edufit.scheduling.domain.model.SessionStatus;
 import vn.edufit.scheduling.domain.model.TutoringSession;
@@ -28,8 +27,14 @@ import vn.edufit.shared.exception.InvalidOperationException;
  * <ul>
  *   <li>Chỉ duy nhất Gia sư của buổi học mới có quyền ghi nhận kết quả.</li>
  *   <li>Kết quả hợp lệ chỉ bao gồm {@link SessionStatus#COMPLETED} hoặc {@link SessionStatus#ABSENT}.</li>
- *   <li>Tự động đồng bộ biên bản buổi học (Session Note) sang module {@code progress} qua Outbound Port.</li>
+ *   <li>Phát {@link SessionOutcomeRecordedEvent} là kênh tích hợp duy nhất với module {@code progress}.
+ *       Event xử lý đồng bộ trong cùng transaction để outcome và session note cùng thành công
+ *       hoặc cùng rollback.</li>
  * </ul>
+ *
+ * <p>Lưu ý về actor ID:
+ * Tham số {@code tutorId} phải là {@code tutor_profile.tutor_id}, không phải {@code account.user_id}.
+ * Controller chịu trách nhiệm resolve đúng tutorId trước khi gọi service này.
  */
 @Slf4j
 @Service
@@ -38,7 +43,6 @@ public class RecordSessionOutcomeService {
 
   private final TutoringSessionDomainRepository sessionRepository;
   private final SessionHistoryDomainRepository historyRepository;
-  private final ProgressSyncPort progressSyncPort;
   private final ApplicationEventPublisher eventPublisher;
   private final Clock clock;
 
@@ -55,7 +59,7 @@ public class RecordSessionOutcomeService {
     TutoringSession session = sessionRepository.findByIdForUpdate(sessionId)
         .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy buổi học với ID: " + sessionId));
 
-    // 2. Kiểm tra quyền của Gia sư
+    // 2. Kiểm tra quyền của Gia sư (tutorId = tutor_profile.tutor_id)
     if (!Objects.equals(tutorId, session.getTutorId())) {
       throw new ForbiddenOperationException("Chỉ Gia sư của buổi học mới có quyền ghi nhận kết quả");
     }
@@ -80,12 +84,7 @@ public class RecordSessionOutcomeService {
     session.recordOutcome(outcome, tutorId, now);
     TutoringSession updatedSession = sessionRepository.save(session);
 
-    // 6. Đồng bộ biên bản học tập (SessionNote) sang module progress nếu có nội dung
-    if (noteContent != null && !noteContent.isBlank()) {
-      progressSyncPort.recordSessionNote(sessionId, session.getClassId(), noteContent.trim(), now);
-    }
-
-    // 7. Ghi Audit Trail
+    // 6. Ghi Audit Trail
     historyRepository.save(SessionHistory.create(
         sessionId,
         null,
@@ -95,7 +94,8 @@ public class RecordSessionOutcomeService {
         now
     ));
 
-    // 8. Bắn Domain Event
+    // 7. Phát Domain Event — kênh tích hợp duy nhất với module Progress và Notification.
+    //    Event xử lý đồng bộ trong cùng transaction: nếu listener (Progress) lỗi thì toàn bộ rollback.
     eventPublisher.publishEvent(SessionOutcomeRecordedEvent.of(
         updatedSession.getSessionId(),
         updatedSession.getClassId(),
