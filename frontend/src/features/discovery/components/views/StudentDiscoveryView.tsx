@@ -14,8 +14,7 @@ import {
 } from "@/features/discovery";
 import { useToast } from "@/shared/ui/Toast";
 import { GoalSelector } from "@/features/discovery/components/GoalSelector";
-import { ConnectionRequestDialog } from "@/features/discovery/components/ConnectionRequestDialog";
-import { SentRequests } from "@/features/discovery/components/SentRequests";
+import { ConnectionRequestDialog, SentRequests } from "@/features/connection";
 
 export function StudentDiscoveryView() {
   const searchParams = useSearchParams();
