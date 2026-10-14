@@ -1,12 +1,15 @@
 package vn.edufit.db;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.UUID;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.flywaydb.core.api.output.MigrateResult;
@@ -265,6 +268,228 @@ class FlywayMigrationIT {
       try (var rows = statement.executeQuery("select count(*) from ai_match_quota_actor")) {
         assertTrue(rows.next());
         assertEquals(1, rows.getInt(1));
+      }
+    }
+  }
+
+  @Test
+  @DisplayName(
+      "Nâng cấp Connection V1.10 -> V1.14: bảo toàn lịch sử, JSONB, relink sau revoke và partial unique indexes")
+  void connectionUpgradePreservesHistoricalDataAndEnforcesIntegrityConstraints() throws Exception {
+    String schema = "connection_migration_upgrade";
+
+    // 1. Migrate tới V1.10 (trước khi có V1.11 relink và version column)
+    Flyway previous =
+        Flyway.configure()
+            .dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
+            .locations("classpath:db/migration")
+            .schemas(schema)
+            .target(MigrationVersion.fromVersion("1.10"))
+            .load();
+    assertEquals(10, previous.migrate().migrationsExecuted, "Phải chạy đúng 10 migrations tới V1.10");
+
+    UUID studentUserId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    UUID studentProfileId = UUID.fromString("11111111-1111-1111-1111-000000000001");
+    UUID tutorUserId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+    UUID tutorProfileId = UUID.fromString("22222222-2222-2222-2222-000000000001");
+    UUID parentUserId = UUID.fromString("33333333-3333-3333-3333-333333333333");
+
+    UUID goalId = UUID.fromString("aaaaaaaa-1111-1111-1111-111111111111");
+    UUID inv1Id = UUID.fromString("bbbbbbbb-1111-1111-1111-111111111111");
+    UUID inv2Id = UUID.fromString("bbbbbbbb-2222-2222-2222-222222222222");
+    UUID link1Id = UUID.fromString("cccccccc-1111-1111-1111-111111111111");
+    UUID req1Id = UUID.fromString("dddddddd-1111-1111-1111-111111111111");
+    UUID req2Id = UUID.fromString("dddddddd-2222-2222-2222-222222222222");
+
+    // 2. Chèn dữ liệu lịch sử phong phú ở V1.10
+    try (Connection connection =
+            DriverManager.getConnection(
+                postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+        Statement statement = connection.createStatement()) {
+      statement.execute("SET search_path TO " + schema);
+
+      // 2.1. Tạo learning goal
+      statement.executeUpdate(
+          "INSERT INTO learning_goal(goal_id, student_id, subject_id, current_level, desired_level, goal_type, deadline, mode, budget_max, status) "
+              + "VALUES ('" + goalId + "', '" + studentProfileId + "', 1, 5, 8, 'EXAM_PREPARATION', CURRENT_DATE + 30, 'BOTH', 300000, 'ACTIVE')");
+
+      // 2.2. Lời mời liên kết: 1 PENDING, 1 EXPIRED
+      statement.executeUpdate(
+          "INSERT INTO link_invitation(invitation_id, inviter_user_id, invited_user_id, status, created_at, expires_at) "
+              + "VALUES ('" + inv1Id + "', '" + parentUserId + "', '" + studentUserId + "', 'PENDING', now() - interval '1 day', now() + interval '13 days')");
+      statement.executeUpdate(
+          "INSERT INTO link_invitation(invitation_id, inviter_user_id, invited_user_id, status, created_at, expires_at) "
+              + "VALUES ('" + inv2Id + "', '" + studentUserId + "', '" + parentUserId + "', 'EXPIRED', now() - interval '20 days', now() - interval '6 days')");
+
+      // 2.3. Liên kết cha mẹ - học sinh: 1 REVOKED link
+      statement.executeUpdate(
+          "INSERT INTO parent_student_link(link_id, parent_user_id, student_id, status, confirmed_at, revoked_at, revoked_by, revoke_reason) "
+              + "VALUES ('" + link1Id + "', '" + parentUserId + "', '" + studentProfileId + "', 'REVOKED', now() - interval '30 days', now() - interval '10 days', '" + studentUserId + "', 'Học sinh chủ động hủy liên kết')");
+
+      // 2.4. Xác nhận tại V1.10: uk_parent_student cấm tạo link mới cho cùng cặp dù link cũ đã REVOKED
+      assertThrows(
+          SQLException.class,
+          () -> {
+            try (Statement s = connection.createStatement()) {
+              s.executeUpdate(
+                  "INSERT INTO parent_student_link(link_id, parent_user_id, student_id, status, confirmed_at) "
+                      + "VALUES (gen_random_uuid(), '" + parentUserId + "', '" + studentProfileId + "', 'CONFIRMED', now())");
+            }
+          },
+          "Tại V1.10, ràng buộc uk_parent_student chặn relink sau khi đã có bản ghi REVOKED");
+
+      // 2.5. Yêu cầu kết nối: 1 PENDING với JSONB desired_slots, 1 REJECTED
+      statement.executeUpdate(
+          "INSERT INTO connection_request(request_id, student_id, tutor_id, goal_id, sent_by_user_id, desired_slots, message, status, created_at, expires_at) "
+              + "VALUES ('" + req1Id + "', '" + studentProfileId + "', '" + tutorProfileId + "', '" + goalId + "', '" + studentUserId + "', "
+              + "'[{\"dayOfWeek\": 2, \"startTime\": \"18:00\", \"endTime\": \"20:00\"}]'::jsonb, 'Cần tìm gia sư kèm hình học', 'PENDING', now() - interval '1 day', now() + interval '6 days')");
+      statement.executeUpdate(
+          "INSERT INTO connection_request(request_id, student_id, tutor_id, goal_id, sent_by_user_id, desired_slots, message, status, reject_reason, created_at, expires_at, responded_at) "
+              + "VALUES ('" + req2Id + "', '" + studentProfileId + "', '" + tutorProfileId + "', '" + goalId + "', '" + studentUserId + "', "
+              + "'[]'::jsonb, 'Lịch học trước đây', 'REJECTED', 'Gia sư kín lịch', now() - interval '15 days', now() - interval '8 days', now() - interval '14 days')");
+    }
+
+    // 3. Nâng cấp lên V1.14 (V1.11, V1.12, V1.13, V1.14)
+    Flyway upgraded =
+        Flyway.configure()
+            .dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
+            .locations("classpath:db/migration")
+            .schemas(schema)
+            .outOfOrder(false)
+            .validateOnMigrate(true)
+            .baselineOnMigrate(false)
+            .load();
+    assertEquals(4, upgraded.migrate().migrationsExecuted, "Phải thực thi đúng 4 migrations: V1.11 -> V1.14");
+    upgraded.validate();
+    assertEquals(0, upgraded.migrate().migrationsExecuted, "Rerun phải là no-op");
+
+    // 4. Kiểm chứng dữ liệu lịch sử được bảo tồn nguyên vẹn & các tính năng mới của V1.11+
+    try (Connection connection =
+            DriverManager.getConnection(
+                postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+        Statement statement = connection.createStatement()) {
+      statement.execute("SET search_path TO " + schema);
+
+      // 4.1. Lịch sử link_invitation bảo tồn và có version = 0
+      try (ResultSet rs =
+          statement.executeQuery(
+              "SELECT status, version FROM link_invitation WHERE invitation_id = '" + inv1Id + "'")) {
+        assertTrue(rs.next());
+        assertEquals("PENDING", rs.getString(1));
+        assertEquals(0L, rs.getLong(2));
+      }
+      try (ResultSet rs =
+          statement.executeQuery(
+              "SELECT status, version FROM link_invitation WHERE invitation_id = '" + inv2Id + "'")) {
+        assertTrue(rs.next());
+        assertEquals("EXPIRED", rs.getString(1));
+        assertEquals(0L, rs.getLong(2));
+      }
+
+      // 4.2. Lịch sử parent_student_link REVOKED bảo tồn và có version = 0
+      try (ResultSet rs =
+          statement.executeQuery(
+              "SELECT status, version, revoke_reason FROM parent_student_link WHERE link_id = '" + link1Id + "'")) {
+        assertTrue(rs.next());
+        assertEquals("REVOKED", rs.getString(1));
+        assertEquals(0L, rs.getLong(2));
+        assertEquals("Học sinh chủ động hủy liên kết", rs.getString(3));
+      }
+
+      // 4.3. Lịch sử connection_request bảo tồn version = 0 và JSONB desired_slots
+      try (ResultSet rs =
+          statement.executeQuery(
+              "SELECT status, version, desired_slots::text FROM connection_request WHERE request_id = '" + req1Id + "'")) {
+        assertTrue(rs.next());
+        assertEquals("PENDING", rs.getString(1));
+        assertEquals(0L, rs.getLong(2));
+        assertTrue(rs.getString(3).contains("18:00"), "JSONB desired_slots phải được bảo toàn nguyên vẹn");
+      }
+
+      // 4.4. Relink sau khi revoke: Bây giờ được phép INSERT CONFIRMED mới cho cùng cặp
+      UUID relinkId = UUID.randomUUID();
+      statement.executeUpdate(
+          "INSERT INTO parent_student_link(link_id, parent_user_id, student_id, status, confirmed_at) "
+              + "VALUES ('" + relinkId + "', '" + parentUserId + "', '" + studentProfileId + "', 'CONFIRMED', now())");
+
+      // Không cho phép 2 link cùng CONFIRMED cho cùng cặp (uq_parent_student_confirmed)
+      assertThrows(
+          SQLException.class,
+          () -> {
+            try (Statement s = connection.createStatement()) {
+              s.executeUpdate(
+                  "INSERT INTO parent_student_link(link_id, parent_user_id, student_id, status, confirmed_at) "
+                      + "VALUES (gen_random_uuid(), '" + parentUserId + "', '" + studentProfileId + "', 'CONFIRMED', now())");
+            }
+          },
+          "Partial unique index uq_parent_student_confirmed cấm 2 link CONFIRMED đồng thời");
+
+      // Cho phép thêm link REVOKED thứ hai cho cùng cặp
+      statement.executeUpdate(
+          "INSERT INTO parent_student_link(link_id, parent_user_id, student_id, status, confirmed_at, revoked_at) "
+              + "VALUES (gen_random_uuid(), '" + parentUserId + "', '" + studentProfileId + "', 'REVOKED', now() - interval '2 days', now() - interval '1 day')");
+
+      // 4.5. Partial unique index uq_connection_request_pending: Cấm 2 request PENDING đồng thời
+      assertThrows(
+          SQLException.class,
+          () -> {
+            try (Statement s = connection.createStatement()) {
+              s.executeUpdate(
+                  "INSERT INTO connection_request(request_id, student_id, tutor_id, goal_id, sent_by_user_id, status, expires_at) "
+                      + "VALUES (gen_random_uuid(), '" + studentProfileId + "', '" + tutorProfileId + "', '" + goalId + "', '" + studentUserId + "', 'PENDING', now() + interval '7 days')");
+            }
+          },
+          "Partial index uq_connection_request_pending cấm 2 request PENDING đồng thời cho cùng 1 cặp student-tutor");
+
+      // 4.6. Partial unique index uq_link_invitation_pending: Cấm 2 invitation PENDING (kể cả đảo chiều)
+      assertThrows(
+          SQLException.class,
+          () -> {
+            try (Statement s = connection.createStatement()) {
+              s.executeUpdate(
+                  "INSERT INTO link_invitation(invitation_id, inviter_user_id, invited_user_id, status, expires_at) "
+                      + "VALUES (gen_random_uuid(), '" + studentUserId + "', '" + parentUserId + "', 'PENDING', now() + interval '14 days')");
+            }
+          },
+          "Partial index uq_link_invitation_pending cấm 2 invitation PENDING hai chiều");
+
+      // 4.7. Partial unique index uq_class_student_tutor_active: Cấm 2 class ACTIVE đồng thời
+      UUID class1Id = UUID.randomUUID();
+      statement.executeUpdate(
+          "INSERT INTO class(class_id, connection_request_id, student_id, tutor_id, goal_id, status) "
+              + "VALUES ('" + class1Id + "', '" + req1Id + "', '" + studentProfileId + "', '" + tutorProfileId + "', '" + goalId + "', 'ACTIVE')");
+      assertThrows(
+          SQLException.class,
+          () -> {
+            try (Statement s = connection.createStatement()) {
+              s.executeUpdate(
+                  "INSERT INTO class(class_id, connection_request_id, student_id, tutor_id, goal_id, status) "
+                      + "VALUES (gen_random_uuid(), '" + req2Id + "', '" + studentProfileId + "', '" + tutorProfileId + "', '" + goalId + "', 'ACTIVE')");
+            }
+          },
+          "Partial index uq_class_student_tutor_active cấm 2 class ACTIVE đồng thời cho cùng cặp");
+
+      // 4.8. Check constraints: tự gửi invitation cho chính mình bị chặn
+      assertThrows(
+          SQLException.class,
+          () -> {
+            try (Statement s = connection.createStatement()) {
+              s.executeUpdate(
+                  "INSERT INTO link_invitation(invitation_id, inviter_user_id, invited_user_id, status, expires_at) "
+                      + "VALUES (gen_random_uuid(), '" + studentUserId + "', '" + studentUserId + "', 'PENDING', now() + interval '14 days')");
+            }
+          },
+          "chk_invitation_different_users cấm gửi invitation cho chính mình");
+
+      // 4.9. Table connection_invite_quota hoạt động
+      statement.executeUpdate(
+          "INSERT INTO connection_invite_quota(user_id, window_started_at, attempts) "
+              + "VALUES ('" + parentUserId + "', now(), 3)");
+      try (ResultSet rs =
+          statement.executeQuery(
+              "SELECT attempts FROM connection_invite_quota WHERE user_id = '" + parentUserId + "'")) {
+        assertTrue(rs.next());
+        assertEquals(3, rs.getInt(1));
       }
     }
   }

@@ -70,3 +70,42 @@ Branch `feat/connection`. Phase 6 comprises 5 comprehensive verification and cle
 - **Test Execution**:
   - `ConnectionHttpSecurityPostgresTest`: 5 integration tests passed (0 failures, 0 errors, 0 skips).
   - Reactor test suite GREEN.
+
+---
+
+## T22a — PostgreSQL Flyway clean/upgrade tests and retained history
+
+### 1. Implementation
+- **Schema Upgrade & Retained History Verification (`FlywayMigrationIT`)**:
+  - Implemented `connectionUpgradePreservesHistoricalDataAndEnforcesIntegrityConstraints` on real PostgreSQL testcontainer.
+  - Setup isolated schema `connection_migration_upgrade` at baseline V1.10 (prior to Connection V1.11 relink and optimistic locking schema).
+  - Seeded comprehensive historical data before upgrade:
+    - `link_invitation`: 1 `PENDING` invitation and 1 `EXPIRED` invitation across parent and student accounts.
+    - `parent_student_link`: 1 `REVOKED` link with detailed audit info (`revoked_at`, `revoked_by`, `revoke_reason`).
+    - Verified that at V1.10, the legacy table constraint `uk_parent_student` strictly blocked creating new links between the same parent and student even after revocation (`SQLException` thrown).
+    - `connection_request`: 1 `PENDING` request with structured JSONB `desired_slots` array (`[{"dayOfWeek": 2, "startTime": "18:00", "endTime": "20:00"}]`) and 1 `REJECTED` request with `reject_reason`.
+  - Executed Flyway upgrade from V1.10 -> V1.14:
+    - Successfully applied 4 migrations (`V1.11__allow_relink_after_revocation.sql`, `V1.12__create_ai_match_reservations.sql`, `V1.13__seed_demo_matching_data.sql`, `V1.14__add_structured_audit_metadata.sql`).
+    - `upgraded.validate()` succeeded with zero checksum or validation mismatches.
+    - Subsequent `upgraded.migrate()` confirmed 0 migrations executed (idempotent no-op).
+- **Data Integrity & Schema Contract Verification**:
+  - **Retained History**:
+    - All historical `link_invitation` rows preserved intact with newly added column `version = 0`.
+    - Historical `parent_student_link` with `REVOKED` status and revoke reasons preserved with `version = 0`.
+    - Historical `connection_request` preserved with `version = 0`, and complex JSONB `desired_slots` preserved byte-for-byte.
+  - **Relink Support (V1.11)**:
+    - Successfully inserted a new `CONFIRMED` link between the same parent and student after previous revocation.
+    - Verified partial unique index `uq_parent_student_confirmed` blocks a second simultaneous `CONFIRMED` link for the same pair.
+    - Verified multiple historical `REVOKED` links are permitted for auditability.
+  - **Connection Partial Indexes & Constraints**:
+    - `uq_connection_request_pending`: verified rejection of duplicate `PENDING` requests for the same student-tutor pair.
+    - `uq_link_invitation_pending`: verified two-way duplicate prevention using `LEAST`/`GREATEST` (student cannot send invite to parent if parent already sent invite to student).
+    - `uq_class_student_tutor_active`: verified rejection of duplicate simultaneous `ACTIVE` classes.
+    - `chk_invitation_different_users`: verified check constraint prevents self-invitations.
+    - `connection_invite_quota`: verified table creation, insert, and query operations.
+
+### 2. Verification
+- **Test Execution**:
+  - `FlywayMigrationIT`: 5 tests passed (0 failures, 0 errors, 0 skips).
+  - `FlywayMigrationScriptTest`: 2 tests passed (0 failures, 0 errors, 0 skips).
+  - Reactor test suite GREEN.
