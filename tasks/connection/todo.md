@@ -247,7 +247,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** `feat(connection): centralize bounded invitation and request expiry`.
 - **Kết thúc:** Commit + push + expiry state evidence.
 
-### [ ] T17 — Scheduler expiry nhiều batch, retry an toàn
+### [x] T17 — Scheduler expiry nhiều batch, retry an toàn
 
 - **Files:** `ConnectionExpiryJob`, config/scheduling wiring, job tests, expiry service refinements nếu cần.
 - **Thực hiện:** Job interval/batch configurable (đề xuất 60s/100); gọi transactional bean qua proxy, transaction ngắn; stable ordering, không giữ nhiều student locks trái thứ tự. Log counters/duration/error không PII; failure item retry ở lần quét tiếp theo.
@@ -495,3 +495,4 @@ Dependency của task cha kế tiếp dùng **task con cuối nhóm**: T09 sau T
 ### Phase 4 execution — 14/10/2026
 
 - T16: Centralized bounded invitation and request expiry service with stable ordering candidate IDs, lock recheck, and on-access integration. BEFORE_COMMIT listener delivers LINK_EXPIRED to inviter and CONNECTION_EXPIRED to tutor and current-authorized sender. 112 focused tests pass, 26 PostgreSQL tests pass with zero failures/errors/skips. Evidence recorded in docs/connection/phase4-validation.md.
+- T17: Scheduled ConnectionExpiryJob with configurable interval/batch size, multi-batch candidate draining, transactional Spring proxy isolation, safe retries, and non-PII logging. 6 unit tests pass, 29 PostgreSQL tests pass (+3 new tests: unassisted background expiry, multi-batch processing, concurrent scheduler dedup). Checkpoint 4 completed; 124 regression tests pass with zero failures/errors/skips. Evidence recorded in docs/connection/phase4-validation.md.

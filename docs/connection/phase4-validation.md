@@ -47,3 +47,42 @@ Branch `feat/connection`, base `1b3f497`. Phase 4 comprises two tasks T16 and T1
   - `onAccessRequestCreationExpiresOverdueRowAndReleasesQuota`: verifies overdue request is transitioned to `EXPIRED` on access, releasing quota and allowing 5th pending request to be created.
   - `accessVsExpiryRaceBetweenTutorAcceptAndSystemExpiry`: concurrent execution of tutor acceptance and system expiry on border request resolves cleanly into exactly one terminal status (`ACCEPTED` with 1 class, or `EXPIRED` with 0 classes), with no half-states or constraint violations.
 - **Broader Regression Suite**: 112 tests across affected modules (`Connection*Test`, `Invitation*Test`, `LinkRevocationTest`, `LearningGoalPostgresTest`, `ConnectionNotificationTransactionTest`) passed, 0 failures, 0 errors, 0 skips.
+
+---
+
+## T17 — Scheduler expiry multi-batch and safe retries
+
+### 1. Implementation
+- **Scheduled Job (`ConnectionExpiryJob`)**:
+  - Implemented in `backend/modules/connection/src/main/java/vn/edufit/connection/infra/scheduling/ConnectionExpiryJob.java`.
+  - Annotated with `@Component` and `@ConditionalOnProperty(name = "edufit.connection.expiry-job.enabled", havingValue = "true", matchIfMissing = true)`, allowing clean disablement in specific integration fixtures when required.
+  - Configurable execution interval (`edufit.connection.expiry-job.interval-ms`, default 60000ms / 60s) and batch size (`edufit.connection.expiry-job.batch-size`, default 100).
+  - Multi-batch draining loops: continuously processes candidate batches for invitations and requests until candidates returned are fewer than `batchSize`.
+  - Transactional isolation: delegates to `ConnectionExpiryService` through its Spring proxy (`expireInvitation` / `expireRequest`), ensuring each candidate row transition runs in its own short, independent transaction with short-lived locks.
+  - Error resilience: individual row processing exceptions are captured, logged without PII (only aggregate ID and error message), and increment failure counters. The scheduler loop continues uninterrupted for remaining items in the batch.
+  - Safe retries: uncommitted/failed candidate rows remain `PENDING` and are naturally re-polled and retried in subsequent scheduler cycles.
+  - Cycle loop protection: tracks `attemptedInvitations` and `attemptedRequests` within a cycle to prevent infinite looping if a row repeatedly fails in the same cycle.
+  - Non-PII summary logging: logs `scanned`, `expired`, `failed` counters and execution duration in milliseconds.
+
+### 2. Verification
+- **Unit Tests (`ConnectionExpiryJobTest`)**: 6 test cases passed, 0 failures, 0 errors, 0 skips.
+  - `noCandidatesReturnsZeroCounts`: zero candidates produce 0 scanned/expired/failed.
+  - `singleBatchAllSuccess`: candidate row transitions and counters verified.
+  - `multiBatchDrainingProcessesAllCandidatesAcrossBatches`: draining multiple batches verified with `batchSize = 2` across 3 items.
+  - `itemFailureDoesNotCrashJobAndAllowsRemainingItemsToProcess`: single item failure captured; subsequent items successfully proceed.
+  - `failedItemIsRetriedInSubsequentCycle`: previously failed item successfully retried in the next scheduled cycle.
+  - `terminalCandidatesReturnFalseAndAreCountedAsScannedNotExpired`: already-terminal candidates return false and are recorded as scanned but not expired.
+- **PostgreSQL Integration Tests (`ConnectionTransactionPostgresTest`)**: 29 test cases passed, 0 failures, 0 errors, 0 skips.
+  - `schedulerExpiryProcessesOverdueRowsAndDeliversNotificationsWithoutUserAccess`: background job execution transitions overdue rows to `EXPIRED` and generates `LINK_EXPIRED` and `CONNECTION_EXPIRED` notifications without any user access.
+  - `schedulerMultiBatchProcessesAllCandidatesOnPostgres`: multi-batch draining with `batchSize = 2` successfully transitions all 4 overdue requests on real PostgreSQL.
+  - `concurrentSchedulersDoNotDuplicateExpiryOrNotifications`: two concurrent scheduler executions on the same overdue request result in exactly one transition and zero duplicate notifications.
+- **Regression Suite**: 124 tests across affected modules (`Connection*Test`, `Invitation*Test`, `LinkRevocationTest`, `LearningGoalPostgresTest`, `ConnectionNotificationTransactionTest`, `Architecture*Test`) passed with 0 failures, 0 errors, 0 skips.
+
+---
+
+## Checkpoint 4 — Scheduler, On-Access Expiry, and Concurrency Guards
+
+- **Automatic Scheduled Expiry**: `ConnectionExpiryJob` runs periodically in the background, reliably draining multiple batches and recovering from transient item failures without thread death.
+- **Access Guard Parity**: On-access read/write operations and background scheduled jobs share the identical central `ConnectionExpiryService`, ensuring consistent state transitions and event publishing.
+- **Invariant Integrity**: Expired rows properly release pending quota limits (allowing up to 5 active pending requests) and unique pending pair constraints on PostgreSQL.
+- **Atomic Notification Guarantee**: BEFORE_COMMIT transactional listeners deliver notifications only upon successful commit; failed transactions roll back notifications atomically.

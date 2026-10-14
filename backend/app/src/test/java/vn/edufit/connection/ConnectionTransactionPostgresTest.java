@@ -60,6 +60,7 @@ class ConnectionTransactionPostgresTest {
   @Autowired ProfileFacade profile;
   @Autowired LinkInvitationService invitations;
   @Autowired vn.edufit.connection.application.service.ConnectionExpiryService expiryService;
+  @Autowired vn.edufit.connection.infra.scheduling.ConnectionExpiryJob expiryJob;
   @Autowired ParentStudentLinkService links;
   @Autowired DataSource source;
   @Autowired vn.edufit.connection.api.ConnectionFacade facade;
@@ -745,9 +746,108 @@ class ConnectionTransactionPostgresTest {
     }
   }
 
+  @Test void schedulerExpiryProcessesOverdueRowsAndDeliversNotificationsWithoutUserAccess() {
+    var jdbc = new JdbcTemplate(source);
+    Instant now = Instant.now();
+
+    // 1 overdue invitation
+    UUID p1 = account("PARENT"), s1 = account("STUDENT");
+    UUID invId = UUID.randomUUID();
+    jdbc.update("insert into link_invitation(invitation_id,inviter_user_id,invited_user_id,expires_at) values (?,?,?,?)",
+        invId, p1, s1, java.sql.Timestamp.from(now.minusSeconds(3600)));
+
+    // 1 overdue request
+    var fixture = pendingRequest();
+    jdbc.update("update connection_request set expires_at = ? where request_id = ?",
+        java.sql.Timestamp.from(now.minusSeconds(3600)), fixture.request());
+
+    when(profile.findStudentById(fixture.student())).thenReturn(Optional.of(new StudentSummaryDto(fixture.student(), fixture.studentUser(), 4, null, true)));
+    when(profile.findTutorById(fixture.tutor())).thenReturn(Optional.of(new TutorSummaryDto(fixture.tutor(), fixture.tutorUser(), "Tutor", null, null, null, null, null, null, null, "VERIFIED", now, null, 0)));
+
+    var result = expiryJob.runExpiryCycle();
+    assertTrue(result.expiredInvitations() >= 1);
+    assertTrue(result.expiredRequests() >= 1);
+
+    assertEquals("EXPIRED", jdbc.queryForObject("select status from link_invitation where invitation_id=?", String.class, invId));
+    assertEquals("EXPIRED", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
+
+    verify(notifications).notify(eq(p1), any(), eq("LINK_EXPIRED"), any(), any(), any(), any());
+    verify(notifications, atLeastOnce()).notify(any(), any(), eq("CONNECTION_EXPIRED"), any(), any(), any(), any());
+  }
+
+  @Test void schedulerMultiBatchProcessesAllCandidatesOnPostgres() {
+    var jdbc = new JdbcTemplate(source);
+    Instant now = Instant.now();
+
+    UUID studentUser = account("STUDENT"), student = UUID.randomUUID();
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", student, studentUser);
+    UUID goal = UUID.randomUUID();
+    jdbc.update("insert into learning_goal(goal_id,student_id,subject_id,current_level,desired_level,goal_type,deadline,mode,budget_max,status) values (?,?,1,1,2,'EXAM_PREPARATION',current_date + 30,'ONLINE',100000,'ACTIVE')", goal, student);
+
+    when(profile.findStudentById(student)).thenReturn(Optional.of(new StudentSummaryDto(student, studentUser, 4, null, true)));
+
+    List<UUID> reqIds = new java.util.ArrayList<>();
+    for (int i = 0; i < 4; i++) {
+      UUID tutorUser = account("TUTOR"), tutor = UUID.randomUUID();
+      jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'Tutor','ONLINE',100000,'VERIFIED')", tutor, tutorUser);
+      when(profile.findTutorById(tutor)).thenReturn(Optional.of(new TutorSummaryDto(tutor, tutorUser, "Tutor", null, null, null, null, null, null, null, "VERIFIED", now, null, 0)));
+
+      UUID rId = UUID.randomUUID();
+      jdbc.update("insert into connection_request(request_id,student_id,tutor_id,goal_id,sent_by_user_id,desired_slots,expires_at) values (?,?,?,?,?,cast(? as jsonb),?)",
+          rId, student, tutor, goal, studentUser, "[\"Tue 19:00\"]", java.sql.Timestamp.from(now.minusSeconds(100 + i * 10)));
+      reqIds.add(rId);
+    }
+
+    // Use a job instance with batchSize = 2 to enforce multi-batch draining
+    var multiBatchJob = new vn.edufit.connection.infra.scheduling.ConnectionExpiryJob(expiryService, java.time.Clock.systemUTC(), 2);
+    var result = multiBatchJob.runExpiryCycle();
+
+    assertTrue(result.expiredRequests() >= 4);
+    for (UUID rId : reqIds) {
+      assertEquals("EXPIRED", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, rId));
+    }
+  }
+
+  @Test void concurrentSchedulersDoNotDuplicateExpiryOrNotifications() throws Exception {
+    var fixture = pendingRequest();
+    var jdbc = new JdbcTemplate(source);
+    Instant now = Instant.now();
+    jdbc.update("update connection_request set expires_at = ? where request_id = ?",
+        java.sql.Timestamp.from(now.minusSeconds(3600)), fixture.request());
+
+    when(profile.findStudentById(fixture.student())).thenReturn(Optional.of(new StudentSummaryDto(fixture.student(), fixture.studentUser(), 4, null, true)));
+    when(profile.findTutorById(fixture.tutor())).thenReturn(Optional.of(new TutorSummaryDto(fixture.tutor(), fixture.tutorUser(), "Tutor", null, null, null, null, null, null, null, "VERIFIED", now, null, 0)));
+
+    int threads = 2;
+    var latch = new CountDownLatch(threads);
+    var startBarrier = new CountDownLatch(1);
+    var results = new java.util.concurrent.atomic.AtomicInteger(0);
+
+    try (var pool = Executors.newFixedThreadPool(threads)) {
+      for (int i = 0; i < threads; i++) {
+        pool.submit(() -> {
+          try {
+            startBarrier.await();
+            var runResult = expiryJob.runExpiryCycle();
+            results.addAndGet(runResult.expiredRequests());
+          } catch (Exception ignored) {
+          } finally {
+            latch.countDown();
+          }
+        });
+      }
+      startBarrier.countDown();
+      assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    assertEquals("EXPIRED", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
+    // Exactly 1 of the concurrent runs should have performed the transition
+    assertEquals(1, results.get());
+  }
+
   @Configuration
   @EnableTransactionManagement
-  @ComponentScan(basePackages = {"vn.edufit.connection.application", "vn.edufit.connection.infra.locking"})
+  @ComponentScan(basePackages = {"vn.edufit.connection.application", "vn.edufit.connection.infra.locking", "vn.edufit.connection.infra.scheduling"})
   @org.springframework.data.jpa.repository.config.EnableJpaRepositories("vn.edufit.connection.infra.persistence.repository")
   @org.springframework.context.annotation.Import({vn.edufit.iam.infra.config.IamClockConfig.class, vn.edufit.notification.NotificationSinkTestBridge.class})
   static class Config {
