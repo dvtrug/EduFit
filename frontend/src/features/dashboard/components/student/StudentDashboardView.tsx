@@ -83,21 +83,21 @@ export function StudentDashboardView({ user }: StudentDashboardViewProps) {
     {
       title: "Cài đặt hồ sơ học tập",
       description: "Chọn khối lớp và khu vực cư trú để hệ thống ghép cặp gia sư lân cận.",
-      href: "/dashboard/profile",
+      href: "/student/profile",
       actionText: "Thiết lập ngay",
       completed: profile?.profileComplete === true,
     },
     {
       title: "Khám phá & Chọn gia sư",
       description: "Xem hồ sơ bằng cấp, đánh giá sao hoặc nhận danh sách AI Match chuẩn xác.",
-      href: "/dashboard/tutors",
+      href: "/student/tutors",
       actionText: "Tìm gia sư",
       completed: false,
     },
     {
       title: "Gửi yêu cầu học thử 1-1",
       description: "Đăng ký buổi trao đổi đầu tiên để thống nhất lịch học và mục tiêu điểm số.",
-      href: "/dashboard/tutors",
+      href: "/student/tutors",
       actionText: "Khám phá môn học",
       completed: false,
     },
@@ -108,17 +108,17 @@ export function StudentDashboardView({ user }: StudentDashboardViewProps) {
       {/* 1. Greeting & Quick Search Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
+          <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-stone-100 tracking-tight">
             Chào {studentName} 👋
           </h2>
-          <p className="text-xs sm:text-sm text-neutral-500 mt-1 font-medium">
+          <p className="text-xs sm:text-sm text-neutral-500 dark:text-stone-300 mt-1 font-medium">
             {nextSession
               ? "Hôm nay bạn có 1 buổi học Toán lúc 19:00 · Lớp 9 Ôn thi vào 10"
               : "Chào mừng bạn đến với EduFit! Hãy bắt đầu bằng việc tìm gia sư phù hợp."}
           </p>
         </div>
         <Link
-          href="/dashboard/tutors"
+          href="/student/tutors"
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-neutral-900 font-bold text-xs rounded-xl shadow-xs transition-all hover:scale-[1.02] shrink-0"
         >
           <Search className="size-4" />
@@ -146,38 +146,38 @@ export function StudentDashboardView({ user }: StudentDashboardViewProps) {
         <div className="lg:col-span-4 space-y-6">
           {/* Micro Metrics */}
           <div className="grid grid-cols-1 gap-3.5">
-            <div className="p-4 bg-white rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-3.5">
-              <div className="size-11 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+            <div className="p-4 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-stone-800 shadow-xs flex items-center gap-3.5">
+              <div className="size-11 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="size-5" />
               </div>
               <div>
-                <div className="text-[11px] text-neutral-500 font-semibold">Cột mốc hoàn thành</div>
-                <div className="text-xl font-extrabold font-heading text-neutral-900">
+                <div className="text-[11px] text-neutral-500 dark:text-stone-300 font-semibold">Cột mốc hoàn thành</div>
+                <div className="text-xl font-extrabold font-heading text-neutral-900 dark:text-stone-100">
                   {activeClasses.length > 0 ? "8 / 12" : "0 / 0"}
                 </div>
               </div>
             </div>
 
-            <div className="p-4 bg-white rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-3.5">
-              <div className="size-11 rounded-xl bg-sky-100 text-sky-800 flex items-center justify-center shrink-0">
+            <div className="p-4 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-stone-800 shadow-xs flex items-center gap-3.5">
+              <div className="size-11 rounded-xl bg-sky-100 dark:bg-sky-950/80 text-sky-800 dark:text-sky-300 flex items-center justify-center shrink-0">
                 <TrendingUp className="size-5" />
               </div>
               <div>
-                <div className="text-[11px] text-neutral-500 font-semibold">Điểm bài tập trung bình</div>
-                <div className="text-xl font-extrabold font-heading text-neutral-900">
-                  {activeClasses.length > 0 ? "8.4" : "--"} <span className="text-xs font-normal text-neutral-400">/ 10</span>
+                <div className="text-[11px] text-neutral-500 dark:text-stone-300 font-semibold">Điểm bài tập trung bình</div>
+                <div className="text-xl font-extrabold font-heading text-neutral-900 dark:text-stone-100">
+                  {activeClasses.length > 0 ? "8.4" : "--"} <span className="text-xs font-normal text-neutral-400 dark:text-stone-400">/ 10</span>
                 </div>
               </div>
             </div>
 
-            <div className="p-4 bg-white rounded-2xl border border-stone-200/80 shadow-xs flex items-center gap-3.5">
-              <div className="size-11 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+            <div className="p-4 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-stone-800 shadow-xs flex items-center gap-3.5">
+              <div className="size-11 rounded-xl bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 flex items-center justify-center shrink-0">
                 <Calendar className="size-5" />
               </div>
               <div>
-                <div className="text-[11px] text-neutral-500 font-semibold">Chuỗi ngày học tập</div>
-                <div className="text-xl font-extrabold font-heading text-neutral-900">
-                  {activeClasses.length > 0 ? "6 ngày" : "0 ngày"} <span className="text-xs font-bold text-amber-600">khởi đầu ✨</span>
+                <div className="text-[11px] text-neutral-500 dark:text-stone-300 font-semibold">Chuỗi ngày học tập</div>
+                <div className="text-xl font-extrabold font-heading text-neutral-900 dark:text-stone-100">
+                  {activeClasses.length > 0 ? "6 ngày" : "0 ngày"} <span className="text-xs font-bold text-amber-600 dark:text-amber-400">khởi đầu ✨</span>
                 </div>
               </div>
             </div>

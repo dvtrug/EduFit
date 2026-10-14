@@ -55,12 +55,12 @@ export function EduFitLogo({
         }`}
       >
         <span
-          className={`font-heading tracking-tight text-neutral-900 group-hover:text-amber-600 transition-colors ${textSizes[size]}`}
+          className={`font-heading tracking-tight text-neutral-900 dark:text-stone-100 group-hover:text-amber-600 transition-colors ${textSizes[size]}`}
         >
           Edu<span className="text-amber-600">Fit</span>
         </span>
         {roleBadge && (
-          <span className="text-[10px] text-neutral-400 font-semibold tracking-normal -mt-0.5">
+          <span className="text-[10px] text-neutral-400 dark:text-stone-400 font-semibold tracking-normal -mt-0.5">
             {roleBadge}
           </span>
         )}

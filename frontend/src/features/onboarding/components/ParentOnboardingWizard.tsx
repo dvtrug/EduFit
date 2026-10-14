@@ -100,7 +100,7 @@ export function ParentOnboardingWizard() {
 
       showToast("Thiết lập tài khoản phụ huynh thành công! Chào mừng bạn đến với EduFit.", "success");
       await refreshUser?.();
-      router.push("/dashboard");
+      router.push("/parent/dashboard");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Có lỗi xảy ra khi hoàn tất thiết lập";
       showToast(message, "error");
@@ -125,7 +125,7 @@ export function ParentOnboardingWizard() {
 
         <div className="flex items-center gap-4">
           <Link
-            href="/dashboard"
+            href="/parent/dashboard"
             className="text-xs text-neutral-500 hover:text-neutral-900 transition-colors"
           >
             Bỏ qua để vào sau

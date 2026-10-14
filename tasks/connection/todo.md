@@ -298,8 +298,8 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 ### [ ] T21 — REST với security filter thật và error contract
 
 - **Files:** controller/security integration tests tại app, JSON fixtures, SecurityConfig và GlobalExceptionHandler cùng regression tests nếu cần mapping400.
-- **Thực hiện:** 10 routes cũ + routes mới; unauthenticated/wrong role/wrong owner/DEACTIVATED; malformed/nullable validation, envelope/conflict409/rate limit429. Thu hẹp exemption CSRF **riêng prefix Connection** đang bị main miễn toàn `/api/v1/**`; client gửi token hiện có, thiếu/sai token403, hợp lệ đi tới nghiệp vụ. Giữ exemption API khác/CORS/session. Mapping malformed JSON/UUID thành400, regression shared handler callers. Assert whitelist privacy/no PII và scoped Admin lookup.
-- **Acceptance:** Filter thật, không chỉ mocked CurrentUser; accept missing không thành decline; error code/status đúng T01; Connection writes có CSRF protection và các API khác giữ policy baseline. Ghi rõ điều kiện client token trước rollout.
+- **Thực hiện:** 10 routes cũ + routes mới; unauthenticated/wrong role/wrong owner/DEACTIVATED; malformed/nullable validation, envelope/conflict409/rate limit429. Kiểm chứng SPA CSRF mà main `d208371` đã bật: client gửi token hiện có, thiếu/sai token403, hợp lệ đi tới nghiệp vụ. Giữ policy main mới/CORS/session, không mở lại exemption `/api/v1/**` của baseline cũ. Mapping malformed JSON/UUID thành400, regression shared handler callers. Assert whitelist privacy/no PII và scoped Admin lookup.
+- **Acceptance:** Filter thật, không chỉ mocked CurrentUser; accept missing không thành decline; error code/status đúng T01; Connection writes có CSRF protection và các API khác giữ policy main mới. Ghi rõ điều kiện client token trước rollout.
 - **Verification:** Chạy tests qua filter chain; kiểm tra actual report. Controller direct invocation không tính là HTTP/filter coverage.
 - **Phụ thuộc / scope:** T20; M.
 - **Commit:** `fix(connection): enforce secured REST contracts and privacy`.
@@ -464,3 +464,10 @@ Dependency của task cha kế tiếp dùng **task con cuối nhóm**: T09 sau T
 - T10a/T10b: event records và listener BEFORE_COMMIT/writer MANDATORY nền đã verify. Chưa chuyển production publishers hoặc hoàn tất recipient matrix; việc này đi cùng các task Phase3/expiry.
 - Checkpoint2 functional: `clean verify` toàn reactor 437 tests pass, zero failure/error/skip. Strict coverage tái sử dụng full-run execution data vẫn FAIL tại Shared (LINE78/103=75.73%, BRANCH20/28=71.43%). Connection LINE385/486=79.22%, BRANCH99/194=51.03%; Notification LINE17/23=73.91%, BRANCH3/4=75.00%, cũng dưới ngưỡng80%. Không hạ gate và không tuyên bố strict pass. Chi tiết [Phase2 validation](../../docs/connection/phase2-validation.md).
 - Dừng sau T10b; Phase3/T11a chưa bắt đầu. Main/Discovery refs, hai task files Discovery và các stash cũ giữ nguyên; WIP riêng của người dùng không đưa vào commit.
+
+
+### Merge main mới — 14/10/2026 (ngoài Phase3)
+
+- [x] M01 — Tích hợp main `d208371`; resolve4 conflicts theo main security/manifest13 và giữ Connection service decomposition. Port detach/reload vào persistence fragment, thích nghi LearningGoal integration wiring.
+- Focused verify pass; full clean Test/IT verify **656 tests pass, zero failure/error/skip**, Connection PostgreSQL18, Flyway IT3 và main E2E7. Strict coverage vẫn fail tại Shared75.73%/71.43%; Connection77.94%/50.51%, Notification73.91%/75.00% còn gap, không hạ ngưỡng.
+- T21 cập nhật theo SPA CSRF của main mới, vẫn pending; Phase3 chưa bắt đầu. [Merge main validation](../../docs/connection/main-merge-validation.md) ghi chi tiết/review/logs/giới hạn. M01 nằm trong merge commit và push feat/connection.

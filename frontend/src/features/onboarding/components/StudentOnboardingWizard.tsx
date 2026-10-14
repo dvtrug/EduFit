@@ -144,7 +144,7 @@ export function StudentOnboardingWizard() {
 
       showToast("Thiết lập hồ sơ học tập thành công! Chào mừng bạn đến với EduFit.", "success");
       await refreshUser?.();
-      router.push("/dashboard");
+      router.push("/student/dashboard");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Có lỗi xảy ra khi hoàn tất thiết lập";
       showToast(message, "error");

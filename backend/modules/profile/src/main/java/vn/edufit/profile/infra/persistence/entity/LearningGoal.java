@@ -189,4 +189,8 @@ public class LearningGoal {
   public Instant getUpdatedAt() {
     return updatedAt;
   }
+
+  public void touch() {
+    updatedAt = Instant.now();
+  }
 }

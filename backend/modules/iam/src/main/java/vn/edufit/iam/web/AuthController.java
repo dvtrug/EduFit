@@ -1,6 +1,7 @@
 package vn.edufit.iam.web;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -12,6 +13,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -58,6 +61,7 @@ public class AuthController {
   private final ChangePasswordService changePasswordService;
   private final AccountRepository accountRepository;
   private final ObjectProvider<CurrentUser> currentUserProvider;
+  private final CsrfTokenRepository csrfTokenRepository;
 
   public AuthController(
       RegisterAccountService registerAccountService,
@@ -66,7 +70,8 @@ public class AuthController {
       ResetPasswordService resetPasswordService,
       ChangePasswordService changePasswordService,
       AccountRepository accountRepository,
-      ObjectProvider<CurrentUser> currentUserProvider
+      ObjectProvider<CurrentUser> currentUserProvider,
+      CsrfTokenRepository csrfTokenRepository
   ) {
     this.registerAccountService = registerAccountService;
     this.authenticateAccountService = authenticateAccountService;
@@ -75,6 +80,7 @@ public class AuthController {
     this.changePasswordService = changePasswordService;
     this.accountRepository = accountRepository;
     this.currentUserProvider = currentUserProvider;
+    this.csrfTokenRepository = csrfTokenRepository;
   }
 
   /**
@@ -104,7 +110,8 @@ public class AuthController {
   @PostMapping("/login")
   public ResponseEntity<ApiResponse<AuthUserResponse>> login(
       @Valid @RequestBody LoginRequest request,
-      HttpServletRequest httpRequest
+      HttpServletRequest httpRequest,
+      HttpServletResponse httpResponse
   ) {
     Account account = authenticateAccountService.authenticate(request.email(), request.password());
 
@@ -115,6 +122,11 @@ public class AuthController {
         null,
         userDetails.getAuthorities()
     );
+
+    // A controller login must explicitly invoke the lifecycle normally run by auth filters.
+    new ChangeSessionIdAuthenticationStrategy()
+        .onAuthentication(authentication, httpRequest, httpResponse);
+    csrfTokenRepository.saveToken(null, httpRequest, httpResponse);
 
     SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
     securityContext.setAuthentication(authentication);
@@ -135,12 +147,14 @@ public class AuthController {
    * Đăng xuất và hủy phiên làm việc hiện tại.
    */
   @PostMapping("/logout")
-  public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest httpRequest) {
+  public ResponseEntity<ApiResponse<Void>> logout(
+      HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
     HttpSession session = httpRequest.getSession(false);
     if (session != null) {
       session.invalidate();
     }
     SecurityContextHolder.clearContext();
+    csrfTokenRepository.saveToken(null, httpRequest, httpResponse);
     return ResponseEntity.ok(ApiResponse.ok("Đăng xuất thành công"));
   }
 

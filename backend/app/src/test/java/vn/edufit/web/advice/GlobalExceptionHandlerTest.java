@@ -100,6 +100,16 @@ class GlobalExceptionHandlerTest {
   class ValidationAndSystemErrorTests {
 
     @Test
+    void nullOrUnreadableBodyReturnsSafe400() throws Exception {
+      for (String body : java.util.List.of("null", "", "{\"title\":\"private-marker\"")) {
+        mockMvc.perform(post("/test/validate").contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code", is(ErrorCode.VALIDATION_FAILED.name())))
+            .andExpect(jsonPath("$.message", is("Nội dung JSON không hợp lệ hoặc thiếu trường bắt buộc.")));
+      }
+    }
+
+    @Test
     @DisplayName("Body thiếu trường bắt buộc phải map thành HTTP 400 kèm chi tiết từng trường")
     void shouldReturn400WithFieldDetailsWhenValidationFails() throws Exception {
       String invalidJson = "{\"title\": \"\"}";

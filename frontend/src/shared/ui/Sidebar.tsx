@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { EduFitLogo } from "@/shared/ui/EduFitLogo";
 import {
   LayoutDashboard,
@@ -28,6 +29,35 @@ import {
 
 export type UserRole = "STUDENT" | "TUTOR" | "PARENT" | "ADMIN";
 
+function isNavItemActive(
+  itemHref: string,
+  pathname: string,
+  searchParams: ReturnType<typeof useSearchParams> | null
+): boolean {
+  const [itemPath, itemQueryString] = itemHref.split("?");
+
+  if (pathname !== itemPath) {
+    return false;
+  }
+
+  const itemParams = new URLSearchParams(itemQueryString || "");
+  const currentTab = searchParams?.get("tab");
+  const itemTab = itemParams.get("tab");
+
+  // Nếu mục menu có chỉ định tab cụ thể (vd: ?tab=matches hoặc ?tab=requests)
+  if (itemTab) {
+    return currentTab === itemTab;
+  }
+
+  // Nếu mục menu không có tab query (vd: /student/tutors)
+  // Chỉ active khi currentTab không có hoặc là tab mặc định "browse" / "discover"
+  if (currentTab && currentTab !== "browse" && currentTab !== "discover") {
+    return false;
+  }
+
+  return true;
+}
+
 interface NavItem {
   label: string;
   href: string;
@@ -47,35 +77,35 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "TỔNG QUAN",
         items: [
-          { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-          { label: "Tiến độ học tập", href: "/dashboard/progress", icon: TrendingUp },
+          { label: "Dashboard", href: "/student/dashboard", icon: LayoutDashboard },
+          { label: "Tiến độ học tập", href: "/student/progress", icon: TrendingUp },
         ],
       },
       {
         title: "TÌM KIẾM",
         items: [
-          { label: "Tìm gia sư", href: "/dashboard/tutors", icon: Search },
-          { label: "Gợi ý AI Match", href: "/dashboard/tutors?tab=matches", icon: Sparkles, badge: "AI" },
-          { label: "Yêu cầu kết nối", href: "/dashboard/tutors?tab=requests", icon: UserCheck },
+          { label: "Tìm gia sư", href: "/student/tutors", icon: Search },
+          { label: "Gợi ý AI Match", href: "/student/tutors?tab=matches", icon: Sparkles, badge: "AI" },
+          { label: "Yêu cầu kết nối", href: "/student/tutors?tab=requests", icon: UserCheck },
         ],
       },
       {
         title: "HỌC TẬP",
         items: [
-          { label: "Lớp của tôi", href: "/dashboard/classes", icon: BookOpen },
-          { label: "Lịch học tuần", href: "/dashboard/schedule", icon: Calendar },
+          { label: "Lớp của tôi", href: "/student/classes", icon: BookOpen },
+          { label: "Lịch học tuần", href: "/student/schedule", icon: Calendar },
         ],
       },
       {
         title: "TÀI CHÍNH",
         items: [
-          { label: "Học phí & Thanh toán", href: "/dashboard/payments", icon: CreditCard },
+          { label: "Học phí & Thanh toán", href: "/student/payments", icon: CreditCard },
         ],
       },
       {
         title: "CÀI ĐẶT",
         items: [
-          { label: "Hồ sơ học tập", href: "/dashboard/profile", icon: Settings },
+          { label: "Cài đặt", href: "/student/settings", icon: Settings },
         ],
       },
     ],
@@ -86,28 +116,28 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "TỔNG QUAN",
         items: [
-          { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-          { label: "Xác minh bằng cấp", href: "/dashboard/verification", icon: FileCheck2, badge: "KYC" },
+          { label: "Dashboard", href: "/tutor/dashboard", icon: LayoutDashboard },
+          { label: "Xác minh bằng cấp", href: "/tutor/verification", icon: FileCheck2, badge: "KYC" },
         ],
       },
       {
         title: "GIẢNG DẠY",
         items: [
-          { label: "Lịch dạy", href: "/dashboard/schedule", icon: Calendar },
-          { label: "Lớp học 1-1", href: "/dashboard/classes", icon: BookOpen },
-          { label: "Yêu cầu học viên", href: "/dashboard/requests", icon: UserCheck },
+          { label: "Lịch dạy", href: "/tutor/schedule", icon: Calendar },
+          { label: "Lớp học 1-1", href: "/tutor/classes", icon: BookOpen },
+          { label: "Yêu cầu học viên", href: "/tutor/requests", icon: UserCheck },
         ],
       },
       {
         title: "THU NHẬP",
         items: [
-          { label: "Báo cáo thu nhập", href: "/dashboard/earnings", icon: DollarSign },
+          { label: "Báo cáo thu nhập", href: "/tutor/earnings", icon: DollarSign },
         ],
       },
       {
         title: "CÀI ĐẶT",
         items: [
-          { label: "Hồ sơ & Môn dạy", href: "/dashboard/profile", icon: Settings },
+          { label: "Cài đặt", href: "/tutor/settings", icon: Settings },
         ],
       },
     ],
@@ -118,22 +148,28 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "TỔNG QUAN",
         items: [
-          { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-          { label: "Liên kết con em", href: "/dashboard/children", icon: HeartHandshake, badge: "2" },
+          { label: "Dashboard", href: "/parent/dashboard", icon: LayoutDashboard },
+          { label: "Liên kết con em", href: "/parent/children", icon: HeartHandshake, badge: "2" },
         ],
       },
       {
         title: "THEO DÕI",
         items: [
-          { label: "Tiến độ học tập", href: "/dashboard/progress", icon: BarChart3 },
-          { label: "Lịch học gia đình", href: "/dashboard/schedule", icon: Calendar },
-          { label: "Gia sư đồng hành", href: "/dashboard/tutors", icon: GraduationCap },
+          { label: "Tiến độ học tập", href: "/parent/progress", icon: BarChart3 },
+          { label: "Lịch học gia đình", href: "/parent/schedule", icon: Calendar },
+          { label: "Gia sư đồng hành", href: "/parent/tutors", icon: GraduationCap },
         ],
       },
       {
         title: "TÀI CHÍNH",
         items: [
-          { label: "Gói học & Thanh toán", href: "/dashboard/billing", icon: CreditCard },
+          { label: "Gói học & Thanh toán", href: "/parent/billing", icon: CreditCard },
+        ],
+      },
+      {
+        title: "CÀI ĐẶT",
+        items: [
+          { label: "Cài đặt", href: "/parent/settings", icon: Settings },
         ],
       },
     ],
@@ -144,23 +180,23 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "HỆ THỐNG",
         items: [
-          { label: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
-          { label: "Duyệt bằng cấp KYC", href: "/dashboard/kyc-queue", icon: ShieldCheck, badge: "5" },
+          { label: "Tổng quan", href: "/admin/dashboard", icon: LayoutDashboard },
+          { label: "Duyệt bằng cấp KYC", href: "/admin/verification-queue", icon: ShieldCheck, badge: "5" },
         ],
       },
       {
         title: "QUẢN LÝ NGƯỜI DÙNG",
         items: [
-          { label: "Học sinh & Phụ huynh", href: "/dashboard/learners", icon: Users },
-          { label: "Gia sư", href: "/dashboard/tutors-management", icon: GraduationCap },
-          { label: "Khiếu nại & Tranh chấp", href: "/dashboard/disputes", icon: AlertTriangle, badge: "2" },
+          { label: "Học sinh & Phụ huynh", href: "/admin/learners", icon: Users },
+          { label: "Gia sư", href: "/admin/tutors-management", icon: GraduationCap },
+          { label: "Khiếu nại & Tranh chấp", href: "/admin/disputes", icon: AlertTriangle, badge: "2" },
         ],
       },
       {
         title: "CẤU HÌNH",
         items: [
-          { label: "Danh mục môn học", href: "/dashboard/catalogs", icon: BookOpen },
-          { label: "Cài đặt hệ thống", href: "/dashboard/settings", icon: Settings },
+          { label: "Danh mục môn học", href: "/admin/catalogs", icon: BookOpen },
+          { label: "Cài đặt hệ thống", href: "/admin/settings", icon: Settings },
         ],
       },
     ],
@@ -178,104 +214,201 @@ interface SidebarProps {
   };
 }
 
+function SidebarNav({
+  sections,
+  collapsed,
+  currentPath,
+}: {
+  sections: NavSection[];
+  collapsed: boolean;
+  currentPath: string;
+}) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const effectivePathname = pathname || currentPath;
+
+  return (
+    <nav className="flex flex-col gap-5">
+      {sections.map((section, idx) => (
+        <div key={idx} className="flex flex-col gap-1">
+          <span
+            aria-hidden={collapsed}
+            className={`h-4 px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-stone-500 font-sans whitespace-nowrap transition-opacity duration-200 ${
+              collapsed ? "opacity-0" : "opacity-100"
+            }`}
+          >
+            {section.title}
+          </span>
+          {section.items.map((item, itemIdx) => {
+            const Icon = item.icon;
+            const isActive = isNavItemActive(item.href, effectivePathname, searchParams);
+
+            return (
+              <Link
+                key={itemIdx}
+                href={item.href}
+                className={`h-10 flex items-center justify-between px-2.5 rounded-xl text-xs font-medium transition-colors group ${
+                  isActive
+                    ? "bg-amber-500/10 dark:bg-amber-500/20 text-amber-900 dark:text-amber-400 font-semibold shadow-xs"
+                    : "text-neutral-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-neutral-900 dark:hover:text-stone-100"
+                }`}
+                title={collapsed ? item.label : undefined}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Icon
+                    className={`size-4.5 shrink-0 transition-transform group-hover:scale-105 ${
+                      isActive
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-neutral-400 dark:text-stone-500 group-hover:text-neutral-700 dark:group-hover:text-stone-300"
+                    }`}
+                  />
+                  <span
+                    aria-hidden={collapsed}
+                    className={`truncate whitespace-nowrap transition-[max-width,opacity] duration-200 ${
+                      collapsed ? "max-w-0 opacity-0" : "max-w-40 opacity-100"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                </div>
+
+                {!collapsed && item.badge && (
+                  <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-500 text-white leading-none shadow-xs">
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      ))}
+    </nav>
+  );
+}
+
 export function Sidebar({
   role = "STUDENT",
   collapsed,
   onToggleCollapse,
-  currentPath = "/dashboard",
+  currentPath,
   user,
 }: SidebarProps) {
   const currentConfig = ROLE_NAV_CONFIG[role] || ROLE_NAV_CONFIG.STUDENT;
+  const roleBase = role.toLowerCase();
+  const effectiveCurrentPath = currentPath || `/${roleBase}/dashboard`;
 
   return (
     <aside
       className={`${
         collapsed ? "w-20" : "w-64"
-      } bg-white border-r border-stone-200/80 transition-[width] duration-300 ease-in-out flex flex-col justify-between shrink-0 h-screen sticky top-0 z-40 select-none`}
+      } bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 transition-[width] duration-300 ease-in-out flex flex-col justify-between shrink-0 h-screen sticky top-0 z-40 select-none`}
     >
       <div className="p-4 flex flex-col gap-5 overflow-y-auto overflow-x-hidden">
-        {/* Logo EduFit chuẩn thương hiệu */}
-        <div className="h-12 px-1 flex items-center">
-          <EduFitLogo href="/dashboard#dashboard-top" showText={!collapsed} roleBadge={currentConfig.roleTitle} />
+        {/* Top Header: Logo EduFit chuẩn thương hiệu + Thu gọn menu ở trên */}
+        <div
+          className={`flex items-center pb-3 border-b border-stone-100 dark:border-stone-800/80 transition-all ${
+            collapsed ? "flex-col gap-2.5 px-0" : "justify-between px-1"
+          }`}
+        >
+          <EduFitLogo
+            href={`/${roleBase}/dashboard#dashboard-top`}
+            showText={!collapsed}
+            roleBadge={currentConfig.roleTitle}
+          />
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className={`p-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 text-neutral-400 hover:text-neutral-700 dark:text-stone-400 dark:hover:text-stone-200 transition-colors cursor-pointer shrink-0 ${
+              collapsed ? "w-9 h-9 flex items-center justify-center bg-stone-50 dark:bg-stone-800" : ""
+            }`}
+            title={collapsed ? "Mở rộng thanh menu" : "Thu gọn thanh menu"}
+            aria-label={collapsed ? "Mở rộng thanh menu" : "Thu gọn thanh menu"}
+          >
+            {collapsed ? (
+              <PanelLeft className="size-4.5" />
+            ) : (
+              <PanelLeftClose className="size-4.5" />
+            )}
+          </button>
         </div>
 
         {/* Navigation Sections */}
-        <nav className="flex flex-col gap-5">
-          {currentConfig.sections.map((section, idx) => (
-            <div key={idx} className="flex flex-col gap-1">
-              <span
-                aria-hidden={collapsed}
-                className={`h-4 px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 font-sans whitespace-nowrap transition-opacity duration-200 ${
-                  collapsed ? "opacity-0" : "opacity-100"
-                }`}
-              >
-                  {section.title}
-              </span>
-              {section.items.map((item, itemIdx) => {
-                const Icon = item.icon;
-                const isActive = currentPath === item.href;
-
-                return (
-                  <Link
-                    key={itemIdx}
-                    href={item.href}
-                    className={`h-10 flex items-center justify-between px-2.5 rounded-xl text-xs font-medium transition-colors group ${
-                      isActive
-                        ? "bg-amber-500/10 text-amber-900 font-semibold shadow-xs"
-                        : "text-neutral-600 hover:bg-stone-100 hover:text-neutral-900"
+        <Suspense
+          fallback={
+            <nav className="flex flex-col gap-5">
+              {currentConfig.sections.map((section, idx) => (
+                <div key={idx} className="flex flex-col gap-1">
+                  <span
+                    aria-hidden={collapsed}
+                    className={`h-4 px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-stone-500 font-sans whitespace-nowrap transition-opacity duration-200 ${
+                      collapsed ? "opacity-0" : "opacity-100"
                     }`}
-                    title={collapsed ? item.label : undefined}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <Icon
-                        className={`size-4.5 shrink-0 transition-transform group-hover:scale-105 ${
-                          isActive ? "text-amber-600" : "text-neutral-400 group-hover:text-neutral-700"
+                    {section.title}
+                  </span>
+                  {section.items.map((item, itemIdx) => {
+                    const Icon = item.icon;
+                    const isActive = isNavItemActive(item.href, effectiveCurrentPath, null);
+                    return (
+                      <Link
+                        key={itemIdx}
+                        href={item.href}
+                        className={`h-10 flex items-center justify-between px-2.5 rounded-xl text-xs font-medium transition-colors group ${
+                          isActive
+                            ? "bg-amber-500/10 dark:bg-amber-500/20 text-amber-900 dark:text-amber-400 font-semibold shadow-xs"
+                            : "text-neutral-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-neutral-900 dark:hover:text-stone-100"
                         }`}
-                      />
-                      <span
-                        aria-hidden={collapsed}
-                        className={`truncate whitespace-nowrap transition-[max-width,opacity] duration-200 ${
-                          collapsed ? "max-w-0 opacity-0" : "max-w-40 opacity-100"
-                        }`}
+                        title={collapsed ? item.label : undefined}
                       >
-                        {item.label}
-                      </span>
-                    </div>
-
-                    {!collapsed && item.badge && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-500 text-white leading-none shadow-xs">
-                        {item.badge}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
-        </nav>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <Icon
+                            className={`size-4.5 shrink-0 transition-transform group-hover:scale-105 ${
+                              isActive
+                                ? "text-amber-600 dark:text-amber-400"
+                                : "text-neutral-400 dark:text-stone-500 group-hover:text-neutral-700 dark:group-hover:text-stone-300"
+                            }`}
+                          />
+                          <span
+                            aria-hidden={collapsed}
+                            className={`truncate whitespace-nowrap transition-[max-width,opacity] duration-200 ${
+                              collapsed ? "max-w-0 opacity-0" : "max-w-40 opacity-100"
+                            }`}
+                          >
+                            {item.label}
+                          </span>
+                        </div>
+                        {!collapsed && item.badge && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-500 text-white leading-none shadow-xs">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
+            </nav>
+          }
+        >
+          <SidebarNav
+            sections={currentConfig.sections}
+            collapsed={collapsed}
+            currentPath={effectiveCurrentPath}
+          />
+        </Suspense>
       </div>
 
-      {/* Footer / Toggle & User pill */}
-      <div className="p-3 border-t border-stone-100 flex flex-col gap-2 bg-stone-50/50">
-        <button
-          type="button"
-          onClick={onToggleCollapse}
-          className="w-full flex items-center justify-center gap-2 p-2 rounded-xl hover:bg-stone-200/60 text-neutral-500 text-xs transition-colors"
-          title={collapsed ? "Mở rộng thanh menu" : "Thu gọn thanh menu"}
-        >
-          {collapsed ? (
-            <PanelLeft className="size-4" />
-          ) : (
-            <>
-              <PanelLeftClose className="size-4" />
-              <span>Thu gọn menu</span>
-            </>
-          )}
-        </button>
-
+      {/* Footer / User pill (Đã chuyển nút thu gọn lên trên) */}
+      <div className="p-3 border-t border-stone-100 dark:border-stone-800 flex flex-col gap-2 bg-stone-50/50 dark:bg-stone-900/50">
         {user && (
-          <div className={`h-11 px-2 flex items-center bg-white rounded-xl border border-stone-200/60 transition-[gap] duration-300 ${collapsed ? "justify-center gap-0" : "gap-2"}`}>
-            <div className="size-7 rounded-lg bg-amber-100 text-amber-700 font-bold text-xs flex items-center justify-center shrink-0">
+          <Link
+            href={`/${roleBase}/settings`}
+            title={collapsed ? "Cài đặt tài khoản" : undefined}
+            className={`h-11 px-2 flex items-center bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-750 rounded-xl border border-stone-200/60 dark:border-stone-700/60 hover:border-amber-300 dark:hover:border-amber-500/60 transition-[gap,border-color,background-color] duration-300 group cursor-pointer ${
+              collapsed ? "justify-center gap-0" : "gap-2"
+            }`}
+          >
+            <div className="size-7 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 font-bold text-xs flex items-center justify-center shrink-0 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/60 transition-colors">
               {user.fullName.charAt(0).toUpperCase()}
             </div>
             <div
@@ -284,10 +417,12 @@ export function Sidebar({
                 collapsed ? "max-w-0 opacity-0" : "max-w-44 opacity-100"
               }`}
             >
-              <span className="text-xs font-semibold text-neutral-900 truncate">{user.fullName}</span>
-              <span className="text-[10px] text-neutral-400 truncate">{user.email}</span>
+              <span className="text-xs font-semibold text-neutral-900 dark:text-stone-100 group-hover:text-amber-900 dark:group-hover:text-amber-400 transition-colors truncate">
+                {user.fullName}
+              </span>
+              <span className="text-[10px] text-neutral-400 dark:text-stone-400 truncate">{user.email}</span>
             </div>
-          </div>
+          </Link>
         )}
       </div>
     </aside>

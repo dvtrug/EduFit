@@ -40,12 +40,12 @@ export function TutorPendingRequests({ requests = [] }: TutorPendingRequestsProp
           description="Hồ sơ được xác minh bằng cấp KYC và có lịch rảnh đầy đủ sẽ nhận được nhiều hơn 80% lượt mời dạy từ phụ huynh."
           action={{
             label: "Xác minh bằng cấp KYC",
-            href: "/dashboard/verification",
+            href: "/tutor/verification",
             icon: ShieldCheck,
           }}
           secondaryAction={{
             label: "Cập nhật hồ sơ & Môn dạy",
-            href: "/dashboard/profile",
+            href: "/tutor/profile",
             icon: Sparkles,
           }}
         />
@@ -64,7 +64,7 @@ export function TutorPendingRequests({ requests = [] }: TutorPendingRequestsProp
             {requests.length}
           </span>
         </div>
-        <Link href="/dashboard/requests" className="text-xs text-sky-600 font-bold hover:underline">
+        <Link href="/tutor/requests" className="text-xs text-sky-600 font-bold hover:underline">
           Xem tất cả
         </Link>
       </div>

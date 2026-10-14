@@ -15,7 +15,9 @@ public record MatchWeights(BigDecimal subject, BigDecimal level, BigDecimal pric
   }
 
   public static MatchWeights standard() {
-    return new MatchWeights(new BigDecimal("0.30"), new BigDecimal("0.20"),
-        new BigDecimal("0.20"), new BigDecimal("0.15"), new BigDecimal("0.15"));
+    // Four criteria: learning need (subject + level) 40%, affordability 10%,
+    // practical availability 25%, and review confidence 25%.
+    return new MatchWeights(new BigDecimal("0.20"), new BigDecimal("0.20"),
+        new BigDecimal("0.10"), new BigDecimal("0.25"), new BigDecimal("0.25"));
   }
 }

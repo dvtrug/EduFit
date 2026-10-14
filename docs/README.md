@@ -24,3 +24,5 @@ Trạng thái bàn giao T15 ngày 2026-10-10 trên `feat/discovery`. Đọc theo
 Tài liệu Discovery hiện tại mô tả code, không coi prototype/roadmap hoặc ảnh cũ là
 hợp đồng runtime. Khi sửa Discovery: đọc tài liệu liên quan trước, cập nhật contract,
 flow và nguồn SVG/PNG cùng thay đổi; kiểm tra score/filter/query count bằng tests.
+
+- [Connection merge main 14/10/2026](connection/main-merge-validation.md): conflict resolution, row-lock reload, manifest13 và integration validation.

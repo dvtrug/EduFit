@@ -50,6 +50,9 @@ import vn.edufit.shared.notification.NotificationSink;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class ConnectionTransactionPostgresTest {
   @Container static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine");
+  @Autowired vn.edufit.connection.infra.persistence.repository.LinkInvitationRepository invitationRows;
+  @Autowired vn.edufit.connection.infra.persistence.repository.ConnectionRequestRepository requestRows;
+  @Autowired vn.edufit.connection.infra.persistence.repository.ParentStudentLinkRepository linkRows;
   @Autowired ConnectionRequestService requests;
   @Autowired ConnectionQueryService queries;
   @Autowired ProfileFacade profile;
@@ -307,6 +310,73 @@ class ConnectionTransactionPostgresTest {
         () -> invitations.respondInvitation(actor(studentUser, "STUDENT"), invitation, true));
     assertEquals("PENDING", jdbc.queryForObject("select status from link_invitation where invitation_id=?", String.class, invitation));
     assertEquals(0, jdbc.queryForObject("select count(*) from parent_student_link where student_id=? and parent_user_id=?", Integer.class, student, parent));
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"invitation", "request", "link"})
+  void rowLockReloadsStateCommittedAfterInitialRead(String kind) throws Exception {
+    var fixture = pendingRequest(); var jdbc = new JdbcTemplate(source);
+    UUID parent = account("PARENT"), id = kind.equals("request") ? fixture.request() : UUID.randomUUID();
+    if (kind.equals("invitation")) jdbc.update(
+        "insert into link_invitation(invitation_id,inviter_user_id,invited_user_id,expires_at) values (?,?,?,now()+interval '14 days')",
+        id, parent, fixture.studentUser());
+    if (kind.equals("link")) jdbc.update(
+        "insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at) values (?,?,?,now())",
+        id, parent, fixture.student());
+    Class<?> type = switch (kind) {
+      case "invitation" -> vn.edufit.connection.infra.persistence.entity.LinkInvitation.class;
+      case "request" -> vn.edufit.connection.infra.persistence.entity.ConnectionRequest.class;
+      default -> vn.edufit.connection.infra.persistence.entity.ParentStudentLink.class;
+    };
+    String table = switch (kind) { case "invitation" -> "link_invitation"; case "request" -> "connection_request"; default -> "parent_student_link"; };
+    String key = switch (kind) { case "invitation" -> "invitation_id"; case "request" -> "request_id"; default -> "link_id"; };
+    String terminal = switch (kind) { case "invitation" -> "WITHDRAWN"; case "request" -> "CANCELLED"; default -> "REVOKED"; };
+    try (var executor = Executors.newSingleThreadExecutor()) {
+      new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+        Object cached = em.find(type, id);
+        assertEquals(kind.equals("link") ? "CONFIRMED" : "PENDING", rowStatus(cached));
+        var other = executor.submit(() -> jdbc.update("update " + table + " set status=?,version=version+1 where " + key + "=?", terminal, id));
+        try { assertEquals(1, other.get(10, TimeUnit.SECONDS)); }
+        catch (Exception failure) { throw new AssertionError("Concurrent update must commit before lock", failure); }
+        Object locked = switch (kind) {
+          case "invitation" -> invitationRows.lockById(id).orElseThrow();
+          case "request" -> requestRows.lockById(id).orElseThrow();
+          default -> linkRows.lockById(id).orElseThrow();
+        };
+        assertEquals(terminal, rowStatus(locked), "Lock must reload committed state, not reuse stale first-level cache");
+      });
+    }
+  }
+
+  private String rowStatus(Object row) {
+    if (row instanceof vn.edufit.connection.infra.persistence.entity.LinkInvitation invitation) return invitation.getStatus();
+    if (row instanceof vn.edufit.connection.infra.persistence.entity.ConnectionRequest request) return request.getStatus();
+    return ((vn.edufit.connection.infra.persistence.entity.ParentStudentLink) row).getStatus();
+  }
+
+  @Test void rowReloadPreservesUnrelatedManagedTransition() {
+    var fixture = pendingRequest(); var jdbc = new JdbcTemplate(source);
+    UUID parent = account("PARENT"), invitation = UUID.randomUUID();
+    jdbc.update("insert into link_invitation(invitation_id,inviter_user_id,invited_user_id,expires_at) values (?,?,?,now()+interval '14 days')",
+        invitation, parent, fixture.studentUser());
+    new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+      var other = invitationRows.findById(invitation).orElseThrow();
+      other.decline(Instant.now());
+      assertTrue(requestRows.lockById(fixture.request()).isPresent());
+    });
+    assertEquals("DECLINED", jdbc.queryForObject("select status from link_invitation where invitation_id=?", String.class, invitation));
+  }
+
+  @Test void freshRowReadsRequireTransactionAndReturnEmptyForMissingRows() {
+    UUID missing = UUID.randomUUID();
+    assertThrows(IllegalTransactionStateException.class, () -> invitationRows.lockById(missing));
+    assertThrows(IllegalTransactionStateException.class, () -> requestRows.lockById(missing));
+    assertThrows(IllegalTransactionStateException.class, () -> linkRows.lockById(missing));
+    new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+      assertTrue(invitationRows.lockById(missing).isEmpty());
+      assertTrue(requestRows.lockById(missing).isEmpty());
+      assertTrue(linkRows.lockById(missing).isEmpty());
+    });
   }
 
   @Test void adaptersRequireAnExistingTransaction() {

@@ -12,7 +12,7 @@ Nguồn đối chiếu: `docs/SRS Edufit.docx` (UC3.1–3.5, BR-26–38), Connec
 - Actor lấy từ CurrentUser/session **EDUFIT_SESSION**; không nhận actor/role/sender từ request. Session HttpOnly, SameSite=Lax, timeout 60 phút theo main hiện tại.
 - `parentUserId`, inviter/invited/sender IDs là account IDs; `studentId`, `tutorId` là profile IDs. Không dùng thay thế cho nhau. `goalId` thuộc Student được xác thực qua ProfileFacade.
 - Timestamp là ISO-8601 Instant UTC. `deadline` của goal là LocalDate `YYYY-MM-DD` hoặc null, không chuyển thành một Instant giả.
-- Main mới đang miễn CSRF toàn `/api/v1/**`; **baseline Phase 0 chưa bảo vệ CSRF cho Connection**. Đích T21: chỉ thu hẹp exemption đối với prefix Connection để các write routes yêu cầu cookie `XSRF-TOKEN` và header `X-XSRF-TOKEN`. Giữ policy các API khác/CORS/session; test filter chain thật phải chứng minh write thiếu token ->403, token hợp lệ -> xử lý nghiệp vụ. Client phải gửi token trước khi bật thay đổi này; endpoint lấy token hiện có là `GET /api/v1/auth/csrf`.
+- **Cập nhật main 14/10/2026 (`d208371`):** SecurityConfig bật SPA CSRF cho các unsafe requests, gồm Connection. Client lấy token qua `GET /api/v1/auth/csrf`, gửi cookie `XSRF-TOKEN` và header `X-XSRF-TOKEN` cùng session cookie. GET Discovery danh sách/chi tiết Tutor được public. Baseline Phase0 miễn `/api/v1/**` là lịch sử; không khôi phục exemption đó. T21 tiếp tục kiểm chứng đủ filter/security/error matrix theo policy main mới.
 - Parent chỉ được thao tác dữ liệu Student khi link hiện tại CONFIRMED. PENDING/DECLINED/REVOKED không cấp quyền. Student giữ quyền với request do Parent đã gửi sau revoke. Tutor chỉ inbox và respond request đúng tutor profile của mình.
 
 Success: `{ "success": true, "data": <object|array|null>, "message": "Thành công", "timestamp": "...Z" }`.
@@ -92,7 +92,7 @@ T19b bổ sung GET `/admin/parent-student/links?email=...&page=0&size=20` dướ
 | 400 | VALIDATION_FAILED | Missing/null accept, malformed JSON/UUID, invalid slots/size/length |
 | 400 | INVALID_OPERATION | Goal không ACTIVE, Tutor không phù hợp, Admin thiếu reason |
 | 401 | UNAUTHORIZED | Session không có/hết hạn ở authenticated routes |
-| 403 | FORBIDDEN | Wrong role/owner/link; CSRF thiếu/sai ở đích T21 |
+| 403 | FORBIDDEN | Wrong role/owner/link; CSRF thiếu/sai theo policy main mới |
 | 404 | RESOURCE_NOT_FOUND | UUID hợp lệ nhưng resource không có |
 | 409 | CONFLICT_DETECTED | Terminal/expired/duplicate/pending limit/already ACTIVE class/controlled metadata inconsistency |
 | 429 | RATE_LIMIT_EXCEEDED | Invite attempt thứ11 |

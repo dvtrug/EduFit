@@ -37,7 +37,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.*;
 import vn.edufit.ai.api.AiGateway;
-import vn.edufit.ai.api.AiUsageQuery;
 import vn.edufit.connection.api.ConnectionFacade;
 import vn.edufit.discovery.application.service.*;
 import vn.edufit.discovery.domain.model.*;
@@ -87,6 +86,7 @@ class DiscoveryReadPostgresTest {
     mvc = MockMvcBuilders.standaloneSetup(new DiscoveryController(queries, matching, provider))
         .setControllerAdvice(new GlobalExceptionHandler()).build();
     reset(ai);
+    when(ai.complete(any())).thenReturn(new vn.edufit.ai.api.AiResponse("Offline fixture", 0, null, false));
     clearSql();
   }
 
@@ -117,7 +117,34 @@ class DiscoveryReadPostgresTest {
     assertEquals(5, matching.match(actor, GOAL, 5).size());
     assertEquals(8, queryCount(), "Goal/student/slots, catalog, bounded candidates/subjects/slots, insert log");
     assertDetached();
-    verifyNoInteractions(ai);
+    verify(ai).complete(any()); // Gateway owns admission; this fixture performs no model call.
+  }
+
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+      "rating,asc", "rating,desc", "relevance,asc", "relevance,desc",
+      "price,asc", "price,desc", "experience,asc", "experience,desc"})
+  void httpPaginationUsesUniqueTutorTieBreak(String sort, String direction) throws Exception {
+    seedTutors(23);
+    jdbc.update("update tutor_profile set price_per_session=200000, rating_avg=4.5, review_count=10, experience_years=2");
+    var found = new ArrayList<UUID>();
+    var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+    for (int page = 0; page < 3; page++) {
+      var response = mvc.perform(get("/api/v1/discovery/tutors").param("page",String.valueOf(page))
+          .param("size","10").param("sortBy",sort).param("sortDirection",direction)
+          .param("area","  ").param("keyword","  "))
+          .andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(23))
+          .andExpect(jsonPath("$.data.content.length()").value(page == 2 ? 3 : 10))
+          .andReturn().getResponse().getContentAsString();
+      for (var tutor : mapper.readTree(response).path("data").path("content")) {
+        found.add(UUID.fromString(tutor.path("tutorId").asText()));
+      }
+    }
+    assertEquals(java.util.stream.IntStream.rangeClosed(1,23).mapToObj(this::id).toList(), found,
+        "All equal sort keys must use ascending unique tutorId across every HTTP page");
+    assertEquals(23,found.stream().distinct().count());
+    mvc.perform(get("/api/v1/discovery/tutors").param("page","3"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.data.content").isEmpty());
   }
 
   @Test
@@ -236,7 +263,7 @@ class DiscoveryReadPostgresTest {
         () -> profile.findVerifiedCandidatesBySubject(new TutorCandidateCriteria(1, "ONLINE", "Hanoi")));
     var candidates = profile.findVerifiedCandidatesBySubject(new TutorCandidateCriteria(1, "ONLINE", "Hanoi"));
     measure("scorer-only", count, 0, () -> rank(candidates));
-    verifyNoInteractions(ai);
+    verify(ai, times(35)).complete(any()); // Five warm-ups plus thirty matching samples.
     if (count == 240) {
       explain("search", "select t.* from tutor_profile t where t.status='VERIFIED' order by t.price_per_session desc limit 10");
       explain("candidate", """
@@ -261,13 +288,13 @@ class DiscoveryReadPostgresTest {
     assertEquals(200, bounded.size());
     assertEquals(240, full.size());
     assertEquals(id(240), full.getFirst().tutorId());
-    assertEquals(new java.math.BigDecimal("97.00"), full.getFirst().total());
-    assertEquals(new java.math.BigDecimal("78.50"), bounded.getFirst().total());
+    assertEquals(new java.math.BigDecimal("95.00"), full.getFirst().total());
+    assertEquals(new java.math.BigDecimal("77.50"), bounded.getFirst().total());
     assertFalse(bounded.stream().anyMatch(s -> s.tutorId().equals(id(240))));
     var fullTop = full.stream().limit(5).map(MatchScore::tutorId).toList();
     long shared = bounded.stream().limit(5).map(MatchScore::tutorId).filter(fullTop::contains).count();
     assertEquals(4, shared);
-    System.out.println("CAP_REPORT candidates=200/240 globalTop1=97.00 boundedTop1=78.50 recallAt5=" + shared + "/5");
+    System.out.println("CAP_REPORT candidates=200/240 globalTop1=95.00 boundedTop1=77.50 recallAt5=" + shared + "/5");
   }
 
   private List<MatchScore> rank(List<TutorDiscoveryProfileDto> candidates) {
@@ -360,7 +387,6 @@ class DiscoveryReadPostgresTest {
     @Bean JpaTransactionManager transactionManager(EntityManagerFactory factory) { return new JpaTransactionManager(factory); }
     @Bean ConnectionFacade connection() { return mock(ConnectionFacade.class); }
     @Bean AiGateway ai() { return mock(AiGateway.class); }
-    @Bean AiUsageQuery usage() { return (user, feature, since) -> 10L; }
     @Bean CurrentUser actor() {
       var user = mock(CurrentUser.class);
       when(user.getUserId()).thenReturn(STUDENT_USER);

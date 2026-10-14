@@ -541,3 +541,10 @@ Lệnh selector dùng `failIfNoSpecifiedTests=false` chỉ để dependency modu
 T08a–T08c cung cấp shared IAM Clock và guard thuần tại entity mutators. T09 dùng typed transition results; expiry conflict được map tại controller sau service proxy, failed writes rollback mặc định và outer transaction được tôn trọng. T10a định nghĩa bốn public event record chỉ chứa IDs/status/time và cause enum. T10b dựng listener BEFORE_COMMIT/writer MANDATORY cho invitation-created; chưa chuyển production publishers hay hoàn tất recipient matrix. Các dispatch khác được nối cùng publisher task tiếp theo, không gửi trùng direct sink hiện có.
 
 Chi tiết RED/GREEN, PostgreSQL flush/deferred failures, listener delay, coverage strict và giới hạn ở [Phase 2 validation](../../docs/connection/phase2-validation.md). Không tự triển khai Phase 3, không sửa Flyway SQL hoặc main/Discovery trong checkpoint này.
+
+
+## Tích hợp main mới — 14/10/2026
+
+Merge main `d208371` vào Connection sau Phase2, không bắt đầu Phase3. Giữ kiến trúc service đã tách, facade duy nhất, Clock và typed conflict/default rollback. Sửa detach/reload của main được chuyển sang repository fragment dùng chung cho invitation/request/link. Manifest hiện tại13 migration, giữ nguyên SQL/checksum đã phát hành. Main đã bật SPA CSRF toàn hệ thống; T21 kiểm chứng policy này, không triển khai lại exemption của baseline Phase0.
+
+[Merge main validation](../../docs/connection/main-merge-validation.md) ghi conflict resolution, các regression và giới hạn kiểm chứng.
