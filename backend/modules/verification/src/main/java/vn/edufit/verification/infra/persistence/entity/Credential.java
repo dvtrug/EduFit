@@ -58,6 +58,7 @@ public class Credential {
   private String note;
 
   @OneToMany(mappedBy = "credential", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("uploadedAt ASC")
   @org.hibernate.annotations.BatchSize(size = 20)
   private java.util.Set<CredentialFile> files = new java.util.LinkedHashSet<>();
 

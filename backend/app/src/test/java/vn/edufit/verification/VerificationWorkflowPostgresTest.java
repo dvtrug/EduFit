@@ -1,5 +1,7 @@
 package vn.edufit.verification;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -206,9 +208,8 @@ class VerificationWorkflowPostgresTest {
     mvc.perform(get("/api/v1/admin/verifications/" + requestId))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.requestId").value(requestId.toString()))
-        .andExpect(jsonPath("$.data.credentials[0].institution").value("Đại học Sư phạm Hà Nội"))
-        .andExpect(jsonPath("$.data.credentials[1].institution").value("IELTS British Council"))
-        .andExpect(jsonPath("$.data.credentials[0].files[0].fileName").value("bang_dai_hoc.pdf"));
+        .andExpect(jsonPath("$.data.credentials[*].institution", containsInAnyOrder("Đại học Sư phạm Hà Nội", "IELTS British Council")))
+        .andExpect(jsonPath("$.data.credentials[*].files[*].fileName", hasItems("bang_dai_hoc.pdf", "ielts_cert.pdf")));
 
     // 4. Admin phê duyệt hồ sơ (APPROVE)
     ReviewVerificationRequest approveRequest = new ReviewVerificationRequest(ReviewVerificationRequest.Action.APPROVE, null);
