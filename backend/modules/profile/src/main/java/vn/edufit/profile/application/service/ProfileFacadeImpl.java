@@ -2,6 +2,7 @@ package vn.edufit.profile.application.service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -280,6 +281,39 @@ public class ProfileFacadeImpl implements ProfileFacade {
             goal.getGoalId(), goal.getStudentId(), student.getUserId(), goal.getSubjectId(),
             student.getEducationLevelId(), goal.getGoalType().name(), goal.getDeadline(),
             goal.getStatus().name())));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Map<UUID, ConnectionGoalDto> findGoalsForConnection(List<UUID> goalIds) {
+    if (goalIds == null || goalIds.isEmpty()) {
+      return Map.of();
+    }
+    List<LearningGoal> goals = learningGoalRepository.findAllById(goalIds);
+    if (goals.isEmpty()) {
+      return Map.of();
+    }
+    Set<UUID> studentIds = goals.stream().map(LearningGoal::getStudentId).collect(Collectors.toSet());
+    Map<UUID, StudentProfile> students = studentProfileRepository.findAllById(studentIds).stream()
+        .collect(Collectors.toMap(StudentProfile::getStudentId, s -> s));
+
+    Map<UUID, ConnectionGoalDto> result = new HashMap<>();
+    for (LearningGoal goal : goals) {
+      StudentProfile student = students.get(goal.getStudentId());
+      if (student != null) {
+        result.put(goal.getGoalId(), new ConnectionGoalDto(
+            goal.getGoalId(),
+            goal.getStudentId(),
+            student.getUserId(),
+            goal.getSubjectId(),
+            student.getEducationLevelId(),
+            goal.getGoalType() != null ? goal.getGoalType().name() : null,
+            goal.getDeadline(),
+            goal.getStatus() != null ? goal.getStatus().name() : null
+        ));
+      }
+    }
+    return result;
   }
 
   @Override

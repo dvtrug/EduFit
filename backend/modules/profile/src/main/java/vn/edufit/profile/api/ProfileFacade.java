@@ -2,6 +2,7 @@ package vn.edufit.profile.api;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -71,6 +72,8 @@ public interface ProfileFacade {
   boolean existsStudentByUserId(UUID userId);
 
   Optional<ConnectionGoalDto> findGoalForConnection(UUID goalId);
+
+  Map<UUID, ConnectionGoalDto> findGoalsForConnection(List<UUID> goalIds);
 
   boolean tutorTeaches(UUID tutorId, Integer subjectId, Integer educationLevelId);
 }
