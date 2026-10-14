@@ -35,3 +35,38 @@ Branch `feat/connection`. Phase 6 comprises 5 comprehensive verification and cle
   - `ConnectionMatrixDdtTest`: 24 tests passed (0 failures, 0 errors, 0 skips).
   - `connection` module suite: **271 unit tests passed with zero failures, errors, or skips**.
   - All existing scenarios (8 baseline scenarios, 30 controller tests, 38 query tests, 28 invitation transition tests, 24 request transition tests, 22 request rules tests, 18 consent tests, 11 expiry service tests, 6 expiry job tests) verified GREEN.
+
+---
+
+## T21 — Secured REST contracts, privacy and CSRF verification
+
+### 1. Implementation
+- **Full Security Filter Chain Test Suite (`ConnectionHttpSecurityPostgresTest`)**:
+  - Implemented end-to-end integration test running on full Spring Boot application context with real PostgreSQL testcontainer, `springSessionRepositoryFilter`, and `springSecurityFilterChain`.
+  - Avoided any mocked security identities or bypasses; tested with real Argon2 password hashing and database-persisted sessions.
+- **Unauthenticated Access Protection (401 Unauthorized)**:
+  - Verified across all connection endpoints: legacy unpaged (`/invitations`, `/links`, `/requests`), paged (`/invitations/page`, `/links/page`, `/requests/page`), and admin (`/admin/parent-student/links`).
+  - Unauthenticated requests are rejected with HTTP 401 and JSON payload `{"code": "UNAUTHORIZED", ...}`.
+- **SPA CSRF Verification**:
+  - Tested Spring Security 6 SPA CSRF protection with `CookieCsrfTokenRepository.withHttpOnlyFalse()`:
+    - Missing CSRF token on mutating requests (`POST /parent-student/invite`) -> HTTP 403 `FORBIDDEN`.
+    - Mismatched/invalid CSRF header `X-XSRF-TOKEN` -> HTTP 403 `FORBIDDEN`.
+    - Valid session cookie + matching `X-XSRF-TOKEN` header -> HTTP 200 OK.
+- **Role-Based Authorization & Privacy**:
+  - `GET /api/v1/connections/admin/parent-student/links`:
+    - Student session -> HTTP 403 `FORBIDDEN`.
+    - Parent session -> HTTP 403 `FORBIDDEN`.
+    - Tutor session -> HTTP 403 `FORBIDDEN`.
+    - Admin session -> HTTP 200 OK with minimal link list.
+- **Malformed Input & Validation Mappings (400 Bad Request)**:
+  - Malformed non-UUID path variables (`/requests/not-a-uuid/cancel`) map to HTTP 400 with `ErrorCode.VALIDATION_FAILED`.
+  - Malformed/unreadable JSON request bodies map to HTTP 400 with `ErrorCode.VALIDATION_FAILED`.
+  - Missing required boolean `accept` on `/requests/{id}/respond` maps to HTTP 400 with `ErrorCode.VALIDATION_FAILED`.
+- **Strict BR-37 Privacy Whitelist**:
+  - Verified Tutor Inbox response contains only permitted fields (`requestId`, `goalType`, `senderRole`, `desiredSlots`, `deadline`, `status`).
+  - Confirmed absolute absence of student/parent emails, phone numbers, contact info, password hashes, or unrequested goal details (e.g. `budget_max`).
+
+### 2. Verification
+- **Test Execution**:
+  - `ConnectionHttpSecurityPostgresTest`: 5 integration tests passed (0 failures, 0 errors, 0 skips).
+  - Reactor test suite GREEN.
