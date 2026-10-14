@@ -17,6 +17,9 @@ import vn.edufit.verification.web.request.SubmitVerificationRequest;
 import vn.edufit.verification.web.response.VerificationRequestDetailResponse;
 
 import java.util.List;
+import java.util.UUID;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 
 @RestController
 @RequestMapping("/api/v1/verifications")
@@ -42,6 +45,17 @@ public class TutorVerificationController {
   public ResponseEntity<ApiResponse<VerificationRequestDetailResponse>> myRequest() {
     VerificationRequestDetailResponse response = tutorVerificationService.getMyLatestRequest(currentUser());
     return ResponseEntity.ok(ApiResponse.success(response, "Lấy trạng thái hồ sơ xác minh thành công"));
+  }
+
+  @GetMapping("/credentials/files/{fileId}")
+  public ResponseEntity<Resource> downloadFile(@PathVariable("fileId") UUID fileId) {
+    TutorVerificationService.CredentialFileDownload download =
+        tutorVerificationService.getCredentialFile(currentUser(), fileId);
+    return ResponseEntity.ok()
+        .contentType(MediaType.parseMediaType(download.contentType()))
+        .contentLength(download.sizeBytes())
+        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + download.fileName() + "\"")
+        .body(download.resource());
   }
   private CurrentUser currentUser() {
     CurrentUser currentUser = currentUserProvider.getIfAvailable();

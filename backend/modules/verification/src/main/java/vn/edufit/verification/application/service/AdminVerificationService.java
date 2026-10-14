@@ -41,6 +41,14 @@ public class AdminVerificationService {
     return PendingVerificationQueueResponse.from(pendingPage);
   }
 
+  @Transactional(readOnly = true)
+  public VerificationRequestDetailResponse getDetail(CurrentUser currentUser, UUID requestId) {
+    ensureAdmin(currentUser);
+    VerificationRequest request = verificationRequestRepository.findWithCredentialsByRequestId(requestId)
+        .orElseThrow(() -> EntityNotFoundException.of("VerificationRequest", requestId));
+    return VerificationRequestDetailResponse.from(request);
+  }
+
   @Transactional
   public VerificationRequestDetailResponse review(
       CurrentUser currentUser,
