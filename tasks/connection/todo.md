@@ -203,7 +203,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** Không tạo commit cha; dùng T12a–T12c tại mục 6.
 - **Kết thúc:** Commit + push + UC3.3/audit evidence.
 
-### [ ] T13 — Hoàn thiện create/cancel request và input validation
+### [x] T13 — Hoàn thiện create/cancel request và input validation
 
 - **Files:** request service, slot validator, request DTO validation, request listener branch, focused tests.
 - **Thực hiện:** Goal owner/ACTIVE, tutor VERIFIED + ACTIVE/expertise; max5 qua COUNT sau expire, duplicate/ACTIVE class. Parse slots theo T01, message ≤500; cancel chỉ PENDING có quyền hiện tại. Parent create/cancel notify Student; cancel notify Tutor. Chuyển direct sinks create/cancel sang event.
@@ -441,7 +441,7 @@ Các nhóm bên dưới **thay thế commit cha**, không còn là gợi ý “n
 | [x] T12c | Revoke event + listener/tests | Admin notify cả hai, Student notify Parent; reason không lộ, rollback pass | T12b | `fix(notification): complete link revocation recipients` |
 | [x] T13a | Slot validator + rollout config + request validation DTO/tests | GrammarT01; tests legacy-compatible/strict-v1, legacy read nguyên vẹn; strict chỉ bật sau data/client inventory; message/slot biên pass | T12c, T01 | `fix(connection): validate connection request slots and message` |
 | [x] T13b | Create/cancel request rules/repository + tests | Owner/goal/tutor/limits/ACTIVE class/cancel guard pass; no unauthorized write | T13a | `fix(connection): enforce request creation and cancellation rules` |
-| [ ] T13c | Request create/cancel events + listener/tests | Tutor/Student notification đúng ma trận, không duplicate direct sink | T13b | `fix(notification): notify request creation and cancellation parties` |
+| [x] T13c | Request create/cancel events + listener/tests | Tutor/Student notification đúng ma trận, không duplicate direct sink | T13b | `fix(notification): notify request creation and cancellation parties` |
 | [ ] T18a | Profile public batch goal method + implementation/repo/tests | Additive API, giữ bounded candidates/catalog; sửa constructor fixtures cùng commit nếu cần; Profile tests | T17 | `feat(profile): expose batch goal metadata for connection` |
 | [ ] T18b | IAM public batch summaries + implementation/repo/tests | Additive API; không đổi auth/enum; IDs chỉ trả summary cần thiết; IAM regression | T18a | `feat(iam): expose batch sender summaries for connection` |
 | [ ] T18c | Connection query/inbox/invitation DTO/mapper + query/JSON tests | Batch deadline + inviterName/role/reinviteAfter, generic POST/privacy; missing metadata409; counts1/20/100 và OSIV pass | T18b | `perf(connection): batch scoped inbox and invitation metadata` |
@@ -487,3 +487,5 @@ Dependency của task cha kế tiếp dùng **task con cuối nhóm**: T09 sau T
 - T13a: strict-v1 parser + default legacy-compatible rollout and HTTP/service validation. 291 focused tests pass, including localized/legacy writers and Discovery-AI E2E.
 
 - T13b: ACTIVE actor/tutor account, current goal account ownership, COUNT-based pending limit and cancel guards. 121 tests pass, including PostgreSQL sixth request/expiry quota and Discovery-AI E2E.
+
+- T13c: Request create and cancel publish ConnectionRequestChangedEvent with complete ID metadata, removing direct notification on create. BEFORE_COMMIT listener/writer delivers CONNECTION_REQUESTED to Tutor and Student (if Parent sent), and CONNECTION_CANCELLED to Tutor and Student (if Parent cancelled, without notifying Student about their own cancellation of older Parent requests). 323 focused verify tests pass (Connection 192, App 131), zero failures/errors/skips.

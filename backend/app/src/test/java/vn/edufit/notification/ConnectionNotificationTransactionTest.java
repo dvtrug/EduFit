@@ -42,6 +42,7 @@ class ConnectionNotificationTransactionTest {
   @Autowired ConnectionNotificationWriter writer;
   @Autowired CommitProbe probe;
   @Autowired vn.edufit.connection.application.service.LinkInvitationService invitationService;
+  @Autowired(required = false) vn.edufit.connection.application.service.ConnectionRequestService requestService;
   @Autowired vn.edufit.iam.api.IamFacade iam;
   @Autowired vn.edufit.profile.api.ProfileFacade profile;
   @Autowired vn.edufit.shared.notification.NotificationSink oldSink;
@@ -214,6 +215,129 @@ class ConnectionNotificationTransactionTest {
     }
   }
 
+  private record RequestFixture(UUID parent, UUID studentUser, UUID student, UUID tutorUser, UUID tutor, UUID goal, UUID request) {}
+  private RequestFixture requestFixture() {
+    var jdbc = new JdbcTemplate(source);
+    UUID parent = UUID.randomUUID(), studentUser = UUID.randomUUID(), student = UUID.randomUUID();
+    UUID tutorUser = UUID.randomUUID(), tutor = UUID.randomUUID(), goal = UUID.randomUUID(), request = UUID.randomUUID();
+    for (UUID user : java.util.List.of(parent, studentUser, tutorUser))
+      jdbc.update("insert into account(user_id,email,password_hash,full_name,role) values (?,?,?,?,?)",
+          user, user + "@test.invalid", "test-only", "Request fixture",
+          user.equals(parent) ? "PARENT" : user.equals(tutorUser) ? "TUTOR" : "STUDENT");
+    jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", student, studentUser);
+    jdbc.update("insert into tutor_profile(tutor_id,user_id,display_name,teaching_mode,price_per_session,status) values (?,?,'Tutor','ONLINE',100000,'VERIFIED')", tutor, tutorUser);
+    jdbc.update("insert into learning_goal(goal_id,student_id,subject_id,current_level,desired_level,goal_type,deadline,mode,budget_max,status) values (?,?,1,1,2,'EXAM_PREPARATION',current_date + 30,'ONLINE',100000,'ACTIVE')", goal, student);
+    return new RequestFixture(parent, studentUser, student, tutorUser, tutor, goal, request);
+  }
+  private void mockRequestMetadata(RequestFixture fixture) {
+    org.mockito.Mockito.when(iam.findUserSummaryById(fixture.studentUser())).thenReturn(java.util.Optional.of(
+        new vn.edufit.iam.api.dto.UserSummaryView(fixture.studentUser(), "student@test.invalid", "Student", vn.edufit.iam.api.AccountRole.STUDENT, vn.edufit.iam.api.AccountStatus.ACTIVE)));
+    org.mockito.Mockito.when(iam.findUserSummaryById(fixture.parent())).thenReturn(java.util.Optional.of(
+        new vn.edufit.iam.api.dto.UserSummaryView(fixture.parent(), "parent@test.invalid", "Parent", vn.edufit.iam.api.AccountRole.PARENT, vn.edufit.iam.api.AccountStatus.ACTIVE)));
+    org.mockito.Mockito.when(iam.findUserSummaryById(fixture.tutorUser())).thenReturn(java.util.Optional.of(
+        new vn.edufit.iam.api.dto.UserSummaryView(fixture.tutorUser(), "tutor@test.invalid", "Tutor", vn.edufit.iam.api.AccountRole.TUTOR, vn.edufit.iam.api.AccountStatus.ACTIVE)));
+    org.mockito.Mockito.when(profile.findStudentById(fixture.student())).thenReturn(java.util.Optional.of(
+        new vn.edufit.profile.api.dto.StudentSummaryDto(fixture.student(), fixture.studentUser(), 4, null, true)));
+    org.mockito.Mockito.when(profile.findTutorById(fixture.tutor())).thenReturn(java.util.Optional.of(
+        new vn.edufit.profile.api.dto.TutorSummaryDto(fixture.tutor(), fixture.tutorUser(), "Tutor", null, null, null, null, null, null, null, "VERIFIED", NOW, null, 0)));
+    org.mockito.Mockito.when(profile.findGoalForConnection(fixture.goal())).thenReturn(java.util.Optional.of(
+        new vn.edufit.profile.api.dto.ConnectionGoalDto(fixture.goal(), fixture.student(), fixture.studentUser(), 1, 4, "EXAM_PREPARATION", null, "ACTIVE")));
+    org.mockito.Mockito.when(profile.tutorTeaches(fixture.tutor(), 1, 4)).thenReturn(true);
+  }
+
+  @Test void realRequestCreationDeliversToTutorOnlyWhenStudentSends() {
+    var fixture = requestFixture(); mockRequestMetadata(fixture); var jdbc = new JdbcTemplate(source);
+    var result = requestService.request(actor(fixture.studentUser(), "STUDENT"), fixture.goal(), fixture.tutor(), java.util.List.of("Tue 19:00"), null);
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class, result);
+    var created = ((vn.edufit.connection.application.dto.TransitionResult.Success<vn.edufit.connection.application.dto.ConnectionRequestResult>) result).value();
+    assertEquals(1, jdbc.queryForObject("select count(*) from notification where target_id=? and type='CONNECTION_REQUESTED'", Integer.class, created.requestId()));
+    assertEquals(1, jdbc.queryForObject("select count(*) from notification where target_id=? and user_id=? and about_student_id=?", Integer.class, created.requestId(), fixture.tutorUser(), fixture.student()));
+    assertEquals(0, jdbc.queryForObject("select count(*) from notification where target_id=? and user_id=?", Integer.class, created.requestId(), fixture.studentUser()));
+    org.mockito.Mockito.verifyNoInteractions(oldSink);
+  }
+
+  @Test void realRequestCreationDeliversToBothTutorAndStudentWhenParentSends() {
+    var fixture = requestFixture(); mockRequestMetadata(fixture); var jdbc = new JdbcTemplate(source);
+    jdbc.update("insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at) values (?,?,?,now())", UUID.randomUUID(), fixture.parent(), fixture.student());
+    var result = requestService.request(actor(fixture.parent(), "PARENT"), fixture.goal(), fixture.tutor(), java.util.List.of("Tue 19:00"), null);
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class, result);
+    var created = ((vn.edufit.connection.application.dto.TransitionResult.Success<vn.edufit.connection.application.dto.ConnectionRequestResult>) result).value();
+    assertEquals(2, jdbc.queryForObject("select count(*) from notification where target_id=? and type='CONNECTION_REQUESTED'", Integer.class, created.requestId()));
+    assertEquals(1, jdbc.queryForObject("select count(*) from notification where target_id=? and user_id=? and about_student_id=?", Integer.class, created.requestId(), fixture.tutorUser(), fixture.student()));
+    assertEquals(1, jdbc.queryForObject("select count(*) from notification where target_id=? and user_id=? and about_student_id=?", Integer.class, created.requestId(), fixture.studentUser(), fixture.student()));
+    org.mockito.Mockito.verifyNoInteractions(oldSink);
+  }
+
+  @Test void realRequestCancellationByParentDeliversToTutorAndStudent() {
+    var fixture = requestFixture(); mockRequestMetadata(fixture); var jdbc = new JdbcTemplate(source);
+    jdbc.update("insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at) values (?,?,?,now())", UUID.randomUUID(), fixture.parent(), fixture.student());
+    jdbc.update("insert into connection_request(request_id,student_id,tutor_id,goal_id,sent_by_user_id,desired_slots,expires_at) values (?,?,?,?,?,cast(? as jsonb),now()+interval '7 days')",
+        fixture.request(), fixture.student(), fixture.tutor(), fixture.goal(), fixture.parent(), "[]");
+    var result = requestService.cancelRequest(actor(fixture.parent(), "PARENT"), fixture.request());
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class, result);
+    assertEquals("CANCELLED", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
+    assertEquals(2, jdbc.queryForObject("select count(*) from notification where target_id=? and type='CONNECTION_CANCELLED'", Integer.class, fixture.request()));
+    assertEquals(1, jdbc.queryForObject("select count(*) from notification where target_id=? and user_id=? and about_student_id=?", Integer.class, fixture.request(), fixture.tutorUser(), fixture.student()));
+    assertEquals(1, jdbc.queryForObject("select count(*) from notification where target_id=? and user_id=? and about_student_id=?", Integer.class, fixture.request(), fixture.studentUser(), fixture.student()));
+    org.mockito.Mockito.verifyNoInteractions(oldSink);
+  }
+
+  @Test void realRequestCancellationByStudentDeliversToTutorOnlyEvenIfParentSent() {
+    var fixture = requestFixture(); mockRequestMetadata(fixture); var jdbc = new JdbcTemplate(source);
+    jdbc.update("insert into connection_request(request_id,student_id,tutor_id,goal_id,sent_by_user_id,desired_slots,expires_at) values (?,?,?,?,?,cast(? as jsonb),now()+interval '7 days')",
+        fixture.request(), fixture.student(), fixture.tutor(), fixture.goal(), fixture.parent(), "[]");
+    var result = requestService.cancelRequest(actor(fixture.studentUser(), "STUDENT"), fixture.request());
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class, result);
+    assertEquals(1, jdbc.queryForObject("select count(*) from notification where target_id=? and type='CONNECTION_CANCELLED'", Integer.class, fixture.request()));
+    assertEquals(1, jdbc.queryForObject("select count(*) from notification where target_id=? and user_id=?", Integer.class, fixture.request(), fixture.tutorUser()));
+    assertEquals(0, jdbc.queryForObject("select count(*) from notification where target_id=? and user_id=?", Integer.class, fixture.request(), fixture.studentUser()));
+    org.mockito.Mockito.verifyNoInteractions(oldSink);
+  }
+
+  @Test void realRequestCancellationTerminalRetryDoesNotDuplicateNotification() {
+    var fixture = requestFixture(); mockRequestMetadata(fixture); var jdbc = new JdbcTemplate(source);
+    jdbc.update("insert into connection_request(request_id,student_id,tutor_id,goal_id,sent_by_user_id,desired_slots,expires_at) values (?,?,?,?,?,cast(? as jsonb),now()+interval '7 days')",
+        fixture.request(), fixture.student(), fixture.tutor(), fixture.goal(), fixture.studentUser(), "[]");
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Success.class,
+        requestService.cancelRequest(actor(fixture.studentUser(), "STUDENT"), fixture.request()));
+    assertEquals(1, jdbc.queryForObject("select count(*) from notification where target_id=?", Integer.class, fixture.request()));
+    assertInstanceOf(vn.edufit.connection.application.dto.TransitionResult.Conflict.class,
+        requestService.cancelRequest(actor(fixture.studentUser(), "STUDENT"), fixture.request()));
+    assertEquals(1, jdbc.queryForObject("select count(*) from notification where target_id=?", Integer.class, fixture.request()));
+    org.mockito.Mockito.verifyNoInteractions(oldSink);
+  }
+
+  @Test void realRequestCreationRollsBackBothNotificationsAndRequestWhenSecondNotificationFails() {
+    var fixture = requestFixture(); mockRequestMetadata(fixture); var jdbc = new JdbcTemplate(source);
+    jdbc.update("insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at) values (?,?,?,now())", UUID.randomUUID(), fixture.parent(), fixture.student());
+    jdbc.execute("create function connection_test_reject_student_request_notification() returns trigger language plpgsql as $$ begin if new.type='CONNECTION_REQUESTED' and new.user_id='" + fixture.studentUser() + "' then raise exception 'second notification rejected' using errcode='23514'; end if; return new; end; $$");
+    jdbc.execute("create trigger connection_test_reject_student_request_notification before insert on notification for each row execute function connection_test_reject_student_request_notification()");
+    try {
+      assertThrows(RuntimeException.class, () -> requestService.request(actor(fixture.parent(), "PARENT"), fixture.goal(), fixture.tutor(), java.util.List.of("Tue 19:00"), null));
+      assertEquals(0, jdbc.queryForObject("select count(*) from connection_request where student_id=? and tutor_id=?", Integer.class, fixture.student(), fixture.tutor()));
+      assertEquals(0, jdbc.queryForObject("select count(*) from notification where about_student_id=?", Integer.class, fixture.student()));
+    } finally {
+      jdbc.execute("drop trigger connection_test_reject_student_request_notification on notification");
+      jdbc.execute("drop function connection_test_reject_student_request_notification()");
+    }
+  }
+
+  @Test void realRequestCancellationRollsBackWhenNotificationFails() {
+    var fixture = requestFixture(); mockRequestMetadata(fixture); var jdbc = new JdbcTemplate(source);
+    jdbc.update("insert into connection_request(request_id,student_id,tutor_id,goal_id,sent_by_user_id,desired_slots,expires_at) values (?,?,?,?,?,cast(? as jsonb),now()+interval '7 days')",
+        fixture.request(), fixture.student(), fixture.tutor(), fixture.goal(), fixture.studentUser(), "[]");
+    jdbc.execute("create function connection_test_reject_cancel_notification() returns trigger language plpgsql as $$ begin if new.type='CONNECTION_CANCELLED' then raise exception 'cancel notification rejected' using errcode='23514'; end if; return new; end; $$");
+    jdbc.execute("create trigger connection_test_reject_cancel_notification before insert on notification for each row execute function connection_test_reject_cancel_notification()");
+    try {
+      assertThrows(RuntimeException.class, () -> requestService.cancelRequest(actor(fixture.studentUser(), "STUDENT"), fixture.request()));
+      assertEquals("PENDING", jdbc.queryForObject("select status from connection_request where request_id=?", String.class, fixture.request()));
+      assertEquals(0, jdbc.queryForObject("select count(*) from notification where target_id=?", Integer.class, fixture.request()));
+    } finally {
+      jdbc.execute("drop trigger connection_test_reject_cancel_notification on notification");
+      jdbc.execute("drop function connection_test_reject_cancel_notification()");
+    }
+  }
+
   private String sqlState(Throwable failure) {
     for (Throwable cause = failure; cause != null; cause = cause.getCause())
       if (cause instanceof SQLException sql) return sql.getSQLState();
@@ -239,11 +363,19 @@ class ConnectionNotificationTransactionTest {
 
   @Configuration
   @EnableTransactionManagement
-  @org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackageClasses = {NotificationRepository.class, vn.edufit.connection.infra.persistence.repository.LinkInvitationRepository.class})
+  @org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackageClasses = {
+      NotificationRepository.class,
+      vn.edufit.connection.infra.persistence.repository.LinkInvitationRepository.class,
+      vn.edufit.connection.infra.persistence.repository.ConnectionRequestRepository.class,
+      vn.edufit.connection.infra.persistence.repository.TutoringClassRepository.class,
+      vn.edufit.connection.infra.persistence.repository.ParentStudentLinkRepository.class
+  })
   @Import({ConnectionTransitionListener.class, ConnectionNotificationWriter.class,
       vn.edufit.connection.application.service.LinkInvitationService.class,
       vn.edufit.connection.application.service.InvitationQuotaService.class,
-      vn.edufit.connection.infra.locking.PostgresConnectionLock.class})
+      vn.edufit.connection.infra.locking.PostgresConnectionLock.class,
+      vn.edufit.connection.application.service.ConnectionRequestService.class,
+      vn.edufit.connection.application.service.ConnectionFacadeImpl.class})
   static class Config {
     @Bean DataSource dataSource() {
       var source = new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
@@ -261,6 +393,9 @@ class ConnectionNotificationTransactionTest {
     @Bean vn.edufit.iam.api.IamFacade iam() { return org.mockito.Mockito.mock(vn.edufit.iam.api.IamFacade.class); }
     @Bean vn.edufit.profile.api.ProfileFacade profile() { return org.mockito.Mockito.mock(vn.edufit.profile.api.ProfileFacade.class); }
     @Bean vn.edufit.shared.notification.NotificationSink oldSink() { return org.mockito.Mockito.mock(vn.edufit.shared.notification.NotificationSink.class); }
+    @Bean vn.edufit.connection.application.policy.ConnectionRequestInput connectionRequestInput() {
+      return new vn.edufit.connection.application.policy.ConnectionRequestInput("legacy-compatible");
+    }
     @Bean CommitProbe probe() { return new CommitProbe(); }
   }
 }

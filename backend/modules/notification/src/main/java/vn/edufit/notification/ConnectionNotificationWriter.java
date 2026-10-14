@@ -3,6 +3,7 @@ package vn.edufit.notification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import vn.edufit.connection.api.event.ConnectionRequestChangedEvent;
 import vn.edufit.connection.api.event.LinkInvitationChangedEvent;
 import vn.edufit.connection.api.event.ParentStudentLinkChangedEvent;
 
@@ -40,5 +41,29 @@ class ConnectionNotificationWriter {
       repository.save(new Notification(event.studentUserId(), event.studentId(), "LINK_REVOKED",
           "Liên kết đã thu hồi", "Liên kết phụ huynh đã được thu hồi", "PARENT_STUDENT_LINK",
           event.aggregateId(), event.occurredAt()));
+  }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void requestCreated(ConnectionRequestChangedEvent event) {
+    repository.save(new Notification(event.tutorUserId(), event.studentId(), "CONNECTION_REQUESTED",
+        "Yêu cầu kết nối mới", "Bạn có yêu cầu dạy học mới", "CONNECTION_REQUEST",
+        event.aggregateId(), event.occurredAt()));
+    if (!event.studentUserId().equals(event.sentByUserId())) {
+      repository.save(new Notification(event.studentUserId(), event.studentId(), "CONNECTION_REQUESTED",
+          "Yêu cầu kết nối mới", "Phụ huynh đã gửi yêu cầu kết nối gia sư", "CONNECTION_REQUEST",
+          event.aggregateId(), event.occurredAt()));
+    }
+  }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void requestCancelled(ConnectionRequestChangedEvent event) {
+    repository.save(new Notification(event.tutorUserId(), event.studentId(), "CONNECTION_CANCELLED",
+        "Yêu cầu đã bị hủy", "Yêu cầu kết nối đã bị hủy", "CONNECTION_REQUEST",
+        event.aggregateId(), event.occurredAt()));
+    if (!event.studentUserId().equals(event.actorUserId())) {
+      repository.save(new Notification(event.studentUserId(), event.studentId(), "CONNECTION_CANCELLED",
+          "Yêu cầu đã bị hủy", "Yêu cầu kết nối đã bị hủy", "CONNECTION_REQUEST",
+          event.aggregateId(), event.occurredAt()));
+    }
   }
 }

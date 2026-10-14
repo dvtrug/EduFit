@@ -3,6 +3,7 @@ package vn.edufit.notification;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+import vn.edufit.connection.api.event.ConnectionRequestChangedEvent;
 import vn.edufit.connection.api.event.LinkInvitationChangedEvent;
 import vn.edufit.connection.api.event.ParentStudentLinkChangedEvent;
 
@@ -26,5 +27,13 @@ class ConnectionTransitionListener {
   @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = false)
   public void onLinkChanged(ParentStudentLinkChangedEvent event) {
     if ("REVOKED".equals(event.newStatus())) writer.linkRevoked(event);
+  }
+  @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = false)
+  public void onRequestChanged(ConnectionRequestChangedEvent event) {
+    switch (event.newStatus()) {
+      case "PENDING" -> { if (event.oldStatus() == null) writer.requestCreated(event); }
+      case "CANCELLED" -> writer.requestCancelled(event);
+      default -> { }
+    }
   }
 }

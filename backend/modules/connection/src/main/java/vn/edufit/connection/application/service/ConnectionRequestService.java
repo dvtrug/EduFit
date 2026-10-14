@@ -20,10 +20,13 @@ import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.iam.api.IamFacade;
 import vn.edufit.iam.api.AccountRole;
 import vn.edufit.iam.api.AccountStatus;
+import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.profile.api.dto.ConnectionGoalDto;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
 import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.notification.NotificationSink;
+import org.springframework.context.ApplicationEventPublisher;
+import vn.edufit.connection.api.event.ConnectionRequestChangedEvent;
 import vn.edufit.shared.exception.ForbiddenOperationException;
 import vn.edufit.shared.exception.EntityNotFoundException;
 import vn.edufit.shared.exception.InvalidOperationException;
@@ -39,9 +42,11 @@ public class ConnectionRequestService {
   private final NotificationSink notifications;
   private final ConnectionFacade facade;
   private final ConnectionRequestInput input;
+  private final ApplicationEventPublisher events;
 
   public ConnectionRequestService(ConnectionRequestRepository requests, TutoringClassRepository classes,
-      ProfileFacade profile, IamFacade iam, ConnectionLock lock, NotificationSink notifications, ConnectionFacade facade, ConnectionRequestInput input, Clock clock) {
+      ProfileFacade profile, IamFacade iam, ConnectionLock lock, NotificationSink notifications,
+      ConnectionFacade facade, ConnectionRequestInput input, ApplicationEventPublisher events, Clock clock) {
     this.clock = clock;
     this.requests = requests;
     this.classes = classes;
@@ -51,6 +56,7 @@ public class ConnectionRequestService {
     this.notifications = notifications;
     this.facade = facade;
     this.input = input;
+    this.events = events;
   }
 
   private static void requireRole(CurrentUser actor, String... roles) {
@@ -106,8 +112,9 @@ public class ConnectionRequestService {
       return TransitionResult.conflict("ACTIVE", "Đã có lớp đang hoạt động");
     ConnectionRequest created = requests.save(new ConnectionRequest(goal.studentId(), tutorId, goalId,
         actor.getUserId(), desiredSlots, message, now));
-    notifications.notify(tutor.userId(), goal.studentId(), "CONNECTION_REQUESTED",
-        "Yêu cầu kết nối mới", "Bạn có yêu cầu dạy học mới", "CONNECTION_REQUEST", created.getId());
+    events.publishEvent(new ConnectionRequestChangedEvent(UUID.randomUUID(), created.getId(),
+        actor.getUserId(), goal.studentId(), null, "PENDING", now,
+        actor.getUserId(), goal.studentUserId(), tutor.userId(), null));
     return TransitionResult.success(ConnectionRequestResult.from(created));
   }
 
@@ -123,7 +130,16 @@ public class ConnectionRequestService {
     request.expire(now);
     if (!"PENDING".equals(request.getStatus()))
       return TransitionResult.conflict(request.getStatus(), "Không còn ở trạng thái chờ xử lý");
+    UUID studentUserId = profile.findStudentById(request.getStudentId())
+        .map(StudentSummaryDto::userId)
+        .orElseThrow(() -> new InvalidOperationException("Không thể xác định tài khoản học sinh"));
+    UUID tutorUserId = profile.findTutorById(request.getTutorId())
+        .map(TutorSummaryDto::userId)
+        .orElseThrow(() -> new InvalidOperationException("Không thể xác định tài khoản gia sư"));
     request.cancel(now);
+    events.publishEvent(new ConnectionRequestChangedEvent(UUID.randomUUID(), id, actor.getUserId(),
+        request.getStudentId(), "PENDING", "CANCELLED", now, request.getSentByUserId(),
+        studentUserId, tutorUserId, null));
     return TransitionResult.success(null);
   }
 

@@ -50,7 +50,7 @@ class ConnectionUseCaseTest {
   ParentStudentLinkService linkService;
 
   @BeforeEach void setup() {
-    service = new ConnectionRequestService(requests, classes, profile, iam, lock, notifications, new ConnectionFacadeImpl(links, classes), new vn.edufit.connection.application.policy.ConnectionRequestInput("legacy-compatible"), Clock.systemUTC());
+    service = new ConnectionRequestService(requests, classes, profile, iam, lock, notifications, new ConnectionFacadeImpl(links, classes), new vn.edufit.connection.application.policy.ConnectionRequestInput("legacy-compatible"), events, Clock.systemUTC());
     invitationService = new LinkInvitationService(invitations, links, iam, profile, lock, new InvitationQuotaService(quotas, lock, Clock.systemUTC()), events, Clock.systemUTC());
     linkService = new ParentStudentLinkService(links, profile, lock, audit, events, iam, Clock.systemUTC());
   }

@@ -32,6 +32,7 @@ class ConnectionRequestRulesTest {
   final ConnectionFacade facade=mock(ConnectionFacade.class);
   final ConnectionLock lock=mock(ConnectionLock.class);
   final NotificationSink sink=mock(NotificationSink.class);
+  final org.springframework.context.ApplicationEventPublisher events=mock(org.springframework.context.ApplicationEventPublisher.class);
   ConnectionRequestService service;
   @BeforeEach void setup() {
     when(profile.findStudentById(student)).thenReturn(Optional.of(new StudentSummaryDto(student,studentUser,4,null,true)));
@@ -39,7 +40,7 @@ class ConnectionRequestRulesTest {
     tutorStatus("VERIFIED");account(tutorUser,"TUTOR",AccountStatus.ACTIVE);
     when(profile.tutorTeaches(tutor,1,4)).thenReturn(true);
     when(rows.save(any())).thenAnswer(call -> {var row=(ConnectionRequest)call.getArgument(0);org.springframework.test.util.ReflectionTestUtils.setField(row,"id",id);return row;});
-    service=new ConnectionRequestService(rows,classes,profile,iam,lock,sink,facade,new ConnectionRequestInput("legacy-compatible"),Clock.fixed(now,ZoneOffset.UTC));
+    service=new ConnectionRequestService(rows,classes,profile,iam,lock,sink,facade,new ConnectionRequestInput("legacy-compatible"),events,Clock.fixed(now,ZoneOffset.UTC));
   }
   private void account(UUID user,String role,AccountStatus status) {
     when(iam.findUserSummaryById(user)).thenReturn(Optional.of(new UserSummaryView(user,"actor@test.invalid","Actor",AccountRole.valueOf(role),status)));
@@ -62,6 +63,10 @@ class ConnectionRequestRulesTest {
     UUID user=role.equals("STUDENT")?studentUser:UUID.randomUUID();
     when(facade.hasConfirmedParentLink(user,student)).thenReturn(true);
     assertInstanceOf(TransitionResult.Success.class,create(actor(user,role)));
+    verify(events).publishEvent(argThat((vn.edufit.connection.api.event.ConnectionRequestChangedEvent e) ->
+        e.aggregateId().equals(id) && e.actorUserId().equals(user) && e.studentId().equals(student)
+            && e.oldStatus() == null && "PENDING".equals(e.newStatus()) && e.classId() == null));
+    verifyNoInteractions(sink);
   }
   @ParameterizedTest @ValueSource(strings={"STUDENT","PARENT"}) void inactiveActorCannotCreateOrCancel(String role) {
     UUID user=role.equals("STUDENT")?studentUser:UUID.randomUUID();var actor=actor(user,role);
@@ -69,26 +74,30 @@ class ConnectionRequestRulesTest {
     account(user,role,AccountStatus.DEACTIVATED);
     assertThrows(ForbiddenOperationException.class,()->create(actor));
     assertThrows(ForbiddenOperationException.class,()->service.cancelRequest(actor,id));
-    verify(rows,never()).save(any());verifyNoInteractions(sink);
+    verify(rows,never()).save(any());verifyNoInteractions(sink);verifyNoInteractions(events);
   }
   @Test void inactiveTutorAccountCannotReceiveRequest() {
     account(tutorUser,"TUTOR",AccountStatus.DEACTIVATED);
     assertThrows(InvalidOperationException.class,()->create(actor(studentUser,"STUDENT")));
-    verify(rows,never()).save(any());
+    verify(rows,never()).save(any());verifyNoInteractions(events);
   }
   @Test void unverifiedTutorCannotReceiveRequest() {
     tutorStatus("PENDING");assertThrows(InvalidOperationException.class,()->create(actor(studentUser,"STUDENT")));
+    verifyNoInteractions(events);
   }
   @Test void changedGoalOwnerCannotCreateForDifferentAccount() {
     when(profile.findGoalForConnection(goal)).thenReturn(Optional.of(new ConnectionGoalDto(goal,student,UUID.randomUUID(),1,4,"EXAM",null,"ACTIVE")));
     assertThrows(InvalidOperationException.class,()->create(actor(studentUser,"STUDENT")));verify(rows,never()).save(any());
+    verifyNoInteractions(events);
   }
   @Test void inactiveGoalCannotCreate() {
     when(profile.findGoalForConnection(goal)).thenReturn(Optional.of(new ConnectionGoalDto(goal,student,studentUser,1,4,"EXAM",null,"ARCHIVED")));
     assertThrows(InvalidOperationException.class,()->create(actor(studentUser,"STUDENT")));
+    verifyNoInteractions(events);
   }
   @Test void expertiseMustMatchCurrentGoal() {
     when(profile.tutorTeaches(tutor,1,4)).thenReturn(false);assertThrows(InvalidOperationException.class,()->create(actor(studentUser,"STUDENT")));
+    verifyNoInteractions(events);
   }
   @ParameterizedTest @ValueSource(strings={"duplicate","limit","class"}) void conflictsDoNotWriteRequest(String kind) {
     if(kind.equals("duplicate")) when(rows.existsByStudentIdAndTutorIdAndStatus(student,tutor,"PENDING")).thenReturn(true);
@@ -98,12 +107,20 @@ class ConnectionRequestRulesTest {
       when(rows.findByStudentIdAndStatus(student,"PENDING")).thenReturn(Collections.nCopies(5,new ConnectionRequest(student,tutor,goal,studentUser,List.of("Tue 19:00"),null,now)));
     }
     assertInstanceOf(TransitionResult.Conflict.class,create(actor(studentUser,"STUDENT")));verify(rows,never()).save(any());verifyNoInteractions(sink);
+    verifyNoInteractions(events);
   }
   @Test void revokedParentCannotCreateOrCancel() {
     var actor=actor(UUID.randomUUID(),"PARENT");pending(actor.getUserId());
     assertThrows(ForbiddenOperationException.class,()->create(actor));assertThrows(ForbiddenOperationException.class,()->service.cancelRequest(actor,id));
+    verifyNoInteractions(events);
   }
   @Test void studentCanCancelAnOlderParentRequest() {
-    var row=pending(UUID.randomUUID());assertInstanceOf(TransitionResult.Success.class,service.cancelRequest(actor(studentUser,"STUDENT"),id));assertEquals("CANCELLED",row.getStatus());
+    var row=pending(UUID.randomUUID());
+    when(profile.findTutorById(tutor)).thenReturn(Optional.of(new TutorSummaryDto(tutor,tutorUser,"Tutor",null,null,null,null,null,null,null,"VERIFIED",now,null,0)));
+    assertInstanceOf(TransitionResult.Success.class,service.cancelRequest(actor(studentUser,"STUDENT"),id));
+    assertEquals("CANCELLED",row.getStatus());
+    verify(events).publishEvent(argThat((vn.edufit.connection.api.event.ConnectionRequestChangedEvent e) ->
+        e.aggregateId().equals(id) && e.actorUserId().equals(studentUser) && e.studentId().equals(student)
+            && "PENDING".equals(e.oldStatus()) && "CANCELLED".equals(e.newStatus()) && e.classId() == null));
   }
 }
