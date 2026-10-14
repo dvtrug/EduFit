@@ -327,8 +327,8 @@ class VerificationWorkflowPostgresTest {
     UUID anotherTutorUserId = UUID.randomUUID();
     UUID anotherTutorProfileId = UUID.randomUUID();
     jdbc.update("INSERT INTO account(user_id, email, password_hash, full_name, role) VALUES (?, 'other@edufit.vn', 'hash', 'Other', 'TUTOR')", anotherTutorUserId);
-    jdbc.update("INSERT INTO tutor_profile(tutor_id, user_id, display_name, headline, bio, teaching_mode, status, rating_avg, review_count, created_at, updated_at) " +
-        "VALUES (?, ?, 'Other', 'H', 'B', 'ONLINE', 'UNVERIFIED', 0, 0, now(), now())", anotherTutorProfileId, anotherTutorUserId);
+    jdbc.update("INSERT INTO tutor_profile(tutor_id, user_id, display_name, headline, bio, teaching_mode, price_per_session, status, rating_avg, review_count, created_at, updated_at) " +
+        "VALUES (?, ?, 'Other', 'H', 'B', 'ONLINE', 200000, 'UNVERIFIED', 0, 0, now(), now())", anotherTutorProfileId, anotherTutorUserId);
 
     currentUser.actAs(anotherTutorUserId, "other@edufit.vn", Set.of("TUTOR"));
     mvc.perform(get("/api/v1/verifications/credentials/files/" + fileId))

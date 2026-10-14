@@ -49,6 +49,7 @@ public class TutorVerificationService {
     this(verificationRequestRepository, credentialStorageService, profileFacade, null);
   }
 
+  @org.springframework.beans.factory.annotation.Autowired
   public TutorVerificationService(
       VerificationRequestRepository verificationRequestRepository,
       CredentialStorageService credentialStorageService,

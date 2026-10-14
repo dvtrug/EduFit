@@ -58,8 +58,8 @@ public class VerificationRequest {
   private Instant reviewedAt;
 
   @OneToMany(mappedBy = "verificationRequest", cascade = CascadeType.ALL, orphanRemoval = true)
-  @OrderBy("credentialId ASC")
-  private List<Credential> credentials = new ArrayList<>();
+  @org.hibernate.annotations.BatchSize(size = 20)
+  private java.util.Set<Credential> credentials = new java.util.LinkedHashSet<>();
 
   public static VerificationRequest pending(UUID tutorId, Instant submittedAt) {
     VerificationRequest request = new VerificationRequest();

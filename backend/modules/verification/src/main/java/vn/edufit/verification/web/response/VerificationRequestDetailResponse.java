@@ -27,7 +27,9 @@ public record VerificationRequestDetailResponse(
         request.getSubmittedAt(),
         request.getReviewedBy(),
         request.getReviewedAt(),
-        request.getCredentials().stream().map(CredentialResponse::from).toList()
+        request.getCredentials().stream()
+            .map(CredentialResponse::from)
+            .toList()
     );
   }
 
@@ -47,7 +49,9 @@ public record VerificationRequestDetailResponse(
           credential.getInstitution(),
           credential.getYear(),
           credential.getNote(),
-          credential.getFiles().stream().map(FileResponse::from).toList()
+          credential.getFiles().stream()
+              .map(FileResponse::from)
+              .toList()
       );
     }
   }
