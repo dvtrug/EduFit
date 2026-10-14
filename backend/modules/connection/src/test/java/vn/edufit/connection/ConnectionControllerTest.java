@@ -145,4 +145,17 @@ class ConnectionControllerTest {
         .content("{\"accept\":%s,\"reason\":\"reason\"}".formatted(accept))), accept ? CLASS : "null");
     verify(service).respondRequest(actor, UUID_ID, accept, "reason");
   }
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings={"empty","null","blank","oversize","message"})
+  void createRejectsInvalidInputBeforeService(String kind) throws Exception {
+    String slot=kind.equals("oversize")?"x".repeat(101):kind.equals("blank")?" ":"Tue 19:00";
+    String slots=kind.equals("empty")?"[]":kind.equals("null")?"null":"[\""+slot+"\"]";
+    String message=kind.equals("message")?"x".repeat(501):"";
+    String body="{\"goalId\":\""+ID+"\",\"tutorId\":\""+ID+"\",\"desiredSlots\":"+slots+",\"message\":\""+message+"\"}";
+    mvc.perform(post(BASE+"/requests").contentType(MediaType.APPLICATION_JSON).content(body))
+        .andExpect(status().isBadRequest())
+        .andExpect(result -> assertInstanceOf(MethodArgumentNotValidException.class,result.getResolvedException()));
+    verifyNoInteractions(service);
+  }
+
 }

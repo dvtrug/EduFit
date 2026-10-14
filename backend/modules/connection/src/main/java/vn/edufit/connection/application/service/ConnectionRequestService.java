@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edufit.connection.api.ConnectionFacade;
+import vn.edufit.connection.application.policy.ConnectionRequestInput;
 import vn.edufit.connection.application.dto.ConnectionRequestResult;
 import vn.edufit.connection.application.dto.ClassResult;
 import vn.edufit.connection.application.port.ConnectionLock;
@@ -33,9 +34,10 @@ public class ConnectionRequestService {
   private final ConnectionLock lock;
   private final NotificationSink notifications;
   private final ConnectionFacade facade;
+  private final ConnectionRequestInput input;
 
   public ConnectionRequestService(ConnectionRequestRepository requests, TutoringClassRepository classes,
-      ProfileFacade profile, ConnectionLock lock, NotificationSink notifications, ConnectionFacade facade, Clock clock) {
+      ProfileFacade profile, ConnectionLock lock, NotificationSink notifications, ConnectionFacade facade, ConnectionRequestInput input, Clock clock) {
     this.clock = clock;
     this.requests = requests;
     this.classes = classes;
@@ -43,6 +45,7 @@ public class ConnectionRequestService {
     this.lock = lock;
     this.notifications = notifications;
     this.facade = facade;
+    this.input = input;
   }
 
   private static void requireRole(CurrentUser actor, String... roles) {
@@ -66,10 +69,7 @@ public class ConnectionRequestService {
     lock.lockStudent(goal.studentId());
     requireStudentAccess(actor, goal.studentId());
     if (!"ACTIVE".equals(goal.status())) throw new InvalidOperationException("Mục tiêu không còn hoạt động");
-    if (message != null && message.length() > 500) throw new InvalidOperationException("Lời nhắn tối đa 500 ký tự");
-    if (desiredSlots == null || desiredSlots.isEmpty()
-        || desiredSlots.stream().anyMatch(s -> s == null || s.isBlank() || s.length() > 100))
-      throw new InvalidOperationException("Cần chọn ít nhất một khung giờ");
+    input.validate(desiredSlots, message);
     TutorSummaryDto tutor = profile.findTutorById(tutorId)
         .orElseThrow(() -> EntityNotFoundException.of("Tutor", tutorId));
     if (!"VERIFIED".equals(tutor.status()) || !profile.tutorTeaches(tutorId,

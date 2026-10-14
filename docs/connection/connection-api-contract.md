@@ -71,7 +71,9 @@ Tutor inbox BR-37 không trả email/contact, parent account/profile/name, stude
 
 Inventory source T01: ConnectionServiceTest có `Mon 18:00`, `Tue 19:00`; service hiện chỉ chặn null/blank/>100. Frontend services/features hiện chưa có Connection API writer thực. Chưa truy cập DB người dùng nên **chưa có inventory persisted data/clients ngoài repo**.
 
-T13a cần parser strict-v1 và rollout setting `edufit.connection.slots.validation-mode`: mặc định `legacy-compatible` giữ validation hiện tại cho old writers; mode `strict-v1` áp grammar trên. Trong compatibility mode chuỗi cũ là legacy chưa được xác minh lịch, không gọi nó là interval hợp lệ. Writer mới gửi canonical v1; không thêm request field version tùy tiện. Trước bật strict phải inventory DB/clients, ghi số lượng/format và cập nhật writers. Tests phải chạy cả hai modes. Không bật strict âm thầm nếu chưa có evidence.
+T13a triển khai parser strict-v1 và rollout setting `edufit.connection.slots.validation-mode`: mặc định `legacy-compatible` giữ validation hiện tại cho old writers; mode `strict-v1` áp grammar trên. Trong compatibility mode chuỗi cũ là legacy chưa được xác minh lịch, không gọi nó là interval hợp lệ. Writer mới gửi canonical v1; không thêm request field version tùy tiện. Trước bật strict phải inventory DB/clients, ghi số lượng/format và cập nhật writers. Tests phải chạy cả hai modes. Không bật strict âm thầm nếu chưa có evidence.
+
+Inventory cập nhật sau tích hợp main/Discovery-AI: frontend Discovery hiện đã có Connection writer, gửi `desiredSlots` từ `formatMatchingSlots` dưới dạng chuỗi hiển thị tiếng Việt (ví dụ `Thứ 2 ·18:00–19:00`). Vì vậy mặc định vẫn là `legacy-compatible`; chưa có inventory DB/clients ngoài repo để bật strict. Parser strict chỉ dùng cho writer opt-in canonical, không chuyển đổi dữ liệu đã lưu.
 
 Readers giữ nguyên string[] đã lưu, gồm legacy điểm giờ không có giờ kết thúc; không đoán end time, không sửa/xóa/migrate dữ liệu đó chỉ để parser pass. Giá trị invalid ở strict-v1 ->400 `VALIDATION_FAILED`, vẫn đọc được lịch sử cũ. T25 bàn giao điều kiện bật strict; Phase 0 chỉ chốt chiến lược.
 

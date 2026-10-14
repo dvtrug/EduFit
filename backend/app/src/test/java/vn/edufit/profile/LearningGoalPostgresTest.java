@@ -713,6 +713,7 @@ class LearningGoalPostgresTest {
     vn.edufit.discovery.application.service.StudentGoalQueryService.class,
     vn.edufit.connection.application.service.ConnectionFacadeImpl.class,
     vn.edufit.connection.application.service.ConnectionRequestService.class,
+    vn.edufit.connection.application.policy.ConnectionRequestInput.class,
     vn.edufit.connection.application.service.ParentStudentLinkService.class,
     vn.edufit.connection.infra.locking.PostgresConnectionLock.class,
     vn.edufit.iam.infra.config.IamClockConfig.class
