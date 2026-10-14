@@ -325,7 +325,7 @@ Focused tests đi cùng từng task; T20–T22 bổ sung kiểm chứng ma trậ
 - **Commit:** `test(connection): enforce nonempty architecture boundaries`.
 - **Kết thúc:** Commit + push + rule evidence.
 
-### [ ] T24 — Tích hợp Discovery/consumer và loại bỏ legacy caller
+### [x] T24 — Tích hợp Discovery/consumer và loại bỏ legacy caller
 
 - **Files:** caller integration tests tại app/Discovery, wiring tối thiểu, obsolete imports/methods nếu scan chứng minh không còn dùng.
 - **Thực hiện:** Base Discovery đã tích hợp ở T00b; đây là final regression, không phải lúc mới merge. Kiểm tra Parent match/revoke denial/Student access; facade ACTIVE class cho Scheduling contract. Scheduling `cfa9a8f` có MockConnectionValidationAdapter default true, chưa gọi facade thật; ghi production adapter/classId + profile-ID mapping là dependency bàn giao Scheduling riêng. Scan legacy remnants; không xóa shared sinks còn caller khác, không thêm `connection -> discovery`.

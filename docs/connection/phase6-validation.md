@@ -194,3 +194,59 @@ Branch `feat/connection`. Phase 6 comprises 5 comprehensive verification and cle
   - Total: 14 architecture tests passed (0 failures, 0 errors, 0 skips).
   - Reactor test suite GREEN.
 
+---
+
+## T24 — Finalize consumer integration and remove legacy paths
+
+### 1. Implementation & Audit
+- **Consumer Compatibility & Contract Verification**:
+  - **Discovery Integration**:
+    - `StudentGoalQueryService` and `TutorMatchingService` call `ConnectionFacade.hasConfirmedParentLink(parentUserId, studentId)`:
+      - Verified: Parent with confirmed link successfully accesses student goals and receives personalized tutor matching.
+      - Verified: Student revoking the link immediately denies parent access (HTTP 403 Forbidden) on all next requests (`AiDiscoveryConnectionE2ETest.parentCanUseStudentGoalUntilStudentRevokesTheConfirmedLink`).
+      - Verified: Student retains full ownership and uninterrupted access to their own goals and matching after parent revocation.
+    - `AiDiscoveryConnectionE2ETest`: 7 end-to-end integration scenarios running on real PostgreSQL 17 testcontainer and faked Gemini provider passed 100%.
+  - **Active Class Contract for Scheduling**:
+    - `ConnectionFacade.findActiveClass(studentId, tutorId)`:
+      - Implemented in `ConnectionFacadeImpl` and verified by 9 unit tests (`ConnectionFacadeImplTest`).
+      - Returns `Optional<ActiveClassView>` with `classId`, `studentId`, `tutorId`, `goalId`.
+      - **Scheduling Handover Audit**: The current Scheduling module baseline in this repository contains a placeholder POM with `MockConnectionValidationAdapter` defaulting to true. Integration of the production `ConnectionValidationAdapter` that queries `ConnectionFacade.findActiveClass` alongside classId/profile-ID mapping is formally cataloged as a Scheduling module handover dependency.
+  - **Notification & Audit Consumer Integrity**:
+    - Verified `ConnectionTransitionListener` in module `notification` handles all 4 public event types (`LinkInvitationChangedEvent`, `ParentStudentLinkChangedEvent`, `ConnectionRequestChangedEvent`, `TutoringClassCreatedEvent`) in transactional `BEFORE_COMMIT` phase without circular dependencies.
+    - Verified `AuditSink` and `NotificationSink` platform adapters are preserved intact and shared across all modules without breaking callers.
+- **Legacy Path & Dead Code Scan**:
+  - Scanned all 50 Java source files across `vn.edufit.connection..`.
+  - Confirmed zero deprecated APIs (`@Deprecated`), zero unused public methods, and zero circular dependencies.
+  - Confirmed strict unidirectional dependency graph: `Discovery -> Connection API`, `Notification -> Connection API Event Contract`. Zero reverse dependencies from `Connection` into `Discovery` or `Notification` internals.
+
+### 2. Verification
+- **Full Reactor Test Execution**:
+  - `mvn test "-Dsurefire.failIfNoSpecifiedTests=false"`: **BUILD SUCCESS** across all 17 reactor modules.
+  - Zero test failures, zero test errors, zero skipped tests.
+  - Key module test counts:
+    - `app`: 278 tests passed.
+    - `connection`: 271 tests passed.
+    - `discovery`: 114 tests passed.
+    - `profile`: 84 tests passed.
+    - `verification`: 47 tests passed.
+    - `iam`: 40 tests passed.
+    - `ai`: 32 tests passed.
+    - `notification`: 13 tests passed.
+    - `storage`: 15 tests passed.
+    - `shared`: 11 tests passed.
+    - Architecture rules: 14 tests passed.
+
+---
+
+## Checkpoint 6 — Phase 6 Verification Complete
+
+All verification criteria for Phase 6 have been satisfied:
+1. **Unit & Service Transition Matrix (T20)**: Complete parameterized DDT matrix covering all 8 baseline scenarios, 14-day invitation TTL, 7-day request TTL, 7-day cooldown to nanosecond boundary, and parent multi-student isolation (271 tests GREEN).
+2. **REST Security & Privacy (T21)**: Tested against real Spring Security filter chain with real Argon2 hashes, session cookies, and SPA CSRF protection; strict BR-37 whitelist verified.
+3. **PostgreSQL Migration & Integrity (T22a)**: Flyway clean & upgrade verified on Testcontainers PostgreSQL 17 from V1.10 -> V1.14 with historical data and JSONB preserved.
+4. **Atomic Rollback Matrix (T22b)**: Outer transaction rollback, listener failure rollback, audit failure rollback, and class constraint rollback verified without half-states.
+5. **Concurrency Race Matrix (T22c)**: Independent transactions with thread barriers verified against PostgreSQL 17 (opposite invite, double accept, accept vs cancel, quota 10/11, pending limit 5, revoke vs create).
+6. **ArchUnit Boundary Enforcement (T23)**: Non-empty boundary rules enforced with negative-probe evidence; zero circular package dependencies.
+7. **Consumer Integration & Legacy Cleanup (T24)**: Discovery integration verified GREEN; Scheduling contract defined and cataloged; full reactor GREEN.
+
+
