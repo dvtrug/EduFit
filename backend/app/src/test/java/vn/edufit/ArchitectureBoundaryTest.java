@@ -68,6 +68,19 @@ public class ArchitectureBoundaryTest {
       }).allowEmptyShould(false);
 
   @ArchTest
+  static final ArchRule notification_uses_only_public_edufit_dependencies = classes()
+      .that().resideInAPackage("vn.edufit.notification..")
+      .should().onlyDependOnClassesThat(new DescribedPredicate<JavaClass>("are own types, shared kernel or public module/platform APIs") {
+        @Override public boolean test(JavaClass target) {
+          String pkg = target.getPackageName();
+          if (!pkg.startsWith("vn.edufit.")) return true;
+          if (pkg.startsWith("vn.edufit.notification.") || pkg.startsWith("vn.edufit.shared.")) return true;
+          String[] parts = pkg.split("\\.");
+          return parts.length >= 4 && parts[3].equals("api");
+        }
+      }).allowEmptyShould(false);
+
+  @ArchTest
   static void production_import_contains_expected_layers(JavaClasses imported) {
     for (String name : new String[] {
         "vn.edufit.discovery.domain.policy.MatchScorer",
@@ -78,7 +91,10 @@ public class ArchitectureBoundaryTest {
         "vn.edufit.connection.application.ConnectionService",
         "vn.edufit.profile.application.service.ProfileFacadeImpl",
         "vn.edufit.verification.application.service.AdminVerificationService",
-        "vn.edufit.verification.application.service.TutorVerificationService"}) {
+        "vn.edufit.verification.application.service.TutorVerificationService",
+        "vn.edufit.notification.web.NotificationController",
+        "vn.edufit.notification.application.service.NotificationService",
+        "vn.edufit.notification.infra.adapter.JpaNotificationSink"}) {
       assertTrue(imported.contain(name), "Architecture import must include " + name);
     }
   }
