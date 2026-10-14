@@ -31,3 +31,27 @@ Branch `feat/connection`, base `1ea58da`. Phase 5 comprises 5 executable slices:
   - `shouldReturnEmptyMapWhenGoalIdsEmptyOrNull`: verifies empty map returned when input list is empty or null.
 - **Profile Module Regression**: 55 tests passed, including `MatchingCandidatesPostgresTest` (6 PostgreSQL tests) with zero failures/errors/skips.
 - **Discovery Module Regression**: 114 tests passed with zero failures/errors/skips, verifying consumer caller compatibility.
+
+---
+
+## T18b — Additive IAM batch sender summaries API
+
+### 1. Implementation
+- **Interface Contract (`IamFacade`)**:
+  - Added additive method: `Map<UUID, UserSummaryView> findUserSummariesByIds(List<UUID> ids);`
+  - Returns a map keyed by `UUID` containing safe `UserSummaryView` (`id`, `email`, `fullName`, `role`, `status`).
+  - Strict privacy: absolutely zero exposure of passwords, hashes, lockout timestamps, or internal security fields.
+  - Preserved all existing contracts (`findUserSummaryById`, `findUserSummaryByEmail`, `existsById`) without altering existing enum types (`AccountRole`, `AccountStatus`).
+- **Service Implementation (`IamFacadeImpl`)**:
+  - Single batch query: delegates to `accountRepository.findAllById(ids)`, generating a single SQL `SELECT ... WHERE id IN (...)` query.
+  - Maps resulting `Account` entities to `UserSummaryView` records and collects into a `Map<UUID, UserSummaryView>`.
+  - Handles `null` or empty `ids` lists cleanly by returning `Map.of()`.
+
+### 2. Verification
+- **Unit Tests (`IamFacadeImplTest`)**: 7 tests passed (0 failures, 0 errors, 0 skips):
+  - `findUserSummariesByIdsReturnsMappedSummaries`: verifies batch lookup across multiple user IDs, asserting ID, email, fullName, role, and status.
+  - `findUserSummariesByIdsReturnsEmptyMapWhenNullOrEmpty`: verifies empty map returned when IDs list is null or empty.
+  - `findUserSummaryByIdReturnsSummaryWhenFound` & `findUserSummaryByIdReturnsEmptyWhenNullOrNotFound`.
+  - `findUserSummaryByEmailNormalizesAndReturnsSummary` & `findUserSummaryByEmailReturnsEmptyWhenBlankOrNotFound`.
+  - `existsByIdReturnsTrueOrFalse`.
+- **IAM Module Regression**: 39 tests passed with zero failures/errors/skips.

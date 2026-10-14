@@ -1,5 +1,7 @@
 package vn.edufit.iam.api;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import vn.edufit.iam.api.dto.UserSummaryView;
@@ -22,6 +24,14 @@ public interface IamFacade {
   Optional<UserSummaryView> findUserSummaryById(UUID id);
 
   Optional<UserSummaryView> findUserSummaryByEmail(String email);
+
+  /**
+   * Tìm kiếm thông tin tóm tắt an toàn của nhiều người dùng theo danh sách ID (batch).
+   *
+   * @param ids danh sách mã định danh tài khoản
+   * @return {@link Map} ánh xạ từ UUID tài khoản sang {@link UserSummaryView}
+   */
+  Map<UUID, UserSummaryView> findUserSummariesByIds(List<UUID> ids);
 
   /**
    * Kiểm tra sự tồn tại của người dùng trong hệ thống theo ID.
