@@ -94,4 +94,12 @@ public class TutoringSessionRepositoryAdapter implements TutoringSessionDomainRe
         .map(sessionMapper::toDomain)
         .toList();
   }
+
+  @Override
+  public List<TutoringSession> findScheduledSessionsByClass(UUID classId, Instant from, Instant to) {
+    return springDataRepository.findScheduledSessionsByClass(classId, from, to)
+        .stream()
+        .map(sessionMapper::toDomain)
+        .toList();
+  }
 }

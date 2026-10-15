@@ -3,7 +3,6 @@ package vn.edufit.scheduling.application.service;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,9 +22,9 @@ import vn.edufit.scheduling.domain.policy.ProposalWindowPolicy;
 import vn.edufit.scheduling.domain.repository.SessionHistoryDomainRepository;
 import vn.edufit.scheduling.domain.repository.SessionRescheduleProposalDomainRepository;
 import vn.edufit.scheduling.domain.repository.TutoringSessionDomainRepository;
+import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.exception.EntityNotFoundException;
 import vn.edufit.shared.exception.ErrorCode;
-import vn.edufit.shared.exception.ForbiddenOperationException;
 import vn.edufit.shared.exception.InvalidOperationException;
 import vn.edufit.shared.exception.ResourceConflictException;
 
@@ -47,6 +46,7 @@ public class RescheduleSessionService {
   private final TutoringSessionDomainRepository sessionRepository;
   private final SessionRescheduleProposalDomainRepository proposalRepository;
   private final SessionHistoryDomainRepository historyRepository;
+  private final SchedulingSecurityResolver schedulingSecurityResolver;
   private final ApplicationEventPublisher eventPublisher;
   private final Clock clock;
 
@@ -56,7 +56,7 @@ public class RescheduleSessionService {
   @Transactional
   public SessionRescheduleProposal proposeReschedule(
       UUID sessionId,
-      UUID proposedBy,
+      CurrentUser actor,
       Instant newStartAt,
       Instant newEndAt,
       String reason
@@ -74,12 +74,9 @@ public class RescheduleSessionService {
       );
     }
 
-    // 2. Kiểm tra quyền người đề xuất
-    boolean isTutor = Objects.equals(proposedBy, session.getTutorId());
-    boolean isStudent = Objects.equals(proposedBy, session.getStudentId());
-    if (!isTutor && !isStudent) {
-      throw new ForbiddenOperationException("Chỉ Gia sư hoặc Học sinh của buổi học mới có quyền đề xuất đổi lịch");
-    }
+    // 2. Kiểm tra quyền người đề xuất qua SchedulingSecurityResolver (Gia sư, Học sinh hoặc Phụ huynh hợp lệ)
+    schedulingSecurityResolver.requireProposeAccess(actor, session.getTutorId(), session.getStudentId());
+    UUID proposedBy = actor.getUserId();
 
     // 3. Kiểm tra BR-44: Không cho phép tạo đề xuất mới nếu đang có đề xuất PENDING
     if (proposalRepository.findPendingBySessionId(sessionId).isPresent()) {
@@ -147,12 +144,26 @@ public class RescheduleSessionService {
   }
 
   /**
+   * Phương thức tương thích ngược chấp nhận UUID của người đề xuất đổi lịch.
+   */
+  @Transactional
+  public SessionRescheduleProposal proposeReschedule(
+      UUID sessionId,
+      UUID proposedBy,
+      Instant newStartAt,
+      Instant newEndAt,
+      String reason
+  ) {
+    return proposeReschedule(sessionId, SimpleCurrentUser.of(proposedBy), newStartAt, newEndAt, reason);
+  }
+
+  /**
    * Phản hồi đề xuất đổi lịch (Chấp nhận hoặc Từ chối).
    */
   @Transactional
   public SessionRescheduleProposal respondToReschedule(
       UUID proposalId,
-      UUID responderId,
+      CurrentUser actor,
       boolean accept,
       String responseReason
   ) {
@@ -173,15 +184,9 @@ public class RescheduleSessionService {
     TutoringSession session = sessionRepository.findByIdForUpdate(proposal.getSessionId())
         .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy buổi học liên kết với đề xuất"));
 
-    // 3. Kiểm tra quyền của người phản hồi
-    if (Objects.equals(responderId, proposal.getProposedBy())) {
-      throw new ForbiddenOperationException("Bạn không thể tự phản hồi đề xuất do chính mình tạo ra");
-    }
-    boolean isTutor = Objects.equals(responderId, session.getTutorId());
-    boolean isStudent = Objects.equals(responderId, session.getStudentId());
-    if (!isTutor && !isStudent) {
-      throw new ForbiddenOperationException("Bạn không phải thành viên của buổi học này");
-    }
+    // 3. Kiểm tra quyền của người phản hồi qua SchedulingSecurityResolver (phải là bên đối tác)
+    schedulingSecurityResolver.requireCounterpartyResponseAccess(actor, session, proposal.getProposedBy());
+    UUID responderId = actor.getUserId();
 
     // 4. Nếu từ chối đề xuất đổi lịch -> Giữ nguyên lịch học cũ
     if (!accept) {
@@ -264,5 +269,18 @@ public class RescheduleSessionService {
     );
 
     return updatedProposal;
+  }
+
+  /**
+   * Phương thức tương thích ngược chấp nhận UUID của người phản hồi đổi lịch.
+   */
+  @Transactional
+  public SessionRescheduleProposal respondToReschedule(
+      UUID proposalId,
+      UUID responderId,
+      boolean accept,
+      String responseReason
+  ) {
+    return respondToReschedule(proposalId, SimpleCurrentUser.of(responderId), accept, responseReason);
   }
 }

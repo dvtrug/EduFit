@@ -3,7 +3,6 @@ package vn.edufit.scheduling.application.service;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +19,8 @@ import vn.edufit.scheduling.domain.policy.ConflictPolicy;
 import vn.edufit.scheduling.domain.policy.ProposalWindowPolicy;
 import vn.edufit.scheduling.domain.repository.SessionHistoryDomainRepository;
 import vn.edufit.scheduling.domain.repository.TutoringSessionDomainRepository;
+import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.exception.ErrorCode;
-import vn.edufit.shared.exception.ForbiddenOperationException;
 import vn.edufit.shared.exception.InvalidOperationException;
 import vn.edufit.shared.exception.ResourceConflictException;
 
@@ -43,6 +42,7 @@ public class ProposeSessionService {
   private final TutoringSessionDomainRepository sessionRepository;
   private final SessionHistoryDomainRepository historyRepository;
   private final ConnectionValidationPort connectionValidationPort;
+  private final SchedulingSecurityResolver schedulingSecurityResolver;
   private final ApplicationEventPublisher eventPublisher;
   private final Clock clock;
 
@@ -57,14 +57,13 @@ public class ProposeSessionService {
       String placeOrLink,
       String repeatNote,
       String message,
-      UUID proposedBy
+      CurrentUser actor
   ) {
     Instant now = clock.instant();
 
-    // 1. Kiểm tra quyền của người đề xuất: Phải là Gia sư hoặc Học sinh của lớp
-    if (!Objects.equals(proposedBy, tutorId) && !Objects.equals(proposedBy, studentId)) {
-      throw new ForbiddenOperationException("Chỉ Gia sư hoặc Học sinh trong lớp học mới có quyền đề xuất lịch học");
-    }
+    // 1. Kiểm tra quyền của người đề xuất qua SchedulingSecurityResolver (Gia sư, Học sinh hoặc Phụ huynh hợp lệ)
+    schedulingSecurityResolver.requireProposeAccess(actor, tutorId, studentId);
+    UUID proposedBy = actor.getUserId();
 
     // 2. Xác thực lớp học / kết nối giữa 2 bên qua Port
     if (!connectionValidationPort.isConnectionActive(classId, tutorId, studentId)) {
@@ -171,5 +170,35 @@ public class ProposeSessionService {
     );
 
     return savedSession;
+  }
+
+  /**
+   * Phương thức tương thích ngược chấp nhận UUID của người đề xuất.
+   */
+  @Transactional
+  public TutoringSession proposeSession(
+      UUID classId,
+      UUID tutorId,
+      UUID studentId,
+      Instant startAt,
+      Instant endAt,
+      SessionMode mode,
+      String placeOrLink,
+      String repeatNote,
+      String message,
+      UUID proposedBy
+  ) {
+    return proposeSession(
+        classId,
+        tutorId,
+        studentId,
+        startAt,
+        endAt,
+        mode,
+        placeOrLink,
+        repeatNote,
+        message,
+        SimpleCurrentUser.of(proposedBy)
+    );
   }
 }

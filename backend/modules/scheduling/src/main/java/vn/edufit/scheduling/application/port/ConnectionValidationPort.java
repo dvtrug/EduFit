@@ -23,4 +23,16 @@ public interface ConnectionValidationPort {
    * @return {@code true} nếu quan hệ hợp lệ và được phép tạo lịch học; ngược lại {@code false}.
    */
   boolean isConnectionActive(UUID classId, UUID tutorId, UUID studentId);
+
+  /**
+   * Kiểm tra xem lớp học có đang ở trạng thái hoạt động (ACTIVE) hay không.
+   */
+  boolean isClassActive(UUID classId);
+
+  /**
+   * Lấy thông tin lớp học đang hoạt động (ACTIVE) bao gồm studentId và tutorId.
+   */
+  java.util.Optional<ActiveClassInfo> findActiveClassById(UUID classId);
+
+  record ActiveClassInfo(UUID classId, UUID studentId, UUID tutorId, UUID goalId) {}
 }

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,11 +27,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import vn.edufit.scheduling.api.event.SessionProposedEvent;
 import vn.edufit.scheduling.application.port.ConnectionValidationPort;
 import vn.edufit.scheduling.application.service.ProposeSessionService;
+import vn.edufit.scheduling.application.service.SchedulingSecurityResolver;
+import vn.edufit.scheduling.application.service.SimpleCurrentUser;
 import vn.edufit.scheduling.domain.model.SessionMode;
 import vn.edufit.scheduling.domain.model.SessionStatus;
 import vn.edufit.scheduling.domain.model.TutoringSession;
 import vn.edufit.scheduling.domain.repository.SessionHistoryDomainRepository;
 import vn.edufit.scheduling.domain.repository.TutoringSessionDomainRepository;
+import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.exception.ErrorCode;
 import vn.edufit.shared.exception.ForbiddenOperationException;
 import vn.edufit.shared.exception.InvalidOperationException;
@@ -53,6 +57,9 @@ class ProposeSessionServiceTest {
   private ConnectionValidationPort connectionValidationPort;
 
   @Mock
+  private SchedulingSecurityResolver schedulingSecurityResolver;
+
+  @Mock
   private ApplicationEventPublisher eventPublisher;
 
   private Clock fixedClock;
@@ -61,7 +68,12 @@ class ProposeSessionServiceTest {
   private final UUID classId = UUID.randomUUID();
   private final UUID tutorId = UUID.randomUUID();
   private final UUID studentId = UUID.randomUUID();
+  private final UUID tutorUserId = UUID.randomUUID();
+  private final UUID parentUserId = UUID.randomUUID();
   private final Instant fixedNow = Instant.parse("2026-10-25T08:00:00Z");
+
+  private CurrentUser tutorUser;
+  private CurrentUser parentUser;
 
   @BeforeEach
   void setUp() {
@@ -70,14 +82,18 @@ class ProposeSessionServiceTest {
         sessionRepository,
         historyRepository,
         connectionValidationPort,
+        schedulingSecurityResolver,
         eventPublisher,
         fixedClock
     );
+
+    tutorUser = SimpleCurrentUser.of(tutorUserId, "TUTOR");
+    parentUser = SimpleCurrentUser.of(parentUserId, "PARENT");
   }
 
   @Test
-  @DisplayName("Đề xuất buổi học thành công khi dữ liệu hợp lệ và không bị trùng lịch")
-  void shouldProposeSessionSuccessfully() {
+  @DisplayName("Đề xuất buổi học thành công khi Gia sư đề xuất hợp lệ và không bị trùng lịch")
+  void shouldProposeSessionSuccessfullyByTutor() {
     Instant startAt = fixedNow.plus(2, ChronoUnit.HOURS);
     Instant endAt = startAt.plus(90, ChronoUnit.MINUTES);
 
@@ -96,24 +112,59 @@ class ProposeSessionServiceTest {
         "https://meet.google.com/xyz",
         "Buổi ôn tập toán số 1",
         "Chào em, thầy hẹn lịch ôn tập nhé",
-        tutorId
+        tutorUser
     );
 
     assertNotNull(session);
     assertEquals(SessionStatus.PROPOSED, session.getStatus());
-    assertEquals(tutorId, session.getProposedBy());
+    assertEquals(tutorUserId, session.getProposedBy());
 
+    verify(schedulingSecurityResolver).requireProposeAccess(tutorUser, tutorId, studentId);
     verify(sessionRepository).save(any(TutoringSession.class));
     verify(historyRepository).save(any());
     verify(eventPublisher).publishEvent(any(SessionProposedEvent.class));
   }
 
   @Test
-  @DisplayName("Ném ForbiddenOperationException nếu người đề xuất không thuộc lớp học")
+  @DisplayName("Đề xuất buổi học thành công khi Phụ huynh đại diện học sinh đề xuất")
+  void shouldProposeSessionSuccessfullyByParent() {
+    Instant startAt = fixedNow.plus(2, ChronoUnit.HOURS);
+    Instant endAt = startAt.plus(90, ChronoUnit.MINUTES);
+
+    when(connectionValidationPort.isConnectionActive(classId, tutorId, studentId)).thenReturn(true);
+    when(sessionRepository.findTutorBusySlots(tutorId, startAt, endAt)).thenReturn(Collections.emptyList());
+    when(sessionRepository.findCalendarSessions(studentId, startAt, endAt)).thenReturn(Collections.emptyList());
+    when(sessionRepository.save(any(TutoringSession.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    TutoringSession session = proposeSessionService.proposeSession(
+        classId,
+        tutorId,
+        studentId,
+        startAt,
+        endAt,
+        SessionMode.ONLINE,
+        "https://meet.google.com/xyz",
+        "Buổi ôn tập toán số 1",
+        "Chào thầy, phụ huynh đăng ký lịch học cho cháu",
+        parentUser
+    );
+
+    assertNotNull(session);
+    assertEquals(SessionStatus.PROPOSED, session.getStatus());
+    assertEquals(parentUserId, session.getProposedBy());
+
+    verify(schedulingSecurityResolver).requireProposeAccess(parentUser, tutorId, studentId);
+  }
+
+  @Test
+  @DisplayName("Ném ForbiddenOperationException nếu người đề xuất không có quyền truy cập lớp học")
   void shouldThrowForbiddenWhenProposedByStranger() {
-    UUID strangerId = UUID.randomUUID();
+    CurrentUser stranger = SimpleCurrentUser.of(UUID.randomUUID(), "STUDENT");
     Instant startAt = fixedNow.plus(2, ChronoUnit.HOURS);
     Instant endAt = startAt.plus(60, ChronoUnit.MINUTES);
+
+    doThrow(new ForbiddenOperationException("Chỉ Gia sư hoặc Học sinh trong lớp học mới có quyền đề xuất lịch học"))
+        .when(schedulingSecurityResolver).requireProposeAccess(stranger, tutorId, studentId);
 
     assertThrows(ForbiddenOperationException.class, () ->
         proposeSessionService.proposeSession(
@@ -126,7 +177,7 @@ class ProposeSessionServiceTest {
             null,
             null,
             null,
-            strangerId
+            stranger
         )
     );
 
@@ -152,7 +203,7 @@ class ProposeSessionServiceTest {
             null,
             null,
             null,
-            studentId
+            tutorUser
         )
     );
 
@@ -176,7 +227,7 @@ class ProposeSessionServiceTest {
         null,
         null,
         null,
-        tutorId,
+        tutorUserId,
         startAt,
         fixedNow
     );
@@ -195,7 +246,7 @@ class ProposeSessionServiceTest {
             null,
             null,
             null,
-            tutorId
+            tutorUser
         )
     );
 
@@ -226,7 +277,7 @@ class ProposeSessionServiceTest {
             null,
             null,
             null,
-            studentId
+            tutorUser
         )
     );
 

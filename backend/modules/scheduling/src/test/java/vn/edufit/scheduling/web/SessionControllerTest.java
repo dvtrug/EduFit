@@ -3,15 +3,12 @@ package vn.edufit.scheduling.web;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,17 +22,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import vn.edufit.scheduling.application.service.CancelSessionService;
 import vn.edufit.scheduling.application.service.GetCalendarService;
+import vn.edufit.scheduling.application.service.GetSessionDetailService;
 import vn.edufit.scheduling.application.service.ProposeSessionService;
 import vn.edufit.scheduling.application.service.RecordSessionOutcomeService;
 import vn.edufit.scheduling.application.service.RescheduleSessionService;
 import vn.edufit.scheduling.application.service.RespondToProposalService;
+import vn.edufit.scheduling.application.service.SimpleCurrentUser;
 import vn.edufit.scheduling.domain.model.CancelReason;
 import vn.edufit.scheduling.domain.model.ProposalStatus;
 import vn.edufit.scheduling.domain.model.SessionMode;
 import vn.edufit.scheduling.domain.model.SessionRescheduleProposal;
 import vn.edufit.scheduling.domain.model.SessionStatus;
 import vn.edufit.scheduling.domain.model.TutoringSession;
-import vn.edufit.scheduling.domain.repository.TutoringSessionDomainRepository;
 import vn.edufit.scheduling.web.request.CancelSessionRequest;
 import vn.edufit.scheduling.web.request.ProposeSessionRequest;
 import vn.edufit.scheduling.web.request.RecordOutcomeRequest;
@@ -77,7 +75,7 @@ class SessionControllerTest {
   private GetCalendarService getCalendarService;
 
   @Mock
-  private TutoringSessionDomainRepository sessionRepository;
+  private GetSessionDetailService getSessionDetailService;
 
   @Mock
   private ObjectProvider<CurrentUser> currentUserProvider;
@@ -102,16 +100,11 @@ class SessionControllerTest {
         cancelSessionService,
         recordSessionOutcomeService,
         getCalendarService,
-        sessionRepository,
+        getSessionDetailService,
         currentUserProvider
     );
 
-    testUser = new CurrentUser() {
-      @Override public UUID getUserId() { return currentUserId; }
-      @Override public String getEmail() { return "test@edufit.vn"; }
-      @Override public Set<String> getRoles() { return Set.of("STUDENT", "TUTOR"); }
-      @Override public boolean hasRole(String role) { return true; }
-    };
+    testUser = SimpleCurrentUser.of(currentUserId, "STUDENT", "TUTOR");
   }
 
   @Test
@@ -135,7 +128,7 @@ class SessionControllerTest {
     when(proposeSessionService.proposeSession(
         eq(classId), eq(tutorId), eq(studentId), eq(startAt), eq(endAt),
         eq(SessionMode.ONLINE), eq("meet.google.com/abc"), eq("Note"), eq("Xin chào"),
-        eq(currentUserId)
+        eq(testUser)
     )).thenReturn(proposedSession);
 
     ResponseEntity<ApiResponse<SessionResponse>> response = controller.proposeSession(req);
@@ -162,7 +155,7 @@ class SessionControllerTest {
         null, startAt, null, null, null, null, false, null, null, 1, fixedNow
     );
 
-    when(respondToProposalService.respondToProposal(sessionId, currentUserId, true, null))
+    when(respondToProposalService.respondToProposal(sessionId, testUser, true, null))
         .thenReturn(scheduledSession);
 
     ResponseEntity<ApiResponse<SessionResponse>> response = controller.respondToProposal(sessionId, req);
@@ -186,7 +179,7 @@ class SessionControllerTest {
         "Dời sang thứ 5", newStartAt, fixedNow
     );
 
-    when(rescheduleSessionService.proposeReschedule(sessionId, currentUserId, newStartAt, newEndAt, "Dời sang thứ 5"))
+    when(rescheduleSessionService.proposeReschedule(sessionId, testUser, newStartAt, newEndAt, "Dời sang thứ 5"))
         .thenReturn(proposal);
 
     ResponseEntity<ApiResponse<RescheduleProposalResponse>> response = controller.proposeReschedule(sessionId, req);
@@ -194,6 +187,32 @@ class SessionControllerTest {
     assertEquals(HttpStatus.CREATED, response.getStatusCode());
     assertNotNull(response.getBody());
     assertEquals(ProposalStatus.PENDING.name(), response.getBody().data().status());
+  }
+
+  @Test
+  @DisplayName("POST /sessions/reschedule-proposals/{proposalId}/respond -> HTTP 200 OK khi phản hồi đổi lịch")
+  void shouldRespondToRescheduleSuccessfully() {
+    when(currentUserProvider.getIfAvailable()).thenReturn(testUser);
+
+    UUID proposalId = UUID.randomUUID();
+    RespondRescheduleRequest req = new RespondRescheduleRequest(true, "Đồng ý đổi giờ");
+
+    Instant newStartAt = fixedNow.plus(3, ChronoUnit.DAYS);
+    Instant newEndAt = newStartAt.plus(90, ChronoUnit.MINUTES);
+    SessionRescheduleProposal proposal = SessionRescheduleProposal.create(
+        proposalId, sessionId, UUID.randomUUID(), newStartAt, newEndAt,
+        "Lý do", newStartAt, fixedNow
+    );
+    proposal.accept(currentUserId, fixedNow);
+
+    when(rescheduleSessionService.respondToReschedule(proposalId, testUser, true, "Đồng ý đổi giờ"))
+        .thenReturn(proposal);
+
+    ResponseEntity<ApiResponse<RescheduleProposalResponse>> response = controller.respondToReschedule(proposalId, req);
+
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertNotNull(response.getBody());
+    assertEquals(ProposalStatus.ACCEPTED.name(), response.getBody().data().status());
   }
 
   @Test
@@ -213,7 +232,7 @@ class SessionControllerTest {
         "Bận việc đột xuất", false, null, null, 2, fixedNow
     );
 
-    when(cancelSessionService.cancelSession(sessionId, currentUserId, CancelReason.PERSONAL_REASON, "Bận việc đột xuất"))
+    when(cancelSessionService.cancelSession(sessionId, testUser, CancelReason.PERSONAL_REASON, "Bận việc đột xuất"))
         .thenReturn(cancelledSession);
 
     ResponseEntity<ApiResponse<SessionResponse>> response = controller.cancelSession(sessionId, req);
@@ -239,7 +258,7 @@ class SessionControllerTest {
         null, startAt, null, null, null, null, false, currentUserId, fixedNow, 2, fixedNow
     );
 
-    when(recordSessionOutcomeService.recordOutcome(sessionId, currentUserId, SessionStatus.COMPLETED, "Học sinh hiểu bài tốt"))
+    when(recordSessionOutcomeService.recordOutcome(sessionId, testUser, SessionStatus.COMPLETED, "Học sinh hiểu bài tốt"))
         .thenReturn(completedSession);
 
     ResponseEntity<ApiResponse<SessionResponse>> response = controller.recordOutcome(sessionId, req);
@@ -250,8 +269,10 @@ class SessionControllerTest {
   }
 
   @Test
-  @DisplayName("GET /sessions/{id} -> HTTP 200 OK khi tìm thấy buổi học")
+  @DisplayName("GET /sessions/{id} -> HTTP 200 OK khi tìm thấy buổi học qua GetSessionDetailService")
   void shouldGetSessionDetailSuccessfully() {
+    when(currentUserProvider.getIfAvailable()).thenReturn(testUser);
+
     Instant startAt = fixedNow.plus(2, ChronoUnit.HOURS);
     Instant endAt = startAt.plus(90, ChronoUnit.MINUTES);
     TutoringSession session = TutoringSession.createProposed(
@@ -259,7 +280,7 @@ class SessionControllerTest {
         SessionMode.ONLINE, null, null, null, studentId, startAt, fixedNow
     );
 
-    when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+    when(getSessionDetailService.getSessionDetail(sessionId, testUser)).thenReturn(session);
 
     ResponseEntity<ApiResponse<SessionResponse>> response = controller.getSessionDetail(sessionId);
 
@@ -271,7 +292,9 @@ class SessionControllerTest {
   @Test
   @DisplayName("GET /sessions/{id} -> Ném EntityNotFoundException khi không tìm thấy")
   void shouldThrowEntityNotFoundWhenSessionMissing() {
-    when(sessionRepository.findById(sessionId)).thenReturn(Optional.empty());
+    when(currentUserProvider.getIfAvailable()).thenReturn(testUser);
+    when(getSessionDetailService.getSessionDetail(sessionId, testUser))
+        .thenThrow(new EntityNotFoundException("Không tìm thấy buổi học với ID: " + sessionId));
 
     assertThrows(EntityNotFoundException.class, () -> controller.getSessionDetail(sessionId));
   }
@@ -289,9 +312,31 @@ class SessionControllerTest {
         SessionMode.ONLINE, null, null, null, studentId, fixedNow, fixedNow
     );
 
-    when(getCalendarService.getCalendarSessions(currentUserId, from, to)).thenReturn(List.of(s1));
+    when(getCalendarService.getCalendarSessions(testUser, from, to, null)).thenReturn(List.of(s1));
 
-    ResponseEntity<ApiResponse<List<CalendarItemResponse>>> response = controller.getCalendar(from, to);
+    ResponseEntity<ApiResponse<List<CalendarItemResponse>>> response = controller.getCalendar(from, to, null);
+
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertNotNull(response.getBody());
+    assertEquals(1, response.getBody().data().size());
+  }
+
+  @Test
+  @DisplayName("GET /calendar?studentId=... -> HTTP 200 OK khi Phụ huynh tra cứu lịch học của con")
+  void shouldGetCalendarSuccessfullyWithStudentId() {
+    when(currentUserProvider.getIfAvailable()).thenReturn(testUser);
+
+    Instant from = fixedNow.minus(7, ChronoUnit.DAYS);
+    Instant to = fixedNow.plus(7, ChronoUnit.DAYS);
+
+    TutoringSession s1 = TutoringSession.createProposed(
+        sessionId, classId, tutorId, studentId, fixedNow, fixedNow.plus(1, ChronoUnit.HOURS),
+        SessionMode.ONLINE, null, null, null, studentId, fixedNow, fixedNow
+    );
+
+    when(getCalendarService.getCalendarSessions(testUser, from, to, studentId)).thenReturn(List.of(s1));
+
+    ResponseEntity<ApiResponse<List<CalendarItemResponse>>> response = controller.getCalendar(from, to, studentId);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertNotNull(response.getBody());

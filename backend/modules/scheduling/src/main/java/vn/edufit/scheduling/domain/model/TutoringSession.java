@@ -176,6 +176,54 @@ public class TutoringSession {
   }
 
   /**
+   * Factory method khởi tạo trực tiếp một buổi học đã được xác nhận (trạng thái {@link SessionStatus#SCHEDULED}).
+   * Dùng cho nghiệp vụ đổi lịch định kỳ UC4.8 khi cả hai bên đã thống nhất qua quy trình đồng thuận.
+   */
+  public static TutoringSession createScheduled(
+      UUID sessionId,
+      UUID classId,
+      UUID tutorId,
+      UUID studentId,
+      Instant startAt,
+      Instant endAt,
+      SessionMode mode,
+      String placeOrLink,
+      String repeatNote,
+      String message,
+      UUID proposedBy,
+      UUID respondedBy,
+      Instant now
+  ) {
+    return new TutoringSession(
+        sessionId != null ? sessionId : UUID.randomUUID(),
+        classId,
+        tutorId,
+        studentId,
+        startAt,
+        endAt,
+        mode,
+        placeOrLink,
+        repeatNote,
+        message,
+        SessionStatus.SCHEDULED,
+        proposedBy,
+        respondedBy,
+        now,
+        "Đổi lịch học định kỳ đã được hai bên đồng thuận",
+        startAt,
+        null,
+        null,
+        null,
+        null,
+        false,
+        null,
+        null,
+        0,
+        now
+    );
+  }
+
+  /**
    * Chấp nhận đề xuất buổi học -> chuyển sang trạng thái {@link SessionStatus#SCHEDULED}.
    */
   public void accept(UUID responderId, Instant now) {
@@ -269,9 +317,9 @@ public class TutoringSession {
   }
 
   /**
-   * Gia sư ghi nhận kết quả buổi học (COMPLETED hoặc ABSENT) sau khi thời gian học đã kết thúc.
+   * Ghi nhận kết quả buổi học (COMPLETED hoặc ABSENT) sau khi thời gian học đã kết thúc.
    */
-  public void recordOutcome(SessionStatus outcome, UUID tutorId, Instant now) {
+  public void recordOutcome(SessionStatus outcome, UUID outcomeRecordedBy, Instant now) {
     validateNotTerminal();
     if (this.status != SessionStatus.SCHEDULED) {
       throw new InvalidOperationException(
@@ -279,16 +327,13 @@ public class TutoringSession {
           "Chỉ có thể ghi nhận kết quả cho buổi học đang SCHEDULED. Hiện tại: " + this.status
       );
     }
-    if (!this.tutorId.equals(tutorId)) {
-      throw new InvalidOperationException(ErrorCode.FORBIDDEN, "Chỉ Gia sư của buổi học mới có quyền ghi nhận kết quả");
-    }
     if (outcome != SessionStatus.COMPLETED && outcome != SessionStatus.ABSENT) {
       throw new InvalidOperationException(ErrorCode.VALIDATION_FAILED, "Kết quả chỉ có thể là COMPLETED hoặc ABSENT");
     }
 
     this.status = outcome;
-    this.outcomeRecordedBy = tutorId;
-    this.outcomeRecordedAt = now;
+    this.outcomeRecordedBy = Objects.requireNonNull(outcomeRecordedBy, "outcomeRecordedBy không được null");
+    this.outcomeRecordedAt = Objects.requireNonNull(now, "now không được null");
   }
 
   /**

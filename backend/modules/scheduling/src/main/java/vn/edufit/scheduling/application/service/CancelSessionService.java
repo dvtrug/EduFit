@@ -2,7 +2,6 @@ package vn.edufit.scheduling.application.service;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,8 +15,8 @@ import vn.edufit.scheduling.domain.model.TutoringSession;
 import vn.edufit.scheduling.domain.policy.LateCancelPolicy;
 import vn.edufit.scheduling.domain.repository.SessionHistoryDomainRepository;
 import vn.edufit.scheduling.domain.repository.TutoringSessionDomainRepository;
+import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.exception.EntityNotFoundException;
-import vn.edufit.shared.exception.ForbiddenOperationException;
 
 /**
  * Service xử lý Use Case UC4.5: Hủy buổi học đã lên lịch (Cancel Session).
@@ -35,13 +34,14 @@ public class CancelSessionService {
 
   private final TutoringSessionDomainRepository sessionRepository;
   private final SessionHistoryDomainRepository historyRepository;
+  private final SchedulingSecurityResolver schedulingSecurityResolver;
   private final ApplicationEventPublisher eventPublisher;
   private final Clock clock;
 
   @Transactional
   public TutoringSession cancelSession(
       UUID sessionId,
-      UUID actorId,
+      CurrentUser actor,
       CancelReason reason,
       String comment
   ) {
@@ -51,17 +51,14 @@ public class CancelSessionService {
     TutoringSession session = sessionRepository.findByIdForUpdate(sessionId)
         .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy buổi học với ID: " + sessionId));
 
-    // 2. Xác thực quyền: Phải là Gia sư hoặc Học sinh của lớp
-    boolean isTutor = Objects.equals(actorId, session.getTutorId());
-    boolean isStudent = Objects.equals(actorId, session.getStudentId());
-    if (!isTutor && !isStudent) {
-      throw new ForbiddenOperationException("Bạn không có quyền hủy buổi học này");
-    }
+    // 2. Xác thực quyền qua SchedulingSecurityResolver (Gia sư, Học sinh hoặc Phụ huynh hợp lệ)
+    schedulingSecurityResolver.requireCancelAccess(actor, session);
+    UUID actorId = actor.getUserId();
 
     // 3. Đánh giá quy tắc Hủy trễ theo BR-46 (< 12 giờ)
     boolean isLate = LateCancelPolicy.isLateCancel(session.getStartAt(), now);
 
-    // 4. Cập nhật Aggregate Root
+    // 4. Cập nhật Aggregate Root (actorId là user_id tuân thủ ràng buộc FK CSDL)
     session.cancel(actorId, reason, comment, isLate, now);
     TutoringSession cancelledSession = sessionRepository.save(session);
 
@@ -95,5 +92,18 @@ public class CancelSessionService {
     );
 
     return cancelledSession;
+  }
+
+  /**
+   * Phương thức tương thích ngược chấp nhận UUID của người thực hiện hủy.
+   */
+  @Transactional
+  public TutoringSession cancelSession(
+      UUID sessionId,
+      UUID actorId,
+      CancelReason reason,
+      String comment
+  ) {
+    return cancelSession(sessionId, SimpleCurrentUser.of(actorId), reason, comment);
   }
 }

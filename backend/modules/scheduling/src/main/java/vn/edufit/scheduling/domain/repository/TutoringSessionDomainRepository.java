@@ -34,4 +34,6 @@ public interface TutoringSessionDomainRepository {
   List<TutoringSession> findUpcomingSessions(Instant windowStart, Instant windowEnd);
 
   List<TutoringSession> findOverdueOutcomeSessions(Instant cutoff);
+
+  List<TutoringSession> findScheduledSessionsByClass(UUID classId, Instant from, Instant to);
 }

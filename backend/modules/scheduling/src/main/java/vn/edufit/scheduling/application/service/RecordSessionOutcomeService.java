@@ -2,7 +2,6 @@ package vn.edufit.scheduling.application.service;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,9 +15,9 @@ import vn.edufit.scheduling.domain.model.SessionStatus;
 import vn.edufit.scheduling.domain.model.TutoringSession;
 import vn.edufit.scheduling.domain.repository.SessionHistoryDomainRepository;
 import vn.edufit.scheduling.domain.repository.TutoringSessionDomainRepository;
+import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.exception.EntityNotFoundException;
 import vn.edufit.shared.exception.ErrorCode;
-import vn.edufit.shared.exception.ForbiddenOperationException;
 import vn.edufit.shared.exception.InvalidOperationException;
 
 /**
@@ -38,6 +37,7 @@ public class RecordSessionOutcomeService {
 
   private final TutoringSessionDomainRepository sessionRepository;
   private final SessionHistoryDomainRepository historyRepository;
+  private final SchedulingSecurityResolver schedulingSecurityResolver;
   private final ProgressSyncPort progressSyncPort;
   private final ApplicationEventPublisher eventPublisher;
   private final Clock clock;
@@ -45,7 +45,7 @@ public class RecordSessionOutcomeService {
   @Transactional
   public TutoringSession recordOutcome(
       UUID sessionId,
-      UUID tutorId,
+      CurrentUser actor,
       SessionStatus outcome,
       String noteContent
   ) {
@@ -55,10 +55,9 @@ public class RecordSessionOutcomeService {
     TutoringSession session = sessionRepository.findByIdForUpdate(sessionId)
         .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy buổi học với ID: " + sessionId));
 
-    // 2. Kiểm tra quyền của Gia sư
-    if (!Objects.equals(tutorId, session.getTutorId())) {
-      throw new ForbiddenOperationException("Chỉ Gia sư của buổi học mới có quyền ghi nhận kết quả");
-    }
+    // 2. Kiểm tra quyền của Gia sư qua SchedulingSecurityResolver
+    schedulingSecurityResolver.requireTutorAccess(actor, session.getTutorId());
+    UUID outcomeRecordedBy = actor.getUserId();
 
     // 3. Kiểm tra tính hợp lệ của outcome
     if (outcome != SessionStatus.COMPLETED && outcome != SessionStatus.ABSENT) {
@@ -76,8 +75,8 @@ public class RecordSessionOutcomeService {
       );
     }
 
-    // 5. Cập nhật Aggregate Root
-    session.recordOutcome(outcome, tutorId, now);
+    // 5. Cập nhật Aggregate Root (lưu user_id tuân thủ khóa ngoại CSDL)
+    session.recordOutcome(outcome, outcomeRecordedBy, now);
     TutoringSession updatedSession = sessionRepository.save(session);
 
     // 6. Đồng bộ biên bản học tập (SessionNote) sang module progress nếu có nội dung
@@ -90,7 +89,7 @@ public class RecordSessionOutcomeService {
         sessionId,
         null,
         "OUTCOME_" + outcome.name(),
-        tutorId,
+        outcomeRecordedBy,
         noteContent,
         now
     ));
@@ -107,12 +106,25 @@ public class RecordSessionOutcomeService {
     ));
 
     log.info(
-        "Ghi nhận kết quả buổi học thành công: sessionId={}, outcome={}, tutorId={}",
+        "Ghi nhận kết quả buổi học thành công: sessionId={}, outcome={}, recordedBy={}",
         sessionId,
         outcome,
-        tutorId
+        outcomeRecordedBy
     );
 
     return updatedSession;
+  }
+
+  /**
+   * Phương thức tương thích ngược chấp nhận UUID của người ghi nhận kết quả.
+   */
+  @Transactional
+  public TutoringSession recordOutcome(
+      UUID sessionId,
+      UUID tutorId,
+      SessionStatus outcome,
+      String noteContent
+  ) {
+    return recordOutcome(sessionId, SimpleCurrentUser.of(tutorId), outcome, noteContent);
   }
 }

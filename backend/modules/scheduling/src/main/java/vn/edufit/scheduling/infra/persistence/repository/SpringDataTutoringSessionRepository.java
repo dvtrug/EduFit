@@ -137,4 +137,20 @@ public interface SpringDataTutoringSessionRepository extends JpaRepository<Tutor
       ORDER BY s.endAt ASC
   """)
   List<TutoringSessionJpaEntity> findOverdueOutcomeSessions(@Param("cutoff") Instant cutoff);
+
+  /**
+   * Quét các buổi học SCHEDULED của một lớp học trong khoảng thời gian xác định (UC4.8).
+   */
+  @Query("""
+      SELECT s FROM TutoringSessionJpaEntity s
+      WHERE s.classId = :classId
+        AND s.status = 'SCHEDULED'
+        AND s.startAt >= :from AND s.startAt < :to
+      ORDER BY s.startAt ASC
+  """)
+  List<TutoringSessionJpaEntity> findScheduledSessionsByClass(
+      @Param("classId") UUID classId,
+      @Param("from") Instant from,
+      @Param("to") Instant to
+  );
 }

@@ -3,7 +3,6 @@ package vn.edufit.scheduling.application.service;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,10 +17,9 @@ import vn.edufit.scheduling.domain.model.TutoringSession;
 import vn.edufit.scheduling.domain.policy.ConflictPolicy;
 import vn.edufit.scheduling.domain.repository.SessionHistoryDomainRepository;
 import vn.edufit.scheduling.domain.repository.TutoringSessionDomainRepository;
+import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.shared.exception.EntityNotFoundException;
 import vn.edufit.shared.exception.ErrorCode;
-import vn.edufit.shared.exception.ForbiddenOperationException;
-import vn.edufit.shared.exception.InvalidOperationException;
 import vn.edufit.shared.exception.ResourceConflictException;
 
 /**
@@ -42,13 +40,14 @@ public class RespondToProposalService {
 
   private final TutoringSessionDomainRepository sessionRepository;
   private final SessionHistoryDomainRepository historyRepository;
+  private final SchedulingSecurityResolver schedulingSecurityResolver;
   private final ApplicationEventPublisher eventPublisher;
   private final Clock clock;
 
   @Transactional
   public TutoringSession respondToProposal(
       UUID sessionId,
-      UUID responderId,
+      CurrentUser actor,
       boolean accept,
       String reason
   ) {
@@ -58,16 +57,9 @@ public class RespondToProposalService {
     TutoringSession session = sessionRepository.findByIdForUpdate(sessionId)
         .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy buổi học với ID: " + sessionId));
 
-    // 2. Kiểm tra quyền của bên phản hồi: Phải là bên đối tác, không phải người đã tạo đề xuất
-    boolean isTutor = Objects.equals(responderId, session.getTutorId());
-    boolean isStudent = Objects.equals(responderId, session.getStudentId());
-
-    if (!isTutor && !isStudent) {
-      throw new ForbiddenOperationException("Bạn không phải thành viên của buổi học này");
-    }
-    if (Objects.equals(responderId, session.getProposedBy())) {
-      throw new ForbiddenOperationException("Bạn không thể tự phản hồi đề xuất do chính mình tạo ra");
-    }
+    // 2. Kiểm tra quyền của bên phản hồi qua SchedulingSecurityResolver (phải là bên đối tác)
+    schedulingSecurityResolver.requireCounterpartyResponseAccess(actor, session);
+    UUID responderId = actor.getUserId();
 
     // 3. Xử lý hành động từ chối (REJECT)
     if (!accept) {
@@ -152,5 +144,18 @@ public class RespondToProposalService {
     );
 
     return scheduledSession;
+  }
+
+  /**
+   * Phương thức tương thích ngược chấp nhận UUID của người phản hồi.
+   */
+  @Transactional
+  public TutoringSession respondToProposal(
+      UUID sessionId,
+      UUID responderId,
+      boolean accept,
+      String reason
+  ) {
+    return respondToProposal(sessionId, SimpleCurrentUser.of(responderId), accept, reason);
   }
 }
