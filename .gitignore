@@ -18,6 +18,7 @@ Thumbs.db
 
 # Local document review artifacts
 .codex-doc-review/
+.agents/
 
 # Runtime uploads and local cookies
 **/var/

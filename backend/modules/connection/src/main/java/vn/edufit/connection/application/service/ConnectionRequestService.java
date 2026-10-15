@@ -29,9 +29,14 @@ import org.springframework.context.ApplicationEventPublisher;
 import vn.edufit.connection.api.event.ConnectionRequestChangedEvent;
 import vn.edufit.connection.api.event.TutoringClassCreatedEvent;
 import vn.edufit.connection.application.policy.ConnectionTransitions;
+import java.util.Optional;
+import vn.edufit.connection.api.TutorScheduleConflictChecker;
+import vn.edufit.connection.application.policy.SlotConflictDetector;
 import vn.edufit.shared.exception.ForbiddenOperationException;
 import vn.edufit.shared.exception.EntityNotFoundException;
 import vn.edufit.shared.exception.InvalidOperationException;
+import vn.edufit.shared.exception.ResourceConflictException;
+import vn.edufit.shared.exception.ErrorCode;
 
 @Service
 public class ConnectionRequestService {
@@ -46,12 +51,15 @@ public class ConnectionRequestService {
   private final ConnectionRequestInput input;
   private final ApplicationEventPublisher events;
   private final ConnectionExpiryService expiryService;
+  private final SlotConflictDetector slotConflictDetector;
+  private final TutorScheduleConflictChecker scheduleConflictChecker;
 
   @org.springframework.beans.factory.annotation.Autowired
   public ConnectionRequestService(ConnectionRequestRepository requests, TutoringClassRepository classes,
       ProfileFacade profile, IamFacade iam, ConnectionLock lock, NotificationSink notifications,
       ConnectionFacade facade, ConnectionRequestInput input, ApplicationEventPublisher events,
-      ConnectionExpiryService expiryService, Clock clock) {
+      ConnectionExpiryService expiryService, SlotConflictDetector slotConflictDetector,
+      Optional<TutorScheduleConflictChecker> scheduleConflictChecker, Clock clock) {
     this.clock = clock;
     this.requests = requests;
     this.classes = classes;
@@ -63,12 +71,23 @@ public class ConnectionRequestService {
     this.input = input;
     this.events = events;
     this.expiryService = expiryService;
+    this.slotConflictDetector = slotConflictDetector != null ? slotConflictDetector : new SlotConflictDetector();
+    this.scheduleConflictChecker = scheduleConflictChecker != null ? scheduleConflictChecker.orElse(null) : null;
+  }
+
+  public ConnectionRequestService(ConnectionRequestRepository requests, TutoringClassRepository classes,
+      ProfileFacade profile, IamFacade iam, ConnectionLock lock, NotificationSink notifications,
+      ConnectionFacade facade, ConnectionRequestInput input, ApplicationEventPublisher events,
+      ConnectionExpiryService expiryService, Clock clock) {
+    this(requests, classes, profile, iam, lock, notifications, facade, input, events, expiryService,
+        new SlotConflictDetector(), Optional.empty(), clock);
   }
 
   public ConnectionRequestService(ConnectionRequestRepository requests, TutoringClassRepository classes,
       ProfileFacade profile, IamFacade iam, ConnectionLock lock, NotificationSink notifications,
       ConnectionFacade facade, ConnectionRequestInput input, ApplicationEventPublisher events, Clock clock) {
-    this(requests, classes, profile, iam, lock, notifications, facade, input, events, null, clock);
+    this(requests, classes, profile, iam, lock, notifications, facade, input, events, null,
+        new SlotConflictDetector(), Optional.empty(), clock);
   }
 
   private static void requireRole(CurrentUser actor, String... roles) {
@@ -214,6 +233,34 @@ public class ConnectionRequestService {
         || !"ACTIVE".equals(goal.status())
         || !profile.tutorTeaches(tutorId, goal.subjectId(), goal.educationLevelId()))
       throw new InvalidOperationException("Mục tiêu hoặc chuyên môn gia sư đã thay đổi");
+
+    // Gatekeeper Dual Source Conflict Check
+    if (request.getDesiredSlots() != null && !request.getDesiredSlots().isEmpty()) {
+      // Source 1: Active classes recurring slots
+      List<TutoringClass> activeClasses = classes.findByTutorIdAndStatus(tutorId, "ACTIVE");
+      if (!activeClasses.isEmpty()) {
+        List<UUID> activeReqIds = activeClasses.stream()
+            .map(TutoringClass::getConnectionRequestId)
+            .filter(java.util.Objects::nonNull)
+            .toList();
+        List<ConnectionRequest> activeRequests = requests.findAllById(activeReqIds);
+        List<String> activeSlots = activeRequests.stream()
+            .filter(r -> r.getDesiredSlots() != null)
+            .flatMap(r -> r.getDesiredSlots().stream())
+            .toList();
+        List<String> conflicts = slotConflictDetector.findConflictingSlots(request.getDesiredSlots(), activeSlots);
+        if (!conflicts.isEmpty()) {
+          throw new ResourceConflictException(ErrorCode.SLOT_CONFLICT_WITH_ACTIVE_SCHEDULE,
+              "Khung giờ đề xuất trùng với lịch của lớp học đang hoạt động: " + String.join(", ", conflicts));
+        }
+      }
+
+      // Source 2: Scheduled sessions via SPI
+      if (scheduleConflictChecker != null && scheduleConflictChecker.hasConflictWithScheduledSessions(tutorId, request.getDesiredSlots())) {
+        throw new ResourceConflictException(ErrorCode.SLOT_CONFLICT_WITH_ACTIVE_SCHEDULE,
+            "Khung giờ đề xuất trùng với buổi học đã được lên lịch của gia sư.");
+      }
+    }
 
     request.accept(now);
     requests.flush();

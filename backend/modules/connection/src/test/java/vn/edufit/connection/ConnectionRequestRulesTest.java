@@ -200,4 +200,59 @@ class ConnectionRequestRulesTest {
         && "ACTIVE".equals(e.newStatus()) && id.equals(e.requestId()) && tutor.equals(e.tutorId()) && goal.equals(e.goalId())));
     verifyNoInteractions(sink);
   }
+
+  @Test
+  void tutorAcceptRejectsWhenDesiredSlotConflictsWithActiveClass() {
+    var row = pending(studentUser);
+    UUID activeReqId = UUID.randomUUID();
+    var activeReq = new ConnectionRequest(UUID.randomUUID(), tutor, UUID.randomUUID(), UUID.randomUUID(),
+        List.of("TUESDAY 18:30-19:30"), null, now);
+    org.springframework.test.util.ReflectionTestUtils.setField(activeReq, "id", activeReqId);
+
+    var activeClass = new TutoringClass(activeReq, now);
+    when(classes.findByTutorIdAndStatus(tutor, "ACTIVE")).thenReturn(List.of(activeClass));
+    when(rows.findAllById(List.of(activeReqId))).thenReturn(List.of(activeReq));
+
+    var ex = assertThrows(ResourceConflictException.class, () ->
+        service.respondRequest(actor(tutorUser, "TUTOR"), id, true, null));
+    assertEquals(ErrorCode.SLOT_CONFLICT_WITH_ACTIVE_SCHEDULE, ex.getErrorCode());
+    assertEquals("PENDING", row.getStatus());
+    verify(classes, never()).save(any());
+  }
+
+  @Test
+  void tutorAcceptRejectsWhenDesiredSlotConflictsWithScheduledSession() {
+    var row = pending(studentUser);
+    vn.edufit.connection.api.TutorScheduleConflictChecker checker = mock(vn.edufit.connection.api.TutorScheduleConflictChecker.class);
+    when(checker.hasConflictWithScheduledSessions(tutor, List.of("Tue 19:00"))).thenReturn(true);
+
+    ConnectionRequestService serviceWithChecker = new ConnectionRequestService(
+        rows, classes, profile, iam, lock, sink, facade, new ConnectionRequestInput("legacy-compatible"),
+        events, null, new vn.edufit.connection.application.policy.SlotConflictDetector(),
+        Optional.of(checker), Clock.fixed(now, ZoneOffset.UTC)
+    );
+
+    var ex = assertThrows(ResourceConflictException.class, () ->
+        serviceWithChecker.respondRequest(actor(tutorUser, "TUTOR"), id, true, null));
+    assertEquals(ErrorCode.SLOT_CONFLICT_WITH_ACTIVE_SCHEDULE, ex.getErrorCode());
+    assertEquals("PENDING", row.getStatus());
+    verify(classes, never()).save(any());
+  }
+
+  @Test
+  void tutorRejectSucceedsEvenIfDesiredSlotsConflictWithActiveClass() {
+    var row = pending(studentUser);
+    UUID activeReqId = UUID.randomUUID();
+    var activeReq = new ConnectionRequest(UUID.randomUUID(), tutor, UUID.randomUUID(), UUID.randomUUID(),
+        List.of("Tue 19:00"), null, now);
+    org.springframework.test.util.ReflectionTestUtils.setField(activeReq, "id", activeReqId);
+
+    var activeClass = new TutoringClass(activeReq, now);
+    when(classes.findByTutorIdAndStatus(tutor, "ACTIVE")).thenReturn(List.of(activeClass));
+    when(rows.findAllById(List.of(activeReqId))).thenReturn(List.of(activeReq));
+
+    assertDoesNotThrow(() -> service.respondRequest(actor(tutorUser, "TUTOR"), id, false, "Declining"));
+    assertEquals("REJECTED", row.getStatus());
+    verify(classes, never()).save(any());
+  }
 }

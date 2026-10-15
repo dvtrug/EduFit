@@ -29,4 +29,29 @@ public class ConnectionFacadeImpl implements ConnectionFacade {
     return classes.findByStudentIdAndTutorIdAndStatus(studentId, tutorId, "ACTIVE")
         .map(c -> new ActiveClassView(c.getId(), c.getStudentId(), c.getTutorId(), c.getGoalId()));
   }
+
+  @Override
+  public boolean isClassActive(UUID classId) {
+    if (classId == null) {
+      return false;
+    }
+    return classes.existsByIdAndStatus(classId, "ACTIVE");
+  }
+
+  @Override
+  public boolean isClassActive(UUID classId, UUID tutorId, UUID studentId) {
+    if (classId == null || tutorId == null || studentId == null) {
+      return false;
+    }
+    return classes.existsByIdAndTutorIdAndStudentIdAndStatus(classId, tutorId, studentId, "ACTIVE");
+  }
+
+  @Override
+  public Optional<ActiveClassView> findActiveClassById(UUID classId) {
+    if (classId == null) {
+      return Optional.empty();
+    }
+    return classes.findByIdAndStatus(classId, "ACTIVE")
+        .map(c -> new ActiveClassView(c.getId(), c.getStudentId(), c.getTutorId(), c.getGoalId()));
+  }
 }

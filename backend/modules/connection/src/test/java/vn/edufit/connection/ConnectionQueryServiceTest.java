@@ -33,13 +33,15 @@ class ConnectionQueryServiceTest {
   @Mock LinkInvitationRepository invitations;
   @Mock ParentStudentLinkRepository links;
   @Mock ConnectionRequestRepository requests;
+  @Mock TutoringClassRepository classes;
   @Mock ProfileFacade profile;
   @Mock IamFacade iam;
   @Mock ConnectionFacade facade;
   ConnectionQueryService service;
 
   @BeforeEach void setup() {
-    service = new ConnectionQueryService(invitations, links, requests, profile, iam, facade, Clock.systemUTC());
+    service = new ConnectionQueryService(invitations, links, requests, classes, profile, iam, facade, null,
+        new vn.edufit.connection.application.policy.SlotConflictDetector(), Optional.empty(), Clock.systemUTC());
   }
 
   private CurrentUser actor(UUID id, String role) {
@@ -379,5 +381,88 @@ class ConnectionQueryServiceTest {
     var page = service.adminLinksPage(actor(admin, "ADMIN"), "tutor@example.com", 0, 20);
     assertTrue(page.items().isEmpty());
     assertEquals(0, page.totalElements());
+  }
+
+  @Test
+  void tutorInboxHydratesPedagogicalFieldsAndFlagsSlotConflict() {
+    UUID user = UUID.randomUUID(), tutor = UUID.randomUUID(), student = UUID.randomUUID(), goal = UUID.randomUUID(), sentBy = UUID.randomUUID();
+    var request = new ConnectionRequest(student, tutor, goal, sentBy, List.of("Tue 19:00"), "Cần gia sư tận tâm", Instant.now().plusSeconds(86400));
+    when(profile.getTutorIdByUserId(user)).thenReturn(tutor);
+    when(requests.findByTutorIdOrderByCreatedAtDesc(tutor)).thenReturn(List.of(request));
+
+    // Active class with overlapping slot
+    UUID activeReqId = UUID.randomUUID();
+    var activeReq = new ConnectionRequest(UUID.randomUUID(), tutor, UUID.randomUUID(), UUID.randomUUID(),
+        List.of("TUESDAY 18:30-19:30"), null, Instant.now());
+    org.springframework.test.util.ReflectionTestUtils.setField(activeReq, "id", activeReqId);
+    var activeClass = new TutoringClass(activeReq, Instant.now());
+    when(classes.findByTutorIdAndStatus(tutor, "ACTIVE")).thenReturn(List.of(activeClass));
+    when(requests.findAllById(List.of(activeReqId))).thenReturn(List.of(activeReq));
+
+    var goalDto = new ConnectionGoalDto(
+        goal, student, sentBy, 1, 4, "EXAM", java.time.LocalDate.of(2027, 6, 1), "ACTIVE",
+        10, 12, 200000L, 500000L, "Quận Cầu Giấy, Hà Nội", "Toán học", "Lớp 12"
+    );
+    when(profile.findGoalsForConnection(List.of(goal))).thenReturn(Map.of(goal, goalDto));
+    when(iam.findUserSummariesByIds(List.of(sentBy))).thenReturn(Map.of(
+        sentBy, new UserSummaryView(sentBy, "student@edufit.vn", "Nguyễn Văn Minh", AccountRole.STUDENT, AccountStatus.ACTIVE)
+    ));
+
+    var result = service.tutorInbox(actor(user, "TUTOR"));
+    assertEquals(1, result.size());
+    var item = result.getFirst();
+
+    // Verify pedagogical proposal enrichment
+    assertEquals("Nguyễn Minh", item.studentDisplayName()); // BR-37: middle name masked
+    assertEquals("Toán học", item.subjectName());
+    assertEquals("Lớp 12", item.educationLevelName());
+    assertEquals("Lớp 12", item.gradeLevelName());
+    assertEquals("Lớp 12", item.currentGrade());
+    assertEquals("12", item.targetScore());
+    assertEquals(10, item.currentLevel());
+    assertEquals(12, item.desiredLevel());
+    assertEquals(200000L, item.budgetMin());
+    assertEquals(500000L, item.budgetMax());
+    assertEquals("Quận Cầu Giấy, Hà Nội", item.area());
+    assertEquals("Quận Cầu Giấy", item.district());
+    assertEquals("Hà Nội", item.city());
+
+    // Verify slot conflict flags
+    assertTrue(item.hasSlotConflict());
+    assertEquals(List.of("Tue 19:00"), item.conflictingSlots());
+
+    // Verify response mapping
+    var response = vn.edufit.connection.web.response.TutorInboxResponse.of(item);
+    assertEquals("Nguyễn Minh", response.studentDisplayName());
+    assertTrue(response.hasSlotConflict());
+    assertEquals("Quận Cầu Giấy", response.district());
+    assertEquals("Hà Nội", response.city());
+  }
+
+  @Test
+  void tutorInboxStrictlyEnforcesBR37Privacy() {
+    UUID user = UUID.randomUUID(), tutor = UUID.randomUUID(), student = UUID.randomUUID(), goal = UUID.randomUUID(), sentBy = UUID.randomUUID();
+    var request = new ConnectionRequest(student, tutor, goal, sentBy, List.of("WEDNESDAY 18:00-19:00"), null, Instant.now().plusSeconds(86400));
+    when(profile.getTutorIdByUserId(user)).thenReturn(tutor);
+    when(requests.findByTutorIdOrderByCreatedAtDesc(tutor)).thenReturn(List.of(request));
+    when(classes.findByTutorIdAndStatus(tutor, "ACTIVE")).thenReturn(List.of());
+
+    var goalDto = new ConnectionGoalDto(
+        goal, student, sentBy, 1, 4, "EXAM", java.time.LocalDate.of(2027, 6, 1), "ACTIVE",
+        8, 10, 150000L, 300000L, "Hà Nội", "Vật lý", "Lớp 10"
+    );
+    when(profile.findGoalsForConnection(List.of(goal))).thenReturn(Map.of(goal, goalDto));
+    when(iam.findUserSummariesByIds(List.of(sentBy))).thenReturn(Map.of(
+        sentBy, new UserSummaryView(sentBy, "secret_email@edufit.vn", "Trần Thị Diệu Hoa", AccountRole.PARENT, AccountStatus.ACTIVE)
+    ));
+
+    var result = service.tutorInbox(actor(user, "TUTOR"));
+    var item = result.getFirst();
+
+    // Verify BR-37: full legal middle names, email, phone must not be exposed
+    assertEquals("Trần Hoa", item.studentDisplayName()); // Only first and last name exposed
+    assertFalse(item.studentDisplayName().contains("Thị Diệu"));
+    assertFalse(item.hasSlotConflict());
+    assertTrue(item.conflictingSlots().isEmpty());
   }
 }

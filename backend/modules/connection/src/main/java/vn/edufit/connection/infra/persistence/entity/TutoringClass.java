@@ -28,6 +28,7 @@ public class TutoringClass {
     startedAt = now;
   }
   public UUID getId() { return id; }
+  public UUID getConnectionRequestId() { return connectionRequestId; }
   public UUID getStudentId() { return studentId; }
   public UUID getTutorId() { return tutorId; }
   public UUID getGoalId() { return goalId; }

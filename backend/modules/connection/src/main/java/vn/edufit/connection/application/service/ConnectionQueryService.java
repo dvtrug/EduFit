@@ -4,22 +4,27 @@ import java.time.Instant;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edufit.connection.api.ConnectionFacade;
+import vn.edufit.connection.api.TutorScheduleConflictChecker;
 import vn.edufit.connection.application.dto.InvitationResult;
 import vn.edufit.connection.application.dto.ParentStudentLinkResult;
 import vn.edufit.connection.application.dto.ConnectionRequestResult;
 import vn.edufit.connection.application.dto.TutorInboxResult;
 import vn.edufit.connection.application.dto.PageResponse;
+import vn.edufit.connection.application.policy.SlotConflictDetector;
 import vn.edufit.connection.infra.persistence.entity.LinkInvitation;
 import vn.edufit.connection.infra.persistence.entity.ConnectionRequest;
 import vn.edufit.connection.infra.persistence.entity.ParentStudentLink;
+import vn.edufit.connection.infra.persistence.entity.TutoringClass;
 import vn.edufit.connection.infra.persistence.repository.LinkInvitationRepository;
 import vn.edufit.connection.infra.persistence.repository.ParentStudentLinkRepository;
 import vn.edufit.connection.infra.persistence.repository.ConnectionRequestRepository;
+import vn.edufit.connection.infra.persistence.repository.TutoringClassRepository;
 import vn.edufit.iam.api.AccountRole;
 import vn.edufit.iam.api.IamFacade;
 import vn.edufit.iam.api.dto.UserSummaryView;
@@ -43,24 +48,40 @@ public class ConnectionQueryService {
   private final IamFacade iam;
   private final ConnectionFacade facade;
   private final ConnectionExpiryService expiryService;
+  private final TutoringClassRepository classes;
+  private final SlotConflictDetector slotConflictDetector;
+  private final TutorScheduleConflictChecker scheduleConflictChecker;
 
   @org.springframework.beans.factory.annotation.Autowired
   public ConnectionQueryService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
-      ConnectionRequestRepository requests, ProfileFacade profile, IamFacade iam, ConnectionFacade facade,
-      ConnectionExpiryService expiryService, Clock clock) {
+      ConnectionRequestRepository requests, TutoringClassRepository classes, ProfileFacade profile,
+      IamFacade iam, ConnectionFacade facade, ConnectionExpiryService expiryService,
+      SlotConflictDetector slotConflictDetector, Optional<TutorScheduleConflictChecker> scheduleConflictChecker,
+      Clock clock) {
     this.clock = clock;
     this.invitations = invitations;
     this.links = links;
     this.requests = requests;
+    this.classes = classes;
     this.profile = profile;
     this.iam = iam;
     this.facade = facade;
     this.expiryService = expiryService;
+    this.slotConflictDetector = slotConflictDetector != null ? slotConflictDetector : new SlotConflictDetector();
+    this.scheduleConflictChecker = scheduleConflictChecker != null ? scheduleConflictChecker.orElse(null) : null;
+  }
+
+  public ConnectionQueryService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
+      ConnectionRequestRepository requests, ProfileFacade profile, IamFacade iam, ConnectionFacade facade,
+      ConnectionExpiryService expiryService, Clock clock) {
+    this(invitations, links, requests, null, profile, iam, facade, expiryService,
+        new SlotConflictDetector(), Optional.empty(), clock);
   }
 
   public ConnectionQueryService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
       ConnectionRequestRepository requests, ProfileFacade profile, IamFacade iam, ConnectionFacade facade, Clock clock) {
-    this(invitations, links, requests, profile, iam, facade, null, clock);
+    this(invitations, links, requests, null, profile, iam, facade, null,
+        new SlotConflictDetector(), Optional.empty(), clock);
   }
 
   private static void requireRole(CurrentUser actor, String... roles) {
@@ -145,6 +166,8 @@ public class ConnectionQueryService {
     Map<UUID, ConnectionGoalDto> goalsMap = profile.findGoalsForConnection(goalIds);
     Map<UUID, UserSummaryView> usersMap = iam.findUserSummariesByIds(sentByUserIds);
 
+    List<String> activeSlots = getActiveSlotsForTutor(tutorId);
+
     return result.stream().map(r -> {
       ConnectionGoalDto goal = goalsMap.get(r.getGoalId());
       if (goal == null) {
@@ -156,10 +179,7 @@ public class ConnectionQueryService {
         throw new ResourceConflictException(ErrorCode.CONFLICT_DETECTED,
             "Không tìm thấy thông tin người gửi yêu cầu");
       }
-      String senderRole = sender.role() == AccountRole.PARENT ? "PARENT" : "STUDENT";
-      return new TutorInboxResult(r.getId(), goal.goalType(), goal.subjectId(),
-          goal.educationLevelId(), r.getDesiredSlots(), r.getMessage(), senderRole,
-          r.getStatus(), r.getExpiresAt(), goal.deadline());
+      return mapToTutorInboxResult(r, goal, sender, usersMap, activeSlots, tutorId);
     }).toList();
   }
 
@@ -289,6 +309,8 @@ public class ConnectionQueryService {
     Map<UUID, ConnectionGoalDto> goalsMap = profile.findGoalsForConnection(goalIds);
     Map<UUID, UserSummaryView> usersMap = iam.findUserSummariesByIds(sentByUserIds);
 
+    List<String> activeSlots = getActiveSlotsForTutor(tutorId);
+
     List<TutorInboxResult> items = content.stream().map(r -> {
       ConnectionGoalDto goal = goalsMap.get(r.getGoalId());
       if (goal == null) {
@@ -300,11 +322,89 @@ public class ConnectionQueryService {
         throw new ResourceConflictException(ErrorCode.CONFLICT_DETECTED,
             "Không tìm thấy thông tin người gửi yêu cầu");
       }
-      String senderRole = sender.role() == AccountRole.PARENT ? "PARENT" : "STUDENT";
-      return new TutorInboxResult(r.getId(), goal.goalType(), goal.subjectId(),
-          goal.educationLevelId(), r.getDesiredSlots(), r.getMessage(), senderRole,
-          r.getStatus(), r.getExpiresAt(), goal.deadline());
+      return mapToTutorInboxResult(r, goal, sender, usersMap, activeSlots, tutorId);
     }).toList();
     return PageResponse.of(items, page, size, p.getTotalElements());
+  }
+
+  private List<String> getActiveSlotsForTutor(UUID tutorId) {
+    if (classes == null) {
+      return List.of();
+    }
+    List<TutoringClass> activeClasses = classes.findByTutorIdAndStatus(tutorId, "ACTIVE");
+    if (activeClasses.isEmpty()) {
+      return List.of();
+    }
+    List<UUID> reqIds = activeClasses.stream()
+        .map(TutoringClass::getConnectionRequestId)
+        .filter(Objects::nonNull)
+        .toList();
+    if (reqIds.isEmpty()) {
+      return List.of();
+    }
+    List<ConnectionRequest> reqs = requests.findAllById(reqIds);
+    return reqs.stream()
+        .filter(r -> r.getDesiredSlots() != null)
+        .flatMap(r -> r.getDesiredSlots().stream())
+        .toList();
+  }
+
+  private static String toSafeDisplayName(String fullName) {
+    if (fullName == null || fullName.isBlank()) return "Học sinh";
+    String[] parts = fullName.trim().split("\\s+");
+    if (parts.length == 1) return parts[0];
+    if (parts.length == 2) return parts[0] + " " + parts[1];
+    return parts[0] + " " + parts[parts.length - 1]; // e.g. "Nguyễn Văn Minh" -> "Nguyễn Minh"
+  }
+
+  private TutorInboxResult mapToTutorInboxResult(
+      ConnectionRequest r,
+      ConnectionGoalDto goal,
+      UserSummaryView sender,
+      Map<UUID, UserSummaryView> usersMap,
+      List<String> activeSlots,
+      UUID tutorId
+  ) {
+    String senderRole = sender.role() == AccountRole.PARENT ? "PARENT" : "STUDENT";
+    String studentDisplayName;
+    if (sender.role() == AccountRole.STUDENT) {
+      studentDisplayName = toSafeDisplayName(sender.fullName());
+    } else if (goal.studentUserId() != null && usersMap.containsKey(goal.studentUserId())) {
+      studentDisplayName = toSafeDisplayName(usersMap.get(goal.studentUserId()).fullName());
+    } else {
+      studentDisplayName = sender.fullName() != null ? toSafeDisplayName(sender.fullName()) : "Học sinh";
+    }
+
+    List<String> conflicts = (slotConflictDetector != null && r.getDesiredSlots() != null)
+        ? slotConflictDetector.findConflictingSlots(r.getDesiredSlots(), activeSlots)
+        : List.of();
+    boolean hasConflict = !conflicts.isEmpty();
+    if (!hasConflict && scheduleConflictChecker != null && r.getDesiredSlots() != null
+        && scheduleConflictChecker.hasConflictWithScheduledSessions(tutorId, r.getDesiredSlots())) {
+      hasConflict = true;
+    }
+
+    return new TutorInboxResult(
+        r.getId(),
+        goal.goalType(),
+        goal.subjectId(),
+        goal.educationLevelId(),
+        r.getDesiredSlots(),
+        r.getMessage(),
+        senderRole,
+        r.getStatus(),
+        r.getExpiresAt(),
+        goal.deadline(),
+        studentDisplayName,
+        goal.currentLevel(),
+        goal.desiredLevel(),
+        goal.budgetMin(),
+        goal.budgetMax(),
+        goal.area(),
+        goal.subjectName(),
+        goal.educationLevelName(),
+        hasConflict,
+        conflicts
+    );
   }
 }

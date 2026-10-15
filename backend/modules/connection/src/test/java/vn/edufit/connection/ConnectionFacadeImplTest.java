@@ -62,4 +62,55 @@ class ConnectionFacadeImplTest {
       assertInstanceOf(ConnectionFacadeImpl.class, context.getBean(ConnectionFacade.class));
     }
   }
+
+  @Test
+  void isClassActiveSingleArgReturnsCorrectBoolean() {
+    UUID activeId = UUID.randomUUID();
+    UUID inactiveId = UUID.randomUUID();
+    when(classes.existsByIdAndStatus(activeId, "ACTIVE")).thenReturn(true);
+    when(classes.existsByIdAndStatus(inactiveId, "ACTIVE")).thenReturn(false);
+
+    assertTrue(facade.isClassActive(activeId));
+    assertFalse(facade.isClassActive(inactiveId));
+    assertFalse(facade.isClassActive(null));
+  }
+
+  @Test
+  void isClassActiveThreeArgsChecksClassTutorAndStudent() {
+    UUID classId = UUID.randomUUID();
+    UUID tutorId = UUID.randomUUID();
+    UUID studentId = UUID.randomUUID();
+
+    when(classes.existsByIdAndTutorIdAndStudentIdAndStatus(classId, tutorId, studentId, "ACTIVE")).thenReturn(true);
+
+    assertTrue(facade.isClassActive(classId, tutorId, studentId));
+    assertFalse(facade.isClassActive(classId, tutorId, UUID.randomUUID()));
+    assertFalse(facade.isClassActive(null, tutorId, studentId));
+    assertFalse(facade.isClassActive(classId, null, studentId));
+    assertFalse(facade.isClassActive(classId, tutorId, null));
+  }
+
+  @Test
+  void findActiveClassByIdReturnsActiveViewWhenPresent() {
+    UUID classId = UUID.randomUUID();
+    UUID tutorId = UUID.randomUUID();
+    UUID studentId = UUID.randomUUID();
+    UUID goalId = UUID.randomUUID();
+
+    var request = new ConnectionRequest(studentId, tutorId, goalId, UUID.randomUUID(), List.of("Tue 19:00"), null, Instant.now());
+    var tutoringClass = new TutoringClass(request, Instant.now());
+    ReflectionTestUtils.setField(tutoringClass, "id", classId);
+
+    when(classes.findByIdAndStatus(classId, "ACTIVE")).thenReturn(Optional.of(tutoringClass));
+    when(classes.findByIdAndStatus(UUID.randomUUID(), "ACTIVE")).thenReturn(Optional.empty());
+
+    var result = facade.findActiveClassById(classId);
+    assertTrue(result.isPresent());
+    assertEquals(classId, result.get().classId());
+    assertEquals(studentId, result.get().studentId());
+    assertEquals(tutorId, result.get().tutorId());
+    assertEquals(goalId, result.get().goalId());
+
+    assertTrue(facade.findActiveClassById(null).isEmpty());
+  }
 }
