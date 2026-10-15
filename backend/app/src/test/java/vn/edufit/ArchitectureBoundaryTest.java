@@ -125,6 +125,12 @@ public class ArchitectureBoundaryTest {
       .allowEmptyShould(false);
 
   @ArchTest
+  static final ArchRule scheduling_web_does_not_depend_on_domain_repository = noClasses()
+      .that().resideInAPackage("vn.edufit.scheduling.web..")
+      .should().dependOnClassesThat().resideInAPackage("vn.edufit.scheduling.domain.repository..")
+      .allowEmptyShould(false);
+
+  @ArchTest
   static final ArchRule scheduling_api_does_not_expose_implementation = classes()
       .that().resideInAPackage("vn.edufit.scheduling.api..")
       .should().onlyDependOnClassesThat()
@@ -181,9 +187,16 @@ public class ArchitectureBoundaryTest {
         "vn.edufit.scheduling.api.SessionFacade",
         "vn.edufit.scheduling.application.service.SessionFacadeImpl",
         "vn.edufit.scheduling.application.service.ProposeSessionService",
+        "vn.edufit.scheduling.application.service.BatchProposeSessionService",
+        "vn.edufit.scheduling.application.service.BatchRespondSessionService",
+        "vn.edufit.scheduling.application.service.RescheduleClassScheduleService",
+        "vn.edufit.scheduling.application.service.SchedulingSecurityResolver",
+        "vn.edufit.scheduling.application.service.GetSessionDetailService",
         "vn.edufit.scheduling.domain.model.TutoringSession",
         "vn.edufit.scheduling.domain.policy.ConflictPolicy",
         "vn.edufit.scheduling.web.SessionController",
+        "vn.edufit.scheduling.infra.adapter.ConnectionValidationAdapter",
+        "vn.edufit.scheduling.infra.adapter.SessionScheduleConflictCheckerAdapter",
         "vn.edufit.scheduling.infra.persistence.repository.SpringDataTutoringSessionRepository"}) {
       assertTrue(imported.contain(name), "Architecture import must include " + name);
     }
