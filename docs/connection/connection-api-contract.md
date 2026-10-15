@@ -45,12 +45,12 @@ Query `studentId` của Student/Tutor không cho phép đổi scope; giữ hành
 | InvitationResponse | invitationId UUID, inviterUserId UUID, invitedUserId UUID, status string, createdAt Instant, expiresAt Instant | T18c: `reinviteAfter` Instant nullable, `inviterName` string nullable, `inviterRole` string nullable; chỉ hydrate lịch sử đã được scope |
 | LinkResponse | linkId UUID, parentUserId UUID, studentId UUID, status string, confirmedAt Instant | Không thêm admin reason vào learner response |
 | RequestResponse | requestId UUID, studentId UUID, tutorId UUID, goalId UUID, status string, createdAt Instant, expiresAt Instant | Giữ field names/types; không thay bằng inbox Tutor |
-| TutorInboxResponse | requestId UUID, goalType string, subjectId integer, educationLevelId integer, desiredSlots string[], message string nullable, senderRole STUDENT/PARENT, status string, expiresAt Instant | T18c: `deadline` LocalDate nullable |
+| TutorInboxResponse | requestId UUID, goalType string, subjectId integer, educationLevelId integer, desiredSlots string[], message string nullable, senderRole STUDENT/PARENT, status string, expiresAt Instant | T18c & Sprint 3 Integration: `deadline` LocalDate nullable; **Hồ sơ đề nghị học tập sư phạm:** `studentDisplayName` string, `currentGrade` string nullable, `targetScore` string nullable, `budgetMin` BigDecimal nullable, `budgetMax` BigDecimal nullable, `district` string nullable, `city` string nullable, `subjectName` string, `gradeLevelName` string; **Cảnh báo sớm xung đột:** `hasSlotConflict` boolean, `conflictingSlots` string[] |
 | ClassResponse | classId UUID, studentId UUID, tutorId UUID, goalId UUID | Giữ một goal/class; public facade nested ActiveClassView không đổi |
 
 Tên/vai trò inviter đáp ứng UC3.2: màn hình consent còn phải giải thích Parent được xem báo cáo/lịch/progress và tìm/gửi request thay Student; Student có thể thu hồi quyền. Đây là dữ liệu cần cho màn hình tương lai, Phase 0 không triển khai frontend. Nếu inviter đã bị xóa, tên/role null và không cho accept; không dùng fallback giả Student.
 
-Tutor inbox BR-37 không trả email/contact, parent account/profile/name, student account/profile hoặc goals khác. IAM batch summary có email nhưng mapper chỉ chọn senderRole. Nếu goal/sender metadata cần thiết bị thiếu: trả controlled 409 `CONFLICT_DETECTED` cho toàn response, thông điệp chung; không drop rows, không tạo role/goal giả. Goal có deadline null hợp lệ không phải missing metadata.
+Tutor inbox tuân thủ nghiêm ngặt **BR-37**: làm giàu thông tin sư phạm (mục tiêu điểm số, trình độ hiện tại, ngân sách, khu vực, tên môn học/cấp học) giúp Gia sư đánh giá chuyên môn trước khi nhận dạy, nhưng **tuyệt đối không** trả email/SĐT liên hệ, tên tài khoản phụ huynh, hoặc các thông tin PII nhạy cảm khác cho đến khi quan hệ lớp học trở thành ACTIVE. `studentDisplayName` chỉ lấy tên gọi/first name hoặc nickname hiển thị an toàn từ ProfileFacade. Nếu goal/sender metadata cần thiết bị thiếu: trả controlled 409 `CONFLICT_DETECTED` cho toàn response, thông điệp chung; không drop rows, không tạo role/goal giả. Goal có deadline null hợp lệ không phải missing metadata. Cờ `hasSlotConflict` giúp gia sư nhận biết ngay trên UI nếu khung giờ đề xuất trùng với lịch lớp học ACTIVE hoặc buổi SCHEDULED khác của gia sư.
 
 ## 4. Input, thời gian và transitions đã chốt
 
@@ -62,7 +62,7 @@ Tutor inbox BR-37 không trả email/contact, parent account/profile/name, stude
 - Invite tới email không tồn tại, sai role, inactive, self, duplicate PENDING, đã CONFIRMED hoặc đang cooldown: cùng 200/data null/message generic. Không trả flag tồn tại account/link. Cooldown chỉ hiện `reinviteAfter` trong GET lịch sử của actor đã biết invitation; POST giữ shape/message đồng nhất.
 - Invitation PENDING -> ACCEPTED/DECLINED/WITHDRAWN/EXPIRED. Link CONFIRMED -> REVOKED; relink chỉ qua invitation mới. Request PENDING -> ACCEPTED/REJECTED/CANCELLED/EXPIRED; terminal ->409, không xử lý lại thành công giả.
 - Accept invitation khi link đã CONFIRMED: đóng invitation thành **WITHDRAWN**, event reason nội bộ `SYSTEM_ALREADY_LINKED`, rồi HTTP409 sau khi transition commit. Không thêm CLOSED enum vào schema. T11a/T11b triển khai state/event; typed result T09 giữ expire/closure nhưng rollback các lỗi không được commit.
-- Accept request revalidate goal ACTIVE, goal.studentId=request.studentId, Tutor VERIFIED/chuyên môn, chưa có ACTIVE class; một transaction tạo đúng một class và ACCEPTED. Không dùng request cancel để kết thúc class đã tạo.
+- Accept request revalidate goal ACTIVE, goal.studentId=request.studentId, Tutor VERIFIED/chuyên môn, chưa có ACTIVE class; đồng thời thực thi **Cơ chế Người gác cổng (Dual Source Conflict Check)**: đối chiếu các slot trong `desiredSlots` với (1) các khung giờ đã cam kết của các lớp `ACTIVE` khác của Gia sư và (2) các buổi học đã `SCHEDULED` của Gia sư. Nếu phát hiện trùng lặp $\rightarrow$ trả về HTTP 409 với mã lỗi `SLOT_CONFLICT_WITH_ACTIVE_SCHEDULE`, rollback transaction và không tạo `class`. Nếu không trùng: trong đúng một transaction tạo một class (status ACTIVE) và chuyển request sang ACCEPTED. Không dùng request cancel để kết thúc class đã tạo.
 - Sau revoke Parent không đọc/cancel/send thay Student hoặc đọc notification chứa dữ liệu Student; cho phép đúng thông báo thu hồi tối thiểu cho chính Parent, không kèm dữ liệu học tập/admin reason. T15 xác minh actual read API, không chỉ writer.
 
 ## 5. Grammar slots và dữ liệu legacy
@@ -97,6 +97,7 @@ T19b bổ sung GET `/admin/parent-student/links?email=...&page=0&size=20` dướ
 | 403 | FORBIDDEN | Wrong role/owner/link; CSRF thiếu/sai theo policy main mới |
 | 404 | RESOURCE_NOT_FOUND | UUID hợp lệ nhưng resource không có |
 | 409 | CONFLICT_DETECTED | Terminal/expired/duplicate/pending limit/already ACTIVE class/controlled metadata inconsistency |
+| 409 | SLOT_CONFLICT_WITH_ACTIVE_SCHEDULE | desiredSlots trùng với lịch đã cam kết của lớp ACTIVE khác hoặc buổi học SCHEDULED của Gia sư |
 | 429 | RATE_LIMIT_EXCEEDED | Invite attempt thứ11 |
 | 500 | INTERNAL_SERVER_ERROR | Lỗi ngoài dự kiến; không stack trace/SQL/PII |
 
@@ -122,10 +123,32 @@ Fixture learner request data (không phải inbox Tutor):
 {"requestId":"30000000-0000-0000-0000-000000000001","studentId":"40000000-0000-0000-0000-000000000001","tutorId":"20000000-0000-0000-0000-000000000001","goalId":"10000000-0000-0000-0000-000000000001","status":"PENDING","createdAt":"2026-10-11T03:00:00Z","expiresAt":"2026-10-18T03:00:00Z"}
 ```
 
-Fixture inbox data sau T18c:
+Fixture inbox data sau Sprint 3 Integration (Hồ sơ đề nghị học tập sư phạm & Gatekeeper check):
 
 ```json
-{"requestId":"30000000-0000-0000-0000-000000000001","goalType":"EXAM","subjectId":1,"educationLevelId":4,"desiredSlots":["MONDAY 18:00-19:00"],"message":null,"senderRole":"PARENT","status":"PENDING","expiresAt":"2026-10-18T03:00:00Z","deadline":"2027-01-01"}
+{
+  "requestId": "30000000-0000-0000-0000-000000000001",
+  "goalType": "EXAM",
+  "subjectId": 1,
+  "educationLevelId": 4,
+  "subjectName": "Toán học",
+  "gradeLevelName": "Lớp 12",
+  "studentDisplayName": "Nguyễn Minh",
+  "currentGrade": "Lớp 12",
+  "targetScore": "8.5",
+  "budgetMin": 200000,
+  "budgetMax": 300000,
+  "district": "Quận Cầu Giấy",
+  "city": "Hà Nội",
+  "desiredSlots": ["MONDAY 18:00-20:00"],
+  "hasSlotConflict": false,
+  "conflictingSlots": [],
+  "message": null,
+  "senderRole": "PARENT",
+  "status": "PENDING",
+  "expiresAt": "2026-10-18T03:00:00Z",
+  "deadline": "2027-01-01"
+}
 ```
 
 Fixture missing accept sau T04 (field message minh họa):
