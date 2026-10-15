@@ -107,6 +107,52 @@ public class ArchitectureBoundaryTest {
       }).allowEmptyShould(false);
 
   @ArchTest
+  static final ArchRule scheduling_domain_is_pure_java = classes()
+      .that().resideInAPackage("vn.edufit.scheduling.domain..")
+      .should().onlyDependOnClassesThat().resideInAnyPackage("java..", "vn.edufit.scheduling.domain..", "vn.edufit.shared..")
+      .allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule scheduling_application_does_not_depend_on_web = noClasses()
+      .that().resideInAPackage("vn.edufit.scheduling.application..")
+      .should().dependOnClassesThat().resideInAPackage("vn.edufit.scheduling.web..")
+      .allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule scheduling_web_does_not_depend_on_infra = noClasses()
+      .that().resideInAPackage("vn.edufit.scheduling.web..")
+      .should().dependOnClassesThat().resideInAPackage("vn.edufit.scheduling.infra..")
+      .allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule scheduling_api_does_not_expose_implementation = classes()
+      .that().resideInAPackage("vn.edufit.scheduling.api..")
+      .should().onlyDependOnClassesThat()
+      .resideInAnyPackage("java..", "vn.edufit.scheduling.api..", "vn.edufit.shared..")
+      .allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule outsiders_use_scheduling_public_api = noClasses()
+      .that().resideOutsideOfPackage("vn.edufit.scheduling..")
+      .should().dependOnClassesThat().resideInAnyPackage(
+          "vn.edufit.scheduling.domain..", "vn.edufit.scheduling.application..",
+          "vn.edufit.scheduling.infra..", "vn.edufit.scheduling.web..")
+      .allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule scheduling_uses_only_public_edufit_dependencies = classes()
+      .that().resideInAPackage("vn.edufit.scheduling..")
+      .should().onlyDependOnClassesThat(new DescribedPredicate<JavaClass>("are own types, shared kernel or public module/platform APIs") {
+        @Override public boolean test(JavaClass target) {
+          String pkg = target.getPackageName();
+          if (!pkg.startsWith("vn.edufit.")) return true;
+          if (pkg.startsWith("vn.edufit.scheduling.") || pkg.startsWith("vn.edufit.shared.")) return true;
+          String[] parts = pkg.split("\\.");
+          return parts.length >= 4 && parts[3].equals("api");
+        }
+      }).allowEmptyShould(false);
+
+  @ArchTest
   static void production_import_contains_expected_layers(JavaClasses imported) {
     for (String name : new String[] {
         "vn.edufit.discovery.domain.policy.MatchScorer",
@@ -131,7 +177,14 @@ public class ArchitectureBoundaryTest {
         "vn.edufit.connection.infra.scheduling.ConnectionExpiryJob",
         "vn.edufit.profile.application.service.ProfileFacadeImpl",
         "vn.edufit.verification.application.service.AdminVerificationService",
-        "vn.edufit.verification.application.service.TutorVerificationService"}) {
+        "vn.edufit.verification.application.service.TutorVerificationService",
+        "vn.edufit.scheduling.api.SessionFacade",
+        "vn.edufit.scheduling.application.service.SessionFacadeImpl",
+        "vn.edufit.scheduling.application.service.ProposeSessionService",
+        "vn.edufit.scheduling.domain.model.TutoringSession",
+        "vn.edufit.scheduling.domain.policy.ConflictPolicy",
+        "vn.edufit.scheduling.web.SessionController",
+        "vn.edufit.scheduling.infra.persistence.repository.SpringDataTutoringSessionRepository"}) {
       assertTrue(imported.contain(name), "Architecture import must include " + name);
     }
 
@@ -139,5 +192,10 @@ public class ArchitectureBoundaryTest {
         .filter(c -> c.getPackageName().startsWith("vn.edufit.connection"))
         .count();
     assertTrue(connectionClassesCount >= 20, "Architecture import must include non-empty connection classes, found: " + connectionClassesCount);
+
+    long schedulingClassesCount = imported.stream()
+        .filter(c -> c.getPackageName().startsWith("vn.edufit.scheduling"))
+        .count();
+    assertTrue(schedulingClassesCount >= 20, "Architecture import must include non-empty scheduling classes, found: " + schedulingClassesCount);
   }
 }
