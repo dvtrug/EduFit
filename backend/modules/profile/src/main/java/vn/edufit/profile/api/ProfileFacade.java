@@ -76,4 +76,6 @@ public interface ProfileFacade {
   Map<UUID, ConnectionGoalDto> findGoalsForConnection(List<UUID> goalIds);
 
   boolean tutorTeaches(UUID tutorId, Integer subjectId, Integer educationLevelId);
+
+  void updateTutorRatingStats(UUID tutorId, double ratingAvg, int reviewCount);
 }

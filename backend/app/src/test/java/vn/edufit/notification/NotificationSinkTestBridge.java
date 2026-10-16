@@ -1,31 +1,50 @@
 package vn.edufit.notification;
 
-import static org.mockito.Mockito.*;
-import java.util.UUID;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.util.ReflectionTestUtils;
+import vn.edufit.notification.application.listener.NotificationEventListener;
+import vn.edufit.notification.infra.persistence.entity.Notification;
+import vn.edufit.notification.infra.persistence.repository.NotificationRepository;
+import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.shared.notification.NotificationSink;
 
-/** Reuses the real listener/writer while the existing failure tests control their required sink. */
 @TestConfiguration(proxyBeanMethods = false)
-@Import({ConnectionTransitionListener.class, ConnectionNotificationWriter.class})
+@Import({NotificationEventListener.class})
 public class NotificationSinkTestBridge {
-  @Bean NotificationRepository notificationRepository(NotificationSink sink) {
+
+  @Bean
+  public NotificationRepository notificationRepository(NotificationSink sink) {
     var repository = mock(NotificationRepository.class);
     when(repository.save(any(Notification.class))).thenAnswer(call -> {
       Notification row = call.getArgument(0);
-      sink.notify((UUID) field(row, "userId"), (UUID) field(row, "studentId"), (String) field(row, "type"),
-          (String) field(row, "title"), (String) field(row, "text"), (String) field(row, "targetType"), (UUID) field(row, "targetId"));
+      sink.notify(
+          row.getUserId(),
+          row.getAboutStudentId(),
+          row.getType(),
+          row.getTitle(),
+          row.getShortText(),
+          row.getTargetType(),
+          row.getTargetId()
+      );
       return row;
     });
     return repository;
   }
+
   @Bean
   @org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean(vn.edufit.connection.api.ConnectionFacade.class)
-  vn.edufit.connection.api.ConnectionFacade connectionFacade() {
+  public vn.edufit.connection.api.ConnectionFacade connectionFacade() {
     return mock(vn.edufit.connection.api.ConnectionFacade.class);
   }
-  private Object field(Notification row, String name) { return ReflectionTestUtils.getField(row, name); }
+
+  @Bean
+  @org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean(ProfileFacade.class)
+  public ProfileFacade profileFacade() {
+    return mock(ProfileFacade.class);
+  }
 }

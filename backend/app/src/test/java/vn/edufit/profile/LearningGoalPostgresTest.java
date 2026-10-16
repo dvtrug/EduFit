@@ -35,7 +35,7 @@ import vn.edufit.profile.web.LearningGoalController;
 import vn.edufit.shared.auth.CurrentUser;
 import vn.edufit.web.advice.GlobalExceptionHandler;
 
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @SpringJUnitConfig(LearningGoalPostgresTest.Config.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class LearningGoalPostgresTest {

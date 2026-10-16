@@ -1,5 +1,7 @@
 package vn.edufit.profile.application.service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.List;
 import java.util.HashMap;
@@ -493,5 +495,18 @@ public class ProfileFacadeImpl implements ProfileFacade {
       return null;
     }
     return value.trim();
+  }
+
+  @Override
+  @Transactional
+  public void updateTutorRatingStats(UUID tutorId, double ratingAvg, int reviewCount) {
+    if (tutorId == null) {
+      return;
+    }
+    TutorProfile tutor = tutorProfileRepository.findById(tutorId)
+        .orElseThrow(() -> EntityNotFoundException.of("TutorProfile", tutorId));
+    tutor.setRatingAvg(BigDecimal.valueOf(ratingAvg).setScale(2, RoundingMode.HALF_UP));
+    tutor.setReviewCount(Math.max(0, reviewCount));
+    tutorProfileRepository.save(tutor);
   }
 }

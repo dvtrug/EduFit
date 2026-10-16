@@ -35,7 +35,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  *       docs/edufit-schema.dbml}.
  * </ul>
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DisplayName("Kiểm thử tích hợp Flyway Migration trên PostgreSQL thật (Testcontainers)")
 class FlywayMigrationIT {
 
