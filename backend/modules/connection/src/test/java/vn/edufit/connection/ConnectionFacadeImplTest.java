@@ -113,4 +113,54 @@ class ConnectionFacadeImplTest {
 
     assertTrue(facade.findActiveClassById(null).isEmpty());
   }
+
+  @Test
+  void findClassByIdAndFindClassesByStudentOrTutorReturnExpectedDetails() {
+    UUID classId = UUID.randomUUID();
+    UUID tutorId = UUID.randomUUID();
+    UUID studentId = UUID.randomUUID();
+    UUID goalId = UUID.randomUUID();
+    Instant now = Instant.now();
+
+    var request = new ConnectionRequest(studentId, tutorId, goalId, UUID.randomUUID(), List.of("Mon 08:00"), null, now);
+    var tutoringClass = new TutoringClass(request, now);
+    ReflectionTestUtils.setField(tutoringClass, "id", classId);
+
+    when(classes.findById(classId)).thenReturn(Optional.of(tutoringClass));
+    when(classes.findByStudentId(studentId)).thenReturn(List.of(tutoringClass));
+    when(classes.findByTutorId(tutorId)).thenReturn(List.of(tutoringClass));
+
+    var detailOpt = facade.findClassById(classId);
+    assertTrue(detailOpt.isPresent());
+    assertEquals(classId, detailOpt.get().classId());
+    assertEquals("ACTIVE", detailOpt.get().status());
+
+    assertEquals(1, facade.findClassesByStudent(studentId).size());
+    assertEquals(1, facade.findClassesByTutor(tutorId).size());
+
+    assertTrue(facade.findClassById(null).isEmpty());
+    assertTrue(facade.findClassesByStudent(null).isEmpty());
+    assertTrue(facade.findClassesByTutor(null).isEmpty());
+  }
+
+  @Test
+  void findConfirmedParentAndStudentIdsReturnMappedUuids() {
+    UUID parentUserId = UUID.randomUUID();
+    UUID studentId = UUID.randomUUID();
+
+    var link = new vn.edufit.connection.infra.persistence.entity.ParentStudentLink(parentUserId, studentId, Instant.now());
+    when(links.findByStudentIdAndStatus(studentId, "CONFIRMED")).thenReturn(List.of(link));
+    when(links.findByParentUserIdAndStatus(parentUserId, "CONFIRMED")).thenReturn(List.of(link));
+
+    var parents = facade.findConfirmedParentUserIds(studentId);
+    assertEquals(1, parents.size());
+    assertEquals(parentUserId, parents.getFirst());
+
+    var students = facade.findConfirmedStudentIds(parentUserId);
+    assertEquals(1, students.size());
+    assertEquals(studentId, students.getFirst());
+
+    assertTrue(facade.findConfirmedParentUserIds(null).isEmpty());
+    assertTrue(facade.findConfirmedStudentIds(null).isEmpty());
+  }
 }

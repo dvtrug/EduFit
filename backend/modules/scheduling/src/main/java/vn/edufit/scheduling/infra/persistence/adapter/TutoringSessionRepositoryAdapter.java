@@ -102,4 +102,22 @@ public class TutoringSessionRepositoryAdapter implements TutoringSessionDomainRe
         .map(sessionMapper::toDomain)
         .toList();
   }
+
+  @Override
+  public List<TutoringSession> findByClassId(UUID classId, Instant from, Instant to) {
+    return springDataRepository.findByClassId(classId, from, to)
+        .stream()
+        .map(sessionMapper::toDomain)
+        .toList();
+  }
+
+  @Override
+  public List<TutoringSession> findByClassIds(java.util.Collection<UUID> classIds, Instant from, Instant to) {
+    if (classIds == null || classIds.isEmpty()) return List.of();
+    return springDataRepository.findByClassIdIn(classIds, from, to)
+        .stream()
+        .map(sessionMapper::toDomain)
+        .toList();
+  }
 }
+

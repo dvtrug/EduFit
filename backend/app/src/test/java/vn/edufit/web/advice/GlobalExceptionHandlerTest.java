@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -70,6 +71,26 @@ class GlobalExceptionHandlerTest {
       mockMvc.perform(get("/test/conflict"))
           .andExpect(status().isConflict())
           .andExpect(jsonPath("$.code", is(ErrorCode.SCHEDULE_OVERLAP.name())))
+          .andExpect(jsonPath("$.message", notNullValue()))
+          .andExpect(jsonPath("$.timestamp", notNullValue()));
+    }
+
+    @Test
+    @DisplayName("PLAN_VERSION_CONFLICT phải map thành HTTP 409 Conflict")
+    void shouldReturn409WhenPlanVersionConflict() throws Exception {
+      mockMvc.perform(get("/test/plan-version-conflict"))
+          .andExpect(status().isConflict())
+          .andExpect(jsonPath("$.code", is(ErrorCode.PLAN_VERSION_CONFLICT.name())))
+          .andExpect(jsonPath("$.message", notNullValue()))
+          .andExpect(jsonPath("$.timestamp", notNullValue()));
+    }
+
+    @Test
+    @DisplayName("ObjectOptimisticLockingFailureException phải map thành HTTP 409 Conflict")
+    void shouldReturn409WhenOptimisticLockingFailure() throws Exception {
+      mockMvc.perform(get("/test/optimistic-lock-failure"))
+          .andExpect(status().isConflict())
+          .andExpect(jsonPath("$.code", is(ErrorCode.PLAN_VERSION_CONFLICT.name())))
           .andExpect(jsonPath("$.message", notNullValue()))
           .andExpect(jsonPath("$.timestamp", notNullValue()));
     }
@@ -150,6 +171,16 @@ class GlobalExceptionHandlerTest {
     @GetMapping("/test/conflict")
     public void throwConflict() {
       throw new ResourceConflictException(ErrorCode.SCHEDULE_OVERLAP, "Khung giờ bị trùng lịch học");
+    }
+
+    @GetMapping("/test/plan-version-conflict")
+    public void throwPlanVersionConflict() {
+      throw new ResourceConflictException(ErrorCode.PLAN_VERSION_CONFLICT, "Kế hoạch đã bị chỉnh sửa bởi phiên làm việc khác");
+    }
+
+    @GetMapping("/test/optimistic-lock-failure")
+    public void throwOptimisticLockFailure() {
+      throw new ObjectOptimisticLockingFailureException("LearningPlan", "id-123");
     }
 
     @GetMapping("/test/forbidden")

@@ -1,5 +1,6 @@
 package vn.edufit.connection.application.service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -53,5 +54,61 @@ public class ConnectionFacadeImpl implements ConnectionFacade {
     }
     return classes.findByIdAndStatus(classId, "ACTIVE")
         .map(c -> new ActiveClassView(c.getId(), c.getStudentId(), c.getTutorId(), c.getGoalId()));
+  }
+
+  @Override
+  public Optional<ClassDetailView> findClassById(UUID classId) {
+    if (classId == null) {
+      return Optional.empty();
+    }
+    return classes.findById(classId).map(this::toClassDetailView);
+  }
+
+  @Override
+  public List<ClassDetailView> findClassesByStudent(UUID studentId) {
+    if (studentId == null) {
+      return java.util.List.of();
+    }
+    return classes.findByStudentId(studentId).stream().map(this::toClassDetailView).toList();
+  }
+
+  @Override
+  public List<ClassDetailView> findClassesByTutor(UUID tutorId) {
+    if (tutorId == null) {
+      return java.util.List.of();
+    }
+    return classes.findByTutorId(tutorId).stream().map(this::toClassDetailView).toList();
+  }
+
+  @Override
+  public java.util.List<UUID> findConfirmedParentUserIds(UUID studentId) {
+    if (studentId == null) {
+      return java.util.List.of();
+    }
+    return links.findByStudentIdAndStatus(studentId, "CONFIRMED").stream()
+        .map(vn.edufit.connection.infra.persistence.entity.ParentStudentLink::getParentUserId)
+        .toList();
+  }
+
+  @Override
+  public java.util.List<UUID> findConfirmedStudentIds(UUID parentUserId) {
+    if (parentUserId == null) {
+      return java.util.List.of();
+    }
+    return links.findByParentUserIdAndStatus(parentUserId, "CONFIRMED").stream()
+        .map(vn.edufit.connection.infra.persistence.entity.ParentStudentLink::getStudentId)
+        .toList();
+  }
+
+  private ClassDetailView toClassDetailView(vn.edufit.connection.infra.persistence.entity.TutoringClass c) {
+    return new ClassDetailView(
+        c.getId(),
+        c.getStudentId(),
+        c.getTutorId(),
+        c.getGoalId(),
+        c.getStatus(),
+        c.getStartedAt(),
+        c.getEndedAt()
+    );
   }
 }

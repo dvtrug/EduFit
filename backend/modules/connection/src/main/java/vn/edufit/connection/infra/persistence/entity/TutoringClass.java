@@ -33,4 +33,6 @@ public class TutoringClass {
   public UUID getTutorId() { return tutorId; }
   public UUID getGoalId() { return goalId; }
   public String getStatus() { return status; }
+  public Instant getStartedAt() { return startedAt; }
+  public Instant getEndedAt() { return endedAt; }
 }

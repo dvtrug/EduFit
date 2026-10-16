@@ -250,6 +250,20 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(error);
   }
 
+  /**
+   * Bắt lỗi xung đột phiên bản Optimistic Locking từ Hibernate/JPA khi cập nhật đồng thời -> HTTP 409 Conflict.
+   */
+  @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
+  public ResponseEntity<ApiError> handleOptimisticLocking(
+      org.springframework.orm.ObjectOptimisticLockingFailureException ex) {
+    log.warn("Optimistic locking conflict detected: {}", ex.getMessage());
+    ApiError error = ApiError.of(
+        ErrorCode.PLAN_VERSION_CONFLICT.name(),
+        "Kế hoạch đã bị chỉnh sửa bởi phiên làm việc khác. Vui lòng tải lại trang để đối chiếu phiên bản mới nhất."
+    );
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+  }
+
   // =========================================================================
   // 5. NGOẠI LỆ HỆ THỐNG KHÔNG XÁC ĐỊNH (CATCH-ALL / FALLBACK)
   // =========================================================================
@@ -283,7 +297,7 @@ public class GlobalExceptionHandler {
       case RESOURCE_NOT_FOUND -> HttpStatus.NOT_FOUND;
       case RATE_LIMIT_EXCEEDED -> HttpStatus.TOO_MANY_REQUESTS;
       case CONFLICT_DETECTED, USER_ALREADY_EXISTS, SCHEDULE_OVERLAP, REVIEW_ALREADY_EXISTS,
-          SLOT_CONFLICT_WITH_ACTIVE_SCHEDULE -> HttpStatus.CONFLICT;
+          SLOT_CONFLICT_WITH_ACTIVE_SCHEDULE, PLAN_VERSION_CONFLICT -> HttpStatus.CONFLICT;
       case AI_SERVICE_UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;
       case AI_REQUEST_TIMEOUT -> HttpStatus.GATEWAY_TIMEOUT;
       case INTERNAL_SERVER_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
