@@ -1,14 +1,14 @@
 # Thư Mục Tài Liệu Kỹ Thuật EduFit (EduFit Documentation Index)
 
-Thư mục này lưu trữ toàn bộ tài liệu kiến trúc, đặc tả yêu cầu, API contracts và kế hoạch kiểm thử cốt lõi của nền tảng **EduFit**.
+Thư mục này lưu trữ toàn bộ tài liệu kiến trúc, đặc tả yêu cầu, lược đồ cơ sở dữ liệu và kế hoạch kiểm thử cốt lõi của nền tảng **EduFit**.
 
 ---
 
 ## 1. Yêu Cầu Nghiệp Vụ & Thiết Kế Kiến Trúc Tổng Thể
 
 - **[SRS Edufit.docx](SRS%20Edufit.docx):** Bản đặc tả yêu cầu phần mềm chính thức (Software Requirements Specification) của toàn bộ hệ thống EduFit.
-- **[SADS (Software Architecture Design Specification)](software-architecture-design-specification.md):** Tài liệu kiến trúc phần mềm chi tiết, bao quát kiến trúc Pragmatic Modular Monolith, Bounded Contexts, Non-Functional Requirements (NFRs), và thiết kế liên module.
-- **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md):** Bối cảnh tổng quan dự án, sứ mệnh sản phẩm và kiến trúc giải pháp.
+- **[SADS (Software Architecture Design Specification)](software-architecture-design-specification.md):** Tài liệu kiến trúc phần mềm chi tiết, bao quát kiến trúc Pragmatic Modular Monolith, Bounded Contexts, Non-Functional Requirements (NFRs), và thiết kế ranh giới liên module.
+- **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md):** Bối cảnh tổng quan dự án, sứ mệnh sản phẩm và định hướng kiến trúc.
 - **[Frontend Architecture Plan](frontend-master-roadmap-and-architecture-plan.md):** Kiến trúc tổng thể và lộ trình công nghệ cho ứng dụng Frontend (Next.js 16, React 19, TypeScript, Tailwind CSS).
 
 ---
@@ -21,12 +21,9 @@ Thư mục này lưu trữ toàn bộ tài liệu kiến trúc, đặc tả yêu
 
 ---
 
-## 3. Lược Đồ Dữ Liệu & Hợp Đồng Giao Tiếp (Database & API Contracts)
+## 3. Lược Đồ Cơ Sở Dữ Liệu (Database Schema)
 
 - **[EduFit Schema DBML](edufit-schema.dbml):** Lược đồ cơ sở dữ liệu quan hệ hoàn chỉnh của hệ thống PostgreSQL (29+ bảng nghiệp vụ).
-- **[Authentication API Contract](authentication-contract.md):** Hợp đồng API và luồng xác thực / phân quyền người dùng (Module IAM).
-- **[Discovery API Contract](discovery-api-contract.md) & [Module Flow](discovery-module-flow.md):** Hợp đồng tìm kiếm gia sư, thuật toán matching điểm số và luồng xử lý module Discovery (kèm sơ đồ luồng tại [docs/images/](images/)).
-- **[Connection API Contract](connection/connection-api-contract.md) & [Module Flow](connection/connection-module-flow.md):** Hợp đồng quản lý kết nối học tập, hồ sơ đề nghị sư phạm, và luồng kiểm soát Gatekeeper chống xung đột lịch.
 
 ---
 
