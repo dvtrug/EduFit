@@ -1,28 +1,35 @@
-# Backend Documentation Index
+# Thư Mục Tài Liệu Kỹ Thuật EduFit (EduFit Documentation Index)
 
-## Discovery
+Thư mục này lưu trữ toàn bộ tài liệu kiến trúc, đặc tả yêu cầu, API contracts và kế hoạch kiểm thử cốt lõi của nền tảng **EduFit**.
 
-Trạng thái bàn giao T15 ngày 2026-10-10 trên `feat/discovery`. Đọc theo thứ tự:
+---
 
-1. [Discovery API contract](discovery-api-contract.md): ba HTTP endpoints, query/body/response/errors, quyền, Java facade và event.
-2. [Discovery module flow](discovery-module-flow.md): package/class, ownership, search/detail/matching, công thức năm yếu tố, AI, transaction và Q&A; diagram PNG nhúng trực tiếp.
-3. [Discovery PostgreSQL performance](discovery-performance-report.md): query count, local p95, query plans, candidate-cap recall và giới hạn bằng chứng.
-4. [Execution plan](../tasks/plan.md) và [checklist](../tasks/todo.md): task/phase/commit và kiểm chứng đã chạy; đây là lịch sử triển khai.
+## 1. Yêu Cầu Nghiệp Vụ & Thiết Kế Kiến Trúc Tổng Thể
 
-## Kiến trúc và module liên quan
+- **[SRS Edufit.docx](SRS%20Edufit.docx):** Bản đặc tả yêu cầu phần mềm chính thức (Software Requirements Specification) của toàn bộ hệ thống EduFit.
+- **[SADS (Software Architecture Design Specification)](software-architecture-design-specification.md):** Tài liệu kiến trúc phần mềm chi tiết, bao quát kiến trúc Pragmatic Modular Monolith, Bounded Contexts, Non-Functional Requirements (NFRs), và thiết kế liên module.
+- **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md):** Bối cảnh tổng quan dự án, sứ mệnh sản phẩm và kiến trúc giải pháp.
+- **[Frontend Architecture Plan](frontend-master-roadmap-and-architecture-plan.md):** Kiến trúc tổng thể và lộ trình công nghệ cho ứng dụng Frontend (Next.js 16, React 19, TypeScript, Tailwind CSS).
 
-- [SADS](software-architecture-design-specification.md): kiến trúc và NFR tổng thể; phần Discovery trỏ tới contract hiện thực.
-- [ADR-002](ADR-002-multi-module-architecture.md): ranh giới Maven/module và public API.
-- [Backend module structure guide](backend-module-structure-guide.md): vai trò api/web/application/domain/infra.
-- [Authentication contract](authentication-contract.md): thiết kế xác thực; đối chiếu code SecurityConfig khi tích hợp runtime.
-- [Connection module flow](connection/connection-module-flow.md): liên kết Parent/Student và connection workflow.
-- [Connection refactor plan](../tasks/connection/plan.md) và [tasks](../tasks/connection/todo.md): thực thi trên feat/connection, commit/push từng task.
-- [Connection HTTP contract](connection/connection-api-contract.md) và [Phase 0 validation](connection/phase0-validation.md) / [Phase 1 validation](connection/phase1-validation.md) / [Phase 2 validation](connection/phase2-validation.md): baseline tích hợp, quyết định cho refactor và kết quả kiểm chứng.
-- [Connection Flyway fix](connection/flyway-fix-validation.md): manifest tương thích main, backup/clone/local validation và phạm vi DB hỗ trợ.
-- [Project overview](PROJECT_OVERVIEW.md): bối cảnh dự án; phần kế hoạch/lịch sử không phải chứng nhận hoàn thành của mọi module.
+---
 
-Tài liệu Discovery hiện tại mô tả code, không coi prototype/roadmap hoặc ảnh cũ là
-hợp đồng runtime. Khi sửa Discovery: đọc tài liệu liên quan trước, cập nhật contract,
-flow và nguồn SVG/PNG cùng thay đổi; kiểm tra score/filter/query count bằng tests.
+## 2. Quyết Định Kiến Trúc & Cẩm Nang Kỹ Thuật (ADRs & Guides)
 
-- [Connection merge main 14/10/2026](connection/main-merge-validation.md): conflict resolution, row-lock reload, manifest13 và integration validation.
+- **[ADR-001 (Core Tech Stack)](ADR-001-tech-stack.md):** Quyết định lựa chọn công nghệ nền tảng (Java 21, Spring Boot 3, PostgreSQL, Maven, Next.js).
+- **[ADR-002 (Multi-Module Architecture)](ADR-002-multi-module-architecture.md):** Quyết định ranh giới Modular Monolith, Clean Architecture, và nguyên tắc giao tiếp giữa các module qua Facade/SPI hoặc Domain Events.
+- **[Backend Module Structure Guide](backend-module-structure-guide.md):** Hướng dẫn chuẩn hóa packaging và cấu trúc phân tầng (`domain`, `application`, `infrastructure`, `presentation`) cho từng module backend.
+
+---
+
+## 3. Lược Đồ Dữ Liệu & Hợp Đồng Giao Tiếp (Database & API Contracts)
+
+- **[EduFit Schema DBML](edufit-schema.dbml):** Lược đồ cơ sở dữ liệu quan hệ hoàn chỉnh của hệ thống PostgreSQL (29+ bảng nghiệp vụ).
+- **[Authentication API Contract](authentication-contract.md):** Hợp đồng API và luồng xác thực / phân quyền người dùng (Module IAM).
+- **[Discovery API Contract](discovery-api-contract.md) & [Module Flow](discovery-module-flow.md):** Hợp đồng tìm kiếm gia sư, thuật toán matching điểm số và luồng xử lý module Discovery (kèm sơ đồ luồng tại [docs/images/](images/)).
+- **[Connection API Contract](connection/connection-api-contract.md) & [Module Flow](connection/connection-module-flow.md):** Hợp đồng quản lý kết nối học tập, hồ sơ đề nghị sư phạm, và luồng kiểm soát Gatekeeper chống xung đột lịch.
+
+---
+
+## 4. Kế Hoạch & Tiêu Chuẩn Kiểm Thử (Testing & Quality Gates)
+
+- **[EduFit Master Test Plan](edufit_master_test_plan.md):** Kế hoạch kiểm thử tổng thể của toàn dự án, bao quát kiểm thử đơn vị, kiểm thử tích hợp (Testcontainers), kiểm thử đồng thời (Concurrency / GiST exclusion), kiểm thử giao diện (Vitest) và bộ 19 quy tắc ArchUnit.
