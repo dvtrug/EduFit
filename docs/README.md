@@ -1,6 +1,6 @@
 # Thư Mục Tài Liệu Kỹ Thuật EduFit (EduFit Documentation Index)
 
-Thư mục này lưu trữ toàn bộ tài liệu kiến trúc, đặc tả yêu cầu, lược đồ cơ sở dữ liệu và kế hoạch kiểm thử cốt lõi của nền tảng **EduFit**.
+Thư mục này lưu trữ toàn bộ tài liệu kiến trúc, đặc tả yêu cầu, lược đồ cơ sở dữ liệu, kế hoạch hiện thực hóa từng phân hệ và kế hoạch kiểm thử cốt lõi của nền tảng **EduFit**.
 
 ---
 
@@ -10,6 +10,7 @@ Thư mục này lưu trữ toàn bộ tài liệu kiến trúc, đặc tả yêu
 - **[SADS (Software Architecture Design Specification)](software-architecture-design-specification.md):** Tài liệu kiến trúc phần mềm chi tiết, bao quát kiến trúc Pragmatic Modular Monolith, Bounded Contexts, Non-Functional Requirements (NFRs), và thiết kế ranh giới liên module.
 - **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md):** Bối cảnh tổng quan dự án, sứ mệnh sản phẩm và định hướng kiến trúc.
 - **[Frontend Architecture Plan](frontend-master-roadmap-and-architecture-plan.md):** Kiến trúc tổng thể và lộ trình công nghệ cho ứng dụng Frontend (Next.js 16, React 19, TypeScript, Tailwind CSS).
+- **[Master Sprint Plan & Framework](master_sprint_plan_and_ai_learning_framework.md):** Kế hoạch Master Sprint, phân chia giai đoạn và khung làm việc kiểm thử/học tập của dự án.
 
 ---
 
@@ -21,12 +22,20 @@ Thư mục này lưu trữ toàn bộ tài liệu kiến trúc, đặc tả yêu
 
 ---
 
-## 3. Lược Đồ Cơ Sở Dữ Liệu (Database Schema)
+## 3. Kế Hoạch Hiện Thực Hóa & Giải Trình Kiến Trúc Phân Hệ (Module Implementation Plans)
+
+- **[Connection Implementation Plan](connection/connection_implementation_plan.md):** Kế hoạch hiện thực hóa và giải trình kiến trúc phân hệ Connection (Kết nối Phụ huynh - Học sinh, Yêu cầu kết nối Gia sư, Gatekeeper chống trùng lịch).
+- **[Scheduling Implementation Plan](scheduling/scheduling_implementation_plan.md):** Kế hoạch hiện thực hóa và giải trình kiến trúc phân hệ Scheduling (Quản lý buổi học, Chống Race Condition/Double-Booking, Batch Operations, Đổi lịch học UC4.8).
+
+---
+
+## 4. Lược Đồ Cơ Sở Dữ Liệu (Database Schema)
 
 - **[EduFit Schema DBML](edufit-schema.dbml):** Lược đồ cơ sở dữ liệu quan hệ hoàn chỉnh của hệ thống PostgreSQL (29+ bảng nghiệp vụ).
 
 ---
 
-## 4. Kế Hoạch & Tiêu Chuẩn Kiểm Thử (Testing & Quality Gates)
+## 5. Kế Hoạch & Tiêu Chuẩn Kiểm Thử (Testing & Quality Gates)
 
 - **[EduFit Master Test Plan](edufit_master_test_plan.md):** Kế hoạch kiểm thử tổng thể của toàn dự án, bao quát kiểm thử đơn vị, kiểm thử tích hợp (Testcontainers), kiểm thử đồng thời (Concurrency / GiST exclusion), kiểm thử giao diện (Vitest) và bộ 19 quy tắc ArchUnit.
+- **[In-Development Testing Specification](in-development-testing-specification.md):** Đặc tả chi tiết các kịch bản kiểm thử trong quá trình phát triển (In-Development Testing Specification) cho từng phân hệ.
