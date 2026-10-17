@@ -2,35 +2,30 @@
 
 import React, { useEffect, useState } from "react";
 import { ScheduleCalendarView, ConnectedClass } from "@/features/scheduling";
-import { useAuth } from "@/context/AuthContext";
-import { progressApi } from "@/features/progress/api/progressApi";
+import { connectionApi } from "@/features/connection/api/connectionApi";
 
 export default function StudentSchedulePage() {
-  const { user } = useAuth();
   const [classes, setClasses] = useState<ConnectedClass[]>([]);
 
   useEffect(() => {
-    if (user?.id) {
-      progressApi
-        .getStudentDashboard(user.id)
-        .then((res) => {
-          if (res.success && res.data?.classes) {
-            const mapped: ConnectedClass[] = res.data.classes.map((c) => ({
-              classId: c.classId,
-              title: c.title,
-              tutorId: res.data?.tutorId || "",
-              studentId: res.data?.studentId || user.id,
-              tutorName: res.data?.tutorName ?? undefined,
-              studentName: res.data?.studentName,
-            }));
-            setClasses(mapped);
-          }
-        })
-        .catch(() => {
-          // Fallback gracefully if dashboard is empty
-        });
-    }
-  }, [user?.id]);
+    connectionApi
+      .getStudentClasses()
+      .then((data) => {
+        const activeClasses = (data || []).filter((c) => c.status === "ACTIVE");
+        const mapped: ConnectedClass[] = activeClasses.map((c) => ({
+          classId: c.classId,
+          title: c.subjectName ? `${c.tutorDisplayName || "Gia sư"} - ${c.subjectName}` : (c.tutorDisplayName || "Lớp học"),
+          tutorId: c.tutorId,
+          studentId: c.studentId,
+          tutorName: c.tutorDisplayName ?? undefined,
+          studentName: c.studentDisplayName ?? undefined,
+        }));
+        setClasses(mapped);
+      })
+      .catch(() => {
+        setClasses([]);
+      });
+  }, []);
 
   return <ScheduleCalendarView role="STUDENT" availabilitySlots={[]} classes={classes} />;
 }

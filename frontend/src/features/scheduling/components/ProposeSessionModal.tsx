@@ -42,17 +42,7 @@ export function ProposeSessionModal({
   const [endTimeStr, setEndTimeStr] = useState<string>(defaultEndTimeStr);
   const [mode, setMode] = useState<SessionMode>("ONLINE");
   const [placeOrLink, setPlaceOrLink] = useState<string>("");
-  const [repeatNote, setRepeatNote] = useState<string>("");
   const [message, setMessage] = useState<string>("");
-
-  // Manual fallback IDs if no connected classes exist
-  const [manualClassId, setManualClassId] = useState<string>("");
-  const [manualTutorId, setManualTutorId] = useState<string>(
-    role === "TUTOR" && currentUserId ? currentUserId : ""
-  );
-  const [manualStudentId, setManualStudentId] = useState<string>(
-    role === "STUDENT" && currentUserId ? currentUserId : ""
-  );
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -69,8 +59,12 @@ export function ProposeSessionModal({
       setErrorMessage(null);
       setIsConflict(false);
 
-      if (connectedClasses.length > 0 && !selectedClassId) {
-        setSelectedClassId(connectedClasses[0].classId);
+      if (connectedClasses.length > 0) {
+        if (!selectedClassId || !connectedClasses.some((c) => c.classId === selectedClassId)) {
+          setSelectedClassId(connectedClasses[0].classId);
+        }
+      } else {
+        setSelectedClassId("");
       }
     }
   }, [isOpen, initialDate, initialHour, connectedClasses, selectedClassId]);
@@ -84,15 +78,14 @@ export function ProposeSessionModal({
     setErrorMessage(null);
     setIsConflict(false);
 
-    let classId = selectedClassId;
-    let tutorId = currentClass?.tutorId || "";
-    let studentId = currentClass?.studentId || "";
-
-    if (!classId) {
-      classId = manualClassId.trim();
-      tutorId = manualTutorId.trim();
-      studentId = manualStudentId.trim();
+    if (!currentClass) {
+      setErrorMessage("Vui lòng chọn lớp học đang hoạt động để đề xuất buổi học.");
+      return;
     }
+
+    const classId = currentClass.classId;
+    const tutorId = currentClass.tutorId;
+    const studentId = currentClass.studentId;
 
     if (!classId || !tutorId || !studentId) {
       setErrorMessage("Vui lòng cung cấp đầy đủ thông tin Lớp học, Gia sư và Học sinh.");
@@ -116,7 +109,6 @@ export function ProposeSessionModal({
       endAt: endDateTime.toISOString(),
       mode,
       placeOrLink: placeOrLink.trim() || undefined,
-      repeatNote: repeatNote.trim() || undefined,
       message: message.trim() || undefined,
     };
 
@@ -231,33 +223,16 @@ export function ProposeSessionModal({
               </select>
             </div>
           ) : (
-            <div className="space-y-2 rounded-2xl bg-stone-50 p-3.5 border border-stone-200">
-              <span className="text-[11px] font-bold text-neutral-600">Thông tin kết nối lớp học</span>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <input
-                  type="text"
-                  placeholder="Class UUID *"
-                  value={manualClassId}
-                  onChange={(e) => setManualClassId(e.target.value)}
-                  className="rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-mono text-neutral-800 focus:border-sky-500 focus:outline-hidden"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Tutor UUID *"
-                  value={manualTutorId}
-                  onChange={(e) => setManualTutorId(e.target.value)}
-                  className="rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-mono text-neutral-800 focus:border-sky-500 focus:outline-hidden"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Student UUID *"
-                  value={manualStudentId}
-                  onChange={(e) => setManualStudentId(e.target.value)}
-                  className="rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-mono text-neutral-800 focus:border-sky-500 focus:outline-hidden"
-                  required
-                />
+            <div
+              role="status"
+              className="flex items-start gap-3 rounded-2xl bg-amber-50 p-4 border border-amber-200 text-amber-800 text-xs font-medium"
+            >
+              <AlertTriangle className="size-4 shrink-0 mt-0.5 text-amber-600" />
+              <div>
+                <p className="font-bold">Chưa có lớp học hoạt động</p>
+                <p className="mt-0.5 leading-relaxed">
+                  Bạn chưa có lớp học nào đang hoạt động để lên lịch. Vui lòng kiểm tra lại kết nối gia sư.
+                </p>
               </div>
             </div>
           )}
@@ -356,22 +331,6 @@ export function ProposeSessionModal({
             />
           </div>
 
-          {/* Ghi chú lặp lại */}
-          <div>
-            <label htmlFor="repeat-note" className="block text-xs font-bold text-neutral-700 mb-1">
-              Ghi chú chu kỳ (Tùy chọn)
-            </label>
-            <input
-              id="repeat-note"
-              type="text"
-              placeholder="Ví dụ: Thứ 3 & Thứ 6 hàng tuần"
-              value={repeatNote}
-              onChange={(e) => setRepeatNote(e.target.value)}
-              className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-neutral-800 focus:border-sky-500 focus:outline-hidden"
-              maxLength={255}
-            />
-          </div>
-
           {/* Lời nhắn */}
           <div>
             <label htmlFor="session-message" className="block text-xs font-bold text-neutral-700 mb-1">
@@ -400,8 +359,8 @@ export function ProposeSessionModal({
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="h-10 px-5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+              disabled={loading || connectedClasses.length === 0}
+              className="h-10 px-5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs flex items-center gap-2 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>

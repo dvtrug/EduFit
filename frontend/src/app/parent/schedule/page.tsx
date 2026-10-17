@@ -2,34 +2,28 @@
 
 import React, { useEffect, useState } from "react";
 import { ScheduleCalendarView, ConnectedClass } from "@/features/scheduling";
-import { progressApi } from "@/features/progress/api/progressApi";
+import { connectionApi } from "@/features/connection/api/connectionApi";
 
 export default function ParentSchedulePage() {
   const [classes, setClasses] = useState<ConnectedClass[]>([]);
 
   useEffect(() => {
-    progressApi
-      .getParentDashboard()
-      .then((res) => {
-        if (res.success && res.data?.students) {
-          const list: ConnectedClass[] = [];
-          for (const s of res.data.students) {
-            for (const c of s.classes || []) {
-              list.push({
-                classId: c.classId,
-                title: `${s.studentName} - ${c.title}`,
-                tutorId: s.activeClassDashboard?.tutorId || "",
-                studentId: s.studentId,
-                studentName: s.studentName,
-                tutorName: s.activeClassDashboard?.tutorName ?? undefined,
-              });
-            }
-          }
-          setClasses(list);
-        }
+    connectionApi
+      .getStudentClasses()
+      .then((data) => {
+        const activeClasses = (data || []).filter((c) => c.status === "ACTIVE");
+        const mapped: ConnectedClass[] = activeClasses.map((c) => ({
+          classId: c.classId,
+          title: `${c.studentDisplayName || "Học sinh"} - ${c.subjectName || "Lớp học"}`,
+          tutorId: c.tutorId,
+          studentId: c.studentId,
+          studentName: c.studentDisplayName ?? undefined,
+          tutorName: c.tutorDisplayName ?? undefined,
+        }));
+        setClasses(mapped);
       })
       .catch(() => {
-        // Fallback gracefully
+        setClasses([]);
       });
   }, []);
 
