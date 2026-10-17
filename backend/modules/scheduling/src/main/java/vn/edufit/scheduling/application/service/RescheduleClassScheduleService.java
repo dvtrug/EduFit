@@ -227,6 +227,13 @@ public class RescheduleClassScheduleService {
     );
     UUID responderId = actor.getUserId();
 
+    // 2b. Kiểm tra lớp học vẫn đang ở trạng thái ACTIVE (tránh chấp thuận lịch cho lớp đã kết thúc)
+    connectionValidationPort.findActiveClassById(proposal.getClassId())
+        .orElseThrow(() -> new InvalidOperationException(
+            ErrorCode.INVALID_OPERATION,
+            "Lớp học không ở trạng thái hoạt động (ACTIVE) hoặc không tồn tại"
+        ));
+
     // 3. Xử lý trường hợp TỪ CHỐI (REJECT)
     if (!accept) {
       proposal.reject(responderId, reason, now);
@@ -423,5 +430,21 @@ public class RescheduleClassScheduleService {
     return proposalStore.values().stream()
         .filter(p -> p.getClassId().equals(classId) && p.isPending(now))
         .findFirst();
+  }
+
+  /**
+   * Hủy các đề xuất đổi lịch học định kỳ đang chờ (In-flight Proposals) khi lớp học kết thúc (Cascade Termination).
+   */
+  public void cancelActiveProposalForClass(UUID classId, String reason, Instant now) {
+    if (classId == null) {
+      return;
+    }
+    for (RecurringRescheduleProposal p : proposalStore.values()) {
+      if (p.getClassId().equals(classId) && p.isPending(now)) {
+        p.expire(now);
+        log.info("Đã hủy đề xuất đổi lịch định kỳ do lớp học kết thúc: proposalId={}, classId={}, reason={}",
+            p.getProposalId(), classId, reason);
+      }
+    }
   }
 }

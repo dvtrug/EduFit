@@ -12,6 +12,7 @@ public record TutoringClassEndedEvent(
     UUID classId,
     UUID studentId,
     UUID tutorId,
+    UUID endedBy,
     String reason,
     Instant endedAt
 ) {
@@ -19,6 +20,7 @@ public record TutoringClassEndedEvent(
     Objects.requireNonNull(classId, "classId");
     Objects.requireNonNull(studentId, "studentId");
     Objects.requireNonNull(tutorId, "tutorId");
+    Objects.requireNonNull(endedBy, "endedBy");
     Objects.requireNonNull(endedAt, "endedAt");
   }
 }

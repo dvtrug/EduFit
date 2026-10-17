@@ -302,7 +302,7 @@ export function StudentActiveClasses() {
                         title="Thống nhất lịch học định kỳ (4-8 tuần)"
                       >
                         <CalendarDays className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                        Lịch định kỳ
+                        Thống nhất lịch định kỳ
                       </button>
                       <button
                         type="button"

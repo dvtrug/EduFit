@@ -309,6 +309,7 @@ public class ConnectionRequestService {
         tutoringClass.getId(),
         tutoringClass.getStudentId(),
         tutoringClass.getTutorId(),
+        actor.getUserId(),
         reason,
         now
     ));

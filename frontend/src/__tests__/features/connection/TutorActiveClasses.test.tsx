@@ -102,4 +102,22 @@ describe("TutorActiveClasses Component", () => {
     expect(screen.getByText("Toán hình học")).toBeInTheDocument();
     expect(screen.queryByText("Tiếng Anh IELTS")).not.toBeInTheDocument();
   });
+
+  it("hiển thị nút 'Thống nhất lịch định kỳ' và 'Kết thúc lớp' trên thẻ lớp ACTIVE", async () => {
+    vi.spyOn(connectionApi, "getTutorClasses").mockResolvedValue(mockClasses);
+
+    render(<TutorActiveClasses />);
+
+    expect(await screen.findByText("Toán hình học")).toBeInTheDocument();
+
+    const recurringButtons = screen.getAllByRole("button", { name: /Thống nhất lịch định kỳ/i });
+    expect(recurringButtons.length).toBe(2);
+
+    const endClassButtons = screen.getAllByRole("button", { name: /Kết thúc lớp/i });
+    expect(endClassButtons.length).toBe(2);
+
+    // Mở modal kết thúc lớp
+    fireEvent.click(endClassButtons[0]);
+    expect(await screen.findByText("Xác nhận kết thúc lớp")).toBeInTheDocument();
+  });
 });

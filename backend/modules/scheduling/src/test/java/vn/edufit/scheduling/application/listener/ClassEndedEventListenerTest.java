@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import vn.edufit.connection.api.event.TutoringClassEndedEvent;
+import vn.edufit.scheduling.application.service.RescheduleClassScheduleService;
 import vn.edufit.scheduling.domain.model.CancelReason;
 import vn.edufit.scheduling.domain.model.SessionMode;
 import vn.edufit.scheduling.domain.model.SessionStatus;
@@ -27,6 +28,9 @@ class ClassEndedEventListenerTest {
   @Mock
   private TutoringSessionDomainRepository sessionRepository;
 
+  @Mock
+  private RescheduleClassScheduleService rescheduleClassScheduleService;
+
   private final Instant fixedNow = Instant.parse("2026-10-20T10:00:00Z");
   private final Clock clock = Clock.fixed(fixedNow, ZoneOffset.UTC);
 
@@ -34,15 +38,16 @@ class ClassEndedEventListenerTest {
 
   @BeforeEach
   void setUp() {
-    listener = new ClassEndedEventListener(sessionRepository, clock);
+    listener = new ClassEndedEventListener(sessionRepository, rescheduleClassScheduleService, clock);
   }
 
   @Test
-  @DisplayName("Khi nhận TutoringClassEndedEvent, cascade hủy tất cả các buổi học tương lai chưa hoàn thành")
+  @DisplayName("Khi nhận TutoringClassEndedEvent, cascade hủy tất cả các buổi học tương lai chưa hoàn thành và hủy đề xuất lịch định kỳ")
   void shouldCancelAllFutureActiveSessionsWhenClassEnds() {
     UUID classId = UUID.randomUUID();
     UUID tutorId = UUID.randomUUID();
     UUID studentId = UUID.randomUUID();
+    UUID endedBy = UUID.randomUUID();
 
     TutoringSession scheduledSession = TutoringSession.createScheduled(
         UUID.randomUUID(), classId, tutorId, studentId,
@@ -62,19 +67,22 @@ class ClassEndedEventListenerTest {
         .thenReturn(List.of(scheduledSession, proposedSession));
 
     TutoringClassEndedEvent event = new TutoringClassEndedEvent(
-        classId, studentId, tutorId, "Học sinh chuyển trường", fixedNow
+        classId, studentId, tutorId, endedBy, "Học sinh chuyển trường", fixedNow
     );
 
     listener.onClassEnded(event);
 
     assertEquals(SessionStatus.CANCELLED, scheduledSession.getStatus());
+    assertEquals(endedBy, scheduledSession.getCancelledBy());
     assertEquals("Học sinh chuyển trường", scheduledSession.getCancelComment());
     assertEquals(CancelReason.OTHER, scheduledSession.getCancelReason());
     assertFalse(scheduledSession.isLateCancel());
 
     assertEquals(SessionStatus.CANCELLED, proposedSession.getStatus());
+    assertEquals(endedBy, proposedSession.getCancelledBy());
     assertEquals("Học sinh chuyển trường", proposedSession.getCancelComment());
 
     verify(sessionRepository, times(2)).save(any(TutoringSession.class));
+    verify(rescheduleClassScheduleService).cancelActiveProposalForClass(classId, "Học sinh chuyển trường", fixedNow);
   }
 }
