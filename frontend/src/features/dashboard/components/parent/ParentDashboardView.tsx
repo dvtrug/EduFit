@@ -9,6 +9,7 @@ import { ParentActiveTutors } from "./ParentActiveTutors";
 import { ParentQuickActions } from "./ParentQuickActions";
 import { OnboardingGuideBanner } from "@/shared/ui/OnboardingGuideBanner";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { ProgressDashboardView } from "@/features/progress";
 
 interface ParentDashboardViewProps {
   user: {
@@ -171,6 +172,14 @@ export function ParentDashboardView({ user }: ParentDashboardViewProps) {
             <div className="lg:col-span-4 space-y-6">
               <ParentQuickActions />
             </div>
+          </div>
+
+          {/* Tiến độ học tập & Nhật ký */}
+          <div className="space-y-4 pt-6 border-t border-stone-200">
+            <h2 className="font-heading font-extrabold text-lg text-neutral-900 tracking-tight">
+              Chi tiết tiến độ học tập & Nhật ký buổi học
+            </h2>
+            <ProgressDashboardView role="PARENT" />
           </div>
         </>
       )}

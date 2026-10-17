@@ -78,6 +78,7 @@ public class SecurityConfig {
                 "/error"
             ).permitAll()
             .requestMatchers(HttpMethod.GET, "/api/v1/discovery/tutors", "/api/v1/discovery/tutors/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/v1/reviews/tutors/**").permitAll()
 
             // 2.2. Phân quyền dành riêng cho Quản trị viên (ADMIN)
             .requestMatchers(
@@ -95,7 +96,9 @@ public class SecurityConfig {
             // 2.4. Phân quyền dành riêng cho Học sinh & Phụ huynh (STUDENT, PARENT)
             .requestMatchers(
                 "/api/v1/profiles/students/me",
-                "/api/v1/profiles/students/me/**"
+                "/api/v1/profiles/students/me/**",
+                "/api/v1/reviews",
+                "/api/v1/reviews/**"
             ).hasAnyRole("STUDENT", "PARENT", "ADMIN")
 
             // 2.5. Mọi yêu cầu API nghiệp vụ khác đều bắt buộc phải đăng nhập

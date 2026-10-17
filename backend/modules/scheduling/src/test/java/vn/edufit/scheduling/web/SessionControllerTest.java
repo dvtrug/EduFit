@@ -20,11 +20,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import vn.edufit.scheduling.application.service.BatchProposeSessionService;
+import vn.edufit.scheduling.application.service.BatchRespondSessionService;
 import vn.edufit.scheduling.application.service.CancelSessionService;
 import vn.edufit.scheduling.application.service.GetCalendarService;
 import vn.edufit.scheduling.application.service.GetSessionDetailService;
 import vn.edufit.scheduling.application.service.ProposeSessionService;
 import vn.edufit.scheduling.application.service.RecordSessionOutcomeService;
+import vn.edufit.scheduling.application.service.RescheduleClassScheduleService;
 import vn.edufit.scheduling.application.service.RescheduleSessionService;
 import vn.edufit.scheduling.application.service.RespondToProposalService;
 import vn.edufit.scheduling.application.service.SimpleCurrentUser;
@@ -60,10 +63,19 @@ class SessionControllerTest {
   private ProposeSessionService proposeSessionService;
 
   @Mock
+  private BatchProposeSessionService batchProposeSessionService;
+
+  @Mock
   private RespondToProposalService respondToProposalService;
 
   @Mock
+  private BatchRespondSessionService batchRespondSessionService;
+
+  @Mock
   private RescheduleSessionService rescheduleSessionService;
+
+  @Mock
+  private RescheduleClassScheduleService rescheduleClassScheduleService;
 
   @Mock
   private CancelSessionService cancelSessionService;
@@ -95,8 +107,11 @@ class SessionControllerTest {
   void setUp() {
     controller = new SessionController(
         proposeSessionService,
+        batchProposeSessionService,
         respondToProposalService,
+        batchRespondSessionService,
         rescheduleSessionService,
+        rescheduleClassScheduleService,
         cancelSessionService,
         recordSessionOutcomeService,
         getCalendarService,

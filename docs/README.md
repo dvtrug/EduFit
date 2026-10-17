@@ -26,6 +26,9 @@ Thư mục này lưu trữ toàn bộ tài liệu kiến trúc, đặc tả yêu
 
 - **[Connection Implementation Plan](connection/connection_implementation_plan.md):** Kế hoạch hiện thực hóa và giải trình kiến trúc phân hệ Connection (Kết nối Phụ huynh - Học sinh, Yêu cầu kết nối Gia sư, Gatekeeper chống trùng lịch).
 - **[Scheduling Implementation Plan](scheduling/scheduling_implementation_plan.md):** Kế hoạch hiện thực hóa và giải trình kiến trúc phân hệ Scheduling (Quản lý buổi học, Chống Race Condition/Double-Booking, Batch Operations, Đổi lịch học UC4.8).
+- **[Progress Implementation Plan](progress/progress_implementation_plan.md):** Kế hoạch hiện thực hóa và giải trình kiến trúc phân hệ Progress (Kế hoạch bài giảng, Cột mốc Milestones, Thuật toán tính tiến độ, Ghi chú buổi học, Progress Dashboard).
+- **[Review Implementation Plan](review/review_implementation_plan.md):** Kế hoạch hiện thực hóa và giải trình kiến trúc phân hệ Review (Đánh giá gia sư thực chứng BR-61, Thang điểm 1-5 sao, Chống đánh giá trùng lặp, Đồng bộ điểm uy tín tức thời).
+- **[Notification Implementation Plan](notification/notification_implementation_plan.md):** Kế hoạch hiện thực hóa và giải trình kiến trúc phân hệ Notification (Trung tâm tiếp nhận Domain Events đa kênh, Chống thông báo ma với TransactionalEventListener, Server-Sent Events real-time).
 
 ---
 

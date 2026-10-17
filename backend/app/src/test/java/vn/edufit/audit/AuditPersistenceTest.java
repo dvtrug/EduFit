@@ -24,7 +24,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.*;
 import vn.edufit.shared.audit.*;
 
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @SpringJUnitConfig(AuditPersistenceTest.Config.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class AuditPersistenceTest {

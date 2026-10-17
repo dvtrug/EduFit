@@ -153,4 +153,36 @@ public interface SpringDataTutoringSessionRepository extends JpaRepository<Tutor
       @Param("from") Instant from,
       @Param("to") Instant to
   );
+
+  /**
+   * Lấy danh sách buổi học của một lớp học theo khoảng thời gian (dùng cho Progress Session Timeline).
+   */
+  @Query("""
+      SELECT s FROM TutoringSessionJpaEntity s
+      WHERE s.classId = :classId
+        AND (:from IS NULL OR s.startAt >= :from)
+        AND (:to IS NULL OR s.startAt <= :to)
+      ORDER BY s.startAt ASC
+  """)
+  List<TutoringSessionJpaEntity> findByClassId(
+      @Param("classId") UUID classId,
+      @Param("from") Instant from,
+      @Param("to") Instant to
+  );
+
+  /**
+   * Batch query lấy danh sách buổi học theo nhiều mã lớp học (tránh N+1 query cho Progress Dashboard).
+   */
+  @Query("""
+      SELECT s FROM TutoringSessionJpaEntity s
+      WHERE s.classId IN :classIds
+        AND (:from IS NULL OR s.startAt >= :from)
+        AND (:to IS NULL OR s.startAt <= :to)
+      ORDER BY s.startAt ASC
+  """)
+  List<TutoringSessionJpaEntity> findByClassIdIn(
+      @Param("classIds") java.util.Collection<UUID> classIds,
+      @Param("from") Instant from,
+      @Param("to") Instant to
+  );
 }

@@ -69,4 +69,14 @@ public interface SessionFacade {
    * @return {@code true} nếu có buổi học SCHEDULED bị trùng.
    */
   boolean hasActiveSessionAt(UUID tutorId, Instant startAt, Instant endAt);
+
+  /**
+   * Lấy danh sách các buổi học của một lớp học theo khoảng thời gian (dùng cho Timeline).
+   */
+  List<vn.edufit.scheduling.api.dto.SessionTimelineView> findSessionsByClassId(UUID classId, Instant from, Instant to);
+
+  /**
+   * Lấy thống kê số buổi học theo danh sách các mã lớp học (Batch query tránh N+1).
+   */
+  java.util.Map<UUID, vn.edufit.scheduling.api.dto.ClassSessionStatsView> getSessionStatsByClassIds(List<UUID> classIds, Instant from, Instant to);
 }

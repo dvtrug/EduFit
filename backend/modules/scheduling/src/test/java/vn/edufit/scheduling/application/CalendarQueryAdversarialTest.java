@@ -24,11 +24,14 @@ import vn.edufit.connection.api.ConnectionFacade;
 import vn.edufit.profile.api.ProfileFacade;
 import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
+import vn.edufit.scheduling.application.service.BatchProposeSessionService;
+import vn.edufit.scheduling.application.service.BatchRespondSessionService;
 import vn.edufit.scheduling.application.service.CancelSessionService;
 import vn.edufit.scheduling.application.service.GetCalendarService;
 import vn.edufit.scheduling.application.service.GetSessionDetailService;
 import vn.edufit.scheduling.application.service.ProposeSessionService;
 import vn.edufit.scheduling.application.service.RecordSessionOutcomeService;
+import vn.edufit.scheduling.application.service.RescheduleClassScheduleService;
 import vn.edufit.scheduling.application.service.RescheduleSessionService;
 import vn.edufit.scheduling.application.service.RespondToProposalService;
 import vn.edufit.scheduling.application.service.SchedulingSecurityResolver;
@@ -68,8 +71,11 @@ class CalendarQueryAdversarialTest {
 
   // Unused service mocks needed to construct SessionController
   @Mock private ProposeSessionService proposeSessionService;
+  @Mock private BatchProposeSessionService batchProposeSessionService;
   @Mock private RespondToProposalService respondToProposalService;
+  @Mock private BatchRespondSessionService batchRespondSessionService;
   @Mock private RescheduleSessionService rescheduleSessionService;
+  @Mock private RescheduleClassScheduleService rescheduleClassScheduleService;
   @Mock private CancelSessionService cancelSessionService;
   @Mock private RecordSessionOutcomeService recordSessionOutcomeService;
   @Mock private GetSessionDetailService getSessionDetailService;
@@ -101,8 +107,11 @@ class CalendarQueryAdversarialTest {
     calendarService = new GetCalendarService(sessionRepository, securityResolver);
     controller = new SessionController(
         proposeSessionService,
+        batchProposeSessionService,
         respondToProposalService,
+        batchRespondSessionService,
         rescheduleSessionService,
+        rescheduleClassScheduleService,
         cancelSessionService,
         recordSessionOutcomeService,
         calendarService,

@@ -159,6 +159,84 @@ public class ArchitectureBoundaryTest {
       }).allowEmptyShould(false);
 
   @ArchTest
+  static final ArchRule progress_domain_is_pure_java = classes()
+      .that().resideInAPackage("vn.edufit.progress.domain..")
+      .should().onlyDependOnClassesThat().resideInAnyPackage("java..", "vn.edufit.progress.domain..", "vn.edufit.shared..")
+      .allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule progress_application_does_not_depend_on_web = noClasses()
+      .that().resideInAPackage("vn.edufit.progress.application..")
+      .should().dependOnClassesThat().resideInAPackage("vn.edufit.progress.web..")
+      .allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule progress_web_does_not_depend_on_infra = noClasses()
+      .that().resideInAPackage("vn.edufit.progress.web..")
+      .should().dependOnClassesThat().resideInAPackage("vn.edufit.progress.infra..")
+      .allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule progress_web_does_not_depend_on_domain_repository = noClasses()
+      .that().resideInAPackage("vn.edufit.progress.web..")
+      .should().dependOnClassesThat().resideInAPackage("vn.edufit.progress.domain.repository..")
+      .allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule progress_api_does_not_expose_implementation = classes()
+      .that().resideInAPackage("vn.edufit.progress.api..")
+      .should().onlyDependOnClassesThat()
+      .resideInAnyPackage("java..", "vn.edufit.progress.api..", "vn.edufit.shared..")
+      .allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule outsiders_use_progress_public_api = noClasses()
+      .that().resideOutsideOfPackage("vn.edufit.progress..")
+      .should().dependOnClassesThat().resideInAnyPackage(
+          "vn.edufit.progress.domain..", "vn.edufit.progress.application..",
+          "vn.edufit.progress.infra..", "vn.edufit.progress.web..")
+      .allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule progress_uses_only_public_edufit_dependencies = classes()
+      .that().resideInAPackage("vn.edufit.progress..")
+      .should().onlyDependOnClassesThat(new DescribedPredicate<JavaClass>("are own types, shared kernel or public module/platform APIs") {
+        @Override public boolean test(JavaClass target) {
+          String pkg = target.getPackageName();
+          if (!pkg.startsWith("vn.edufit.")) return true;
+          if (pkg.startsWith("vn.edufit.progress.") || pkg.startsWith("vn.edufit.shared.")) return true;
+          String[] parts = pkg.split("\\.");
+          return parts.length >= 4 && parts[3].equals("api");
+        }
+      }).allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule review_uses_only_public_edufit_dependencies = classes()
+      .that().resideInAPackage("vn.edufit.review..")
+      .should().onlyDependOnClassesThat(new DescribedPredicate<JavaClass>("are own types, shared kernel or public module/platform APIs") {
+        @Override public boolean test(JavaClass target) {
+          String pkg = target.getPackageName();
+          if (!pkg.startsWith("vn.edufit.")) return true;
+          if (pkg.startsWith("vn.edufit.review.") || pkg.startsWith("vn.edufit.shared.")) return true;
+          String[] parts = pkg.split("\\.");
+          return parts.length >= 4 && parts[3].equals("api");
+        }
+      }).allowEmptyShould(false);
+
+  @ArchTest
+  static final ArchRule notification_uses_only_public_edufit_dependencies = classes()
+      .that().resideInAPackage("vn.edufit.notification..")
+      .should().onlyDependOnClassesThat(new DescribedPredicate<JavaClass>("are own types, shared kernel or public module/platform APIs") {
+        @Override public boolean test(JavaClass target) {
+          String pkg = target.getPackageName();
+          if (!pkg.startsWith("vn.edufit.")) return true;
+          if (pkg.startsWith("vn.edufit.notification.") || pkg.startsWith("vn.edufit.shared.")) return true;
+          String[] parts = pkg.split("\\.");
+          return parts.length >= 4 && parts[3].equals("api");
+        }
+      }).allowEmptyShould(false);
+
+  @ArchTest
   static void production_import_contains_expected_layers(JavaClasses imported) {
     for (String name : new String[] {
         "vn.edufit.discovery.domain.policy.MatchScorer",
@@ -197,7 +275,24 @@ public class ArchitectureBoundaryTest {
         "vn.edufit.scheduling.web.SessionController",
         "vn.edufit.scheduling.infra.adapter.ConnectionValidationAdapter",
         "vn.edufit.scheduling.infra.adapter.SessionScheduleConflictCheckerAdapter",
-        "vn.edufit.scheduling.infra.persistence.repository.SpringDataTutoringSessionRepository"}) {
+        "vn.edufit.scheduling.infra.persistence.repository.SpringDataTutoringSessionRepository",
+        "vn.edufit.progress.api.ProgressFacade",
+        "vn.edufit.progress.application.service.ProgressFacadeImpl",
+        "vn.edufit.progress.application.service.LearningPlanService",
+        "vn.edufit.progress.application.service.ProgressDashboardService",
+        "vn.edufit.progress.application.service.SessionNoteService",
+        "vn.edufit.progress.domain.model.LearningPlan",
+        "vn.edufit.progress.domain.policy.ProgressCalculator",
+        "vn.edufit.progress.web.ProgressPlanController",
+        "vn.edufit.progress.web.ProgressDashboardController",
+        "vn.edufit.progress.infra.persistence.repository.SpringDataLearningPlanRepository",
+        "vn.edufit.review.api.ReviewFacade",
+        "vn.edufit.review.application.service.ReviewFacadeImpl",
+        "vn.edufit.review.application.service.ReviewService",
+        "vn.edufit.review.web.ReviewController",
+        "vn.edufit.notification.application.service.NotificationService",
+        "vn.edufit.notification.application.listener.NotificationEventListener",
+        "vn.edufit.notification.web.NotificationController"}) {
       assertTrue(imported.contain(name), "Architecture import must include " + name);
     }
 
@@ -210,5 +305,20 @@ public class ArchitectureBoundaryTest {
         .filter(c -> c.getPackageName().startsWith("vn.edufit.scheduling"))
         .count();
     assertTrue(schedulingClassesCount >= 20, "Architecture import must include non-empty scheduling classes, found: " + schedulingClassesCount);
+
+    long progressClassesCount = imported.stream()
+        .filter(c -> c.getPackageName().startsWith("vn.edufit.progress"))
+        .count();
+    assertTrue(progressClassesCount >= 20, "Architecture import must include non-empty progress classes, found: " + progressClassesCount);
+
+    long reviewClassesCount = imported.stream()
+        .filter(c -> c.getPackageName().startsWith("vn.edufit.review"))
+        .count();
+    assertTrue(reviewClassesCount >= 10, "Architecture import must include non-empty review classes, found: " + reviewClassesCount);
+
+    long notificationClassesCount = imported.stream()
+        .filter(c -> c.getPackageName().startsWith("vn.edufit.notification"))
+        .count();
+    assertTrue(notificationClassesCount >= 8, "Architecture import must include non-empty notification classes, found: " + notificationClassesCount);
   }
 }

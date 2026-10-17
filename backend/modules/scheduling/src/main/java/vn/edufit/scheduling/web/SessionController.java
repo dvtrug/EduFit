@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -108,34 +107,6 @@ public class SessionController {
     this.getCalendarService = getCalendarService;
     this.getSessionDetailService = getSessionDetailService;
     this.currentUserProvider = currentUserProvider;
-  }
-
-  /**
-   * Constructor tương thích ngược cho các bài kiểm thử đơn vị hiện có.
-   */
-  public SessionController(
-      ProposeSessionService proposeSessionService,
-      RespondToProposalService respondToProposalService,
-      RescheduleSessionService rescheduleSessionService,
-      CancelSessionService cancelSessionService,
-      RecordSessionOutcomeService recordSessionOutcomeService,
-      GetCalendarService getCalendarService,
-      GetSessionDetailService getSessionDetailService,
-      ObjectProvider<CurrentUser> currentUserProvider
-  ) {
-    this(
-        proposeSessionService,
-        null,
-        respondToProposalService,
-        null,
-        rescheduleSessionService,
-        null,
-        cancelSessionService,
-        recordSessionOutcomeService,
-        getCalendarService,
-        getSessionDetailService,
-        currentUserProvider
-    );
   }
 
   @PostMapping("/sessions/propose")

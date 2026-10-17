@@ -71,4 +71,72 @@ public class SessionFacadeImpl implements SessionFacade {
         .stream()
         .anyMatch(s -> ConflictPolicy.isOverlapping(startAt, endAt, s.getStartAt(), s.getEndAt()));
   }
+
+  @Override
+  public List<vn.edufit.scheduling.api.dto.SessionTimelineView> findSessionsByClassId(UUID classId, Instant from, Instant to) {
+    if (classId == null) return List.of();
+    return sessionRepository.findByClassId(classId, from, to)
+        .stream()
+        .map(s -> new vn.edufit.scheduling.api.dto.SessionTimelineView(
+            s.getSessionId(),
+            s.getClassId(),
+            s.getStartAt(),
+            s.getEndAt(),
+            s.getStatus().name()
+        ))
+        .toList();
+  }
+
+  @Override
+  public java.util.Map<UUID, vn.edufit.scheduling.api.dto.ClassSessionStatsView> getSessionStatsByClassIds(List<UUID> classIds, Instant from, Instant to) {
+    if (classIds == null || classIds.isEmpty()) return java.util.Map.of();
+
+    List<vn.edufit.scheduling.domain.model.TutoringSession> sessions = sessionRepository.findByClassIds(classIds, from, to);
+    Instant now = Instant.now();
+
+    java.util.Map<UUID, List<vn.edufit.scheduling.domain.model.TutoringSession>> grouped = sessions.stream()
+        .collect(java.util.stream.Collectors.groupingBy(vn.edufit.scheduling.domain.model.TutoringSession::getClassId));
+
+    java.util.Map<UUID, vn.edufit.scheduling.api.dto.ClassSessionStatsView> result = new java.util.HashMap<>();
+    for (UUID cid : classIds) {
+      List<vn.edufit.scheduling.domain.model.TutoringSession> classSessions = grouped.getOrDefault(cid, List.of());
+
+      int completed = 0;
+      int absent = 0;
+      int cancelled = 0;
+      int upcoming = 0;
+      Instant nextSession = null;
+      Instant lastSession = null;
+
+      for (vn.edufit.scheduling.domain.model.TutoringSession s : classSessions) {
+        switch (s.getStatus()) {
+          case COMPLETED -> completed++;
+          case ABSENT -> absent++;
+          case CANCELLED -> cancelled++;
+          case SCHEDULED -> {
+            if (s.getStartAt().isAfter(now)) {
+              upcoming++;
+              if (nextSession == null || s.getStartAt().isBefore(nextSession)) {
+                nextSession = s.getStartAt();
+              }
+            }
+          }
+          default -> {}
+        }
+
+        if (s.getStartAt().isBefore(now)) {
+          if (lastSession == null || s.getStartAt().isAfter(lastSession)) {
+            lastSession = s.getStartAt();
+          }
+        }
+      }
+
+      result.put(cid, new vn.edufit.scheduling.api.dto.ClassSessionStatsView(
+          cid, completed, absent, cancelled, upcoming, nextSession, lastSession
+      ));
+    }
+
+    return result;
+  }
 }
+
