@@ -33,6 +33,8 @@ import vn.edufit.profile.api.dto.TutorSearchCriteria;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
 import vn.edufit.profile.application.service.ProfileFacadeImpl;
 import vn.edufit.profile.infra.persistence.entity.StudentProfile;
+import vn.edufit.profile.infra.persistence.entity.LearningGoal;
+import vn.edufit.profile.infra.persistence.entity.GoalType;
 import vn.edufit.profile.infra.persistence.entity.EducationLevel;
 import vn.edufit.profile.infra.persistence.entity.TeachingMode;
 import vn.edufit.profile.infra.persistence.entity.TutorProfile;
@@ -304,5 +306,44 @@ class ProfileFacadeImplTest {
     when(studentProfileRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
     assertThrows(EntityNotFoundException.class, () -> profileFacade.getStudentIdByUserId(userId));
+  }
+
+  @Test
+  @DisplayName("Batch tìm kiếm goals cho connection thành công")
+  void shouldBatchFindGoalsForConnection() {
+    UUID g1 = UUID.randomUUID(), g2 = UUID.randomUUID();
+    UUID s1 = UUID.randomUUID(), s2 = UUID.randomUUID();
+    UUID u1 = UUID.randomUUID(), u2 = UUID.randomUUID();
+
+    LearningGoal goal1 = new LearningGoal(s1, 1, (short) 1, (short) 2, vn.edufit.profile.infra.persistence.entity.GoalType.EXAM_PREPARATION, java.time.LocalDate.now().plusDays(30), TeachingMode.ONLINE, 100000L);
+    ReflectionTestUtils.setField(goal1, "goalId", g1);
+
+    LearningGoal goal2 = new LearningGoal(s2, 2, (short) 2, (short) 3, GoalType.IMPROVE_GRADES, java.time.LocalDate.now().plusDays(60), TeachingMode.ONLINE, 200000L);
+    ReflectionTestUtils.setField(goal2, "goalId", g2);
+
+    StudentProfile student1 = new StudentProfile(u1);
+    ReflectionTestUtils.setField(student1, "studentId", s1);
+    student1.setEducationLevelId(4);
+
+    StudentProfile student2 = new StudentProfile(u2);
+    ReflectionTestUtils.setField(student2, "studentId", s2);
+    student2.setEducationLevelId(5);
+
+    when(learningGoalRepository.findAllById(List.of(g1, g2))).thenReturn(List.of(goal1, goal2));
+    when(studentProfileRepository.findAllById(java.util.Set.of(s1, s2))).thenReturn(List.of(student1, student2));
+
+    var map = profileFacade.findGoalsForConnection(List.of(g1, g2));
+    assertEquals(2, map.size());
+    assertEquals(u1, map.get(g1).studentUserId());
+    assertEquals(4, map.get(g1).educationLevelId());
+    assertEquals(u2, map.get(g2).studentUserId());
+    assertEquals(5, map.get(g2).educationLevelId());
+  }
+
+  @Test
+  @DisplayName("Trả về map rỗng khi danh sách goalIds rỗng hoặc null")
+  void shouldReturnEmptyMapWhenGoalIdsEmptyOrNull() {
+    assertTrue(profileFacade.findGoalsForConnection(List.of()).isEmpty());
+    assertTrue(profileFacade.findGoalsForConnection(null).isEmpty());
   }
 }

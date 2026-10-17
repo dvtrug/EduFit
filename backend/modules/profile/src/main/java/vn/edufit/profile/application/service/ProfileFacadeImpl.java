@@ -2,6 +2,7 @@ package vn.edufit.profile.application.service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -33,10 +34,12 @@ import vn.edufit.profile.infra.persistence.entity.StudentProfile;
 import vn.edufit.profile.infra.persistence.entity.TeachingMode;
 import vn.edufit.profile.infra.persistence.entity.TutorProfile;
 import vn.edufit.profile.infra.persistence.entity.TutorStatus;
+import vn.edufit.profile.infra.persistence.entity.Subject;
 import vn.edufit.profile.infra.persistence.repository.EducationLevelRepository;
 import vn.edufit.profile.infra.persistence.repository.GoalAvailabilitySlotRepository;
 import vn.edufit.profile.infra.persistence.repository.LearningGoalRepository;
 import vn.edufit.profile.infra.persistence.repository.StudentProfileRepository;
+import vn.edufit.profile.infra.persistence.repository.SubjectRepository;
 import vn.edufit.profile.infra.persistence.repository.TutorAvailabilitySlotRepository;
 import vn.edufit.profile.infra.persistence.repository.TutorProfileRepository;
 import vn.edufit.profile.infra.persistence.repository.TutorSubjectRepository;
@@ -54,8 +57,10 @@ public class ProfileFacadeImpl implements ProfileFacade {
   private final LearningGoalRepository learningGoalRepository;
   private final GoalAvailabilitySlotRepository goalAvailabilitySlotRepository;
   private final EducationLevelRepository educationLevelRepository;
+  private final SubjectRepository subjectRepository;
   private final int candidateLimit;
 
+  @org.springframework.beans.factory.annotation.Autowired
   public ProfileFacadeImpl(
       TutorProfileRepository tutorProfileRepository,
       StudentProfileRepository studentProfileRepository,
@@ -64,6 +69,7 @@ public class ProfileFacadeImpl implements ProfileFacade {
       LearningGoalRepository learningGoalRepository,
       GoalAvailabilitySlotRepository goalAvailabilitySlotRepository,
       EducationLevelRepository educationLevelRepository,
+      SubjectRepository subjectRepository,
       @Value("${edufit.discovery.matching.candidate-limit:200}") int candidateLimit
   ) {
     this.tutorProfileRepository = tutorProfileRepository;
@@ -73,10 +79,26 @@ public class ProfileFacadeImpl implements ProfileFacade {
     this.learningGoalRepository = learningGoalRepository;
     this.goalAvailabilitySlotRepository = goalAvailabilitySlotRepository;
     this.educationLevelRepository = educationLevelRepository;
+    this.subjectRepository = subjectRepository;
     if (candidateLimit < 1) {
       throw new IllegalArgumentException("Matching candidate limit must be positive.");
     }
     this.candidateLimit = candidateLimit;
+  }
+
+  public ProfileFacadeImpl(
+      TutorProfileRepository tutorProfileRepository,
+      StudentProfileRepository studentProfileRepository,
+      TutorSubjectRepository tutorSubjectRepository,
+      TutorAvailabilitySlotRepository tutorAvailabilitySlotRepository,
+      LearningGoalRepository learningGoalRepository,
+      GoalAvailabilitySlotRepository goalAvailabilitySlotRepository,
+      EducationLevelRepository educationLevelRepository,
+      int candidateLimit
+  ) {
+    this(tutorProfileRepository, studentProfileRepository, tutorSubjectRepository,
+        tutorAvailabilitySlotRepository, learningGoalRepository, goalAvailabilitySlotRepository,
+        educationLevelRepository, null, candidateLimit);
   }
 
   @Override
@@ -276,10 +298,85 @@ public class ProfileFacadeImpl implements ProfileFacade {
   @Transactional(readOnly = true)
   public Optional<ConnectionGoalDto> findGoalForConnection(UUID goalId) {
     return learningGoalRepository.findById(goalId).flatMap(goal -> studentProfileRepository
-        .findById(goal.getStudentId()).map(student -> new ConnectionGoalDto(
-            goal.getGoalId(), goal.getStudentId(), student.getUserId(), goal.getSubjectId(),
-            student.getEducationLevelId(), goal.getGoalType().name(), goal.getDeadline(),
-            goal.getStatus().name())));
+        .findById(goal.getStudentId()).map(student -> {
+          String subjectName = (subjectRepository != null && goal.getSubjectId() != null)
+              ? subjectRepository.findById(goal.getSubjectId()).map(Subject::getName).orElse(null)
+              : null;
+          String levelName = (educationLevelRepository != null && student.getEducationLevelId() != null)
+              ? educationLevelRepository.findById(student.getEducationLevelId()).map(EducationLevel::getName).orElse(null)
+              : null;
+          String area = (goal.getArea() != null && !goal.getArea().isBlank()) ? goal.getArea() : student.getArea();
+          return new ConnectionGoalDto(
+              goal.getGoalId(),
+              goal.getStudentId(),
+              student.getUserId(),
+              goal.getSubjectId(),
+              student.getEducationLevelId(),
+              goal.getGoalType() != null ? goal.getGoalType().name() : null,
+              goal.getDeadline(),
+              goal.getStatus() != null ? goal.getStatus().name() : null,
+              goal.getCurrentLevel() != null ? goal.getCurrentLevel().intValue() : null,
+              goal.getDesiredLevel() != null ? goal.getDesiredLevel().intValue() : null,
+              goal.getBudgetMin(),
+              goal.getBudgetMax(),
+              area,
+              subjectName,
+              levelName
+          );
+        }));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Map<UUID, ConnectionGoalDto> findGoalsForConnection(List<UUID> goalIds) {
+    if (goalIds == null || goalIds.isEmpty()) {
+      return Map.of();
+    }
+    List<LearningGoal> goals = learningGoalRepository.findAllById(goalIds);
+    if (goals.isEmpty()) {
+      return Map.of();
+    }
+    Set<UUID> studentIds = goals.stream().map(LearningGoal::getStudentId).collect(Collectors.toSet());
+    Map<UUID, StudentProfile> students = studentProfileRepository.findAllById(studentIds).stream()
+        .collect(Collectors.toMap(StudentProfile::getStudentId, s -> s));
+
+    Set<Integer> subjectIds = goals.stream().map(LearningGoal::getSubjectId).filter(java.util.Objects::nonNull).collect(Collectors.toSet());
+    Map<Integer, String> subjects = (subjectRepository != null && !subjectIds.isEmpty())
+        ? subjectRepository.findAllById(subjectIds).stream().collect(Collectors.toMap(Subject::getSubjectId, Subject::getName))
+        : Map.of();
+
+    Set<Integer> levelIds = students.values().stream().map(StudentProfile::getEducationLevelId).filter(java.util.Objects::nonNull).collect(Collectors.toSet());
+    Map<Integer, String> levels = (educationLevelRepository != null && !levelIds.isEmpty())
+        ? educationLevelRepository.findAllById(levelIds).stream().collect(Collectors.toMap(EducationLevel::getLevelId, EducationLevel::getName))
+        : Map.of();
+
+    Map<UUID, ConnectionGoalDto> result = new HashMap<>();
+    for (LearningGoal goal : goals) {
+      StudentProfile student = students.get(goal.getStudentId());
+      if (student != null) {
+        String subjectName = subjects.get(goal.getSubjectId());
+        String levelName = levels.get(student.getEducationLevelId());
+        String area = (goal.getArea() != null && !goal.getArea().isBlank()) ? goal.getArea() : student.getArea();
+        result.put(goal.getGoalId(), new ConnectionGoalDto(
+            goal.getGoalId(),
+            goal.getStudentId(),
+            student.getUserId(),
+            goal.getSubjectId(),
+            student.getEducationLevelId(),
+            goal.getGoalType() != null ? goal.getGoalType().name() : null,
+            goal.getDeadline(),
+            goal.getStatus() != null ? goal.getStatus().name() : null,
+            goal.getCurrentLevel() != null ? goal.getCurrentLevel().intValue() : null,
+            goal.getDesiredLevel() != null ? goal.getDesiredLevel().intValue() : null,
+            goal.getBudgetMin(),
+            goal.getBudgetMax(),
+            area,
+            subjectName,
+            levelName
+        ));
+      }
+    }
+    return result;
   }
 
   @Override

@@ -239,7 +239,7 @@ class LearningGoalPostgresTest {
         vn.edufit.shared.exception.InvalidOperationException.class,
         () ->
             context
-                .getBean(vn.edufit.connection.application.ConnectionService.class)
+                .getBean(vn.edufit.connection.application.service.ConnectionRequestService.class)
                 .request(user, id, UUID.randomUUID(), java.util.List.of("MON 18:00"), null));
     assertEquals(0, jdbc.queryForObject("select count(*) from connection_request", Integer.class));
   }
@@ -496,7 +496,7 @@ class LearningGoalPostgresTest {
     UUID link = jdbc.queryForObject("select link_id from parent_student_link", UUID.class);
     actor(accountId, "STUDENT");
     context
-        .getBean(vn.edufit.connection.application.ConnectionService.class)
+        .getBean(vn.edufit.connection.application.service.ParentStudentLinkService.class)
         .revokeLink(user, link, "test revoke");
     actor(parent, "PARENT");
     mvc.perform(get(path)).andExpect(status().isForbidden());
@@ -691,6 +691,8 @@ class LearningGoalPostgresTest {
   void actor(UUID id, String role) {
     when(user.getUserId()).thenReturn(role.equals("GUEST") ? null : id);
     when(user.hasRole(anyString())).thenAnswer(call -> role.equals(call.getArgument(0)));
+    if (!role.equals("GUEST")) when(context.getBean(vn.edufit.iam.api.IamFacade.class).findUserSummaryById(id))
+        .thenReturn(java.util.Optional.of(new vn.edufit.iam.api.dto.UserSummaryView(id,"actor@test.invalid","Actor",vn.edufit.iam.api.AccountRole.valueOf(role),vn.edufit.iam.api.AccountStatus.ACTIVE)));
   }
 
   @Configuration
@@ -698,7 +700,7 @@ class LearningGoalPostgresTest {
   @EnableJpaRepositories({
     "vn.edufit.profile.infra.persistence.repository",
     "vn.edufit.discovery.infra.persistence.repository",
-    "vn.edufit.connection.infra.persistence"
+    "vn.edufit.connection.infra.persistence.repository"
   })
   @Import({
     LearningGoalController.class,
@@ -709,7 +711,13 @@ class LearningGoalPostgresTest {
     vn.edufit.discovery.web.DiscoveryController.class,
     vn.edufit.discovery.web.StudentGoalsController.class,
     vn.edufit.discovery.application.service.StudentGoalQueryService.class,
-    vn.edufit.connection.application.ConnectionService.class
+    vn.edufit.connection.application.service.ConnectionFacadeImpl.class,
+    vn.edufit.connection.application.service.ConnectionExpiryService.class,
+    vn.edufit.connection.application.service.ConnectionRequestService.class,
+    vn.edufit.connection.application.policy.ConnectionRequestInput.class,
+    vn.edufit.connection.application.service.ParentStudentLinkService.class,
+    vn.edufit.connection.infra.locking.PostgresConnectionLock.class,
+    vn.edufit.iam.infra.config.IamClockConfig.class
   })
   static class Config {
     @Bean

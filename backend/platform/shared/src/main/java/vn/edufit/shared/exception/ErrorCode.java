@@ -85,6 +85,10 @@ public enum ErrorCode {
   /** Khung giờ đề xuất bị xung đột/trùng lịch với lịch dạy hoặc lịch học đã có (BR-42, NFR-17). */
   SCHEDULE_OVERLAP,
 
+  // --- Module Connection (Liên kết & Ghép nối - Milestone 1) ---
+  /** Khung giờ đề xuất bị trùng với lịch lớp học hoặc buổi học đã chốt của gia sư. */
+  SLOT_CONFLICT_WITH_ACTIVE_SCHEDULE,
+
   /** Đề xuất buổi học đã quá hạn phản hồi và không còn hiệu lực (FR-17, BR-41). */
   PROPOSAL_EXPIRED,
 
