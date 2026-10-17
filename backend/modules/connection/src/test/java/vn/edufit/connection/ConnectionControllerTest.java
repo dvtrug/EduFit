@@ -215,4 +215,13 @@ class ConnectionControllerTest {
     mvc.perform(get(BASE + "/admin/parent-student/links"))
         .andExpect(status().isBadRequest());
   }
+
+  @Test void classesReturnsTutoringClassesList() throws Exception {
+    when(queries.classes(actor)).thenReturn(List.of(new TutoringClassResult(
+        UUID_ID, UUID_ID, UUID_ID, UUID_ID, "ACTIVE", "Học sinh Minh", "Gia sư Nam", "Toán", "Lớp 10", "PROPOSED", 0, NOW, null
+    )));
+    data(mvc.perform(get(BASE + "/classes")),
+        "[{\"classId\":\"%s\",\"studentId\":\"%s\",\"tutorId\":\"%s\",\"goalId\":\"%s\",\"status\":\"ACTIVE\",\"studentDisplayName\":\"Học sinh Minh\",\"tutorDisplayName\":\"Gia sư Nam\",\"subjectName\":\"Toán\",\"educationLevelName\":\"Lớp 10\",\"scheduleStatus\":\"PROPOSED\",\"sessionCount\":0,\"startedAt\":\"2026-10-11T03:00:00Z\"}]".formatted(ID, ID, ID, ID));
+    verify(queries).classes(actor);
+  }
 }

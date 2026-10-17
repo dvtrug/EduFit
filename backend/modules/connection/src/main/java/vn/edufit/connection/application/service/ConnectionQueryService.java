@@ -407,4 +407,64 @@ public class ConnectionQueryService {
         conflicts
     );
   }
+
+  @Transactional(readOnly = true)
+  public List<vn.edufit.connection.application.dto.TutoringClassResult> classes(CurrentUser actor) {
+    requireRole(actor, "TUTOR", "STUDENT", "PARENT");
+    List<TutoringClass> classList;
+    if (actor.hasRole("TUTOR")) {
+      UUID tutorId = profile.getTutorIdByUserId(actor.getUserId());
+      classList = (classes != null && tutorId != null) ? classes.findByTutorId(tutorId) : List.of();
+    } else if (actor.hasRole("STUDENT")) {
+      UUID studentId = profile.getStudentIdByUserId(actor.getUserId());
+      classList = (classes != null && studentId != null) ? classes.findByStudentId(studentId) : List.of();
+    } else {
+      List<ParentStudentLinkResult> linkResults = links(actor);
+      List<UUID> sIds = linkResults.stream().map(ParentStudentLinkResult::studentId).distinct().toList();
+      classList = classes != null ? sIds.stream().flatMap(s -> classes.findByStudentId(s).stream()).toList() : List.of();
+    }
+    if (classList.isEmpty()) {
+      return List.of();
+    }
+
+    List<UUID> goalIds = classList.stream().map(TutoringClass::getGoalId).distinct().toList();
+    Map<UUID, ConnectionGoalDto> goalsMap = profile.findGoalsForConnection(goalIds);
+
+    return classList.stream().map(c -> {
+      ConnectionGoalDto goal = goalsMap.get(c.getGoalId());
+      String subjectName = goal != null ? goal.subjectName() : null;
+      String educationLevelName = goal != null ? goal.educationLevelName() : null;
+
+      String studentName = null;
+      if (profile != null && iam != null) {
+        studentName = profile.findStudentById(c.getStudentId())
+            .flatMap(s -> iam.findUserSummaryById(s.userId()))
+            .map(u -> toSafeDisplayName(u.fullName()))
+            .orElse("Học sinh");
+      }
+
+      String tutorName = null;
+      if (profile != null) {
+        tutorName = profile.findTutorById(c.getTutorId())
+            .map(vn.edufit.profile.api.dto.TutorSummaryDto::displayName)
+            .orElse("Gia sư");
+      }
+
+      return new vn.edufit.connection.application.dto.TutoringClassResult(
+          c.getId(),
+          c.getStudentId(),
+          c.getTutorId(),
+          c.getGoalId(),
+          c.getStatus(),
+          studentName,
+          tutorName,
+          subjectName,
+          educationLevelName,
+          "PROPOSED",
+          0,
+          c.getStartedAt(),
+          c.getEndedAt()
+      );
+    }).toList();
+  }
 }

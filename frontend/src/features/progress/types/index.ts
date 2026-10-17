@@ -1,79 +1,175 @@
-export type MilestoneStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED";
+export type MilestoneStatus = "NOT_STARTED" | "IN_PROGRESS" | "ACHIEVED" | "PENDING" | "COMPLETED";
 
-export interface MilestoneItem {
+export interface MilestoneResponse {
   milestoneId: string;
   title: string;
-  description?: string;
-  orderIndex: number;
+  description?: string | null;
+  targetDate?: string | null;
+  weight: number; // 1 to 5
   status: MilestoneStatus;
-  completedAt?: string;
+  achievedDate?: string | null;
+  isArchived: boolean;
+  sortOrder: number;
 }
 
-export interface PlanItem {
+// Backwards-compatible alias for existing views
+export type MilestoneItem = MilestoneResponse;
+
+export interface PlanResponse {
   planId: string;
   classId: string;
-  title: string;
-  description?: string;
-  milestones: MilestoneItem[];
-  totalMilestones: number;
-  completedMilestones: number;
-  progressPercentage: number;
+  summary?: string | null;
+  version: number;
+  progressPercentage?: number | null;
+  milestones: MilestoneResponse[];
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface ClassSessionStats {
+// Backwards-compatible alias for existing views
+export interface PlanItem extends PlanResponse {
+  title?: string;
+  totalMilestones?: number;
+  completedMilestones?: number;
+}
+
+export interface ClassSessionStatsView {
   totalSessions: number;
   completedSessions: number;
-  upcomingSessions: number;
+  absentSessions?: number;
+  upcomingSessions?: number;
   cancelledSessions: number;
 }
+
+// Backwards-compatible alias
+export type ClassSessionStats = ClassSessionStatsView;
 
 export interface ProgressSeriesPoint {
   date: string;
   progressPercent: number;
 }
 
-export interface SessionNoteItem {
-  sessionNoteId: string;
+export interface SessionNoteTimelineResponse {
   sessionId: string;
+  classId: string;
+  startAt: string;
+  endAt: string;
+  status: string; // "COMPLETED" | "ABSENT" | "SCHEDULED" etc.
+  noteText?: string | null;
+  recordedAt?: string | null;
+}
+
+// Backwards-compatible alias
+export interface SessionNoteItem extends SessionNoteTimelineResponse {
+  sessionNoteId?: string;
   sessionDate?: string;
-  summary: string;
+  summary?: string;
   homeworkAssigned?: string;
   studentAttitude?: string;
   nextSteps?: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface ClassSelectorItem {
   classId: string;
   title: string;
   status: string;
-  progressPercentage?: number;
+  progressPercentage?: number | null;
 }
 
-export interface StudentDashboardData {
+export interface StudentDashboardResponse {
   studentId: string;
   studentName: string;
   classes: ClassSelectorItem[];
-  selectedClassId?: string;
-  tutorId?: string;
-  tutorName?: string;
-  goalId?: string;
-  goalTitle?: string;
-  progressPercentage?: number;
-  plan?: PlanItem;
-  sessionStats?: ClassSessionStats;
+  selectedClassId?: string | null;
+  tutorId?: string | null;
+  tutorName?: string | null;
+  goalId?: string | null;
+  goalTitle?: string | null;
+  progressPercentage?: number | null;
+  plan?: PlanResponse | null;
+  sessionStats?: ClassSessionStatsView | null;
   progressSeries?: ProgressSeriesPoint[];
-  recentNotes?: SessionNoteItem[];
+  recentNotes?: SessionNoteTimelineResponse[];
   hasMoreNotes?: boolean;
 }
+
+// Backwards-compatible alias
+export type StudentDashboardData = StudentDashboardResponse;
 
 export interface ParentStudentSummary {
   studentId: string;
   studentName: string;
   classes: ClassSelectorItem[];
-  activeClassDashboard?: StudentDashboardData;
+  activeClassDashboard?: StudentDashboardResponse | null;
 }
 
-export interface ParentDashboardData {
+export interface ParentDashboardResponse {
   students: ParentStudentSummary[];
+}
+
+// Backwards-compatible alias
+export type ParentDashboardData = ParentDashboardResponse;
+
+export interface TeachingHistoryItem {
+  classId: string;
+  studentId: string;
+  studentName: string;
+  goalId?: string | null;
+  goalTitle?: string | null;
+  status: string;
+  progressPercentage?: number | null;
+  startedAt?: string | null;
+  endedAt?: string | null;
+  sessionStats?: ClassSessionStatsView | null;
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
+
+// Payload DTOs
+export interface CreateMilestoneItemPayload {
+  title: string;
+  description?: string;
+  targetDate?: string;
+  weight?: number;
+}
+
+export interface CreatePlanPayload {
+  classId: string;
+  summary?: string;
+  milestones: CreateMilestoneItemPayload[];
+}
+
+export interface UpdateMilestoneItemPayload {
+  milestoneId?: string;
+  title: string;
+  description?: string;
+  targetDate?: string;
+  weight?: number;
+}
+
+export interface UpdatePlanPayload {
+  version: number;
+  summary?: string;
+  milestones: UpdateMilestoneItemPayload[];
+}
+
+export interface UpdateMilestoneStatusPayload {
+  version: number;
+  status: "NOT_STARTED" | "IN_PROGRESS" | "ACHIEVED";
+  achievedDate?: string;
+}
+
+export interface RecordSessionOutcomePayload {
+  outcome: "COMPLETED" | "ABSENT";
+  noteContent?: string;
 }
