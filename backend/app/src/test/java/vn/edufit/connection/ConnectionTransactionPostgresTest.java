@@ -1173,6 +1173,9 @@ class ConnectionTransactionPostgresTest {
         new vn.edufit.iam.api.dto.UserSummaryView(parent, parent + "@test.invalid", "Parent", vn.edufit.iam.api.AccountRole.PARENT, vn.edufit.iam.api.AccountStatus.ACTIVE)
     ));
 
+    var parentActor = actor(parent, "PARENT");
+    var studentActor = actor(studentUser, "STUDENT");
+
     int threads = 2;
     var latch = new CountDownLatch(threads);
     var startBarrier = new CountDownLatch(1);
@@ -1183,9 +1186,11 @@ class ConnectionTransactionPostgresTest {
       pool.submit(() -> {
         try {
           startBarrier.await();
-          boolean res = invitations.invite(actor(parent, "PARENT"), studentUser + "@test.invalid");
+          boolean res = invitations.invite(parentActor, studentUser + "@test.invalid");
           if (res) successCount.incrementAndGet();
-        } catch (Exception ignored) {
+        } catch (vn.edufit.shared.exception.ResourceConflictException | org.springframework.dao.DataIntegrityViolationException ignored) {
+        } catch (Exception e) {
+          e.printStackTrace();
         } finally {
           latch.countDown();
         }
@@ -1194,9 +1199,11 @@ class ConnectionTransactionPostgresTest {
       pool.submit(() -> {
         try {
           startBarrier.await();
-          boolean res = invitations.invite(actor(studentUser, "STUDENT"), parent + "@test.invalid");
+          boolean res = invitations.invite(studentActor, parent + "@test.invalid");
           if (res) successCount.incrementAndGet();
-        } catch (Exception ignored) {
+        } catch (vn.edufit.shared.exception.ResourceConflictException | org.springframework.dao.DataIntegrityViolationException ignored) {
+        } catch (Exception e) {
+          e.printStackTrace();
         } finally {
           latch.countDown();
         }
@@ -1204,6 +1211,8 @@ class ConnectionTransactionPostgresTest {
       startBarrier.countDown();
       assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
+
+    assertEquals(1, successCount.get(), "Exactly one invitation should succeed");
 
     // Invariant: Exactly one invitation can be in PENDING status for the pair
     int pendingCount = jdbc.queryForObject(
