@@ -62,7 +62,7 @@ export function StudentDiscoveryView() {
   } = useTutorDetail();
 
   // 3. AI Matching Hook (Tab 2: Gợi ý thông minh)
-  const matching = useTutorMatching();
+  const matching = useTutorMatching({ enabled: activeTab === "matches" });
   const {
     matches,
     isMatching,
@@ -73,12 +73,13 @@ export function StudentDiscoveryView() {
 
   // 4. Request connection state
   const [connectTutorId, setConnectTutorId] = useState<string | null>(null);
+  const activeGoal = matching.goal || matching.goals[0];
 
   const handleRequestConnect = (tutorId: string) => {
-    if (activeTab === "matches" && matching.goal) {
+    if (activeGoal) {
       setConnectTutorId(tutorId);
     } else {
-      showToast("Chuyển sang tab Gợi ý phù hợp để ghép lớp theo mục tiêu.", "info");
+      showToast("Bạn cần thiết lập mục tiêu học tập trước khi gửi yêu cầu kết nối.", "info");
       handleTabChange("matches");
     }
   };
@@ -271,10 +272,12 @@ export function StudentDiscoveryView() {
       {activeTab === "requests" && <SentRequests />}
 
       {/* 6. MODALS */}
-      {connectTutorId && matching.goal && (
+      {connectTutorId && activeGoal && (
         <ConnectionRequestDialog
           tutorId={connectTutorId}
-          goal={matching.goal}
+          goal={activeGoal}
+          goals={matching.goals}
+          onSelectGoal={(selected) => matching.setGoalId(selected.goalId)}
           onClose={() => setConnectTutorId(null)}
           onSent={() => {
             setConnectTutorId(null);

@@ -4,6 +4,7 @@ import React from "react";
 import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import type { SubjectItem, EducationLevel } from "@/services/catalog";
 import type { TutorSearchParams, TeachingMode } from "../../types";
+import { MAJOR_VIETNAM_CITIES } from "@/shared/constants/locations";
 
 export interface QuickFilterPillsProps {
   params: TutorSearchParams;
@@ -27,17 +28,6 @@ const DAY_OPTIONS = [
   { value: 5, label: "Thứ 6" },
   { value: 6, label: "Thứ 7" },
   { value: 7, label: "Chủ Nhật" },
-];
-
-const COMMON_AREAS = [
-  "Quận 1",
-  "Quận 3",
-  "Quận 5",
-  "Quận 7",
-  "Quận 10",
-  "Bình Thạnh",
-  "Tân Bình",
-  "Thủ Đức",
 ];
 
 export function QuickFilterPills({
@@ -155,7 +145,7 @@ export function QuickFilterPills({
           }`}
         >
           <option value="" className="text-neutral-900 bg-card">Khu vực</option>
-          {COMMON_AREAS.map((a) => (
+          {MAJOR_VIETNAM_CITIES.map((a) => (
             <option key={a} value={a} className="text-neutral-900 bg-card">
               {a}
             </option>
@@ -172,11 +162,14 @@ export function QuickFilterPills({
       <div className="relative inline-block">
         <select
           value={params.dayOfWeek || ""}
-          onChange={(e) =>
+          onChange={(e) => {
+            const val = e.target.value ? Number(e.target.value) : undefined;
             onUpdateFilters({
-              dayOfWeek: e.target.value ? Number(e.target.value) : undefined,
-            })
-          }
+              dayOfWeek: val,
+              availableFrom: val ? "00:00:00" : undefined,
+              availableTo: val ? "23:59:59" : undefined,
+            });
+          }}
           aria-label="Lọc theo lịch rảnh trong tuần"
           className={`appearance-none pl-3 pr-7 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer shadow-2xs ${
             params.dayOfWeek

@@ -12,6 +12,7 @@ import {
 } from "../utils/matchingNeed";
 
 import { SLOT_PRESETS } from "@/shared/lib/dateTime";
+import { MAJOR_VIETNAM_CITIES } from "@/shared/constants/locations";
 
 export interface MatchingNeedModalProps {
   isOpen: boolean;
@@ -48,10 +49,47 @@ export function MatchingNeedModal({ isOpen, currentNeed, onClose, onSave }: Matc
 
   const selectedSubject = subjects.find((subject) => subject.subjectId === subjectId);
   const selectedLevel = levels.find((level) => level.levelId === educationLevelId);
-  const selectedPresetId = useMemo(
-    () => SLOT_PRESETS.find((preset) => JSON.stringify(preset.slots) === JSON.stringify(slots))?.id,
-    [slots]
-  );
+
+  const isSlotContained = (list: TutorAvailabilitySlot[], target: TutorAvailabilitySlot) =>
+    list.some(
+      (s) =>
+        s.dayOfWeek === target.dayOfWeek &&
+        s.startTime.slice(0, 5) === target.startTime.slice(0, 5) &&
+        s.endTime.slice(0, 5) === target.endTime.slice(0, 5)
+    );
+
+  const isPresetActive = (preset: (typeof SLOT_PRESETS)[number]) =>
+    preset.slots.length > 0 && preset.slots.every((ps) => isSlotContained(slots, ps));
+
+  const togglePreset = (preset: (typeof SLOT_PRESETS)[number]) => {
+    if (isPresetActive(preset)) {
+      setSlots((prev) =>
+        prev.filter(
+          (s) =>
+            !preset.slots.some(
+              (ps) =>
+                ps.dayOfWeek === s.dayOfWeek &&
+                ps.startTime.slice(0, 5) === s.startTime.slice(0, 5) &&
+                ps.endTime.slice(0, 5) === s.endTime.slice(0, 5)
+            )
+        )
+      );
+    } else {
+      setSlots((prev) => {
+        const result = [...prev];
+        for (const ps of preset.slots) {
+          if (!isSlotContained(result, ps)) {
+            result.push({
+              dayOfWeek: ps.dayOfWeek,
+              startTime: ps.startTime,
+              endTime: ps.endTime,
+            });
+          }
+        }
+        return result;
+      });
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -158,8 +196,33 @@ export function MatchingNeedModal({ isOpen, currentNeed, onClose, onSave }: Matc
                 <option value="BOTH">Online & Trực tiếp</option><option value="ONLINE">Chỉ học Online</option><option value="OFFLINE">Chỉ học Trực tiếp</option>
               </select>
             </label>
-            <label className="text-xs font-bold text-neutral-700"><span className="flex items-center gap-1"><MapPin className="size-3" />Khu vực</span>
-              <input value={area} onChange={(event) => setArea(event.target.value)} disabled={mode === "ONLINE"} maxLength={100} className="mt-1.5 w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium disabled:opacity-50" />
+            <label className="text-xs font-bold text-neutral-700">
+              <span className="flex items-center gap-1"><MapPin className="size-3" />Khu vực</span>
+              <select
+                value={MAJOR_VIETNAM_CITIES.includes(area) ? area : (area ? "other" : "")}
+                onChange={(event) => {
+                  if (event.target.value !== "other") {
+                    setArea(event.target.value);
+                  }
+                }}
+                disabled={mode === "ONLINE"}
+                className="mt-1.5 w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium disabled:opacity-50"
+              >
+                <option value="">-- Chọn Tỉnh / Thành phố --</option>
+                {MAJOR_VIETNAM_CITIES.map((city) => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+                <option value="other">Khu vực / Địa chỉ chi tiết khác...</option>
+              </select>
+              {(!MAJOR_VIETNAM_CITIES.includes(area) || area === "") && mode !== "ONLINE" && (
+                <input
+                  value={area}
+                  placeholder="VD: Cầu Giấy, Hà Nội hoặc Quận 1, TP.HCM"
+                  onChange={(event) => setArea(event.target.value)}
+                  maxLength={100}
+                  className="mt-1.5 w-full px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium"
+                />
+              )}
             </label>
             <label className="text-xs font-bold text-neutral-700">Ngân sách tối đa / buổi
               <input type="number" min={1} required value={budgetMax} onChange={(event) => setBudgetMax(Number(event.target.value))} className="mt-1.5 w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium" />
@@ -170,14 +233,50 @@ export function MatchingNeedModal({ isOpen, currentNeed, onClose, onSave }: Matc
           </div>
 
           <fieldset className="space-y-2">
-            <legend className="text-xs font-bold text-neutral-700 flex items-center gap-1.5"><Clock className="size-3.5 text-neutral-400" />Khung giờ mong muốn</legend>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-              {SLOT_PRESETS.map((preset) => (
-                <button key={preset.id} type="button" onClick={() => setSlots(preset.slots)} className={`text-left px-3 py-2 rounded-xl text-[11px] border ${selectedPresetId === preset.id ? "border-[#006DCC] bg-sky-50/60 text-[#006DCC] font-semibold" : "border-stone-200 text-neutral-600 hover:bg-stone-50"}`}>
-                  {preset.label}
+            <div className="flex items-center justify-between">
+              <legend className="text-xs font-bold text-neutral-700 flex items-center gap-1.5">
+                <Clock className="size-3.5 text-neutral-400" />
+                Khung giờ mong muốn (chọn nhiều / bấm lại để bỏ chọn)
+              </legend>
+              {slots.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSlots([])}
+                  className="text-[11px] text-rose-600 hover:text-rose-700 font-medium cursor-pointer"
+                >
+                  Xóa tất cả
                 </button>
-              ))}
+              )}
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {SLOT_PRESETS.map((preset) => {
+                const active = isPresetActive(preset);
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => togglePreset(preset)}
+                    className={`text-left px-3 py-2 rounded-xl text-[11px] border flex items-center justify-between transition-colors cursor-pointer ${
+                      active
+                        ? "border-[#006DCC] bg-sky-50/60 text-[#006DCC] font-semibold"
+                        : "border-stone-200 text-neutral-600 hover:bg-stone-50"
+                    }`}
+                  >
+                    <span>{preset.label}</span>
+                    {active && <Check className="size-3.5 text-[#006DCC] shrink-0 ml-1" />}
+                  </button>
+                );
+              })}
+            </div>
+            {slots.length > 0 ? (
+              <p className="text-[11px] text-neutral-500 pt-0.5">
+                Đã chọn: <span className="font-medium text-neutral-700">{formatMatchingSlots(slots)}</span>
+              </p>
+            ) : (
+              <p className="text-[11px] text-amber-600 pt-0.5">
+                Chưa chọn khung giờ nào. Vui lòng chọn ít nhất 1 khung giờ.
+              </p>
+            )}
           </fieldset>
 
           <div className="pt-3 border-t border-stone-100 flex justify-end gap-2.5">

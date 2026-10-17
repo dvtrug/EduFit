@@ -123,7 +123,29 @@ export function StudentOnboardingWizard() {
         area: area.trim(),
       });
 
-      // 2. Lưu thông tin mục tiêu học tập bổ sung vào Local Storage để đồng bộ Dashboard
+      // 2. Khởi tạo mục tiêu học tập ban đầu trên Backend để sẵn sàng cho AI Matching & Kết nối
+      try {
+        const primarySubjectId = selectedSubjectIds[0] || 1;
+        await profileService.createLearningGoal({
+          subjectId: primarySubjectId,
+          currentLevel: 1,
+          desiredLevel: 4,
+          goalType: "EXAM_PREPARATION",
+          deadline: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          mode: learningMode,
+          area: learningMode === "ONLINE" ? undefined : (area.trim() || undefined),
+          budgetMin: 150000,
+          budgetMax: 300000,
+          availabilitySlots: [
+            { dayOfWeek: 2, startTime: "19:00:00", endTime: "21:00:00" },
+            { dayOfWeek: 5, startTime: "19:00:00", endTime: "21:00:00" },
+          ],
+        });
+      } catch (goalErr) {
+        console.warn("Không thể tạo mục tiêu học tập tự động từ onboarding:", goalErr);
+      }
+
+      // 3. Lưu thông tin mục tiêu học tập bổ sung vào Local Storage để đồng bộ Dashboard
       const selectedSubjects = subjectsCatalog
         .filter((s) => selectedSubjectIds.includes(s.subjectId))
         .map((s) => s.name);

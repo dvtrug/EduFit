@@ -83,16 +83,19 @@ export function useTutorMatching({ parent = false, enabled = false } = {}) {
   const updateNeed = useCallback(async (newNeed: MatchingNeed) => {
     if (parent) throw new Error("Chỉ học sinh được chỉnh sửa mục tiêu học tập.");
     await profileService.updateStudentProfile({ educationLevelId: newNeed.educationLevelId, area: newNeed.area });
-    const saved = await profileService.createLearningGoal({
+    const payload = {
       subjectId: newNeed.subjectId, currentLevel: newNeed.currentLevel, desiredLevel: newNeed.desiredLevel,
       goalType: newNeed.goalType, deadline: newNeed.deadline, mode: newNeed.teachingMode,
       area: newNeed.teachingMode === "ONLINE" ? undefined : newNeed.area,
       budgetMin: newNeed.budgetMin, budgetMax: newNeed.budgetMax, availabilitySlots: newNeed.availabilitySlots,
-    });
+    };
+    const saved = goalId
+      ? await profileService.updateLearningGoal(goalId, payload)
+      : await profileService.createLearningGoal(payload);
     const refreshed = await profileService.getMyLearningGoals();
     setGoals(refreshed.filter(item => item.status === "ACTIVE"));
     setGoalId(saved.goalId);
-  }, [parent]);
+  }, [parent, goalId]);
 
   return { need, goal, goals, goalId, setGoalId, links, studentId, setStudentId,
     matches, isMatching: isMatching || isLoadingGoals, error, updateNeed };
