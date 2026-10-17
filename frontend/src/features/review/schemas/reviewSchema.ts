@@ -15,6 +15,7 @@ export const reviewFormSchema = z.object({
     .trim()
     .min(10, "Nội dung nhận xét phải có ít nhất 10 ký tự")
     .max(1000, "Nội dung nhận xét không được vượt quá 1000 ký tự"),
+  tags: z.array(z.string()).optional(),
 });
 
 export type ReviewFormValues = z.infer<typeof reviewFormSchema>;

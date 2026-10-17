@@ -33,4 +33,17 @@ describe("Review Form Schema Validation", () => {
     const result = reviewFormSchema.safeParse(longComment);
     expect(result.success).toBe(false);
   });
+
+  it("chấp nhận danh sách nhãn nhận xét nhanh (quick tags) hợp lệ", () => {
+    const validWithTags = {
+      rating: 5,
+      comment: "[Nhiệt tình, Dễ hiểu] Gia sư dạy rất dễ hiểu.",
+      tags: ["Nhiệt tình", "Dễ hiểu"],
+    };
+    const result = reviewFormSchema.safeParse(validWithTags);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.tags).toEqual(["Nhiệt tình", "Dễ hiểu"]);
+    }
+  });
 });

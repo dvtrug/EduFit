@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { profileService } from "@/services/profile";
 import { loginSchema } from "../schemas/authSchemas";
@@ -22,6 +22,7 @@ export function shouldRedirectTutorToOnboarding(
 
 export function useLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
 
   const [formData, setFormData] = useState<LoginInput>({
@@ -90,6 +91,12 @@ export function useLoginForm() {
         }
       }
 
+      const returnUrl = searchParams.get("returnUrl");
+      if (returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//")) {
+        router.push(returnUrl);
+        return;
+      }
+
       if (user.redirectUrl) {
         router.push(user.redirectUrl);
         return;
@@ -108,7 +115,7 @@ export function useLoginForm() {
         router.push("/student/dashboard");
       }
     },
-    [router]
+    [router, searchParams]
   );
 
   const handleSubmit = useCallback(

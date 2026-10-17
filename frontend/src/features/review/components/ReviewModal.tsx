@@ -1,9 +1,21 @@
 "use client";
 
 import React, { useState } from "react";
-import { Star, X, Loader2, AlertCircle } from "lucide-react";
+import { Star, X, Loader2, AlertCircle, Tag, Check } from "lucide-react";
 import { reviewApi } from "../api/reviewApi";
+import { reviewFormSchema } from "../schemas/reviewSchema";
 import type { ReviewItem } from "../types";
+
+export const QUICK_REVIEW_TAGS = [
+  "Nhiệt tình",
+  "Đúng giờ",
+  "Dễ hiểu",
+  "Kiên nhẫn",
+  "Phương pháp hay",
+  "Tận tâm",
+  "Truyền cảm hứng",
+  "Bài tập thực tế",
+];
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -28,27 +40,47 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   const [rating, setRating] = useState<number>(existingReview?.rating || 5);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [comment, setComment] = useState<string>(existingReview?.comment || "");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) => {
+      const exists = prev.includes(tag);
+      if (exists) {
+        return prev.filter((t) => t !== tag);
+      } else {
+        return [...prev, tag];
+      }
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (rating < 1 || rating > 5) {
-      setError("Vui lòng chọn số sao đánh giá (1 - 5 sao).");
-      return;
+    const trimmedComment = comment.trim();
+    // Build combined comment with quick tags if selected and not yet present in comment text
+    let finalComment = trimmedComment;
+    if (selectedTags.length > 0) {
+      const tagPrefix = `[${selectedTags.join(", ")}]`;
+      if (!trimmedComment.includes(selectedTags[0])) {
+        finalComment = trimmedComment ? `${tagPrefix} ${trimmedComment}` : tagPrefix;
+      }
     }
 
-    const trimmedComment = comment.trim();
-    if (trimmedComment.length < 10) {
-      setError("Nội dung nhận xét phải có ít nhất 10 ký tự.");
-      return;
-    }
-    if (trimmedComment.length > 1000) {
-      setError("Nội dung nhận xét không được vượt quá 1000 ký tự.");
+    // Zod Schema Validation
+    const validationResult = reviewFormSchema.safeParse({
+      rating,
+      comment: finalComment,
+      tags: selectedTags,
+    });
+
+    if (!validationResult.success) {
+      const firstIssue = validationResult.error.issues[0];
+      setError(firstIssue?.message || "Dữ liệu đánh giá không hợp lệ. Vui lòng kiểm tra lại.");
       return;
     }
 
@@ -58,14 +90,16 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
       if (isEditing && existingReview) {
         response = await reviewApi.updateReview(existingReview.reviewId, {
           rating,
-          comment: trimmedComment,
+          comment: finalComment,
+          tags: selectedTags,
         });
       } else {
         response = await reviewApi.createReview({
           tutorId,
           studentId,
           rating,
-          comment: trimmedComment,
+          comment: finalComment,
+          tags: selectedTags,
         });
       }
 
@@ -85,12 +119,17 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="review-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+    >
       <div className="w-full max-w-lg bg-white rounded-3xl shadow-xl border border-stone-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 bg-stone-50/70">
           <div>
-            <h3 className="text-base font-bold text-neutral-900">
+            <h3 id="review-modal-title" className="text-base font-bold text-neutral-900">
               {isEditing ? "Chỉnh sửa đánh giá gia sư" : "Đánh giá gia sư"}
             </h3>
             {tutorName && (
@@ -100,6 +139,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Đóng"
             className="p-1.5 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-stone-200/60 transition-colors"
           >
             <X className="size-5" />
@@ -109,13 +149,16 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5">
+            <div
+              role="alert"
+              className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5"
+            >
               <AlertCircle className="size-4 shrink-0 text-red-600 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
-          {/* Chấm điểm sao */}
+          {/* 1. Chấm điểm sao (1-5 sao) */}
           <div className="space-y-2 text-center">
             <label className="text-xs font-semibold text-neutral-700 block">
               Mức độ hài lòng của bạn
@@ -127,10 +170,11 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                   <button
                     key={star}
                     type="button"
+                    aria-label={`${star} sao`}
                     onClick={() => setRating(star)}
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
-                    className="p-1 transition-transform hover:scale-115 focus:outline-hidden"
+                    className="p-1 transition-transform hover:scale-115 focus:outline-hidden cursor-pointer"
                   >
                     <Star
                       className={`size-7 transition-colors ${
@@ -152,7 +196,35 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             </p>
           </div>
 
-          {/* Ô nhập nhận xét */}
+          {/* 2. Chọn các nhãn nhận xét nhanh (quick tags) */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-neutral-700">
+              <Tag className="size-3.5 text-amber-600" />
+              <span>Nhãn nhận xét nhanh (chọn nhiều)</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {QUICK_REVIEW_TAGS.map((tag) => {
+                const isSelected = selectedTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs font-semibold"
+                        : "bg-stone-50 text-neutral-600 border border-stone-200 hover:bg-stone-100 hover:text-neutral-900"
+                    }`}
+                  >
+                    {isSelected && <Check className="size-3 text-amber-700" />}
+                    <span>{tag}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. Ô nhập nhận xét chi tiết */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <label htmlFor="review-comment" className="font-semibold text-neutral-800">
@@ -178,20 +250,20 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             />
           </div>
 
-          {/* Nút hành động */}
+          {/* 4. Nút hành động */}
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold text-neutral-600 hover:bg-stone-100 transition-colors"
+              className="px-4 py-2.5 rounded-xl text-xs font-semibold text-neutral-600 hover:bg-stone-100 transition-colors cursor-pointer"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 active:bg-amber-800 disabled:opacity-50 transition-colors flex items-center gap-2 shadow-sm"
+              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 active:bg-amber-800 disabled:opacity-50 transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
             >
               {loading && <Loader2 className="size-3.5 animate-spin" />}
               {isEditing ? "Lưu thay đổi" : "Gửi đánh giá"}
@@ -202,4 +274,3 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     </div>
   );
 };
-
