@@ -90,4 +90,16 @@ export const connectionApi = {
     const res = await apiClient.get<TutoringClass[]>("/api/v1/connections/classes");
     return res.data || [];
   },
+
+  /**
+   * Kết thúc lớp học đang hoạt động (Class Termination).
+   * Backend sẽ phát sự kiện TutoringClassEndedEvent tự động hủy các buổi học tương lai trên GiST.
+   */
+  async endClass(classId: string, reason?: string): Promise<TutoringClass> {
+    const res = await apiClient.post<TutoringClass>(
+      `/api/v1/connections/classes/${encodeURIComponent(classId)}/end`,
+      { reason: reason?.trim() || undefined }
+    );
+    return res.data as TutoringClass;
+  },
 };

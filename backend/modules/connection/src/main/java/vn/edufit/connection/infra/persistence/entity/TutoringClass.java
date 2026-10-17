@@ -35,4 +35,14 @@ public class TutoringClass {
   public String getStatus() { return status; }
   public Instant getStartedAt() { return startedAt; }
   public Instant getEndedAt() { return endedAt; }
+  public String getEndReason() { return endReason; }
+
+  public void endClass(String reason, Instant now) {
+    if (!"ACTIVE".equals(this.status)) {
+      throw new IllegalStateException("Chỉ có thể kết thúc lớp học đang hoạt động");
+    }
+    this.status = "ENDED";
+    this.endedAt = now;
+    this.endReason = reason;
+  }
 }

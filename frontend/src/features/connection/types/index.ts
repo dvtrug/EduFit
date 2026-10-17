@@ -54,7 +54,7 @@ export interface TutoringClass {
   studentId: string;
   tutorId: string;
   goalId: string;
-  status: "ACTIVE" | "COMPLETED" | "CANCELLED" | string;
+  status: "ACTIVE" | "ENDED" | "COMPLETED" | "CANCELLED" | string;
   studentDisplayName?: string | null;
   tutorDisplayName?: string | null;
   subjectName?: string | null;
@@ -63,6 +63,7 @@ export interface TutoringClass {
   sessionCount: number;
   startedAt: string;
   endedAt?: string | null;
+  endReason?: string | null;
 }
 
 export interface RespondRequestPayload {

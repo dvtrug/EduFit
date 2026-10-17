@@ -159,4 +159,13 @@ public class ConnectionController {
         .toList();
     return ApiResponse.success(items);
   }
+
+  @PostMapping("/classes/{id}/end")
+  public ApiResponse<TutoringClassResponse> endClass(
+      @PathVariable UUID id,
+      @Valid @RequestBody(required = false) EndClassBody body) {
+    String reason = body != null ? body.reason() : null;
+    TutoringClassResult result = value(service.endClass(user(), id, reason));
+    return ApiResponse.success(TutoringClassResponse.of(result));
+  }
 }

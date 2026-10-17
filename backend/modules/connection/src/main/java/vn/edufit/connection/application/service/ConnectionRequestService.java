@@ -28,6 +28,8 @@ import vn.edufit.shared.notification.NotificationSink;
 import org.springframework.context.ApplicationEventPublisher;
 import vn.edufit.connection.api.event.ConnectionRequestChangedEvent;
 import vn.edufit.connection.api.event.TutoringClassCreatedEvent;
+import vn.edufit.connection.api.event.TutoringClassEndedEvent;
+import vn.edufit.connection.application.dto.TutoringClassResult;
 import vn.edufit.connection.application.policy.ConnectionTransitions;
 import java.util.Optional;
 import vn.edufit.connection.api.TutorScheduleConflictChecker;
@@ -271,5 +273,60 @@ public class ConnectionRequestService {
     events.publishEvent(new TutoringClassCreatedEvent(UUID.randomUUID(), created.getId(), actor.getUserId(),
         request.getStudentId(), null, "ACTIVE", now, id, tutorId, request.getGoalId()));
     return TransitionResult.success(ClassResult.from(created));
+  }
+
+  @Transactional
+  public TransitionResult<TutoringClassResult> endClass(CurrentUser actor, UUID classId, String reason) {
+    requireRole(actor, "TUTOR", "STUDENT", "PARENT");
+    requireActiveActor(actor);
+
+    if (reason != null && reason.length() > 300) {
+      throw new InvalidOperationException("Lý do kết thúc lớp học không được vượt quá 300 ký tự");
+    }
+
+    TutoringClass tutoringClass = classes.findById(classId)
+        .orElseThrow(() -> EntityNotFoundException.of("TutoringClass", classId));
+
+    if (!"ACTIVE".equals(tutoringClass.getStatus())) {
+      throw new InvalidOperationException("Chỉ có thể kết thúc lớp học đang hoạt động");
+    }
+
+    boolean isTutor = actor.hasRole("TUTOR") && profile.findTutorById(tutoringClass.getTutorId())
+        .map(t -> t.userId().equals(actor.getUserId())).orElse(false);
+    boolean isStudent = actor.hasRole("STUDENT") && profile.findStudentById(tutoringClass.getStudentId())
+        .map(s -> s.userId().equals(actor.getUserId())).orElse(false);
+    boolean isParent = actor.hasRole("PARENT") && facade.hasConfirmedParentLink(actor.getUserId(), tutoringClass.getStudentId());
+
+    if (!isTutor && !isStudent && !isParent) {
+      throw new ForbiddenOperationException("Bạn không có quyền kết thúc lớp học này");
+    }
+
+    Instant now = clock.instant();
+    tutoringClass.endClass(reason, now);
+    classes.flush();
+
+    events.publishEvent(new TutoringClassEndedEvent(
+        tutoringClass.getId(),
+        tutoringClass.getStudentId(),
+        tutoringClass.getTutorId(),
+        reason,
+        now
+    ));
+
+    return TransitionResult.success(new TutoringClassResult(
+        tutoringClass.getId(),
+        tutoringClass.getStudentId(),
+        tutoringClass.getTutorId(),
+        tutoringClass.getGoalId(),
+        tutoringClass.getStatus(),
+        null,
+        null,
+        null,
+        null,
+        null,
+        0,
+        tutoringClass.getStartedAt(),
+        tutoringClass.getEndedAt()
+    ));
   }
 }

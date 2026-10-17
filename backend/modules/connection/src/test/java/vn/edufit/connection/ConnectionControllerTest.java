@@ -224,4 +224,18 @@ class ConnectionControllerTest {
         "[{\"classId\":\"%s\",\"studentId\":\"%s\",\"tutorId\":\"%s\",\"goalId\":\"%s\",\"status\":\"ACTIVE\",\"studentDisplayName\":\"Học sinh Minh\",\"tutorDisplayName\":\"Gia sư Nam\",\"subjectName\":\"Toán\",\"educationLevelName\":\"Lớp 10\",\"scheduleStatus\":\"PROPOSED\",\"sessionCount\":0,\"startedAt\":\"2026-10-11T03:00:00Z\"}]".formatted(ID, ID, ID, ID));
     verify(queries).classes(actor);
   }
+
+  @Test void endClassReturnsEndedClassResponse() throws Exception {
+    when(service.endClass(eq(actor), eq(UUID_ID), eq("Lý do kết thúc lớp"))).thenReturn(
+        TransitionResult.success(new TutoringClassResult(
+            UUID_ID, UUID_ID, UUID_ID, UUID_ID, "ENDED", "Học sinh Minh", "Gia sư Nam", "Toán", "Lớp 10", "PROPOSED", 5, NOW, NOW
+        ))
+    );
+    mvc.perform(post(BASE + "/classes/" + ID + "/end")
+            .contentType("application/json")
+            .content("{\"reason\":\"Lý do kết thúc lớp\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.status").value("ENDED"));
+    verify(service).endClass(eq(actor), eq(UUID_ID), eq("Lý do kết thúc lớp"));
+  }
 }

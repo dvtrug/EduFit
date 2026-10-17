@@ -17,6 +17,7 @@ import {
 import { connectionApi } from "../api/connectionApi";
 import type { TutoringClass } from "../types";
 import { CreateLearningPlanModal } from "@/features/progress";
+import { EndClassModal } from "./EndClassModal";
 
 export function TutorActiveClasses() {
   const [classes, setClasses] = useState<TutoringClass[]>([]);
@@ -24,6 +25,7 @@ export function TutorActiveClasses() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"ALL" | "PENDING_SCHEDULE" | "SCHEDULED">("ALL");
   const [planModalClass, setPlanModalClass] = useState<TutoringClass | null>(null);
+  const [endClassTarget, setEndClassTarget] = useState<TutoringClass | null>(null);
 
   const loadClasses = useCallback(async () => {
     try {
@@ -198,9 +200,17 @@ export function TutorActiveClasses() {
                       </p>
                     </div>
 
-                    {/* Badge 'Chờ thống nhất lịch học' or 'Đã chốt lịch' */}
+                    {/* Badge 'Chờ thống nhất lịch học' or 'Đã chốt lịch' or 'Đã kết thúc' */}
                     <div>
-                      {isPendingSchedule ? (
+                      {item.status === "ENDED" ? (
+                        <span
+                          data-testid="badge-ended"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+                        >
+                          <CheckCircle2 className="h-3 w-3 text-zinc-500" />
+                          Đã kết thúc
+                        </span>
+                      ) : isPendingSchedule ? (
                         <span
                           data-testid="badge-pending-schedule"
                           className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50"
@@ -251,8 +261,18 @@ export function TutorActiveClasses() {
                       <span className="text-zinc-500 dark:text-zinc-400 block text-[11px]">
                         Trạng thái lớp
                       </span>
-                      <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 block">
-                        {item.status === "ACTIVE" ? "Đang diễn ra" : item.status}
+                      <span
+                        className={`text-sm font-bold mt-0.5 block ${
+                          item.status === "ACTIVE"
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-zinc-600 dark:text-zinc-400"
+                        }`}
+                      >
+                        {item.status === "ACTIVE"
+                          ? "Đang diễn ra"
+                          : item.status === "ENDED"
+                          ? "Đã kết thúc"
+                          : item.status}
                       </span>
                     </div>
                   </div>
@@ -285,6 +305,16 @@ export function TutorActiveClasses() {
                     <Calendar className="h-3.5 w-3.5" />
                     Lịch dạy & Đổi lịch
                   </Link>
+                  {item.status === "ACTIVE" && (
+                    <button
+                      type="button"
+                      onClick={() => setEndClassTarget(item)}
+                      className="inline-flex items-center justify-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 active:scale-95 transition-all cursor-pointer dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300"
+                      title="Kết thúc lớp học"
+                    >
+                      Kết thúc lớp
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -306,6 +336,14 @@ export function TutorActiveClasses() {
           }}
         />
       )}
+
+      {/* Modal kết thúc lớp học */}
+      <EndClassModal
+        classItem={endClassTarget}
+        isOpen={Boolean(endClassTarget)}
+        onClose={() => setEndClassTarget(null)}
+        onSuccess={() => void loadClasses()}
+      />
     </div>
   );
 }
