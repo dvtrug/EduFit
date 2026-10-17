@@ -127,3 +127,52 @@ export interface ScheduleCalendarViewProps {
   classes?: ConnectedClass[];
   initialStudentId?: string;
 }
+
+export interface WeeklySlotPayload {
+  dayOfWeek: "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY";
+  startTime: string;
+  endTime: string;
+}
+
+export interface ProposeRecurringPayload {
+  classId: string;
+  effectiveFrom: string;
+  effectiveTo: string;
+  newWeeklySlots: string[];
+  mode?: SessionMode;
+  placeOrLink?: string;
+  message?: string;
+}
+
+export interface RespondRecurringPayload {
+  proposalId: string;
+  accept: boolean;
+  reason?: string;
+}
+
+export interface RecurringProposalResponse {
+  proposalId: string;
+  classId: string;
+  tutorId: string;
+  studentId: string;
+  proposedBy: string;
+  effectiveFrom: string;
+  effectiveTo: string;
+  newWeeklySlots: string[];
+  defaultMode?: SessionMode | string;
+  placeOrLink?: string | null;
+  message?: string | null;
+  status: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED" | string;
+  respondedBy?: string | null;
+  respondedAt?: string | null;
+  responseReason?: string | null;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface RecurringScheduleResult {
+  proposal: RecurringProposalResponse;
+  cancelledSessionCount: number;
+  generatedSessions: SessionDetail[];
+}
+

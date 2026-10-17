@@ -219,6 +219,118 @@ describe("Scheduling API Client", () => {
     expect(res.data?.status).toBe("CANCELLED");
   });
 
+  describe("Recurring Schedule Endpoints (UC4.8 Bounded Horizon)", () => {
+    it("gọi POST /api/v1/scheduling/recurring/propose để tạo đề xuất lịch định kỳ", async () => {
+      const fetchSpy = vi.spyOn(apiModule, "fetchApi").mockResolvedValue({
+        success: true,
+        data: {
+          proposalId: "prop-123",
+          classId: "cls-1",
+          tutorId: "tut-1",
+          studentId: "stu-1",
+          proposedBy: "user-1",
+          effectiveFrom: "2026-10-19",
+          effectiveTo: "2026-11-16",
+          newWeeklySlots: ["MONDAY 18:00-20:00", "WEDNESDAY 18:00-20:00"],
+          defaultMode: "ONLINE",
+          placeOrLink: "https://meet.google.com/xyz",
+          message: "Lịch học 4 tuần tới",
+          status: "PENDING",
+          expiresAt: "2026-10-21T00:00:00Z",
+          createdAt: "2026-10-19T00:00:00Z",
+        },
+      });
+
+      const payload = {
+        classId: "cls-1",
+        effectiveFrom: "2026-10-19",
+        effectiveTo: "2026-11-16",
+        newWeeklySlots: ["MONDAY 18:00-20:00", "WEDNESDAY 18:00-20:00"],
+        mode: "ONLINE" as const,
+        placeOrLink: "https://meet.google.com/xyz",
+        message: "Lịch học 4 tuần tới",
+      };
+
+      const res = await schedulingApi.proposeRecurringSchedule(payload);
+
+      expect(fetchSpy).toHaveBeenCalledWith("/api/v1/scheduling/recurring/propose", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      expect(res.data?.proposalId).toBe("prop-123");
+      expect(res.data?.status).toBe("PENDING");
+      expect(res.data?.newWeeklySlots).toHaveLength(2);
+    });
+
+    it("gọi POST /api/v1/scheduling/recurring/respond để phản hồi đề xuất lịch định kỳ", async () => {
+      const fetchSpy = vi.spyOn(apiModule, "fetchApi").mockResolvedValue({
+        success: true,
+        data: {
+          proposal: {
+            proposalId: "prop-123",
+            classId: "cls-1",
+            status: "ACCEPTED",
+          },
+          cancelledSessionCount: 2,
+          generatedSessions: [],
+        },
+      });
+
+      const payload = {
+        proposalId: "prop-123",
+        accept: true,
+      };
+
+      const res = await schedulingApi.respondRecurringSchedule(payload);
+
+      expect(fetchSpy).toHaveBeenCalledWith("/api/v1/scheduling/recurring/respond", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      expect(res.data?.proposal.status).toBe("ACCEPTED");
+      expect(res.data?.cancelledSessionCount).toBe(2);
+    });
+
+    it("gọi GET /api/v1/scheduling/recurring/classes/{classId}/active-proposal", async () => {
+      const fetchSpy = vi.spyOn(apiModule, "fetchApi").mockResolvedValue({
+        success: true,
+        data: {
+          proposalId: "prop-123",
+          classId: "cls-1",
+          status: "PENDING",
+        },
+      });
+
+      const res = await schedulingApi.getActiveRecurringProposal("cls-1");
+
+      expect(fetchSpy).toHaveBeenCalledWith(
+        "/api/v1/scheduling/recurring/classes/cls-1/active-proposal",
+        { method: "GET" }
+      );
+      expect(res.data?.proposalId).toBe("prop-123");
+    });
+
+    it("gọi GET /api/v1/scheduling/recurring/proposals/{proposalId}", async () => {
+      const fetchSpy = vi.spyOn(apiModule, "fetchApi").mockResolvedValue({
+        success: true,
+        data: {
+          proposalId: "prop-123",
+          classId: "cls-1",
+          status: "PENDING",
+        },
+      });
+
+      const res = await schedulingApi.getRecurringProposal("prop-123");
+
+      expect(fetchSpy).toHaveBeenCalledWith(
+        "/api/v1/scheduling/recurring/proposals/prop-123",
+        { method: "GET" }
+      );
+      expect(res.data?.proposalId).toBe("prop-123");
+    });
+  });
+
+
   describe("Phát hiện lỗi xung đột 409 PostgreSQL GiST (isConflictError)", () => {
     it("nhận diện đúng ApiError với status 409", () => {
       const conflictError = new ApiError("Trùng lịch", 409, "SCHEDULE_OVERLAP");

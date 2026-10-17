@@ -8,6 +8,10 @@ import type {
   RescheduleSessionPayload,
   RespondReschedulePayload,
   CancelSessionPayload,
+  ProposeRecurringPayload,
+  RespondRecurringPayload,
+  RecurringProposalResponse,
+  RecurringScheduleResult,
 } from "../types";
 
 export interface GetCalendarParams {
@@ -169,4 +173,57 @@ export const schedulingApi = {
       }
     );
   },
+
+  /**
+   * Đề xuất đổi lịch học định kỳ theo bounded horizon 4-8 tuần (UC4.8).
+   * POST /api/v1/scheduling/recurring/propose
+   */
+  async proposeRecurringSchedule(
+    payload: ProposeRecurringPayload
+  ): Promise<ApiResponse<RecurringProposalResponse>> {
+    return fetchApi<RecurringProposalResponse>("/api/v1/scheduling/recurring/propose", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /**
+   * Phản hồi đề xuất đổi lịch học định kỳ (UC4.8).
+   * POST /api/v1/scheduling/recurring/respond
+   */
+  async respondRecurringSchedule(
+    payload: RespondRecurringPayload
+  ): Promise<ApiResponse<RecurringScheduleResult>> {
+    return fetchApi<RecurringScheduleResult>("/api/v1/scheduling/recurring/respond", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /**
+   * Lấy thông tin đề xuất đổi lịch định kỳ đang chờ xử lý của lớp học (UC4.8).
+   * GET /api/v1/scheduling/recurring/classes/{classId}/active-proposal
+   */
+  async getActiveRecurringProposal(
+    classId: string
+  ): Promise<ApiResponse<RecurringProposalResponse | null>> {
+    return fetchApi<RecurringProposalResponse | null>(
+      `/api/v1/scheduling/recurring/classes/${encodeURIComponent(classId)}/active-proposal`,
+      { method: "GET" }
+    );
+  },
+
+  /**
+   * Lấy chi tiết đề xuất đổi lịch định kỳ theo ID.
+   * GET /api/v1/scheduling/recurring/proposals/{proposalId}
+   */
+  async getRecurringProposal(
+    proposalId: string
+  ): Promise<ApiResponse<RecurringProposalResponse>> {
+    return fetchApi<RecurringProposalResponse>(
+      `/api/v1/scheduling/recurring/proposals/${encodeURIComponent(proposalId)}`,
+      { method: "GET" }
+    );
+  },
 };
+
