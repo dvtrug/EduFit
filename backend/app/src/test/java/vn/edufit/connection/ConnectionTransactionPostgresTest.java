@@ -96,7 +96,8 @@ class ConnectionTransactionPostgresTest {
       assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
       return Optional.empty();
     });
-    assertTrue(invitations.invite(actor(parent, "PARENT"), "missing@test.invalid"));
+    assertThrows(vn.edufit.shared.exception.EntityNotFoundException.class,
+        () -> invitations.invite(actor(parent, "PARENT"), "missing@test.invalid"));
     assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
     assertEquals(1, new JdbcTemplate(source).queryForObject(
         "select attempts from connection_invite_quota where user_id = ?", Integer.class, parent));

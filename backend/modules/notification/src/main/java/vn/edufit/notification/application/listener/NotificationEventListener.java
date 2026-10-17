@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import vn.edufit.connection.api.ConnectionFacade;
 import vn.edufit.connection.api.event.ConnectionRequestChangedEvent;
 import vn.edufit.connection.api.event.LinkInvitationChangedEvent;
@@ -54,7 +56,7 @@ public class NotificationEventListener {
   // 1. MODULE CONNECTION EVENTS
   // =========================================================================
 
-  @EventListener
+  @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = false)
   @Transactional
   public void onInvitationChanged(LinkInvitationChangedEvent event) {
     if (event == null) return;
@@ -83,7 +85,7 @@ public class NotificationEventListener {
     }
   }
 
-  @EventListener
+  @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = false)
   @Transactional
   public void onLinkChanged(ParentStudentLinkChangedEvent event) {
     if (event == null) return;
@@ -99,7 +101,7 @@ public class NotificationEventListener {
     }
   }
 
-  @EventListener
+  @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = false)
   @Transactional
   public void onRequestChanged(ConnectionRequestChangedEvent event) {
     if (event == null) return;
@@ -164,7 +166,7 @@ public class NotificationEventListener {
   // 2. MODULE SCHEDULING EVENTS
   // =========================================================================
 
-  @EventListener
+  @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = false)
   @Transactional
   public void onSessionProposed(SessionProposedEvent event) {
     if (event == null) return;
@@ -179,21 +181,21 @@ public class NotificationEventListener {
     );
   }
 
-  @EventListener
+  @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = false)
   @Transactional
   public void onSessionScheduled(SessionScheduledEvent event) {
     if (event == null) return;
     notifyBoth(event.tutorId(), event.studentId(), "Buổi học đã chốt lịch", "Buổi học đã được xác nhận vào lịch học", "SESSION", event.sessionId());
   }
 
-  @EventListener
+  @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = false)
   @Transactional
   public void onSessionRescheduled(SessionRescheduledEvent event) {
     if (event == null) return;
     notifyBoth(event.tutorId(), event.studentId(), "Lịch học đã thay đổi", "Thời gian buổi học đã được cập nhật lại", "SESSION", event.sessionId());
   }
 
-  @EventListener
+  @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = false)
   @Transactional
   public void onSessionCancelled(SessionCancelledEvent event) {
     if (event == null) return;
@@ -202,7 +204,7 @@ public class NotificationEventListener {
     notifyBoth(event.tutorId(), event.studentId(), "Buổi học đã bị hủy", "Buổi học đã bị hủy" + reason, "SESSION", event.sessionId());
   }
 
-  @EventListener
+  @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = true)
   @Transactional
   public void onSessionUpcomingReminder(SessionUpcomingReminderEvent event) {
     if (event == null) return;
@@ -214,7 +216,7 @@ public class NotificationEventListener {
   // 3. MODULE REVIEW EVENTS
   // =========================================================================
 
-  @EventListener
+  @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = false)
   @Transactional
   public void onReviewSubmitted(ReviewSubmittedEvent event) {
     if (event == null) return;

@@ -64,16 +64,6 @@ public class ReviewService {
     this.eventPublisher = eventPublisher;
   }
 
-  public ReviewService(
-      ReviewRepository reviewRepository,
-      ProfileFacade profileFacade,
-      ConnectionFacade connectionFacade,
-      IamFacade iamFacade,
-      ApplicationEventPublisher eventPublisher
-  ) {
-    this(reviewRepository, profileFacade, connectionFacade, null, iamFacade, eventPublisher);
-  }
-
   /**
    * Tạo đánh giá mới cho gia sư sau khi hoàn thành buổi học (UC6.1, BR-57, BR-58, BR-59, NFR-24).
    */

@@ -715,6 +715,7 @@ class LearningGoalPostgresTest {
     vn.edufit.connection.application.service.ConnectionExpiryService.class,
     vn.edufit.connection.application.service.ConnectionRequestService.class,
     vn.edufit.connection.application.policy.ConnectionRequestInput.class,
+    vn.edufit.connection.application.policy.SlotConflictDetector.class,
     vn.edufit.connection.application.service.ParentStudentLinkService.class,
     vn.edufit.connection.infra.locking.PostgresConnectionLock.class,
     vn.edufit.iam.infra.config.IamClockConfig.class

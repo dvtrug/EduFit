@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -42,6 +43,7 @@ import vn.edufit.profile.api.dto.TutorSummaryDto;
 import vn.edufit.review.api.event.ReviewSubmittedEvent;
 import vn.edufit.review.api.event.ReviewUpdatedEvent;
 import vn.edufit.review.application.service.ReviewService;
+import vn.edufit.scheduling.api.SessionFacade;
 import vn.edufit.review.infra.persistence.entity.ReviewEntity;
 import vn.edufit.review.infra.persistence.repository.ReviewRepository;
 import vn.edufit.review.web.request.CreateReviewRequest;
@@ -66,6 +68,9 @@ class ReviewServiceTest {
 
   @Mock
   private ConnectionFacade connectionFacade;
+
+  @Mock
+  private SessionFacade sessionFacade;
 
   @Mock
   private IamFacade iamFacade;
@@ -113,7 +118,8 @@ class ReviewServiceTest {
 
   @BeforeEach
   void setUp() {
-    reviewService = new ReviewService(reviewRepository, profileFacade, connectionFacade, iamFacade, eventPublisher);
+    reviewService = new ReviewService(reviewRepository, profileFacade, connectionFacade, sessionFacade, iamFacade, eventPublisher);
+    lenient().when(sessionFacade.countCompletedSessionsBetween(any(), any())).thenReturn(3);
 
     testTutorId = UUID.randomUUID();
     testStudentId = UUID.randomUUID();
@@ -278,6 +284,33 @@ class ReviewServiceTest {
     when(profileFacade.findStudentById(testStudentId)).thenReturn(Optional.of(studentDto));
     when(profileFacade.getStudentIdByUserId(testUserId)).thenReturn(testStudentId);
     when(connectionFacade.findActiveClass(testStudentId, testTutorId)).thenReturn(Optional.empty());
+
+    InvalidOperationException ex = assertThrows(InvalidOperationException.class, () ->
+        reviewService.createReview(studentUser, request));
+
+    assertEquals(ErrorCode.NOT_ENOUGH_SESSIONS, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("Tạo đánh giá thất bại khi chưa hoàn thành buổi học nào (BR-61)")
+  void createReview_notEnoughCompletedSessions_throwsNotEnoughSessions() {
+    CreateReviewRequest request = new CreateReviewRequest(
+        testTutorId,
+        testStudentId,
+        5,
+        "Chưa hoàn thành buổi học nào nhưng gửi đánh giá."
+    );
+
+    TutorSummaryDto tutorDto = createDummyTutor(testTutorId);
+    StudentSummaryDto studentDto = new StudentSummaryDto(testStudentId, testUserId, 1, "HN", true);
+
+    when(profileFacade.findTutorById(testTutorId)).thenReturn(Optional.of(tutorDto));
+    when(profileFacade.findStudentById(testStudentId)).thenReturn(Optional.of(studentDto));
+    when(profileFacade.getStudentIdByUserId(testUserId)).thenReturn(testStudentId);
+    when(connectionFacade.findActiveClass(testStudentId, testTutorId))
+        .thenReturn(Optional.of(new ConnectionFacade.ActiveClassView(UUID.randomUUID(), testStudentId, testTutorId, UUID.randomUUID())));
+    when(reviewRepository.existsByTutorIdAndStudentId(testTutorId, testStudentId)).thenReturn(false);
+    when(sessionFacade.countCompletedSessionsBetween(testTutorId, testStudentId)).thenReturn(0);
 
     InvalidOperationException ex = assertThrows(InvalidOperationException.class, () ->
         reviewService.createReview(studentUser, request));

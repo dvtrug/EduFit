@@ -41,11 +41,14 @@ import vn.edufit.profile.api.dto.StudentSummaryDto;
 import vn.edufit.profile.api.dto.TutorSummaryDto;
 import vn.edufit.scheduling.application.port.ConnectionValidationPort;
 import vn.edufit.scheduling.application.port.ProgressSyncPort;
+import vn.edufit.scheduling.application.service.BatchProposeSessionService;
+import vn.edufit.scheduling.application.service.BatchRespondSessionService;
 import vn.edufit.scheduling.application.service.CancelSessionService;
 import vn.edufit.scheduling.application.service.GetCalendarService;
 import vn.edufit.scheduling.application.service.GetSessionDetailService;
 import vn.edufit.scheduling.application.service.ProposeSessionService;
 import vn.edufit.scheduling.application.service.RecordSessionOutcomeService;
+import vn.edufit.scheduling.application.service.RescheduleClassScheduleService;
 import vn.edufit.scheduling.application.service.RescheduleSessionService;
 import vn.edufit.scheduling.application.service.RespondToProposalService;
 import vn.edufit.scheduling.application.service.SchedulingSecurityResolver;
@@ -303,9 +306,17 @@ class SchedulingSecurityAdversarialTest {
       ObjectProvider<CurrentUser> currentUserProvider = mock(ObjectProvider.class);
 
       SessionController controller = new SessionController(
-          proposeSessionService, respondToProposalService, rescheduleSessionService,
-          cancelSessionService, recordSessionOutcomeService, getCalendarService,
-          getSessionDetailService, currentUserProvider
+          proposeSessionService,
+          mock(BatchProposeSessionService.class),
+          respondToProposalService,
+          mock(BatchRespondSessionService.class),
+          rescheduleSessionService,
+          mock(RescheduleClassScheduleService.class),
+          cancelSessionService,
+          recordSessionOutcomeService,
+          getCalendarService,
+          getSessionDetailService,
+          currentUserProvider
       );
 
       MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
