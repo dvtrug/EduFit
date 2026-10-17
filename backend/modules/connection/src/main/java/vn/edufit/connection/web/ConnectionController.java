@@ -151,4 +151,12 @@ public class ConnectionController {
     ClassResult c = value(service.respondRequest(user(), id, body.accept(), body.reason()));
     return ApiResponse.success(c == null ? null : ClassResponse.of(c));
   }
+
+  @GetMapping("/classes")
+  public ApiResponse<List<TutoringClassResponse>> classes() {
+    List<TutoringClassResponse> items = queries.classes(user()).stream()
+        .map(TutoringClassResponse::of)
+        .toList();
+    return ApiResponse.success(items);
+  }
 }
