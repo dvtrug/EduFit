@@ -1,7 +1,129 @@
 import type { TutorAvailabilitySlot } from "@/services/profile";
 import type { UserRole } from "@/shared/ui/Sidebar";
 
+export type { UserRole };
+
+export type SessionMode = "ONLINE" | "OFFLINE";
+
+export type SessionStatus =
+  | "PROPOSED"
+  | "SCHEDULED"
+  | "COMPLETED"
+  | "ABSENT"
+  | "CANCELLED"
+  | "REJECTED"
+  | "WITHDRAWN"
+  | "EXPIRED";
+
+export type CancelReason =
+  | "SCHEDULE_CONFLICT"
+  | "PERSONAL_REASON"
+  | "OTHER_PARTY_UNAVAILABLE"
+  | "OTHER";
+
+export interface CalendarItem {
+  sessionId: string;
+  classId: string;
+  tutorId: string;
+  studentId: string;
+  startAt: string;
+  endAt: string;
+  mode: SessionMode | string;
+  placeOrLink?: string | null;
+  status: SessionStatus | string;
+  isLateCancel: boolean;
+}
+
+export interface SessionDetail {
+  sessionId: string;
+  classId: string;
+  tutorId: string;
+  studentId: string;
+  startAt: string;
+  endAt: string;
+  mode: SessionMode | string;
+  placeOrLink?: string | null;
+  repeatNote?: string | null;
+  message?: string | null;
+  status: SessionStatus | string;
+  proposedBy: string;
+  respondedBy?: string | null;
+  respondedAt?: string | null;
+  responseReason?: string | null;
+  expiresAt: string;
+  cancelledBy?: string | null;
+  cancelledAt?: string | null;
+  cancelReason?: CancelReason | string | null;
+  cancelComment?: string | null;
+  isLateCancel: boolean;
+  outcomeRecordedBy?: string | null;
+  outcomeRecordedAt?: string | null;
+  version: number;
+  createdAt: string;
+}
+
+export interface RescheduleProposal {
+  proposalId: string;
+  sessionId: string;
+  proposedBy: string;
+  newStartAt: string;
+  newEndAt: string;
+  reason?: string | null;
+  status: string;
+  expiresAt: string;
+  respondedBy?: string | null;
+  respondedAt?: string | null;
+  responseReason?: string | null;
+  createdAt: string;
+}
+
+export interface ProposeSessionPayload {
+  classId: string;
+  tutorId: string;
+  studentId: string;
+  startAt: string;
+  endAt: string;
+  mode: SessionMode;
+  placeOrLink?: string;
+  repeatNote?: string;
+  message?: string;
+}
+
+export interface RespondProposalPayload {
+  accept: boolean;
+  reason?: string;
+}
+
+export interface RescheduleSessionPayload {
+  newStartAt: string;
+  newEndAt: string;
+  reason?: string;
+}
+
+export interface RespondReschedulePayload {
+  accept: boolean;
+  responseReason?: string;
+}
+
+export interface CancelSessionPayload {
+  reason: CancelReason;
+  comment?: string;
+}
+
+export interface ConnectedClass {
+  classId: string;
+  title: string;
+  tutorId: string;
+  studentId: string;
+  tutorName?: string;
+  studentName?: string;
+}
+
+export type ScheduleViewMode = "grid" | "timeline";
+
 export interface ScheduleCalendarViewProps {
   role: UserRole;
   availabilitySlots?: TutorAvailabilitySlot[];
+  classes?: ConnectedClass[];
+  initialStudentId?: string;
 }
