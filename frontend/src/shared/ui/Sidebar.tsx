@@ -125,6 +125,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
         items: [
           { label: "Lịch dạy", href: "/tutor/schedule", icon: Calendar },
           { label: "Lớp học 1-1", href: "/tutor/classes", icon: BookOpen },
+          { label: "Lịch sử giảng dạy", href: "/tutor/history", icon: GraduationCap },
           { label: "Yêu cầu học viên", href: "/tutor/requests", icon: UserCheck },
         ],
       },

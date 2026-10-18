@@ -104,7 +104,7 @@ Có **11 task M3-00–M3-10**: 1 preparation/audit đã xong và 10 task còn l�
 - **Verify:** URL/query/envelope/date boundaries/reordered response/error tests; không mock response production.
 - **Commit:** `feat(tutor): connect typed teaching history reads and filters`.
 
-### [ ] M3-08 — History class summary và menu entry
+### [x] M3-08 — History class summary và menu entry
 
 - **Dependency:** M3-07.
 - **Acceptance:**
@@ -115,7 +115,7 @@ Có **11 task M3-00–M3-10**: 1 preparation/audit đã xong và 10 task còn l�
 - **Verify:** summary states, paging/filter và no-history/unknown-stats tests; browser/API smoke.
 - **Commit:** `feat(tutor): add scoped teaching history overview`.
 
-### [ ] M3-09 — Session/notes detail và read-only plan
+### [x] M3-09 — Session/notes detail và read-only plan
 
 - **Dependency:** M3-08, session/notes/plan contract và server ownership đã chốt.
 - **Acceptance:**
