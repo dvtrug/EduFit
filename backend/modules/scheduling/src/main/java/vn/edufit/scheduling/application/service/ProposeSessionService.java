@@ -61,12 +61,35 @@ public class ProposeSessionService {
   ) {
     Instant now = clock.instant();
 
+    if (classId == null) {
+      throw new InvalidOperationException(
+          ErrorCode.VALIDATION_FAILED,
+          "Mã lớp học (classId) không được để trống"
+      );
+    }
+
+    // Tự động phân giải tutorId và studentId trực tiếp từ classId (thông qua ConnectionValidationPort)
+    UUID resolvedTutorId = tutorId;
+    UUID resolvedStudentId = studentId;
+
+    var activeClassOpt = connectionValidationPort.findActiveClassById(classId);
+    if (activeClassOpt.isPresent()) {
+      var activeClass = activeClassOpt.get();
+      resolvedTutorId = activeClass.tutorId();
+      resolvedStudentId = activeClass.studentId();
+    } else if (resolvedTutorId == null || resolvedStudentId == null) {
+      throw new InvalidOperationException(
+          ErrorCode.INVALID_OPERATION,
+          "Lớp học không ở trạng thái hoạt động (ACTIVE) hoặc không tồn tại"
+      );
+    }
+
     // 1. Kiểm tra quyền của người đề xuất qua SchedulingSecurityResolver (Gia sư, Học sinh hoặc Phụ huynh hợp lệ)
-    schedulingSecurityResolver.requireProposeAccess(actor, tutorId, studentId);
+    schedulingSecurityResolver.requireProposeAccess(actor, resolvedTutorId, resolvedStudentId);
     UUID proposedBy = actor.getUserId();
 
     // 2. Xác thực lớp học / kết nối giữa 2 bên qua Port
-    if (!connectionValidationPort.isConnectionActive(classId, tutorId, studentId)) {
+    if (!connectionValidationPort.isConnectionActive(classId, resolvedTutorId, resolvedStudentId)) {
       throw new InvalidOperationException(
           ErrorCode.INVALID_OPERATION,
           "Lớp học không ở trạng thái hoạt động (ACTIVE) hoặc không tồn tại kết nối giữa hai bên"
@@ -86,7 +109,7 @@ public class ProposeSessionService {
     Instant expiresAt = ProposalWindowPolicy.calculateExpiresAt(startAt, now);
 
     // 5. Kiểm tra sơ bộ xung đột lịch dạy của Gia sư (In-Memory Check qua ConflictPolicy)
-    List<TutoringSession> tutorBusySlots = sessionRepository.findTutorBusySlots(tutorId, startAt, endAt);
+    List<TutoringSession> tutorBusySlots = sessionRepository.findTutorBusySlots(resolvedTutorId, startAt, endAt);
     boolean tutorHasConflict = tutorBusySlots.stream().anyMatch(existing ->
         ConflictPolicy.isOverlapping(startAt, endAt, existing.getStartAt(), existing.getEndAt())
     );
@@ -98,7 +121,7 @@ public class ProposeSessionService {
     }
 
     // 6. Kiểm tra sơ bộ xung đột lịch học của Học sinh
-    List<TutoringSession> studentSessions = sessionRepository.findCalendarSessions(studentId, startAt, endAt);
+    List<TutoringSession> studentSessions = sessionRepository.findCalendarSessions(resolvedStudentId, startAt, endAt);
     boolean studentHasConflict = studentSessions.stream().anyMatch(existing ->
         ConflictPolicy.isOverlapping(startAt, endAt, existing.getStartAt(), existing.getEndAt())
     );
@@ -113,8 +136,8 @@ public class ProposeSessionService {
     TutoringSession newSession = TutoringSession.propose(
         UUID.randomUUID(),
         classId,
-        tutorId,
-        studentId,
+        resolvedTutorId,
+        resolvedStudentId,
         startAt,
         endAt,
         mode,

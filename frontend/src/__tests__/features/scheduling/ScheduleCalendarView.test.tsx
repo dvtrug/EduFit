@@ -194,4 +194,104 @@ describe("ScheduleCalendarView Component", () => {
       ).toBeInTheDocument();
     });
   });
+
+  it("TUYỆT ĐỐI KHÔNG hiển thị các buổi học đã hủy (CANCELLED, REJECTED, EXPIRED, WITHDRAWN) trên Lưới tuần", async () => {
+    // Giả lập ngày hiện tại là cùng tuần với mock sessions
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
+    const currentDate = String(now.getDate()).padStart(2, "0");
+
+    const testSessionsWithCancelled = [
+      ...mockSessions,
+      {
+        sessionId: "sess-cancelled-1",
+        classId: "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+        tutorId: "user-tutor-1",
+        studentId: "6ba7b812-9dad-11d1-80b4-00c04fd430c8",
+        startAt: `${currentYear}-${currentMonth}-${currentDate}T18:00:00.000Z`,
+        endAt: `${currentYear}-${currentMonth}-${currentDate}T20:00:00.000Z`,
+        mode: "ONLINE",
+        placeOrLink: "https://meet.google.com/cancelled-session",
+        status: "CANCELLED",
+        isLateCancel: false,
+      },
+      {
+        sessionId: "sess-rejected-2",
+        classId: "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+        tutorId: "user-tutor-1",
+        studentId: "6ba7b812-9dad-11d1-80b4-00c04fd430c8",
+        startAt: `${currentYear}-${currentMonth}-${currentDate}T09:00:00.000Z`,
+        endAt: `${currentYear}-${currentMonth}-${currentDate}T10:30:00.000Z`,
+        mode: "ONLINE",
+        status: "REJECTED",
+        isLateCancel: false,
+      },
+      {
+        sessionId: "sess-expired-3",
+        classId: "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+        tutorId: "user-tutor-1",
+        studentId: "6ba7b812-9dad-11d1-80b4-00c04fd430c8",
+        startAt: `${currentYear}-${currentMonth}-${currentDate}T11:00:00.000Z`,
+        endAt: `${currentYear}-${currentMonth}-${currentDate}T12:00:00.000Z`,
+        mode: "ONLINE",
+        status: "EXPIRED",
+        isLateCancel: false,
+      },
+      {
+        sessionId: "sess-withdrawn-4",
+        classId: "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+        tutorId: "user-tutor-1",
+        studentId: "6ba7b812-9dad-11d1-80b4-00c04fd430c8",
+        startAt: `${currentYear}-${currentMonth}-${currentDate}T14:00:00.000Z`,
+        endAt: `${currentYear}-${currentMonth}-${currentDate}T15:00:00.000Z`,
+        mode: "ONLINE",
+        status: "WITHDRAWN",
+        isLateCancel: false,
+      },
+      {
+        sessionId: "sess-lowercase-5",
+        classId: "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+        tutorId: "user-tutor-1",
+        studentId: "6ba7b812-9dad-11d1-80b4-00c04fd430c8",
+        startAt: `${currentYear}-${currentMonth}-${currentDate}T16:00:00.000Z`,
+        endAt: `${currentYear}-${currentMonth}-${currentDate}T17:00:00.000Z`,
+        mode: "ONLINE",
+        status: "cancelled",
+        isLateCancel: false,
+      },
+    ];
+
+    vi.spyOn(schedulingApi, "getCalendar").mockResolvedValue({
+      success: true,
+      data: testSessionsWithCancelled,
+    });
+
+    render(<ScheduleCalendarView role="TUTOR" availabilitySlots={[]} />);
+
+    await waitFor(() => {
+      expect(schedulingApi.getCalendar).toHaveBeenCalled();
+    });
+
+    // Trên lưới tuần (Grid mode): TUYỆT ĐỐI KHÔNG có text '✕ Đã hủy', 'Từ chối', 'Hết hạn', 'Đã rút'
+    expect(screen.queryByText("✕ Đã hủy")).not.toBeInTheDocument();
+    expect(screen.queryByText("Từ chối")).not.toBeInTheDocument();
+    expect(screen.queryByText("Hết hạn")).not.toBeInTheDocument();
+    expect(screen.queryByText("Đã rút")).not.toBeInTheDocument();
+
+    // Chuyển sang Dòng thời gian -> Tab "Lịch đã hủy"
+    const timelineBtn = screen.getByRole("button", { name: "Dòng thời gian" });
+    fireEvent.click(timelineBtn);
+
+    const cancelledTabBtn = screen.getByRole("button", { name: /Lịch đã hủy/i });
+    fireEvent.click(cancelledTabBtn);
+
+    // Xuất hiện các buổi học đã hủy trong tab Lịch đã hủy
+    await waitFor(() => {
+      expect(screen.getAllByText("Đã hủy").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText("Từ chối")).toBeInTheDocument();
+      expect(screen.getByText("Hết hạn")).toBeInTheDocument();
+      expect(screen.getByText("Đã rút")).toBeInTheDocument();
+    });
+  });
 });

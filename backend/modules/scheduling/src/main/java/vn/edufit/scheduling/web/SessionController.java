@@ -216,6 +216,17 @@ public class SessionController {
     );
   }
 
+  @GetMapping("/sessions/{id}/reschedule-proposal")
+  public ResponseEntity<ApiResponse<RescheduleProposalResponse>> getRescheduleProposal(
+      @PathVariable("id") UUID id
+  ) {
+    SessionRescheduleProposal proposal = rescheduleSessionService.findActiveProposalBySessionId(id, currentUser())
+        .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đề xuất đổi lịch đang chờ xử lý cho buổi học: " + id));
+    return ResponseEntity.ok(
+        ApiResponse.success(RescheduleProposalResponse.from(proposal), "Lấy thông tin đề xuất đổi lịch thành công")
+    );
+  }
+
   @PostMapping("/recurring/propose")
   public ResponseEntity<ApiResponse<RecurringProposalResponse>> proposeRecurringSchedule(
       @Valid @RequestBody ProposeRecurringScheduleRequest req

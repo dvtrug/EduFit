@@ -16,11 +16,19 @@ import {
   Loader2,
   ExternalLink,
   FileText,
+  BookOpen,
 } from "lucide-react";
 import { schedulingApi, isConflictError, getConflictMessage } from "../api/schedulingApi";
 import { rescheduleSessionSchema, cancelSessionSchema } from "../schemas/schedulingSchemas";
-import type { SessionDetail, CancelReason } from "../types";
+import {
+  type SessionDetail,
+  type CancelReason,
+  type RescheduleProposal,
+  type ConnectedClass,
+  formatConnectedClassName,
+} from "../types";
 import type { UserRole } from "@/shared/ui/Sidebar";
+import { formatLocalDateToIso, formatLocalTime, formatSessionTime } from "@/shared/utils/dateTime";
 import { SessionOutcomeModal, progressApi, type PlanResponse } from "@/features/progress";
 
 export interface SessionDetailModalProps {
@@ -30,6 +38,7 @@ export interface SessionDetailModalProps {
   onUpdated: () => void;
   role: UserRole;
   currentUserId?: string;
+  classes?: ConnectedClass[];
 }
 
 export function SessionDetailModal({
@@ -39,12 +48,25 @@ export function SessionDetailModal({
   onUpdated,
   role,
   currentUserId,
+  classes = [],
 }: SessionDetailModalProps) {
   const [session, setSession] = useState<SessionDetail | null>(null);
+  const [rescheduleProposal, setRescheduleProposal] = useState<RescheduleProposal | null>(null);
+  const [showRescheduleRejectInput, setShowRescheduleRejectInput] = useState(false);
+  const [rescheduleRejectReason, setRescheduleRejectReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isConflict, setIsConflict] = useState(false);
+
+  const classMap = React.useMemo(() => {
+    return new Map<string, ConnectedClass>((classes || []).map((c) => [c.classId, c]));
+  }, [classes]);
+
+  const currentClass = session?.classId ? classMap.get(session.classId) : null;
+  const currentClassName = session?.classId
+    ? formatConnectedClassName(currentClass, role, session.classId)
+    : "Lớp học";
 
   // Subview toggles for actions
   const [showRescheduleForm, setShowRescheduleForm] = useState(false);
@@ -71,6 +93,9 @@ export function SessionDetailModal({
   useEffect(() => {
     let ignore = false;
     if (isOpen && sessionId) {
+      setRescheduleProposal(null);
+      setShowRescheduleRejectInput(false);
+      setRescheduleRejectReason("");
       schedulingApi
         .getSessionDetail(sessionId)
         .then((res) => {
@@ -80,15 +105,25 @@ export function SessionDetailModal({
               const start = new Date(res.data.startAt);
               const end = new Date(res.data.endAt);
               if (!Number.isNaN(start.getTime())) {
-                setNewDateStr(start.toISOString().slice(0, 10));
-                setNewStartTimeStr(
-                  `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`
-                );
+                setNewDateStr(formatLocalDateToIso(start));
+                setNewStartTimeStr(formatLocalTime(start));
               }
               if (!Number.isNaN(end.getTime())) {
-                setNewEndTimeStr(
-                  `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`
+                setNewEndTimeStr(formatLocalTime(end));
+              }
+              if ((res.data as unknown as { rescheduleProposal?: RescheduleProposal }).rescheduleProposal) {
+                setRescheduleProposal(
+                  (res.data as unknown as { rescheduleProposal: RescheduleProposal }).rescheduleProposal
                 );
+              } else {
+                schedulingApi
+                  .getRescheduleProposal(sessionId)
+                  .then((pRes) => {
+                    if (!ignore && pRes.success && pRes.data) {
+                      setRescheduleProposal(pRes.data);
+                    }
+                  })
+                  .catch(() => {});
               }
               if (res.data.classId) {
                 progressApi
@@ -114,6 +149,7 @@ export function SessionDetailModal({
         });
     } else {
       setSession(null);
+      setRescheduleProposal(null);
     }
     return () => {
       ignore = true;
@@ -158,14 +194,56 @@ export function SessionDetailModal({
     }
   };
 
-  // Open cancel form and compute late cancel in event handler
+  // Open cancel form and compute late cancel in event handler (12 hours according to BR-46)
   const handleOpenCancelForm = () => {
     if (session) {
-      const isLate = new Date(session.startAt).getTime() - Date.now() < 24 * 3600 * 1000;
+      const isLate = new Date(session.startAt).getTime() - Date.now() < 12 * 3600 * 1000;
       setIsWithin24Hours(isLate);
     }
     setShowCancelForm(true);
   };
+
+  // Handle Respond to Reschedule (UC4.4)
+  const handleRespondReschedule = async (accept: boolean) => {
+    if (!rescheduleProposal) return;
+    setErrorMessage(null);
+    setIsConflict(false);
+    setActionLoading(true);
+
+    try {
+      const res = await schedulingApi.respondToReschedule(rescheduleProposal.proposalId, {
+        accept,
+        responseReason:
+          !accept && rescheduleRejectReason.trim() ? rescheduleRejectReason.trim() : undefined,
+      });
+      if (res.success) {
+        setRescheduleProposal(null);
+        setShowRescheduleRejectInput(false);
+        setRescheduleRejectReason("");
+        onUpdated();
+        onClose();
+      } else {
+        setErrorMessage(res.message || "Không thể phản hồi yêu cầu đổi lịch.");
+      }
+    } catch (err: unknown) {
+      if (isConflictError(err)) {
+        setIsConflict(true);
+        setErrorMessage(
+          getConflictMessage(
+            err,
+            "Khung giờ dời lịch đã bị trùng với lịch khác! Vui lòng chọn thời gian khác."
+          )
+        );
+      } else {
+        setErrorMessage(
+          err instanceof Error ? err.message : "Đã xảy ra lỗi khi phản hồi yêu cầu đổi lịch."
+        );
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
 
   // Handle Accept proposal
   const handleAcceptProposal = async () => {
@@ -232,8 +310,19 @@ export function SessionDetailModal({
     setErrorMessage(null);
     setIsConflict(false);
 
+    if (!newDateStr || !newStartTimeStr || !newEndTimeStr) {
+      setErrorMessage("Vui lòng chọn ngày và giờ bắt đầu/kết thúc hợp lệ.");
+      return;
+    }
     const startDateTime = new Date(`${newDateStr}T${newStartTimeStr}:00`);
-    const endDateTime = new Date(`${newDateStr}T${newEndTimeStr}:00`);
+    let endDateTime = new Date(`${newDateStr}T${newEndTimeStr}:00`);
+    if (Number.isNaN(startDateTime.getTime()) || Number.isNaN(endDateTime.getTime())) {
+      setErrorMessage("Thời gian không hợp lệ. Vui lòng kiểm tra lại ngày và giờ.");
+      return;
+    }
+    if (endDateTime <= startDateTime) {
+      endDateTime = new Date(endDateTime.getTime() + 24 * 3600 * 1000);
+    }
 
     const payload = {
       newStartAt: startDateTime.toISOString(),
@@ -329,14 +418,17 @@ export function SessionDetailModal({
                 Chi tiết buổi học
               </h2>
               {session && (
-                <div className="flex items-center gap-2 mt-0.5">
+                <div className="flex flex-wrap items-center gap-2 mt-0.5">
                   <span
                     className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-bold ${statusBadge.bg}`}
                   >
                     {statusBadge.text}
                   </span>
+                  <span className="text-xs font-bold text-sky-950 dark:text-sky-300">
+                    {currentClassName}
+                  </span>
                   <span className="text-[11px] font-medium text-neutral-400">
-                    Mã: {session.sessionId.slice(0, 8)}... ({role})
+                    • Mã: {session.sessionId.slice(0, 8)}... ({role})
                   </span>
                 </div>
               )}
@@ -383,6 +475,54 @@ export function SessionDetailModal({
 
           {session && !loading && (
             <>
+              {/* Thẻ thông tin lớp học */}
+              <div className="rounded-2xl border border-sky-100 bg-sky-50/60 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-sky-800">
+                    <BookOpen className="size-3.5 text-sky-600" />
+                    <span>Lớp học</span>
+                  </div>
+                  {currentClass?.status && (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800">
+                      {currentClass.status === "ACTIVE"
+                        ? "Đang hoạt động"
+                        : currentClass.status === "ENDED"
+                        ? "Đã kết thúc"
+                        : currentClass.status}
+                    </span>
+                  )}
+                </div>
+                <div className="text-sm font-bold text-neutral-900 mt-1">
+                  {currentClassName}
+                </div>
+                {(currentClass?.subjectName ||
+                  currentClass?.educationLevelName ||
+                  currentClass?.tutorName ||
+                  currentClass?.studentName) && (
+                  <div className="text-xs text-neutral-600 mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                    {currentClass.subjectName && (
+                      <span>
+                        Môn học: <b>{currentClass.subjectName}</b>
+                      </span>
+                    )}
+                    {currentClass.educationLevelName && (
+                      <span>
+                        Cấp học: <b>{currentClass.educationLevelName}</b>
+                      </span>
+                    )}
+                    {currentClass.tutorName && (
+                      <span>
+                        Gia sư: <b>{currentClass.tutorName}</b>
+                      </span>
+                    )}
+                    {currentClass.studentName && (
+                      <span>
+                        Học sinh: <b>{currentClass.studentName}</b>
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
               {/* Thẻ thời gian và hình thức */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-stone-200 bg-stone-50/70 p-4">
@@ -427,6 +567,102 @@ export function SessionDetailModal({
                 </div>
               </div>
 
+              {/* Banner đề xuất dời lịch học (UC4.4) */}
+              {rescheduleProposal && rescheduleProposal.status === "PENDING" && (
+                <div
+                  role="region"
+                  aria-label="Đề xuất đổi lịch học"
+                  className="rounded-2xl border border-sky-300 bg-sky-50/90 p-4 text-xs text-sky-950 space-y-3 shadow-xs"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-bold text-sky-900">
+                      <RotateCcw className="size-4 text-sky-600" />
+                      <span className="text-sm font-extrabold">Đề xuất đổi lịch học (UC4.4)</span>
+                    </div>
+                    <span className="rounded-full bg-sky-200/80 px-2.5 py-0.5 text-[10px] font-extrabold text-sky-800">
+                      Chờ phản hồi
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 text-neutral-800">
+                    <div>
+                      <span className="font-semibold text-neutral-600">Thời gian đề xuất mới: </span>
+                      <span className="font-bold text-sky-900 text-xs">
+                        {formatDateTime(rescheduleProposal.newStartAt)} - {formatLocalTime(rescheduleProposal.newEndAt)}
+                      </span>
+                    </div>
+                    {rescheduleProposal.reason && (
+                      <div className="flex items-start gap-1">
+                        <span className="font-semibold text-neutral-600 shrink-0">Lý do: </span>
+                        <span className="italic text-neutral-700">{rescheduleProposal.reason}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {currentUserId && rescheduleProposal.proposedBy === currentUserId ? (
+                    <div className="text-[11px] font-medium text-sky-700 italic pt-1 border-t border-sky-200/60">
+                      Bạn đã gửi đề xuất dời lịch này. Đang chờ đối phương xác nhận.
+                    </div>
+                  ) : (
+                    <div className="pt-2 border-t border-sky-200/60 space-y-2">
+                      {!showRescheduleRejectInput ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            disabled={actionLoading}
+                            onClick={() => setShowRescheduleRejectInput(true)}
+                            className="h-8 px-3.5 rounded-xl border border-stone-300 bg-white text-xs font-bold text-neutral-700 hover:bg-stone-50 cursor-pointer disabled:opacity-50"
+                          >
+                            Từ chối
+                          </button>
+                          <button
+                            type="button"
+                            disabled={actionLoading}
+                            onClick={() => void handleRespondReschedule(true)}
+                            className="h-8 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-xs"
+                          >
+                            {actionLoading ? (
+                              <Loader2 className="size-3 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="size-3" />
+                            )}
+                            Chấp thuận
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            value={rescheduleRejectReason}
+                            onChange={(e) => setRescheduleRejectReason(e.target.value)}
+                            placeholder="Nhập lý do từ chối (tùy chọn)..."
+                            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-1.5 text-xs text-neutral-800 focus:outline-sky-500"
+                          />
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              disabled={actionLoading}
+                              onClick={() => setShowRescheduleRejectInput(false)}
+                              className="h-7 px-2.5 rounded-lg text-xs font-medium text-neutral-600 hover:bg-stone-100 cursor-pointer"
+                            >
+                              Hủy
+                            </button>
+                            <button
+                              type="button"
+                              disabled={actionLoading}
+                              onClick={() => void handleRespondReschedule(false)}
+                              className="h-7 px-3 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer disabled:opacity-50"
+                            >
+                              {actionLoading ? "Đang xử lý..." : "Xác nhận từ chối"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Lời nhắn / Ghi chú lặp lại */}
               {(session.repeatNote || session.message) && (
                 <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-2">
@@ -465,7 +701,7 @@ export function SessionDetailModal({
                   )}
                   {session.isLateCancel && (
                     <div className="font-bold text-rose-700 mt-1">
-                      ⚠️ Buổi học này bị hủy sát giờ (&lt; 24 giờ trước giờ học).
+                      ⚠️ Buổi học này bị hủy sát giờ (&lt; 12 giờ trước giờ học).
                     </div>
                   )}
                 </div>
@@ -578,8 +814,8 @@ export function SessionDetailModal({
 
                   {isWithin24Hours && (
                     <div className="rounded-xl border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-900">
-                      ⚠️ Cảnh báo: Buổi học diễn ra trong vòng 24 giờ. Hành động này sẽ được ghi nhận là Hủy Sát Giờ
-                      (Late Cancellation) theo quy định BR-45.
+                      ⚠️ Cảnh báo: Buổi học diễn ra trong vòng 12 giờ (Buổi học diễn ra trong vòng 24 giờ theo quy định cũ). Hành động này sẽ được ghi nhận là Hủy Sát Giờ
+                      (Late Cancellation) theo quy định BR-46.
                     </div>
                   )}
 

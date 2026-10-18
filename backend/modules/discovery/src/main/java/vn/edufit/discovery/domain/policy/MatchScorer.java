@@ -39,12 +39,20 @@ public class MatchScorer {
       return Optional.empty();
     }
     BigDecimal level = levelFit(criteria, tutor);
-    var requested = merge(criteria.availabilitySlots());
-    var offered = merge(tutor.availabilitySlots());
-    BigDecimal time = timeFit(requested, offered);
-    // Keep the legacy field as the number of original requested slots with any overlap.
-    int overlappingSlots = (int) criteria.availabilitySlots().stream()
-        .filter(slot -> offered.stream().anyMatch(slot::overlaps)).count();
+    boolean tutorFlexible = tutor.availabilitySlots() == null || tutor.availabilitySlots().isEmpty();
+    BigDecimal time;
+    int overlappingSlots;
+    if (tutorFlexible) {
+      time = HUNDRED;
+      overlappingSlots = criteria.availabilitySlots() != null ? criteria.availabilitySlots().size() : 0;
+    } else {
+      var requested = criteria.availabilitySlots() == null ? List.<AvailabilitySlot>of() : merge(criteria.availabilitySlots());
+      var offered = merge(tutor.availabilitySlots());
+      time = timeFit(requested, offered);
+      // Keep the legacy field as the number of original requested slots with any overlap.
+      overlappingSlots = criteria.availabilitySlots() == null ? 0 : (int) criteria.availabilitySlots().stream()
+          .filter(slot -> offered.stream().anyMatch(slot::overlaps)).count();
+    }
     BigDecimal price = budgetFit(criteria.budgetMax(), tutor.pricePerSession());
     BigDecimal rating = ratingFit(tutor);
     BigDecimal total = HUNDRED.multiply(weights.subject()).add(level.multiply(weights.level()))

@@ -98,6 +98,19 @@ describe("ProposeRecurringScheduleModal Component (UC4.8 Bounded Horizon)", () =
       expect(defaultProps.onClose).toHaveBeenCalled();
     });
   });
+
+  it("hiển thị cảnh báo hủy lịch cũ và tiêu đề 'Đề xuất lại lịch học định kỳ' khi isReschedule = true", () => {
+    render(<ProposeRecurringScheduleModal {...defaultProps} isReschedule={true} />);
+
+    expect(screen.getByRole("heading", { name: "Đề xuất lại lịch học định kỳ" })).toBeInTheDocument();
+    expect(screen.getByText(/Đề xuất lại lịch định kỳ \(UC4.8\)/)).toBeInTheDocument();
+
+    const warningAlert = screen.getByRole("alert");
+    expect(warningAlert).toBeInTheDocument();
+    expect(warningAlert).toHaveTextContent(/toàn bộ lịch học cũ trong tương lai của lớp sẽ tự động bị hủy/);
+
+    expect(screen.getByRole("button", { name: "Gửi đề xuất lại lịch định kỳ" })).toBeInTheDocument();
+  });
 });
 
 describe("ActiveRecurringProposalBanner Component", () => {
@@ -256,5 +269,27 @@ describe("ActiveRecurringProposalBanner Component", () => {
       );
       expect(onUpdatedMock).toHaveBeenCalled();
     });
+  });
+
+  it("hiển thị cảnh báo nổi bật về việc hủy lịch học cũ trong tương lai cho đối phương khi xem đề xuất", async () => {
+    vi.mocked(schedulingApi.getActiveRecurringProposal).mockResolvedValue({
+      success: true,
+      data: mockProposal,
+    });
+
+    render(
+      <ActiveRecurringProposalBanner
+        classId="class-123"
+        currentUserId="student-1"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Đồng ý lịch định kỳ")).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByText(/toàn bộ lịch học cũ trong tương lai của lớp sẽ tự động bị hủy/i)
+    ).toBeInTheDocument();
   });
 });

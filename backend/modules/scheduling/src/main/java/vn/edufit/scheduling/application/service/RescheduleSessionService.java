@@ -3,6 +3,7 @@ package vn.edufit.scheduling.application.service;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -206,7 +207,14 @@ public class RescheduleSessionService {
       return updatedProposal;
     }
 
-    // 5. Nếu chấp nhận đề xuất đổi lịch: Kiểm tra xung đột & Cập nhật thời gian buổi học
+    // 5. Nếu chấp nhận đề xuất đổi lịch: Kiểm tra trạng thái buổi học, xung đột & Cập nhật thời gian buổi học
+    if (session.getStatus() != SessionStatus.SCHEDULED) {
+      throw new InvalidOperationException(
+          ErrorCode.INVALID_OPERATION,
+          "Chỉ có thể chấp nhận đổi lịch khi buổi học đang ở trạng thái SCHEDULED. Hiện tại: " + session.getStatus()
+      );
+    }
+
     List<TutoringSession> tutorBusySlots = sessionRepository.findTutorBusySlots(
         session.getTutorId(),
         proposal.getNewStartAt(),
@@ -282,5 +290,25 @@ public class RescheduleSessionService {
       String responseReason
   ) {
     return respondToReschedule(proposalId, SimpleCurrentUser.of(responderId), accept, responseReason);
+  }
+
+  /**
+   * Tra cứu đề xuất đổi lịch đang chờ xử lý (PENDING) của một buổi học kèm kiểm tra quyền truy cập.
+   */
+  @Transactional(readOnly = true)
+  public Optional<SessionRescheduleProposal> findActiveProposalBySessionId(UUID sessionId, CurrentUser actor) {
+    TutoringSession session = sessionRepository.findById(sessionId)
+        .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy buổi học với ID: " + sessionId));
+
+    schedulingSecurityResolver.requireSessionAccess(actor, session);
+    return proposalRepository.findPendingBySessionId(sessionId);
+  }
+
+  /**
+   * Tra cứu đề xuất đổi lịch đang chờ xử lý (PENDING) không cần kiểm tra quyền (dùng nội bộ / test).
+   */
+  @Transactional(readOnly = true)
+  public Optional<SessionRescheduleProposal> findActiveProposalBySessionId(UUID sessionId) {
+    return proposalRepository.findPendingBySessionId(sessionId);
   }
 }

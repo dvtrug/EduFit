@@ -158,6 +158,20 @@ export const schedulingApi = {
   },
 
   /**
+   * Lấy thông tin đề xuất đổi lịch học đang chờ xử lý của buổi học (UC4.4).
+   * GET /api/v1/scheduling/sessions/{id}/reschedule-proposal
+   */
+  async getRescheduleProposal(
+    sessionId: string
+  ): Promise<ApiResponse<RescheduleProposal | null>> {
+    return fetchApi<RescheduleProposal | null>(
+      `/api/v1/scheduling/sessions/${encodeURIComponent(sessionId)}/reschedule-proposal`,
+      { method: "GET" }
+    );
+  },
+
+
+  /**
    * Hủy buổi học đã lên lịch (UC4.5).
    * POST /api/v1/scheduling/sessions/{id}/cancel
    */

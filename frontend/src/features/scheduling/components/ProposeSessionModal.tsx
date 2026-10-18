@@ -4,8 +4,15 @@ import React, { useState, useEffect } from "react";
 import { X, CalendarPlus, AlertTriangle, Video, MapPin, Loader2 } from "lucide-react";
 import { schedulingApi, isConflictError, getConflictMessage } from "../api/schedulingApi";
 import { proposeSessionSchema } from "../schemas/schedulingSchemas";
-import type { SessionDetail, ConnectedClass, SessionMode } from "../types";
+import {
+  type SessionDetail,
+  type ConnectedClass,
+  type SessionMode,
+  type ProposeSessionPayload,
+  formatConnectedClassName,
+} from "../types";
 import type { UserRole } from "@/shared/ui/Sidebar";
+import { formatLocalDateToIso } from "@/shared/utils/dateTime";
 
 export interface ProposeSessionModalProps {
   isOpen: boolean;
@@ -29,9 +36,7 @@ export function ProposeSessionModal({
   connectedClasses = [],
 }: ProposeSessionModalProps) {
   // Pre-fill date string (YYYY-MM-DD)
-  const defaultDateStr = initialDate
-    ? initialDate.toISOString().slice(0, 10)
-    : new Date().toISOString().slice(0, 10);
+  const defaultDateStr = formatLocalDateToIso(initialDate || new Date());
 
   const defaultStartTimeStr = `${String(initialHour).padStart(2, "0")}:00`;
   const defaultEndTimeStr = `${String(Math.min(initialHour + 1, 23)).padStart(2, "0")}:00`;
@@ -48,30 +53,34 @@ export function ProposeSessionModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isConflict, setIsConflict] = useState(false);
 
+  const availableClasses = React.useMemo(() => {
+    return connectedClasses.filter((c) => !c.status || c.status === "ACTIVE");
+  }, [connectedClasses]);
+
   // Sync initial date/hour when modal opens
   useEffect(() => {
     if (isOpen) {
       if (initialDate) {
-        setDateStr(initialDate.toISOString().slice(0, 10));
+        setDateStr(formatLocalDateToIso(initialDate));
       }
       setStartTimeStr(`${String(initialHour).padStart(2, "0")}:00`);
       setEndTimeStr(`${String(Math.min(initialHour + 1, 23)).padStart(2, "0")}:00`);
       setErrorMessage(null);
       setIsConflict(false);
 
-      if (connectedClasses.length > 0) {
-        if (!selectedClassId || !connectedClasses.some((c) => c.classId === selectedClassId)) {
-          setSelectedClassId(connectedClasses[0].classId);
+      if (availableClasses.length > 0) {
+        if (!selectedClassId || !availableClasses.some((c) => c.classId === selectedClassId)) {
+          setSelectedClassId(availableClasses[0].classId);
         }
       } else {
         setSelectedClassId("");
       }
     }
-  }, [isOpen, initialDate, initialHour, connectedClasses, selectedClassId]);
+  }, [isOpen, initialDate, initialHour, availableClasses, selectedClassId]);
 
   if (!isOpen) return null;
 
-  const currentClass = connectedClasses.find((c) => c.classId === selectedClassId);
+  const currentClass = availableClasses.find((c) => c.classId === selectedClassId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,8 +96,8 @@ export function ProposeSessionModal({
     const tutorId = currentClass.tutorId;
     const studentId = currentClass.studentId;
 
-    if (!classId || !tutorId || !studentId) {
-      setErrorMessage("Vui lòng cung cấp đầy đủ thông tin Lớp học, Gia sư và Học sinh.");
+    if (!classId) {
+      setErrorMessage("Vui lòng chọn lớp học đang hoạt động để đề xuất buổi học.");
       return;
     }
 
@@ -101,10 +110,10 @@ export function ProposeSessionModal({
       return;
     }
 
-    const payload = {
+    const payload: ProposeSessionPayload = {
       classId,
-      tutorId,
-      studentId,
+      tutorId: tutorId || undefined,
+      studentId: studentId || undefined,
       startAt: startDateTime.toISOString(),
       endAt: endDateTime.toISOString(),
       mode,
@@ -204,7 +213,7 @@ export function ProposeSessionModal({
           )}
 
           {/* Chọn lớp học */}
-          {connectedClasses.length > 0 ? (
+          {availableClasses.length > 0 ? (
             <div>
               <label htmlFor="select-class" className="block text-xs font-bold text-neutral-700 mb-1">
                 Lớp học <span className="text-rose-500">*</span>
@@ -215,9 +224,9 @@ export function ProposeSessionModal({
                 onChange={(e) => setSelectedClassId(e.target.value)}
                 className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-800 focus:border-sky-500 focus:outline-hidden"
               >
-                {connectedClasses.map((c) => (
+                {availableClasses.map((c) => (
                   <option key={c.classId} value={c.classId}>
-                    {c.title} {c.tutorName ? `(Gia sư: ${c.tutorName})` : ""} {c.studentName ? `(Học sinh: ${c.studentName})` : ""}
+                    {formatConnectedClassName(c, role, c.classId)}
                   </option>
                 ))}
               </select>

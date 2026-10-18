@@ -283,4 +283,63 @@ class ProposeSessionServiceTest {
 
     assertEquals(ErrorCode.SCHEDULE_OVERLAP, ex.getErrorCode());
   }
+
+  @Test
+  @DisplayName("Tự động phân giải tutorId và studentId từ classId khi đề xuất buổi lẻ")
+  void shouldAutoResolveTutorAndStudentIdFromActiveClass() {
+    Instant startAt = fixedNow.plus(2, ChronoUnit.HOURS);
+    Instant endAt = startAt.plus(90, ChronoUnit.MINUTES);
+
+    UUID resolvedTutorId = UUID.randomUUID();
+    UUID resolvedStudentId = UUID.randomUUID();
+    var activeClassInfo = new ConnectionValidationPort.ActiveClassInfo(classId, resolvedStudentId, resolvedTutorId, null);
+
+    when(connectionValidationPort.findActiveClassById(classId)).thenReturn(java.util.Optional.of(activeClassInfo));
+    when(connectionValidationPort.isConnectionActive(classId, resolvedTutorId, resolvedStudentId)).thenReturn(true);
+    when(sessionRepository.findTutorBusySlots(resolvedTutorId, startAt, endAt)).thenReturn(Collections.emptyList());
+    when(sessionRepository.findCalendarSessions(resolvedStudentId, startAt, endAt)).thenReturn(Collections.emptyList());
+    when(sessionRepository.save(any(TutoringSession.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    // Client truyền tutorId và studentId là null hoặc ID khác
+    TutoringSession session = proposeSessionService.proposeSession(
+        classId,
+        null,
+        null,
+        startAt,
+        endAt,
+        SessionMode.ONLINE,
+        "https://meet.google.com/xyz",
+        "Buổi học giải tích",
+        "Thầy hẹn lịch nhé",
+        tutorUser
+    );
+
+    assertNotNull(session);
+    assertEquals(resolvedTutorId, session.getTutorId());
+    assertEquals(resolvedStudentId, session.getStudentId());
+    verify(schedulingSecurityResolver).requireProposeAccess(tutorUser, resolvedTutorId, resolvedStudentId);
+    verify(sessionRepository).save(any(TutoringSession.class));
+  }
+
+  @Test
+  @DisplayName("Ném InvalidOperationException khi classId là null")
+  void shouldThrowWhenClassIdIsNull() {
+    Instant startAt = fixedNow.plus(2, ChronoUnit.HOURS);
+    Instant endAt = startAt.plus(90, ChronoUnit.MINUTES);
+
+    assertThrows(InvalidOperationException.class, () ->
+        proposeSessionService.proposeSession(
+            null,
+            tutorId,
+            studentId,
+            startAt,
+            endAt,
+            SessionMode.ONLINE,
+            null,
+            null,
+            null,
+            tutorUser
+        )
+    );
+  }
 }

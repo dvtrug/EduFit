@@ -18,14 +18,19 @@ export default function TutorSchedulePage() {
     connectionApi
       .getTutorClasses()
       .then((data) => {
-        const activeClasses = (data || []).filter((c) => c.status === "ACTIVE");
-        const mapped: ConnectedClass[] = activeClasses.map((c) => ({
+        const classList = data || [];
+        const mapped: ConnectedClass[] = classList.map((c) => ({
           classId: c.classId,
-          title: c.subjectName ? `${c.studentDisplayName || "Học sinh"} - ${c.subjectName}` : (c.studentDisplayName || "Lớp học"),
+          title: c.subjectName
+            ? `${c.subjectName} - ${c.educationLevelName || "Cấp học"} • ${c.studentDisplayName || "Học sinh"}`
+            : (c.studentDisplayName || "Lớp học"),
           tutorId: c.tutorId,
           studentId: c.studentId,
           tutorName: c.tutorDisplayName ?? undefined,
           studentName: c.studentDisplayName ?? undefined,
+          subjectName: c.subjectName ?? undefined,
+          educationLevelName: c.educationLevelName ?? undefined,
+          status: c.status,
         }));
         setClasses(mapped);
       })

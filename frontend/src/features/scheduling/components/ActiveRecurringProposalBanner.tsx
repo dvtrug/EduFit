@@ -106,6 +106,15 @@ export function ActiveRecurringProposalBanner({
         reason: !accept && rejectReason.trim() ? rejectReason.trim() : undefined,
       });
 
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("edufit:schedule-updated"));
+        try {
+          localStorage.setItem("edufit:schedule-updated", String(Date.now()));
+        } catch {
+          // ignore
+        }
+      }
+
       showToast(
         accept
           ? "Đã đồng ý áp dụng lịch học định kỳ mới!"
@@ -208,7 +217,20 @@ export function ActiveRecurringProposalBanner({
             </span>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
+            {/* Cảnh báo hủy lịch cũ cho đối phương nắm rõ */}
+            <div
+              role="alert"
+              className="rounded-xl border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300 flex items-start gap-2"
+            >
+              <AlertTriangle className="size-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+              <div>
+                <span className="font-bold">Lưu ý quan trọng:</span> Khi bạn bấm đồng ý,{" "}
+                <strong>toàn bộ lịch học cũ trong tương lai của lớp sẽ tự động bị hủy</strong> và được
+                thay thế bằng loạt buổi học mới theo khung giờ thỏa thuận này.
+              </div>
+            </div>
+
             {!showRejectInput ? (
               <div className="flex flex-wrap items-center gap-2">
                 <button

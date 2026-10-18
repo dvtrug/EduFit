@@ -25,11 +25,15 @@ import vn.edufit.shared.exception.InvalidOperationException;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class SchedulingSecurityResolver {
 
   private final ProfileFacade profileFacade;
   private final ConnectionFacade connectionFacade;
+
+  public SchedulingSecurityResolver(ProfileFacade profileFacade, ConnectionFacade connectionFacade) {
+    this.profileFacade = profileFacade;
+    this.connectionFacade = connectionFacade;
+  }
 
   /**
    * Phân giải mã hồ sơ gia sư (tutor_id) từ tài khoản đang đăng nhập.

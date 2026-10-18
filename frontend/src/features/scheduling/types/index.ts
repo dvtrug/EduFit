@@ -79,8 +79,8 @@ export interface RescheduleProposal {
 
 export interface ProposeSessionPayload {
   classId: string;
-  tutorId: string;
-  studentId: string;
+  tutorId?: string;
+  studentId?: string;
   startAt: string;
   endAt: string;
   mode: SessionMode;
@@ -117,6 +117,51 @@ export interface ConnectedClass {
   studentId: string;
   tutorName?: string;
   studentName?: string;
+  subjectName?: string;
+  educationLevelName?: string;
+  status?: string;
+}
+
+/**
+ * Thống nhất định dạng tên lớp học trên toàn hệ thống (Grid, Timeline, Modal):
+ * [Tên Môn] - [Cấp học] • [Đối tác / Con] thay vì hiển thị mã UUID thô.
+ */
+export function formatConnectedClassName(
+  cls?: ConnectedClass | null,
+  role?: UserRole,
+  fallbackClassId?: string
+): string {
+  if (!cls) {
+    return fallbackClassId ? `Lớp #${fallbackClassId.slice(0, 8)}` : "Lớp học";
+  }
+
+  const subject = cls.subjectName?.trim();
+  const level = cls.educationLevelName?.trim();
+
+  if (subject) {
+    const subjectAndLevel = level ? `${subject} - ${level}` : subject;
+
+    if (role === "TUTOR") {
+      return cls.studentName ? `${subjectAndLevel} • ${cls.studentName}` : subjectAndLevel;
+    }
+    if (role === "STUDENT") {
+      return cls.tutorName ? `${subjectAndLevel} • ${cls.tutorName}` : subjectAndLevel;
+    }
+    if (role === "PARENT") {
+      const partner = cls.tutorName ? ` • ${cls.tutorName}` : "";
+      const child = cls.studentName ? ` (${cls.studentName})` : "";
+      return `${subjectAndLevel}${partner}${child}`;
+    }
+
+    const partner = cls.studentName || cls.tutorName;
+    return partner ? `${subjectAndLevel} • ${partner}` : subjectAndLevel;
+  }
+
+  if (cls.title) {
+    return cls.title;
+  }
+
+  return fallbackClassId ? `Lớp #${fallbackClassId.slice(0, 8)}` : "Lớp học";
 }
 
 export type ScheduleViewMode = "grid" | "timeline";

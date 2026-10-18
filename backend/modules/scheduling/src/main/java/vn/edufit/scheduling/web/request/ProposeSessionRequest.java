@@ -14,10 +14,8 @@ public record ProposeSessionRequest(
     @NotNull(message = "classId không được để trống")
     UUID classId,
 
-    @NotNull(message = "tutorId không được để trống")
     UUID tutorId,
 
-    @NotNull(message = "studentId không được để trống")
     UUID studentId,
 
     @NotNull(message = "startAt không được để trống")

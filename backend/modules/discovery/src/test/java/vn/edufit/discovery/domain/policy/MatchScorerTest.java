@@ -120,7 +120,7 @@ class MatchScorerTest {
 
   @Test
   void noTimeOverlapIsSoftIncludingTouchingBoundaryAndDifferentDays() {
-    for (var offered : List.of(List.<AvailabilitySlot>of(), List.of(slot(1, "20:00", "21:00")),
+    for (var offered : List.of(List.of(slot(1, "20:00", "21:00")),
         List.of(slot(2, "18:00", "20:00")))) {
       var score = scorer.score(criteria(List.of(monday)), tutor(3, 200000, "5", 10, offered)).orElseThrow();
       assertEquals(new BigDecimal("0.00"), score.scheduleFit());
@@ -128,6 +128,29 @@ class MatchScorerTest {
     }
     assertEquals(new BigDecimal("0.00"), scorer.score(criteria(List.of()),
         tutor(3, 200000, "5", 10, List.of(monday))).orElseThrow().scheduleFit());
+  }
+
+  @Test
+  void emptyOrNullAvailabilitySlotsTreatedAsFlexibleWithMaxScore() {
+    // Empty availability slots list
+    var scoreEmpty = scorer.score(criteria(List.of(monday)), tutor(3, 200000, "5", 10, List.of())).orElseThrow();
+    assertEquals(new BigDecimal("100.00"), scoreEmpty.scheduleFit());
+    assertEquals(1, scoreEmpty.overlappingSlots());
+    assertEquals(new BigDecimal("100.00"), scoreEmpty.total());
+
+    // Multiple requested slots with empty tutor slots
+    var twoSlots = List.of(monday, slot(2, "18:00", "20:00"));
+    var scoreMultiple = scorer.score(criteria(twoSlots), tutor(3, 200000, "5", 10, List.of())).orElseThrow();
+    assertEquals(new BigDecimal("100.00"), scoreMultiple.scheduleFit());
+    assertEquals(2, scoreMultiple.overlappingSlots());
+
+    // Null availability slots
+    var nullCandidate = new TutorCandidate(UUID.randomUUID(), Set.of(new SubjectLevel(1, 3)), "ONLINE", "Hanoi",
+        200000L, new BigDecimal("5"), 10, Instant.parse("2025-01-01T00:00:00Z"), null);
+    var nullScore = scorer.score(criteria(List.of(monday)), nullCandidate).orElseThrow();
+    assertEquals(new BigDecimal("100.00"), nullScore.scheduleFit());
+    assertEquals(1, nullScore.overlappingSlots());
+    assertEquals(new BigDecimal("100.00"), nullScore.total());
   }
 
   private MatchCriteria criteria(List<AvailabilitySlot> slots) {

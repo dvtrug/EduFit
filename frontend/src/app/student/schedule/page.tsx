@@ -11,14 +11,19 @@ export default function StudentSchedulePage() {
     connectionApi
       .getStudentClasses()
       .then((data) => {
-        const activeClasses = (data || []).filter((c) => c.status === "ACTIVE");
-        const mapped: ConnectedClass[] = activeClasses.map((c) => ({
+        const classList = data || [];
+        const mapped: ConnectedClass[] = classList.map((c) => ({
           classId: c.classId,
-          title: c.subjectName ? `${c.tutorDisplayName || "Gia sư"} - ${c.subjectName}` : (c.tutorDisplayName || "Lớp học"),
+          title: c.subjectName
+            ? `${c.subjectName} - ${c.educationLevelName || "Cấp học"} • ${c.tutorDisplayName || "Gia sư"}`
+            : (c.tutorDisplayName || "Lớp học"),
           tutorId: c.tutorId,
           studentId: c.studentId,
           tutorName: c.tutorDisplayName ?? undefined,
           studentName: c.studentDisplayName ?? undefined,
+          subjectName: c.subjectName ?? undefined,
+          educationLevelName: c.educationLevelName ?? undefined,
+          status: c.status,
         }));
         setClasses(mapped);
       })

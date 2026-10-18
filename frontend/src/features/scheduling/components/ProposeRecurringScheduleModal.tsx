@@ -12,6 +12,7 @@ import {
   X,
   CheckCircle2,
   CalendarDays,
+  AlertTriangle,
 } from "lucide-react";
 import { schedulingApi, isConflictError, getConflictMessage } from "../api/schedulingApi";
 import type { SessionMode } from "../types";
@@ -42,6 +43,7 @@ export interface ProposeRecurringScheduleModalProps {
   className?: string;
   tutorName?: string;
   studentName?: string;
+  isReschedule?: boolean;
   onSuccess?: () => void;
 }
 
@@ -71,6 +73,7 @@ export function ProposeRecurringScheduleModal({
   className,
   tutorName,
   studentName,
+  isReschedule = false,
   onSuccess,
 }: ProposeRecurringScheduleModalProps) {
   const titleId = useId();
@@ -190,6 +193,14 @@ export function ProposeRecurringScheduleModal({
         message: message.trim() || undefined,
       });
 
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("edufit:schedule-updated"));
+        try {
+          localStorage.setItem("edufit:schedule-updated", String(Date.now()));
+        } catch {
+          // ignore
+        }
+      }
       onSuccess?.();
       onClose();
     } catch (err: unknown) {
@@ -220,10 +231,10 @@ export function ProposeRecurringScheduleModal({
           <div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 mb-1.5">
               <CalendarDays className="h-3.5 w-3.5" />
-              Lập lịch định kỳ (UC4.8)
+              {isReschedule ? "Đề xuất lại lịch định kỳ (UC4.8)" : "Lập lịch định kỳ (UC4.8)"}
             </div>
             <h2 id={titleId} className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-              Thống nhất lịch học định kỳ
+              {isReschedule ? "Đề xuất lại lịch học định kỳ" : "Thống nhất lịch học định kỳ"}
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
               {className ? `Lớp ${className}` : "Lớp học"}{" "}
@@ -233,11 +244,28 @@ export function ProposeRecurringScheduleModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+            className="rounded-full p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 cursor-pointer"
+            aria-label="Đóng"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {/* Cảnh báo nổi bật khi đề xuất lại lịch định kỳ */}
+        {isReschedule && (
+          <div
+            role="alert"
+            className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300 flex items-start gap-3"
+          >
+            <AlertTriangle className="size-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+            <div>
+              <p className="font-bold text-sm">Lưu ý quan trọng khi đề xuất lại lịch:</p>
+              <p className="mt-1 leading-relaxed">
+                Khi đề xuất mới được đối tác chấp thuận, <strong>toàn bộ lịch học cũ trong tương lai của lớp sẽ tự động bị hủy</strong> và được thay thế bằng loạt buổi học mới theo khung giờ thỏa thuận này.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Error Alert */}
         {error && (
@@ -480,7 +508,7 @@ export function ProposeRecurringScheduleModal({
               ) : (
                 <>
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  Gửi đề xuất lịch định kỳ
+                  {isReschedule ? "Gửi đề xuất lại lịch định kỳ" : "Gửi đề xuất lịch định kỳ"}
                 </>
               )}
             </button>

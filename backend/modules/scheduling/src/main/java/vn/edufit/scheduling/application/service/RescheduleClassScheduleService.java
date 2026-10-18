@@ -10,6 +10,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -440,7 +441,7 @@ public class RescheduleClassScheduleService {
       return;
     }
     for (RecurringRescheduleProposal p : proposalStore.values()) {
-      if (p.getClassId().equals(classId) && p.isPending(now)) {
+      if (p != null && Objects.equals(p.getClassId(), classId) && p.isPending(now)) {
         p.expire(now);
         log.info("Đã hủy đề xuất đổi lịch định kỳ do lớp học kết thúc: proposalId={}, classId={}, reason={}",
             p.getProposalId(), classId, reason);
