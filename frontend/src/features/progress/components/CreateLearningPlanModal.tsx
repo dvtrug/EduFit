@@ -17,6 +17,7 @@ import { progressApi } from "../api/progressApi";
 import { createPlanSchema, CreatePlanInput } from "../schemas/progressSchemas";
 import type { PlanResponse } from "../types";
 import { calculateWeightedProgress } from "../utils/progressCalculator";
+import { formatLocalDateToIso } from "@/shared/utils/dateTime";
 
 export interface CreateLearningPlanModalProps {
   isOpen: boolean;
@@ -66,7 +67,7 @@ export function CreateLearningPlanModal({
               milestoneId: m.milestoneId,
               title: m.title,
               description: m.description || "",
-              targetDate: m.targetDate ? m.targetDate.slice(0, 10) : "",
+              targetDate: m.targetDate ? formatLocalDateToIso(m.targetDate) : "",
               weight: m.weight || 1,
             }))
           );

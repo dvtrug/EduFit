@@ -19,7 +19,14 @@ import { ProposeSessionModal } from "./ProposeSessionModal";
 import { SessionDetailModal } from "./SessionDetailModal";
 import { ScheduleTimelineView } from "./ScheduleTimelineView";
 import { useAuth } from "@/context/AuthContext";
-import type { CalendarItem, ScheduleViewMode, ScheduleCalendarViewProps } from "../types";
+import { formatLocalDateToIso, formatSessionTime, formatLocalTime } from "@/shared/utils/dateTime";
+import {
+  type CalendarItem,
+  type ScheduleViewMode,
+  type ScheduleCalendarViewProps,
+  type ConnectedClass,
+  formatConnectedClassName,
+} from "../types";
 
 const HOURS = Array.from({ length: 15 }, (_, index) => index + 7);
 const DAY_LABELS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
@@ -126,25 +133,89 @@ export function ScheduleCalendarView({
     fetchSessions();
   }, [fetchSessions]);
 
+  // Listen to Global Event Bus (edufit:schedule-updated) and StorageEvent to auto-reload
+  useEffect(() => {
+    const handleScheduleUpdated = () => {
+      fetchSessions();
+    };
+    window.addEventListener("edufit:schedule-updated", handleScheduleUpdated);
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "edufit:schedule-updated") {
+        fetchSessions();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("edufit:schedule-updated", handleScheduleUpdated);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [fetchSessions]);
+
+  const classMap = useMemo(() => {
+    return new Map<string, ConnectedClass>((classes || []).map((c) => [c.classId, c]));
+  }, [classes]);
+
+  const getClassName = (classId: string) => {
+    return formatConnectedClassName(classMap.get(classId), role, classId);
+  };
+
+  const hasExplicitAvailability = Boolean(availabilitySlots && availabilitySlots.length > 0);
+
   // Map availability slots (for Tutor)
-  const isAvailable = (dayOfWeek: number, hour: number) =>
-    availabilitySlots.some((slot) => {
+  // When tutor has empty availabilitySlots: implicitly treat isAvailable = true for all grid slots
+  const isAvailable = (dayOfWeek: number, hour: number) => {
+    if (!hasExplicitAvailability) {
+      return true;
+    }
+    return availabilitySlots.some((slot) => {
       const start = toMinutes(slot.startTime);
       const end = toMinutes(slot.endTime);
       const cellStart = hour * 60;
       return slot.dayOfWeek === dayOfWeek && start <= cellStart && end > cellStart;
     });
+  };
 
-  // Get sessions that belong to a specific day index (1-based: 1=Monday...7=Sunday) and hour
-  const getSessionsForCell = (date: Date, hour: number): CalendarItem[] => {
-    const targetDateStr = date.toISOString().slice(0, 10);
+  // Only valid active/real sessions (upcoming: SCHEDULED, PROPOSED; past: COMPLETED, ABSENT) are allowed on the calendar grid
+  const isValidCalendarGridStatus = (status?: string): boolean => {
+    if (!status) return false;
+    const normalized = status.trim().toUpperCase();
+    return (
+      normalized === "SCHEDULED" ||
+      normalized === "PROPOSED" ||
+      normalized === "COMPLETED" ||
+      normalized === "ABSENT"
+    );
+  };
+
+  const isCancelledOrInactive = (status?: string): boolean => {
+    return !isValidCalendarGridStatus(status);
+  };
+
+  // Get sessions that start in this specific hour on this day (origin)
+  const getOriginSessionsForCell = (date: Date, hour: number): CalendarItem[] => {
+    const targetDateStr = formatLocalDateToIso(date);
     return sessions.filter((s) => {
       if (!s.startAt) return false;
-      const sDateStr = s.startAt.slice(0, 10);
-      if (sDateStr !== targetDateStr) return false;
+      if (!isValidCalendarGridStatus(s.status)) return false;
+      if (formatLocalDateToIso(s.startAt) !== targetDateStr) return false;
       const sessionDate = new Date(s.startAt);
-      const sessionHour = sessionDate.getHours();
-      return sessionHour === hour;
+      return sessionDate.getHours() === hour;
+    });
+  };
+
+  // Get continuation sessions for non-hour durations (90m/150m)
+  const getContinuationSessionsForCell = (date: Date, hour: number): CalendarItem[] => {
+    const targetDateStr = formatLocalDateToIso(date);
+    return sessions.filter((s) => {
+      if (!s.startAt || !s.endAt) return false;
+      if (!isValidCalendarGridStatus(s.status)) return false;
+      if (formatLocalDateToIso(s.startAt) !== targetDateStr) return false;
+      const startDate = new Date(s.startAt);
+      const endDate = new Date(s.endAt);
+      const sessionStartMin = startDate.getHours() * 60 + startDate.getMinutes();
+      const sessionEndMin = endDate.getHours() * 60 + endDate.getMinutes();
+      const slotStartMin = hour * 60;
+      return sessionStartMin < slotStartMin && sessionEndMin > slotStartMin;
     });
   };
 
@@ -293,7 +364,7 @@ export function ScheduleCalendarView({
                 </div>
                 {weekDays.map(({ label, date }) => {
                   const isToday =
-                    date.toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10);
+                    formatLocalDateToIso(date) === formatLocalDateToIso(new Date());
                   return (
                     <div
                       key={label}
@@ -338,23 +409,27 @@ export function ScheduleCalendarView({
 
                     {weekDays.map((day, index) => {
                       const available = role === "TUTOR" && isAvailable(index + 1, hour);
-                      const cellSessions = getSessionsForCell(day.date, hour);
+                      const cellSessions = getOriginSessionsForCell(day.date, hour);
+                      const continuationSessions = getContinuationSessionsForCell(day.date, hour);
+                      const isCellBusy = cellSessions.length > 0 || continuationSessions.length > 0;
 
                       return (
                         <div
                           key={`${day.label}-${hour}`}
-                          onClick={() => cellSessions.length === 0 && handleCellClick(day.date, hour)}
+                          onClick={() => !isCellBusy && handleCellClick(day.date, hour)}
                           className={`relative border-r border-stone-100 p-1 last:border-r-0 transition-colors group ${
-                            available ? "bg-emerald-50/40" : "bg-white"
-                          } ${cellSessions.length === 0 ? "hover:bg-sky-50/30 cursor-pointer" : ""}`}
+                            hasExplicitAvailability && available ? "bg-emerald-50/40" : "bg-white"
+                          } ${!isCellBusy ? "hover:bg-sky-50/30 cursor-pointer" : "cursor-default"}`}
                           title={
-                            cellSessions.length === 0
+                            !isCellBusy
                               ? `Bấm để đề xuất lịch lúc ${String(hour).padStart(2, "0")}:00 ${day.label}`
+                              : continuationSessions.length > 0
+                              ? `Khung giờ đang có ca học tiếp nối (${formatSessionTime(continuationSessions[0].startAt, continuationSessions[0].endAt)})`
                               : undefined
                           }
                         >
                           {/* If availability slot */}
-                          {available && cellSessions.length === 0 && (
+                          {hasExplicitAvailability && available && !isCellBusy && (
                             <div className="absolute inset-1 pointer-events-none flex items-center justify-center opacity-60">
                               <span className="text-[9px] font-bold text-emerald-700 flex items-center gap-0.5">
                                 <Clock3 className="size-2.5" /> Khung rảnh
@@ -367,7 +442,7 @@ export function ScheduleCalendarView({
                             const isProposed = s.status === "PROPOSED";
                             const isScheduled = s.status === "SCHEDULED";
                             const isCompleted = s.status === "COMPLETED";
-                            const isCancelled = s.status === "CANCELLED";
+                            const isAbsent = s.status === "ABSENT";
 
                             const badgeColor = isScheduled
                               ? "border-sky-300 bg-sky-50 text-sky-900 hover:bg-sky-100"
@@ -375,8 +450,8 @@ export function ScheduleCalendarView({
                               ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"
                               : isCompleted
                               ? "border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
-                              : isCancelled
-                              ? "border-rose-300 bg-rose-50 text-rose-800 line-through opacity-70"
+                              : isAbsent
+                              ? "border-orange-300 bg-orange-50 text-orange-900 hover:bg-orange-100"
                               : "border-stone-300 bg-stone-50 text-stone-700";
 
                             return (
@@ -388,7 +463,7 @@ export function ScheduleCalendarView({
                               >
                                 <div className="flex items-center justify-between">
                                   <span className="truncate">
-                                    {s.startAt.slice(11, 16)} - {s.endAt.slice(11, 16)}
+                                    {formatSessionTime(s.startAt, s.endAt)}
                                   </span>
                                   {s.mode === "ONLINE" ? (
                                     <Video className="size-3 shrink-0" />
@@ -396,15 +471,46 @@ export function ScheduleCalendarView({
                                     <MapPin className="size-3 shrink-0" />
                                   )}
                                 </div>
+                                <div className="truncate text-[10px] font-bold text-neutral-800 dark:text-zinc-100 mt-0.5" title={getClassName(s.classId)}>
+                                  {getClassName(s.classId)}
+                                </div>
                                 <div className="truncate text-[9px] font-semibold mt-0.5">
                                   {isProposed && "⚠️ Chờ xác nhận"}
                                   {isScheduled && "✓ Đã xếp lịch"}
                                   {isCompleted && "✓ Đã hoàn thành"}
-                                  {isCancelled && "✕ Đã hủy"}
+                                  {isAbsent && "✕ Vắng mặt"}
                                 </div>
                               </button>
                             );
                           })}
+
+                          {/* Continuation slots for non-hour durations (90m/150m) */}
+                          {continuationSessions.map((s) => (
+                            <div
+                              key={`cont-${s.sessionId}`}
+                              onClick={(e) => handleSessionClick(e, s.sessionId)}
+                              className="w-full rounded-xl border border-dashed border-sky-300 bg-sky-50/70 p-1.5 text-left text-[10px] font-bold text-sky-900 shadow-2xs transition-all cursor-pointer hover:bg-sky-100/80"
+                              title={`Ca học tiếp nối (${formatSessionTime(s.startAt, s.endAt)})`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="truncate flex items-center gap-1 text-[9px] font-bold text-sky-800">
+                                  <Clock3 className="size-2.5 shrink-0 text-sky-600" />
+                                  ↳ Tiếp nối ({formatSessionTime(s.startAt, s.endAt)})
+                                </span>
+                                {s.mode === "ONLINE" ? (
+                                  <Video className="size-3 shrink-0 text-sky-600" />
+                                ) : (
+                                  <MapPin className="size-3 shrink-0 text-sky-600" />
+                                )}
+                              </div>
+                              <div className="truncate text-[9px] font-bold text-sky-800 dark:text-sky-300 mt-0.5" title={getClassName(s.classId)}>
+                                {getClassName(s.classId)}
+                              </div>
+                              <div className="truncate text-[9px] font-semibold text-sky-600 mt-0.5">
+                                Khóa giờ: Đến {formatLocalTime(s.endAt)}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       );
                     })}
@@ -418,6 +524,8 @@ export function ScheduleCalendarView({
         /* Timeline View */
         <ScheduleTimelineView
           sessions={sessions}
+          classes={classes}
+          role={role}
           onSelectSession={(id) => {
             setSelectedSessionId(id);
             setIsDetailOpen(true);
@@ -463,6 +571,14 @@ export function ScheduleCalendarView({
         onClose={() => setIsProposeOpen(false)}
         onSuccess={() => {
           fetchSessions();
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("edufit:schedule-updated"));
+            try {
+              localStorage.setItem("edufit:schedule-updated", String(Date.now()));
+            } catch {
+              // ignore
+            }
+          }
         }}
         role={role}
         currentUserId={user?.id}
@@ -480,9 +596,18 @@ export function ScheduleCalendarView({
         }}
         onUpdated={() => {
           fetchSessions();
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("edufit:schedule-updated"));
+            try {
+              localStorage.setItem("edufit:schedule-updated", String(Date.now()));
+            } catch {
+              // ignore
+            }
+          }
         }}
         role={role}
         currentUserId={user?.id}
+        classes={classes}
       />
     </div>
   );

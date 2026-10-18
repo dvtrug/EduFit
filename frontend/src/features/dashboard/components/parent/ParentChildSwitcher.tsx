@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 
 export interface ChildInfo {
   id: number;
+  studentId?: string;
   name: string;
   grade: string;
   tutorsCount: number;

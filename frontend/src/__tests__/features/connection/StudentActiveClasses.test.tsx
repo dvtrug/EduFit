@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { StudentActiveClasses } from "@/features/connection/components/StudentActiveClasses";
 import { connectionApi } from "@/features/connection/api/connectionApi";
@@ -101,5 +101,51 @@ describe("StudentActiveClasses Component", () => {
     // ReviewModal xuất hiện
     expect(await screen.findByText("Đánh giá gia sư")).toBeInTheDocument();
     expect(screen.getByText(/Dành cho: Thầy Đỗ Minh/i)).toBeInTheDocument();
+  });
+
+  it("hiển thị nút 'Thống nhất lịch học định kỳ', 'Đề xuất lại lịch học định kỳ' và 'Kết thúc lớp' trên thẻ lớp ACTIVE của học sinh", async () => {
+    vi.spyOn(connectionApi, "getStudentClasses").mockResolvedValue(mockStudentClasses);
+
+    render(<StudentActiveClasses />);
+
+    expect(await screen.findByText("Thầy Đỗ Minh")).toBeInTheDocument();
+
+    const recurringButtons = screen.getAllByRole("button", { name: /định kỳ/i });
+    expect(recurringButtons.length).toBe(2);
+    expect(screen.getByRole("button", { name: /Thống nhất lịch học định kỳ/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Đề xuất lại lịch học định kỳ/i })).toBeInTheDocument();
+
+    const endClassButtons = screen.getAllByRole("button", { name: /Kết thúc lớp/i });
+    expect(endClassButtons.length).toBe(2);
+
+    // Mở modal kết thúc lớp
+    fireEvent.click(endClassButtons[0]);
+    expect(await screen.findByText("Xác nhận kết thúc lớp")).toBeInTheDocument();
+  });
+
+  it("tự động gọi lại connectionApi.getStudentClasses() khi nhận sự kiện edufit:schedule-updated hoặc storage event", async () => {
+    const getSpy = vi.spyOn(connectionApi, "getStudentClasses").mockResolvedValue(mockStudentClasses);
+
+    render(<StudentActiveClasses />);
+    expect(await screen.findByText("Thầy Đỗ Minh")).toBeInTheDocument();
+    expect(getSpy).toHaveBeenCalledTimes(1);
+
+    // Kích hoạt event edufit:schedule-updated từ bất kỳ đâu (modal hoặc counterparty trong cùng tab)
+    act(() => {
+      window.dispatchEvent(new CustomEvent("edufit:schedule-updated"));
+    });
+
+    await waitFor(() => {
+      expect(getSpy).toHaveBeenCalledTimes(2);
+    });
+
+    // Kích hoạt cross-tab storage event
+    act(() => {
+      window.dispatchEvent(new StorageEvent("storage", { key: "edufit:schedule-updated" }));
+    });
+
+    await waitFor(() => {
+      expect(getSpy).toHaveBeenCalledTimes(3);
+    });
   });
 });

@@ -6,6 +6,7 @@ import { connectionApi } from "../api/connectionApi";
 import type { TutorInboxItem } from "../types";
 import { respondRequestSchema } from "../schemas/connectionSchemas";
 import { ApiError } from "@/lib/api";
+import { formatGoalType, formatDeadline } from "./StudentPedagogicalProfileModal";
 
 export interface RespondRequestModalProps {
   request: TutorInboxItem | null;
@@ -137,6 +138,45 @@ export function RespondRequestModal({
 
         {/* Body Form */}
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          {/* Pedagogical Summary Card */}
+          <div className="rounded-xl border border-stone-200 bg-stone-50/70 p-3.5 dark:border-zinc-800 dark:bg-zinc-800/40 text-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-neutral-700 dark:text-zinc-200">
+                Mục tiêu học tập:
+              </span>
+              <span className="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700 border border-indigo-200 dark:bg-indigo-950 dark:border-indigo-800 dark:text-indigo-300">
+                {formatGoalType(request.goalType)}
+              </span>
+            </div>
+            {(request.currentLevel != null || request.desiredLevel != null || request.currentGrade || request.targetScore) && (
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-500 dark:text-zinc-400">Lộ trình năng lực:</span>
+                <span className="font-semibold text-neutral-800 dark:text-zinc-100">
+                  {request.currentLevel != null ? `Cấp độ ${request.currentLevel}` : request.currentGrade || "Chưa rõ"}
+                  {" → "}
+                  {request.desiredLevel != null ? `Cấp độ ${request.desiredLevel}` : request.targetScore || "Chưa rõ"}
+                </span>
+              </div>
+            )}
+            {request.deadline && (
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-500 dark:text-zinc-400">Hạn chót mục tiêu:</span>
+                <span className="font-semibold text-neutral-800 dark:text-zinc-100">
+                  {formatDeadline(request.deadline)}
+                </span>
+              </div>
+            )}
+            {request.budgetMax && (
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-500 dark:text-zinc-400">Ngân sách:</span>
+                <span className="font-semibold text-neutral-800 dark:text-zinc-100">
+                  {request.budgetMin ? `${request.budgetMin.toLocaleString("vi-VN")} - ` : ""}
+                  {request.budgetMax.toLocaleString("vi-VN")} đ/buổi
+                </span>
+              </div>
+            )}
+          </div>
+
           {/* Slot conflict warning banner if approving */}
           {isApprove && request.hasSlotConflict && (
             <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300 flex items-start gap-3">

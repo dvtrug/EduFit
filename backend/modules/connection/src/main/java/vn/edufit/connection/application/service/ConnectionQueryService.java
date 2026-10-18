@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import vn.edufit.connection.api.ClassScheduleStatusProvider;
 import vn.edufit.connection.api.ConnectionFacade;
 import vn.edufit.connection.api.TutorScheduleConflictChecker;
 import vn.edufit.connection.application.dto.InvitationResult;
@@ -51,12 +52,14 @@ public class ConnectionQueryService {
   private final TutoringClassRepository classes;
   private final SlotConflictDetector slotConflictDetector;
   private final TutorScheduleConflictChecker scheduleConflictChecker;
+  private final ClassScheduleStatusProvider scheduleStatusProvider;
 
   @org.springframework.beans.factory.annotation.Autowired
   public ConnectionQueryService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
       ConnectionRequestRepository requests, TutoringClassRepository classes, ProfileFacade profile,
       IamFacade iam, ConnectionFacade facade, ConnectionExpiryService expiryService,
       SlotConflictDetector slotConflictDetector, Optional<TutorScheduleConflictChecker> scheduleConflictChecker,
+      Optional<ClassScheduleStatusProvider> scheduleStatusProvider,
       Clock clock) {
     this.clock = clock;
     this.invitations = invitations;
@@ -69,19 +72,29 @@ public class ConnectionQueryService {
     this.expiryService = expiryService;
     this.slotConflictDetector = slotConflictDetector != null ? slotConflictDetector : new SlotConflictDetector();
     this.scheduleConflictChecker = scheduleConflictChecker != null ? scheduleConflictChecker.orElse(null) : null;
+    this.scheduleStatusProvider = scheduleStatusProvider != null ? scheduleStatusProvider.orElse(null) : null;
+  }
+
+  public ConnectionQueryService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
+      ConnectionRequestRepository requests, TutoringClassRepository classes, ProfileFacade profile,
+      IamFacade iam, ConnectionFacade facade, ConnectionExpiryService expiryService,
+      SlotConflictDetector slotConflictDetector, Optional<TutorScheduleConflictChecker> scheduleConflictChecker,
+      Clock clock) {
+    this(invitations, links, requests, classes, profile, iam, facade, expiryService,
+        slotConflictDetector, scheduleConflictChecker, Optional.empty(), clock);
   }
 
   public ConnectionQueryService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
       ConnectionRequestRepository requests, ProfileFacade profile, IamFacade iam, ConnectionFacade facade,
       ConnectionExpiryService expiryService, Clock clock) {
     this(invitations, links, requests, null, profile, iam, facade, expiryService,
-        new SlotConflictDetector(), Optional.empty(), clock);
+        new SlotConflictDetector(), Optional.empty(), Optional.empty(), clock);
   }
 
   public ConnectionQueryService(LinkInvitationRepository invitations, ParentStudentLinkRepository links,
       ConnectionRequestRepository requests, ProfileFacade profile, IamFacade iam, ConnectionFacade facade, Clock clock) {
     this(invitations, links, requests, null, profile, iam, facade, null,
-        new SlotConflictDetector(), Optional.empty(), clock);
+        new SlotConflictDetector(), Optional.empty(), Optional.empty(), clock);
   }
 
   private static void requireRole(CurrentUser actor, String... roles) {
@@ -430,6 +443,12 @@ public class ConnectionQueryService {
     List<UUID> goalIds = classList.stream().map(TutoringClass::getGoalId).distinct().toList();
     Map<UUID, ConnectionGoalDto> goalsMap = profile.findGoalsForConnection(goalIds);
 
+    List<UUID> classIds = classList.stream().map(TutoringClass::getId).toList();
+    Map<UUID, ClassScheduleStatusProvider.ClassScheduleInfo> scheduleInfoMap =
+        (scheduleStatusProvider != null && !classIds.isEmpty())
+            ? scheduleStatusProvider.getScheduleInfoBatch(classIds)
+            : Map.of();
+
     return classList.stream().map(c -> {
       ConnectionGoalDto goal = goalsMap.get(c.getGoalId());
       String subjectName = goal != null ? goal.subjectName() : null;
@@ -450,6 +469,13 @@ public class ConnectionQueryService {
             .orElse("Gia sư");
       }
 
+      ClassScheduleStatusProvider.ClassScheduleInfo scheduleInfo = scheduleInfoMap.get(c.getId());
+      String scheduleStatus = scheduleInfo != null ? scheduleInfo.scheduleStatus() : "PROPOSED";
+      int sessionCount = scheduleInfo != null ? scheduleInfo.sessionCount() : 0;
+      int completedCount = scheduleInfo != null ? scheduleInfo.completedCount() : 0;
+      int scheduledCount = scheduleInfo != null ? scheduleInfo.scheduledCount() : 0;
+      int totalCount = scheduleInfo != null ? scheduleInfo.totalCount() : 0;
+
       return new vn.edufit.connection.application.dto.TutoringClassResult(
           c.getId(),
           c.getStudentId(),
@@ -460,8 +486,11 @@ public class ConnectionQueryService {
           tutorName,
           subjectName,
           educationLevelName,
-          "PROPOSED",
-          0,
+          scheduleStatus,
+          sessionCount,
+          completedCount,
+          scheduledCount,
+          totalCount,
           c.getStartedAt(),
           c.getEndedAt()
       );

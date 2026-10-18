@@ -7,3 +7,5 @@ export * from "./components/RespondRequestModal";
 export * from "./components/TutorPendingRequests";
 export * from "./components/TutorActiveClasses";
 export * from "./components/StudentActiveClasses";
+export * from "./components/StudentPedagogicalProfileModal";
+export * from "./components/EndClassModal";

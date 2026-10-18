@@ -14,18 +14,29 @@ import {
   TrendingUp,
   User,
   Star,
+  CalendarDays,
 } from "lucide-react";
 import { connectionApi } from "../api/connectionApi";
 import type { TutoringClass } from "../types";
 import { ReviewModal } from "@/features/review";
 import { useToast } from "@/shared/ui/Toast";
+import { EndClassModal } from "./EndClassModal";
+import { useOptionalAuth } from "@/context/AuthContext";
+import {
+  ProposeRecurringScheduleModal,
+  ActiveRecurringProposalBanner,
+} from "@/features/scheduling";
 
 export function StudentActiveClasses() {
+  const auth = useOptionalAuth();
+  const user = auth?.user;
   const { showToast } = useToast();
   const [classes, setClasses] = useState<TutoringClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reviewTargetClass, setReviewTargetClass] = useState<TutoringClass | null>(null);
+  const [endClassTarget, setEndClassTarget] = useState<TutoringClass | null>(null);
+  const [recurringModalClass, setRecurringModalClass] = useState<TutoringClass | null>(null);
 
   const loadClasses = useCallback(async () => {
     try {
@@ -45,6 +56,30 @@ export function StudentActiveClasses() {
   useEffect(() => {
     void loadClasses();
   }, [loadClasses]);
+
+  // Listen to Global Event Bus (edufit:schedule-updated) and StorageEvent to auto-reload
+  useEffect(() => {
+    const handleScheduleUpdated = () => {
+      void loadClasses();
+    };
+    window.addEventListener("edufit:schedule-updated", handleScheduleUpdated);
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "edufit:schedule-updated") {
+        void loadClasses();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("edufit:schedule-updated", handleScheduleUpdated);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [loadClasses]);
+
+  const isClassScheduled = (c: TutoringClass) =>
+    (c.scheduledCount ?? 0) > 0 ||
+    (c.sessionCount ?? 0) > 0 ||
+    c.scheduleStatus === "SCHEDULED" ||
+    c.scheduleStatus === "COMPLETED";
 
   return (
     <div className="space-y-6">
@@ -141,8 +176,15 @@ export function StudentActiveClasses() {
       {!loading && !error && classes.length > 0 && (
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {classes.map((item) => {
-            const isPendingSchedule =
-              item.scheduleStatus === "PROPOSED" || item.sessionCount === 0;
+            const isScheduled = isClassScheduled(item);
+            const totalCount = item.totalCount ?? item.sessionCount ?? 0;
+            const completedCount = item.completedCount ?? 0;
+            const scheduledCount = item.scheduledCount ?? (isScheduled ? Math.max(0, totalCount - completedCount) : 0);
+            const isEnded = item.status === "ENDED";
+            const isBatchCompleted = !isEnded && totalCount > 0 && scheduledCount === 0 && completedCount >= totalCount;
+            const isOngoing = !isEnded && isScheduled && !isBatchCompleted;
+            const isUnscheduled = !isEnded && !isScheduled;
+            const isPendingSchedule = isUnscheduled;
 
             return (
               <div
@@ -162,9 +204,25 @@ export function StudentActiveClasses() {
                       </p>
                     </div>
 
-                    {/* Badge 'Chờ thống nhất lịch học' or 'Đã chốt lịch' */}
+                    {/* Badge */}
                     <div>
-                      {isPendingSchedule ? (
+                      {isEnded ? (
+                        <span
+                          data-testid="badge-ended"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+                        >
+                          <CheckCircle2 className="h-3 w-3 text-zinc-500" />
+                          Đã kết thúc
+                        </span>
+                      ) : isBatchCompleted ? (
+                        <span
+                          data-testid="badge-batch-completed"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-semibold text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-900/50"
+                        >
+                          <CheckCircle2 className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                          Đã hoàn thành đợt học
+                        </span>
+                      ) : isPendingSchedule ? (
                         <span
                           data-testid="badge-pending-schedule"
                           className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50"
@@ -208,15 +266,25 @@ export function StudentActiveClasses() {
                         Số buổi đã học
                       </span>
                       <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5 block">
-                        {item.sessionCount} buổi
+                        {item.completedCount ?? 0} / {item.totalCount ?? item.sessionCount} buổi
                       </span>
                     </div>
                     <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-2.5 dark:border-zinc-800 dark:bg-zinc-800/40">
                       <span className="text-zinc-500 dark:text-zinc-400 block text-[11px]">
                         Trạng thái lớp
                       </span>
-                      <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 block">
-                        {item.status === "ACTIVE" ? "Đang diễn ra" : item.status}
+                      <span
+                        className={`text-sm font-bold mt-0.5 block ${
+                          item.status === "ACTIVE"
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-zinc-600 dark:text-zinc-400"
+                        }`}
+                      >
+                        {item.status === "ACTIVE"
+                          ? "Đang diễn ra"
+                          : item.status === "ENDED"
+                          ? "Đã kết thúc"
+                          : item.status}
                       </span>
                     </div>
                   </div>
@@ -230,6 +298,14 @@ export function StudentActiveClasses() {
                       </p>
                     </div>
                   )}
+
+                  {/* Active Recurring Proposal Banner (UC4.8) */}
+                  <ActiveRecurringProposalBanner
+                    classId={item.classId}
+                    currentUserId={user?.id}
+                    userRole="STUDENT"
+                    onUpdated={loadClasses}
+                  />
                 </div>
 
                 {/* Actions */}
@@ -256,6 +332,48 @@ export function StudentActiveClasses() {
                     <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
                     Đánh giá
                   </button>
+                  {item.status === "ACTIVE" && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setRecurringModalClass(item)}
+                        className="inline-flex items-center justify-center gap-1 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 active:scale-95 transition-all cursor-pointer dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-300"
+                        title={
+                          isOngoing
+                            ? "Đề xuất lại lịch học định kỳ (Hủy lịch cũ khi được chấp thuận)"
+                            : isBatchCompleted
+                            ? "Đề xuất tiếp đợt học mới (4-8 tuần)"
+                            : "Thống nhất lịch học định kỳ (4-8 tuần)"
+                        }
+                      >
+                        <CalendarDays className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                        {isOngoing
+                          ? "Đề xuất lại lịch học định kỳ"
+                          : isBatchCompleted
+                          ? "Đề xuất tiếp đợt học mới"
+                          : "Thống nhất lịch học định kỳ"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEndClassTarget(item)}
+                        className={`inline-flex items-center justify-center gap-1 rounded-xl px-3 py-2 text-xs font-semibold active:scale-95 transition-all cursor-pointer ${
+                          isBatchCompleted
+                            ? "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
+                            : "border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300"
+                        }`}
+                        title="Kết thúc lớp học"
+                      >
+                        {isBatchCompleted ? (
+                          <>
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Xác nhận hoàn tất
+                          </>
+                        ) : (
+                          "Kết thúc lớp"
+                        )}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             );
@@ -274,6 +392,37 @@ export function StudentActiveClasses() {
           onSuccess={() => {
             showToast("Gửi đánh giá gia sư thành công!", "success");
             setReviewTargetClass(null);
+          }}
+        />
+      )}
+
+      {/* End Class Modal */}
+      <EndClassModal
+        classItem={endClassTarget}
+        isOpen={Boolean(endClassTarget)}
+        onClose={() => setEndClassTarget(null)}
+        onSuccess={() => void loadClasses()}
+      />
+
+      {/* Modal lập lịch học định kỳ UC4.8 */}
+      {recurringModalClass && (
+        <ProposeRecurringScheduleModal
+          isOpen={Boolean(recurringModalClass)}
+          onClose={() => setRecurringModalClass(null)}
+          classId={recurringModalClass.classId}
+          className={
+            recurringModalClass.subjectName
+              ? `${recurringModalClass.subjectName}${recurringModalClass.educationLevelName ? ` - ${recurringModalClass.educationLevelName}` : ""}`
+              : undefined
+          }
+          tutorName={recurringModalClass.tutorDisplayName ?? undefined}
+          studentName={recurringModalClass.studentDisplayName ?? undefined}
+          isReschedule={Boolean(
+            recurringModalClass && isClassScheduled(recurringModalClass)
+          )}
+          onSuccess={() => {
+            setRecurringModalClass(null);
+            void loadClasses();
           }}
         />
       )}

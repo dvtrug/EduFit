@@ -3,9 +3,11 @@ package vn.edufit.scheduling.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +39,7 @@ import vn.edufit.scheduling.domain.repository.SessionHistoryDomainRepository;
 import vn.edufit.scheduling.domain.repository.SessionRescheduleProposalDomainRepository;
 import vn.edufit.scheduling.domain.repository.TutoringSessionDomainRepository;
 import vn.edufit.shared.auth.CurrentUser;
+import vn.edufit.shared.exception.ErrorCode;
 import vn.edufit.shared.exception.ForbiddenOperationException;
 import vn.edufit.shared.exception.InvalidOperationException;
 
@@ -254,5 +257,53 @@ class RescheduleSessionServiceTest {
     assertThrows(ForbiddenOperationException.class, () ->
         service.respondToReschedule(proposalId, stranger, true, null)
     );
+  }
+
+  @Test
+  @DisplayName("Ném InvalidOperationException khi chấp nhận đề xuất đổi lịch nhưng buổi học không ở trạng thái SCHEDULED")
+  void shouldThrowWhenAcceptingRescheduleForNonScheduledSession() {
+    Instant newStartAt = fixedNow.plus(4, ChronoUnit.DAYS);
+    Instant newEndAt = newStartAt.plus(90, ChronoUnit.MINUTES);
+
+    SessionRescheduleProposal proposal = SessionRescheduleProposal.create(
+        proposalId, sessionId, tutorUserId, newStartAt, newEndAt, "Dời giờ", newStartAt, fixedNow
+    );
+
+    TutoringSession cancelledSession = new TutoringSession(
+        sessionId, classId, tutorId, studentId,
+        scheduledSession.getStartAt(), scheduledSession.getEndAt(), SessionMode.ONLINE, null, null, null,
+        SessionStatus.CANCELLED, studentUserId, tutorUserId, fixedNow.minus(1, ChronoUnit.DAYS),
+        null, scheduledSession.getStartAt(), null, null, null, null, false, null, null, 1, fixedNow.minus(2, ChronoUnit.DAYS)
+    );
+
+    when(proposalRepository.findById(proposalId)).thenReturn(Optional.of(proposal));
+    when(sessionRepository.findByIdForUpdate(sessionId)).thenReturn(Optional.of(cancelledSession));
+
+    InvalidOperationException ex = assertThrows(InvalidOperationException.class, () ->
+        service.respondToReschedule(proposalId, studentUser, true, null)
+    );
+
+    assertEquals(ErrorCode.INVALID_OPERATION, ex.getErrorCode());
+    verify(sessionRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("Tra cứu thành công đề xuất đổi lịch đang chờ xử lý của buổi học (findActiveProposalBySessionId)")
+  void shouldFindActiveProposalBySessionIdSuccessfully() {
+    Instant newStartAt = fixedNow.plus(4, ChronoUnit.DAYS);
+    Instant newEndAt = newStartAt.plus(90, ChronoUnit.MINUTES);
+
+    SessionRescheduleProposal proposal = SessionRescheduleProposal.create(
+        proposalId, sessionId, tutorUserId, newStartAt, newEndAt, "Dời giờ", newStartAt, fixedNow
+    );
+
+    when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(scheduledSession));
+    when(proposalRepository.findPendingBySessionId(sessionId)).thenReturn(Optional.of(proposal));
+
+    Optional<SessionRescheduleProposal> result = service.findActiveProposalBySessionId(sessionId, studentUser);
+
+    assertTrue(result.isPresent());
+    assertEquals(proposalId, result.get().getProposalId());
+    verify(schedulingSecurityResolver).requireSessionAccess(studentUser, scheduledSession);
   }
 }

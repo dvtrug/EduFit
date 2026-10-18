@@ -14,8 +14,8 @@ export const cancelReasonSchema = z.enum(
 export const proposeSessionSchema = z
   .object({
     classId: z.string().uuid("Vui lòng chọn lớp học hợp lệ"),
-    tutorId: z.string().uuid("ID gia sư không hợp lệ"),
-    studentId: z.string().uuid("ID học sinh không hợp lệ"),
+    tutorId: z.string().optional(),
+    studentId: z.string().optional(),
     startAt: z.string().min(1, "Thời gian bắt đầu không được để trống"),
     endAt: z.string().min(1, "Thời gian kết thúc không được để trống"),
     mode: sessionModeSchema,

@@ -16,6 +16,7 @@ import {
 import { progressApi } from "../api/progressApi";
 import { recordSessionOutcomeSchema } from "../schemas/progressSchemas";
 import type { PlanResponse, MilestoneResponse } from "../types";
+import { formatLocalDateToIso } from "@/shared/utils/dateTime";
 
 export interface SessionOutcomeModalProps {
   isOpen: boolean;
@@ -118,7 +119,7 @@ export function SessionOutcomeModal({
 
       // 2. Nếu có cột mốc nào được gia sư tích chọn đạt được trong buổi học này
       if (selectedMilestoneIds.length > 0 && plan) {
-        const todayStr = new Date().toISOString().slice(0, 10);
+        const todayStr = formatLocalDateToIso(new Date());
         let currentVersion = plan.version;
 
         for (const milestoneId of selectedMilestoneIds) {

@@ -180,4 +180,81 @@ class ConnectionUseCaseTest {
     order.verify(invitations).lockById(id);
     order.verify(links).save(any());
   }
+
+  @Test void endClassFailsWhenReasonIsBlank() {
+    UUID classId = UUID.randomUUID(), actorId = UUID.randomUUID();
+    CurrentUser actor = actor(actorId, "TUTOR");
+    assertThrows(InvalidOperationException.class, () -> service.endClass(actor, classId, "   "));
+    assertThrows(InvalidOperationException.class, () -> service.endClass(actor, classId, null));
+  }
+
+  @Test void endClassFailsWhenReasonExceeds300Chars() {
+    UUID classId = UUID.randomUUID(), actorId = UUID.randomUUID();
+    CurrentUser actor = actor(actorId, "TUTOR");
+    assertThrows(InvalidOperationException.class, () -> service.endClass(actor, classId, "a".repeat(301)));
+  }
+
+  @Test void endClassFailsWhenClassNotActive() {
+    UUID classId = UUID.randomUUID(), actorId = UUID.randomUUID(), tutorId = UUID.randomUUID(), studentId = UUID.randomUUID();
+    CurrentUser actor = actor(actorId, "TUTOR");
+    ConnectionRequest request = new ConnectionRequest(studentId, tutorId, UUID.randomUUID(), UUID.randomUUID(), List.of("Mon 08:00"), null, Instant.now());
+    TutoringClass tutoringClass = new TutoringClass(request, Instant.now());
+    tutoringClass.endClass("Đã kết thúc trước đó", Instant.now());
+    when(classes.findById(classId)).thenReturn(Optional.of(tutoringClass));
+
+    assertThrows(InvalidOperationException.class, () -> service.endClass(actor, classId, "Kết thúc lớp"));
+  }
+
+  @Test void endClassFailsWhenActorNotParticipant() {
+    UUID classId = UUID.randomUUID(), actorId = UUID.randomUUID(), tutorId = UUID.randomUUID(), studentId = UUID.randomUUID();
+    CurrentUser actor = actor(actorId, "TUTOR");
+    ConnectionRequest request = new ConnectionRequest(studentId, tutorId, UUID.randomUUID(), UUID.randomUUID(), List.of("Mon 08:00"), null, Instant.now());
+    TutoringClass tutoringClass = new TutoringClass(request, Instant.now());
+    when(classes.findById(classId)).thenReturn(Optional.of(tutoringClass));
+    when(profile.findTutorById(tutorId)).thenReturn(Optional.of(new TutorSummaryDto(tutorId, UUID.randomUUID(), "Tutor", null, null, null, null, null, null, null, "VERIFIED", Instant.now(), null, 0)));
+
+    assertThrows(ForbiddenOperationException.class, () -> service.endClass(actor, classId, "Kết thúc lớp"));
+  }
+
+  @Test void endClassSucceedsAndPublishesEvent() {
+    UUID classId = UUID.randomUUID(), actorId = UUID.randomUUID(), tutorId = UUID.randomUUID(), studentId = UUID.randomUUID();
+    CurrentUser actor = actor(actorId, "TUTOR");
+    ConnectionRequest request = new ConnectionRequest(studentId, tutorId, UUID.randomUUID(), UUID.randomUUID(), List.of("Mon 08:00"), null, Instant.now());
+    TutoringClass tutoringClass = new TutoringClass(request, Instant.now());
+    org.springframework.test.util.ReflectionTestUtils.setField(tutoringClass, "id", classId);
+    when(classes.findById(classId)).thenReturn(Optional.of(tutoringClass));
+    when(profile.findTutorById(tutorId)).thenReturn(Optional.of(new TutorSummaryDto(tutorId, actorId, "Tutor", null, null, null, null, null, null, null, "VERIFIED", Instant.now(), null, 0)));
+
+    var result = service.endClass(actor, classId, "Học sinh đã hoàn thành khóa học");
+    assertNotNull(result);
+    assertEquals("ENDED", tutoringClass.getStatus());
+    assertEquals("Học sinh đã hoàn thành khóa học", tutoringClass.getEndReason());
+    verify(classes).flush();
+    verify(events).publishEvent(isA(vn.edufit.connection.api.event.TutoringClassEndedEvent.class));
+  }
+
+  @Test void endClassFailsWhenSessionsAreStillScheduled() {
+    UUID classId = UUID.randomUUID(), actorId = UUID.randomUUID(), tutorId = UUID.randomUUID(), studentId = UUID.randomUUID();
+    CurrentUser actor = actor(actorId, "TUTOR");
+    ConnectionRequest request = new ConnectionRequest(studentId, tutorId, UUID.randomUUID(), UUID.randomUUID(), List.of("Mon 08:00"), null, Instant.now());
+    TutoringClass tutoringClass = new TutoringClass(request, Instant.now());
+    org.springframework.test.util.ReflectionTestUtils.setField(tutoringClass, "id", classId);
+    when(classes.findById(classId)).thenReturn(Optional.of(tutoringClass));
+    when(profile.findTutorById(tutorId)).thenReturn(Optional.of(new TutorSummaryDto(tutorId, actorId, "Tutor", null, null, null, null, null, null, null, "VERIFIED", Instant.now(), null, 0)));
+
+    vn.edufit.connection.api.ClassScheduleStatusProvider mockProvider = mock(vn.edufit.connection.api.ClassScheduleStatusProvider.class);
+    when(mockProvider.getScheduleInfoBatch(List.of(classId))).thenReturn(
+        java.util.Map.of(classId, new vn.edufit.connection.api.ClassScheduleStatusProvider.ClassScheduleInfo("SCHEDULED", 2, 5, 7))
+    );
+    ConnectionRequestService customService = new ConnectionRequestService(
+        requests, classes, profile, iam, lock, notifications,
+        new ConnectionFacadeImpl(links, classes),
+        new vn.edufit.connection.application.policy.ConnectionRequestInput("legacy-compatible"),
+        events, null,
+        new vn.edufit.connection.application.policy.SlotConflictDetector(), Optional.empty(), Optional.of(mockProvider), Clock.systemUTC()
+    );
+
+    var ex = assertThrows(InvalidOperationException.class, () -> customService.endClass(actor, classId, "Kết thúc lớp"));
+    assertTrue(ex.getMessage().contains("vẫn còn buổi học đã lên lịch"));
+  }
 }

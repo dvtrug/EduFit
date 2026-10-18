@@ -465,4 +465,76 @@ class ConnectionQueryServiceTest {
     assertFalse(item.hasSlotConflict());
     assertTrue(item.conflictingSlots().isEmpty());
   }
+
+  @Test
+  void classes_withScheduleStatusProvider_populatesScheduleStatusAndCount() {
+    UUID user = UUID.randomUUID(), tutor = UUID.randomUUID(), student = UUID.randomUUID(), goal = UUID.randomUUID();
+    UUID classId = UUID.randomUUID();
+    var req = new ConnectionRequest(student, tutor, goal, user, List.of("MON 18:00-19:00"), null, Instant.now().plusSeconds(86400));
+    var tutoringClass = new TutoringClass(req, Instant.now());
+    // Use reflection to set ID on entity if protected
+    org.springframework.test.util.ReflectionTestUtils.setField(tutoringClass, "id", classId);
+
+    when(profile.getTutorIdByUserId(user)).thenReturn(tutor);
+    when(classes.findByTutorId(tutor)).thenReturn(List.of(tutoringClass));
+
+    var goalDto = new ConnectionGoalDto(
+        goal, student, user, 1, 4, "EXAM", java.time.LocalDate.of(2027, 6, 1), "ACTIVE",
+        8, 10, 150000L, 300000L, "Hà Nội", "Toán học", "Lớp 12"
+    );
+    when(profile.findGoalsForConnection(List.of(goal))).thenReturn(Map.of(goal, goalDto));
+    when(profile.findStudentById(student)).thenReturn(Optional.empty());
+    when(profile.findTutorById(tutor)).thenReturn(Optional.empty());
+
+    var mockScheduleProvider = mock(vn.edufit.connection.api.ClassScheduleStatusProvider.class);
+    when(mockScheduleProvider.getScheduleInfoBatch(List.of(classId))).thenReturn(Map.of(
+        classId, new vn.edufit.connection.api.ClassScheduleStatusProvider.ClassScheduleInfo("SCHEDULED", 2, 4, 6)
+    ));
+
+    var customService = new ConnectionQueryService(
+        invitations, links, requests, classes, profile, iam, facade, null,
+        new vn.edufit.connection.application.policy.SlotConflictDetector(),
+        Optional.empty(),
+        Optional.of(mockScheduleProvider),
+        Clock.systemUTC()
+    );
+
+    var results = customService.classes(actor(user, "TUTOR"));
+    assertEquals(1, results.size());
+    var cls = results.getFirst();
+    assertEquals("SCHEDULED", cls.scheduleStatus());
+    assertEquals(2, cls.sessionCount());
+    assertEquals(2, cls.completedCount());
+    assertEquals(4, cls.scheduledCount());
+    assertEquals(6, cls.totalCount());
+  }
+
+  @Test
+  void classes_withoutScheduleStatusProvider_fallsBackToProposedAndZero() {
+    UUID user = UUID.randomUUID(), tutor = UUID.randomUUID(), student = UUID.randomUUID(), goal = UUID.randomUUID();
+    UUID classId = UUID.randomUUID();
+    var req = new ConnectionRequest(student, tutor, goal, user, List.of("MON 18:00-19:00"), null, Instant.now().plusSeconds(86400));
+    var tutoringClass = new TutoringClass(req, Instant.now());
+    org.springframework.test.util.ReflectionTestUtils.setField(tutoringClass, "id", classId);
+
+    when(profile.getTutorIdByUserId(user)).thenReturn(tutor);
+    when(classes.findByTutorId(tutor)).thenReturn(List.of(tutoringClass));
+
+    var goalDto = new ConnectionGoalDto(
+        goal, student, user, 1, 4, "EXAM", java.time.LocalDate.of(2027, 6, 1), "ACTIVE",
+        8, 10, 150000L, 300000L, "Hà Nội", "Toán học", "Lớp 12"
+    );
+    when(profile.findGoalsForConnection(List.of(goal))).thenReturn(Map.of(goal, goalDto));
+    when(profile.findStudentById(student)).thenReturn(Optional.empty());
+    when(profile.findTutorById(tutor)).thenReturn(Optional.empty());
+
+    var results = service.classes(actor(user, "TUTOR"));
+    assertEquals(1, results.size());
+    var cls = results.getFirst();
+    assertEquals("PROPOSED", cls.scheduleStatus());
+    assertEquals(0, cls.sessionCount());
+    assertEquals(0, cls.completedCount());
+    assertEquals(0, cls.scheduledCount());
+    assertEquals(0, cls.totalCount());
+  }
 }

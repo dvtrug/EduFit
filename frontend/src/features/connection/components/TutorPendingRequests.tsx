@@ -19,6 +19,11 @@ import {
 import { connectionApi } from "../api/connectionApi";
 import type { TutorInboxItem } from "../types";
 import { RespondRequestModal } from "./RespondRequestModal";
+import {
+  StudentPedagogicalProfileModal,
+  formatGoalType,
+  formatDeadline,
+} from "./StudentPedagogicalProfileModal";
 
 export function TutorPendingRequests() {
   const [items, setItems] = useState<TutorInboxItem[]>([]);
@@ -30,6 +35,10 @@ export function TutorPendingRequests() {
   const [selectedRequest, setSelectedRequest] = useState<TutorInboxItem | null>(null);
   const [modalMode, setModalMode] = useState<"APPROVE" | "REJECT">("APPROVE");
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Profile Modal State
+  const [profileModalRequest, setProfileModalRequest] = useState<TutorInboxItem | null>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Toast State
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -57,6 +66,11 @@ export function TutorPendingRequests() {
     setSelectedRequest(request);
     setModalMode(mode);
     setIsModalOpen(true);
+  };
+
+  const handleOpenProfileModal = (request: TutorInboxItem) => {
+    setProfileModalRequest(request);
+    setIsProfileModalOpen(true);
   };
 
   const handleModalSuccess = (classId?: string) => {
@@ -265,6 +279,26 @@ export function TutorPendingRequests() {
                             {item.subjectName || "Môn học"} • {item.educationLevelName || "Cấp độ"}
                           </span>
                         </div>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                          <span className="inline-flex items-center rounded-md bg-indigo-50 border border-indigo-200 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-950/70 dark:border-indigo-800 dark:text-indigo-300">
+                            {formatGoalType(item.goalType)}
+                          </span>
+                          {(item.currentLevel != null || item.desiredLevel != null || item.currentGrade || item.targetScore) && (
+                            <span className="text-[11px] font-medium text-zinc-600 dark:text-zinc-300">
+                              Lộ trình:{" "}
+                              <span className="font-semibold text-zinc-800 dark:text-zinc-100">
+                                {item.currentLevel != null ? `Lv ${item.currentLevel}` : item.currentGrade || "Chưa rõ"}
+                                {" → "}
+                                {item.desiredLevel != null ? `Lv ${item.desiredLevel}` : item.targetScore || "Chưa rõ"}
+                              </span>
+                            </span>
+                          )}
+                          {item.deadline && (
+                            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                              • Hạn chót: <span className="font-semibold text-zinc-700 dark:text-zinc-300">{formatDeadline(item.deadline)}</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -392,23 +426,32 @@ export function TutorPendingRequests() {
                 </div>
 
                 {/* Card Actions */}
-                {isPending && (
-                  <div className="mt-5 flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-                    <button
-                      onClick={() => handleOpenModal(item, "REJECT")}
-                      className="rounded-xl border border-zinc-300 px-3.5 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:border-rose-300 dark:border-zinc-700 dark:text-rose-400 dark:hover:bg-rose-950/30 transition-colors"
-                    >
-                      Từ chối
-                    </button>
-                    <button
-                      onClick={() => handleOpenModal(item, "APPROVE")}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 active:scale-95 transition-all"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      Chấp thuận tạo lớp
-                    </button>
-                  </div>
-                )}
+                <div className="mt-5 flex items-center justify-between gap-2.5 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenProfileModal(item)}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/60 px-3.5 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300 transition-colors cursor-pointer"
+                  >
+                    Xem hồ sơ chi tiết
+                  </button>
+                  {isPending && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleOpenModal(item, "REJECT")}
+                        className="rounded-xl border border-zinc-300 px-3.5 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:border-rose-300 dark:border-zinc-700 dark:text-rose-400 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                      >
+                        Từ chối
+                      </button>
+                      <button
+                        onClick={() => handleOpenModal(item, "APPROVE")}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 active:scale-95 transition-all cursor-pointer"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Chấp thuận tạo lớp
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -422,6 +465,13 @@ export function TutorPendingRequests() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleModalSuccess}
+      />
+
+      {/* Modal Student Pedagogical Profile */}
+      <StudentPedagogicalProfileModal
+        request={profileModalRequest}
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
       />
     </div>
   );

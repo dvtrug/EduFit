@@ -105,8 +105,20 @@ public class TutoringSessionRepositoryAdapter implements TutoringSessionDomainRe
 
   @Override
   public List<TutoringSession> findByClassId(UUID classId, Instant from, Instant to) {
-    return springDataRepository.findByClassId(classId, from, to)
-        .stream()
+    if (classId == null) {
+      return List.of();
+    }
+    List<TutoringSessionJpaEntity> entities;
+    if (from == null && to == null) {
+      entities = springDataRepository.findByClassIdOrderByStartAtAsc(classId);
+    } else if (from != null && to == null) {
+      entities = springDataRepository.findByClassIdAndStartAtGreaterThanEqualOrderByStartAtAsc(classId, from);
+    } else if (from == null && to != null) {
+      entities = springDataRepository.findByClassIdAndStartAtLessThanEqualOrderByStartAtAsc(classId, to);
+    } else {
+      entities = springDataRepository.findByClassIdAndStartAtGreaterThanEqualAndStartAtLessThanEqualOrderByStartAtAsc(classId, from, to);
+    }
+    return entities.stream()
         .map(sessionMapper::toDomain)
         .toList();
   }
@@ -114,8 +126,17 @@ public class TutoringSessionRepositoryAdapter implements TutoringSessionDomainRe
   @Override
   public List<TutoringSession> findByClassIds(java.util.Collection<UUID> classIds, Instant from, Instant to) {
     if (classIds == null || classIds.isEmpty()) return List.of();
-    return springDataRepository.findByClassIdIn(classIds, from, to)
-        .stream()
+    List<TutoringSessionJpaEntity> entities;
+    if (from == null && to == null) {
+      entities = springDataRepository.findByClassIdInOrderByStartAtAsc(classIds);
+    } else if (from != null && to == null) {
+      entities = springDataRepository.findByClassIdInAndStartAtGreaterThanEqualOrderByStartAtAsc(classIds, from);
+    } else if (from == null && to != null) {
+      entities = springDataRepository.findByClassIdInAndStartAtLessThanEqualOrderByStartAtAsc(classIds, to);
+    } else {
+      entities = springDataRepository.findByClassIdInAndStartAtGreaterThanEqualAndStartAtLessThanEqualOrderByStartAtAsc(classIds, from, to);
+    }
+    return entities.stream()
         .map(sessionMapper::toDomain)
         .toList();
   }

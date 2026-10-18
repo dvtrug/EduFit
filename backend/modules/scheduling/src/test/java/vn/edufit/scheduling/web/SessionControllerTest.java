@@ -231,6 +231,41 @@ class SessionControllerTest {
   }
 
   @Test
+  @DisplayName("GET /sessions/{id}/reschedule-proposal -> HTTP 200 OK khi tìm thấy đề xuất đổi lịch")
+  void shouldGetRescheduleProposalSuccessfully() {
+    when(currentUserProvider.getIfAvailable()).thenReturn(testUser);
+
+    UUID proposalId = UUID.randomUUID();
+    Instant newStartAt = fixedNow.plus(3, ChronoUnit.DAYS);
+    Instant newEndAt = newStartAt.plus(90, ChronoUnit.MINUTES);
+    SessionRescheduleProposal proposal = SessionRescheduleProposal.create(
+        proposalId, sessionId, UUID.randomUUID(), newStartAt, newEndAt,
+        "Lý do", newStartAt, fixedNow
+    );
+
+    when(rescheduleSessionService.findActiveProposalBySessionId(sessionId, testUser))
+        .thenReturn(java.util.Optional.of(proposal));
+
+    ResponseEntity<ApiResponse<RescheduleProposalResponse>> response = controller.getRescheduleProposal(sessionId);
+
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertNotNull(response.getBody());
+    assertEquals(proposalId, response.getBody().data().proposalId());
+    assertEquals(sessionId, response.getBody().data().sessionId());
+  }
+
+  @Test
+  @DisplayName("GET /sessions/{id}/reschedule-proposal -> ném EntityNotFoundException khi không có đề xuất PENDING")
+  void shouldThrowEntityNotFoundWhenNoRescheduleProposal() {
+    when(currentUserProvider.getIfAvailable()).thenReturn(testUser);
+
+    when(rescheduleSessionService.findActiveProposalBySessionId(sessionId, testUser))
+        .thenReturn(java.util.Optional.empty());
+
+    assertThrows(EntityNotFoundException.class, () -> controller.getRescheduleProposal(sessionId));
+  }
+
+  @Test
   @DisplayName("POST /sessions/{id}/cancel -> HTTP 200 OK khi hủy buổi học")
   void shouldCancelSessionSuccessfully() {
     when(currentUserProvider.getIfAvailable()).thenReturn(testUser);

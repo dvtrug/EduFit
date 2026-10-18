@@ -9,7 +9,9 @@ import { ParentActiveTutors } from "./ParentActiveTutors";
 import { ParentQuickActions } from "./ParentQuickActions";
 import { OnboardingGuideBanner } from "@/shared/ui/OnboardingGuideBanner";
 import { EmptyState } from "@/shared/ui/EmptyState";
-import { ProgressDashboardView } from "@/features/progress";
+import { ProgressDashboardView, progressApi } from "@/features/progress";
+import { connectionApi } from "@/features/connection/api/connectionApi";
+import type { TutoringClass } from "@/features/connection/types";
 
 interface ParentDashboardViewProps {
   user: {
@@ -49,7 +51,141 @@ export function ParentDashboardView({ user }: ParentDashboardViewProps) {
     return [];
   });
   const [selectedChild, setSelectedChild] = useState<number>(0);
-  const currentChild = childrenList[selectedChild];
+  const [allClasses, setAllClasses] = useState<TutoringClass[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  React.useEffect(() => {
+    let ignore = false;
+
+    async function loadParentData() {
+      try {
+        setLoading(true);
+        const [linksRes, dashRes, classesRes] = await Promise.allSettled([
+          connectionApi.getLinks(),
+          progressApi.getParentDashboard(),
+          connectionApi.getStudentClasses(),
+        ]);
+
+        if (ignore) return;
+
+        const classList: TutoringClass[] =
+          classesRes.status === "fulfilled" ? classesRes.value || [] : [];
+        setAllClasses(classList);
+
+        const studentMap = new Map<
+          string,
+          { id: string; name: string; grade: string; avgScore: string; completedLessons: string }
+        >();
+
+        // 1. From progress dashboard
+        if (
+          dashRes.status === "fulfilled" &&
+          dashRes.value?.success &&
+          dashRes.value.data?.students
+        ) {
+          dashRes.value.data.students.forEach((s) => {
+            if (s.studentId) {
+              const childClasses = classList.filter((c) => c.studentId === s.studentId);
+              const completed = childClasses.reduce(
+                (acc, c) => acc + (c.completedCount ?? 0),
+                0
+              );
+              const total = childClasses.reduce(
+                (acc, c) => acc + (c.totalCount ?? c.sessionCount),
+                0
+              );
+              studentMap.set(s.studentId, {
+                id: s.studentId,
+                name: s.studentName || `Học sinh ${s.studentId.slice(0, 8)}`,
+                grade: "Lớp 9",
+                avgScore: "8.5",
+                completedLessons: total > 0 ? `${completed}/${total}` : "0/0",
+              });
+            }
+          });
+        }
+
+        // 2. From tutoring classes
+        classList.forEach((c) => {
+          if (c.studentId) {
+            const existing = studentMap.get(c.studentId);
+            const childClasses = classList.filter((cls) => cls.studentId === c.studentId);
+            const completed = childClasses.reduce(
+              (acc, cls) => acc + (cls.completedCount ?? 0),
+              0
+            );
+            const total = childClasses.reduce(
+              (acc, cls) => acc + (cls.totalCount ?? cls.sessionCount),
+              0
+            );
+            studentMap.set(c.studentId, {
+              id: c.studentId,
+              name: existing?.name || c.studentDisplayName || `Học sinh ${c.studentId.slice(0, 8)}`,
+              grade: existing?.grade || c.educationLevelName || "Lớp 9",
+              avgScore: existing?.avgScore || "8.5",
+              completedLessons: total > 0 ? `${completed}/${total}` : "0/0",
+            });
+          }
+        });
+
+        // 3. From confirmed links
+        if (linksRes.status === "fulfilled" && Array.isArray(linksRes.value)) {
+          linksRes.value.forEach((l) => {
+            if (l.studentId && !studentMap.has(l.studentId)) {
+              studentMap.set(l.studentId, {
+                id: l.studentId,
+                name: `Học sinh ${l.studentId.slice(0, 8)}`,
+                grade: "Lớp 9",
+                avgScore: "Chưa có",
+                completedLessons: "0/0",
+              });
+            }
+          });
+        }
+
+        if (studentMap.size > 0) {
+          const mapped: ChildInfo[] = Array.from(studentMap.values()).map((s, idx) => {
+            const childClasses = classList.filter((c) => c.studentId === s.id);
+            return {
+              id: idx + 1,
+              studentId: s.id,
+              name: s.name,
+              grade: s.grade,
+              tutorsCount: childClasses.length,
+              completedLessons: s.completedLessons,
+              avgScore: s.avgScore,
+              tuition: "0 đ",
+              nextSession: childClasses.length > 0 ? "Theo lịch tuần" : "Chưa xếp lịch",
+            };
+          });
+          setChildrenList(mapped);
+        }
+      } catch {
+        // keep fallback
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+
+    void loadParentData();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const currentChild = childrenList[selectedChild] || childrenList[0];
+  const currentChildClasses = currentChild?.studentId
+    ? allClasses.filter((c) => c.studentId === currentChild.studentId && c.status === "ACTIVE")
+    : allClasses.filter((c) => c.status === "ACTIVE");
+
+  const currentChildTutors = currentChildClasses.map((c) => ({
+    name: c.tutorDisplayName || "Gia sư EduFit",
+    subject: `${c.subjectName || "Môn học kèm"}${c.educationLevelName ? ` · ${c.educationLevelName}` : ""}`,
+    rating: "5.0 ★",
+    recentNote: c.scheduleStatus === "SCHEDULED" ? "Đã chốt lịch học hàng tuần" : "Đang chờ thống nhất lịch học",
+    progress: `Đã học ${c.completedCount ?? 0} / ${c.totalCount ?? c.sessionCount} buổi`,
+  }));
 
   const onboardingSteps = [
     {
@@ -166,7 +302,7 @@ export function ParentDashboardView({ user }: ParentDashboardViewProps) {
           {/* 2-Column Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
             <div className="lg:col-span-8 space-y-6">
-              <ParentActiveTutors tutors={[]} />
+              <ParentActiveTutors tutors={currentChildTutors} />
             </div>
 
             <div className="lg:col-span-4 space-y-6">
@@ -179,7 +315,11 @@ export function ParentDashboardView({ user }: ParentDashboardViewProps) {
             <h2 className="font-heading font-extrabold text-lg text-neutral-900 tracking-tight">
               Chi tiết tiến độ học tập & Nhật ký buổi học
             </h2>
-            <ProgressDashboardView role="PARENT" />
+            <ProgressDashboardView
+              key={currentChild?.studentId || "default-child"}
+              role="PARENT"
+              studentId={currentChild?.studentId}
+            />
           </div>
         </>
       )}

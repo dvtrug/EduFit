@@ -19,6 +19,15 @@ export const connectionApi = {
   },
 
   /**
+   * Gửi lời mời liên kết phụ huynh - học sinh qua email
+   */
+  async inviteParentStudent(targetEmail: string): Promise<void> {
+    await apiClient.post<void>("/api/v1/connections/parent-student/invite", {
+      targetEmail,
+    });
+  },
+
+  /**
    * Lấy danh sách các yêu cầu kết nối đã gửi (phía học sinh hoặc phụ huynh)
    */
   async getSentRequests(studentId?: string): Promise<ConnectionRequest[]> {
@@ -60,6 +69,14 @@ export const connectionApi = {
   },
 
   /**
+   * Lấy danh sách các yêu cầu kết nối đang chờ phản hồi (PENDING) cho gia sư
+   */
+  async getPendingRequests(): Promise<TutorInboxItem[]> {
+    const items = await this.getTutorInbox();
+    return items.filter((item) => item.status === "PENDING");
+  },
+
+  /**
    * Gia sư phản hồi yêu cầu kết nối:
    * - accept: true -> Duyệt yêu cầu & tạo Lớp học mới (TutoringClass)
    * - accept: false -> Từ chối yêu cầu kèm lý do
@@ -89,5 +106,17 @@ export const connectionApi = {
   async getStudentClasses(): Promise<TutoringClass[]> {
     const res = await apiClient.get<TutoringClass[]>("/api/v1/connections/classes");
     return res.data || [];
+  },
+
+  /**
+   * Kết thúc lớp học đang hoạt động (Class Termination).
+   * Backend sẽ phát sự kiện TutoringClassEndedEvent tự động hủy các buổi học tương lai trên GiST.
+   */
+  async endClass(classId: string, reason?: string): Promise<TutoringClass> {
+    const res = await apiClient.post<TutoringClass>(
+      `/api/v1/connections/classes/${encodeURIComponent(classId)}/end`,
+      { reason: reason?.trim() || undefined }
+    );
+    return res.data as TutoringClass;
   },
 };

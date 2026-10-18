@@ -154,3 +154,11 @@ export function useAuth() {
   }
   return context;
 }
+
+/**
+ * Hook truy cập AuthContext tùy chọn, trả về undefined nếu gọi ngoài <AuthProvider> thay vì ném ngoại lệ.
+ */
+export function useOptionalAuth() {
+  return useContext(AuthContext);
+}
+

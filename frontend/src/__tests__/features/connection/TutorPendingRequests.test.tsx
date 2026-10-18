@@ -113,4 +113,20 @@ describe("TutorPendingRequests Component", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("Từ chối yêu cầu kết nối")).toBeInTheDocument();
   });
+
+  it("mở modal xem hồ sơ học tập chi tiết khi nhấn 'Xem hồ sơ chi tiết'", async () => {
+    vi.spyOn(connectionApi, "getTutorInbox").mockResolvedValue(mockPendingRequests);
+
+    render(<TutorPendingRequests />);
+
+    const viewProfileButtons = await screen.findAllByRole("button", {
+      name: /Xem hồ sơ chi tiết/i,
+    });
+    fireEvent.click(viewProfileButtons[0]);
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("Hồ sơ học tập chi tiết")).toBeInTheDocument();
+    expect(screen.getByText("Mục tiêu sư phạm")).toBeInTheDocument();
+    expect(screen.getByText("Lộ trình năng lực")).toBeInTheDocument();
+  });
 });

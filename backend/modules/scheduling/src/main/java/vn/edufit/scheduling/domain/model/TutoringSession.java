@@ -317,6 +317,22 @@ public class TutoringSession {
   }
 
   /**
+   * Tự động hủy buổi học do lớp học kết thúc (Cascade Cancellation).
+   * Áp dụng cho cả buổi học PROPOSED và SCHEDULED chưa diễn ra, giải phóng khóa PostgreSQL GiST exclusion.
+   */
+  public void cancelDueToClassEnded(UUID actorId, String reason, Instant now) {
+    if (this.status.isTerminal()) {
+      return;
+    }
+    this.status = SessionStatus.CANCELLED;
+    this.cancelledBy = actorId != null ? actorId : this.tutorId;
+    this.cancelledAt = Objects.requireNonNull(now, "now không được null");
+    this.cancelReason = CancelReason.OTHER;
+    this.cancelComment = (reason != null && !reason.isBlank()) ? reason : "Lớp học đã kết thúc";
+    this.lateCancel = false;
+  }
+
+  /**
    * Ghi nhận kết quả buổi học (COMPLETED hoặc ABSENT) sau khi thời gian học đã kết thúc.
    */
   public void recordOutcome(SessionStatus outcome, UUID outcomeRecordedBy, Instant now) {

@@ -394,4 +394,68 @@ class RescheduleClassScheduleServiceTest {
     verify(eventPublisher).publishEvent(any(SessionCancelledEvent.class));
     verify(eventPublisher, org.mockito.Mockito.times(9)).publishEvent(any(SessionScheduledEvent.class));
   }
+
+  @Test
+  @DisplayName("Cascade Termination: Từ chối chấp thuận đề xuất đổi lịch định kỳ nếu lớp học đã kết thúc (không còn ACTIVE)")
+  void shouldRejectAcceptingRecurringProposalWhenClassIsNotActive() {
+    LocalDate effectiveFrom = today.plusDays(1);
+    LocalDate effectiveTo = effectiveFrom.plusDays(28);
+
+    when(connectionValidationPort.findActiveClassById(classId))
+        .thenReturn(Optional.of(new ActiveClassInfo(classId, studentId, tutorId, UUID.randomUUID())));
+
+    RecurringRescheduleProposal proposal = service.proposeRecurringSchedule(
+        classId,
+        effectiveFrom,
+        effectiveTo,
+        List.of("MONDAY 18:00-20:00"),
+        SessionMode.ONLINE,
+        null,
+        "Đổi lịch",
+        tutorUser
+    );
+
+    // Giả lập lớp học đã kết thúc trước khi đối tác phản hồi
+    when(connectionValidationPort.findActiveClassById(classId)).thenReturn(Optional.empty());
+
+    RespondRecurringScheduleRequest req = new RespondRecurringScheduleRequest(
+        proposal.getProposalId(),
+        true,
+        null
+    );
+
+    assertThrows(InvalidOperationException.class, () ->
+        respondHelper(req, studentUser)
+    );
+  }
+
+  @Test
+  @DisplayName("Cascade Termination: cancelActiveProposalForClass làm hết hạn đề xuất PENDING của lớp học kết thúc")
+  void shouldCancelActiveProposalForClass() {
+    LocalDate effectiveFrom = today.plusDays(1);
+    LocalDate effectiveTo = effectiveFrom.plusDays(28);
+
+    when(connectionValidationPort.findActiveClassById(classId))
+        .thenReturn(Optional.of(new ActiveClassInfo(classId, studentId, tutorId, UUID.randomUUID())));
+
+    RecurringRescheduleProposal proposal = service.proposeRecurringSchedule(
+        classId,
+        effectiveFrom,
+        effectiveTo,
+        List.of("MONDAY 18:00-20:00"),
+        SessionMode.ONLINE,
+        null,
+        "Đổi lịch",
+        tutorUser
+    );
+
+    assertTrue(proposal.isPending(fixedNow));
+    assertTrue(service.findActiveProposalByClassId(classId).isPresent());
+
+    // Cascade cancel
+    service.cancelActiveProposalForClass(classId, "Lớp đã kết thúc", fixedNow);
+
+    assertFalse(proposal.isPending(fixedNow));
+    assertTrue(service.findActiveProposalByClassId(classId).isEmpty());
+  }
 }
