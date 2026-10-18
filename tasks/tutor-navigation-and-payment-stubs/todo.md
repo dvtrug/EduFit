@@ -56,7 +56,7 @@ Có **11 task M3-00–M3-10**: 1 preparation/audit đã xong và 10 task còn l�
 
 ## Phase 2 — Payment stubs 3.2
 
-### [ ] M3-04 — Ba route tài chính chỉ đọc và shared notice
+### [x] M3-04 — Ba route tài chính chỉ đọc và shared notice
 
 - **Dependency:** M3-00; plan đã review. Không cần chờ Progress.
 - **Acceptance:**
