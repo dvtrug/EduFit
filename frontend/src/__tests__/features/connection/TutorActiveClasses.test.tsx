@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TutorActiveClasses } from "@/features/connection/components/TutorActiveClasses";
 import { connectionApi } from "@/features/connection/api/connectionApi";
@@ -103,15 +103,17 @@ describe("TutorActiveClasses Component", () => {
     expect(screen.queryByText("Tiếng Anh IELTS")).not.toBeInTheDocument();
   });
 
-  it("hiển thị nút 'Thống nhất lịch định kỳ' và 'Kết thúc lớp' trên thẻ lớp ACTIVE", async () => {
+  it("hiển thị nút 'Thống nhất lịch học định kỳ', 'Đề xuất lại lịch học định kỳ' và 'Kết thúc lớp' trên thẻ lớp ACTIVE", async () => {
     vi.spyOn(connectionApi, "getTutorClasses").mockResolvedValue(mockClasses);
 
     render(<TutorActiveClasses />);
 
     expect(await screen.findByText("Toán hình học")).toBeInTheDocument();
 
-    const recurringButtons = screen.getAllByRole("button", { name: /Thống nhất lịch định kỳ/i });
+    const recurringButtons = screen.getAllByRole("button", { name: /định kỳ/i });
     expect(recurringButtons.length).toBe(2);
+    expect(screen.getByRole("button", { name: /Thống nhất lịch học định kỳ/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Đề xuất lại lịch học định kỳ/i })).toBeInTheDocument();
 
     const endClassButtons = screen.getAllByRole("button", { name: /Kết thúc lớp/i });
     expect(endClassButtons.length).toBe(2);
@@ -119,5 +121,31 @@ describe("TutorActiveClasses Component", () => {
     // Mở modal kết thúc lớp
     fireEvent.click(endClassButtons[0]);
     expect(await screen.findByText("Xác nhận kết thúc lớp")).toBeInTheDocument();
+  });
+
+  it("tự động gọi lại connectionApi.getTutorClasses() khi nhận sự kiện edufit:schedule-updated hoặc storage event", async () => {
+    const getSpy = vi.spyOn(connectionApi, "getTutorClasses").mockResolvedValue(mockClasses);
+
+    render(<TutorActiveClasses />);
+    expect(await screen.findByText("Toán hình học")).toBeInTheDocument();
+    expect(getSpy).toHaveBeenCalledTimes(1);
+
+    // Kích hoạt event edufit:schedule-updated từ bất kỳ đâu (modal hoặc counterparty trong cùng tab)
+    act(() => {
+      window.dispatchEvent(new CustomEvent("edufit:schedule-updated"));
+    });
+
+    await waitFor(() => {
+      expect(getSpy).toHaveBeenCalledTimes(2);
+    });
+
+    // Kích hoạt cross-tab storage event
+    act(() => {
+      window.dispatchEvent(new StorageEvent("storage", { key: "edufit:schedule-updated" }));
+    });
+
+    await waitFor(() => {
+      expect(getSpy).toHaveBeenCalledTimes(3);
+    });
   });
 });

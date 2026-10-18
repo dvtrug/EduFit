@@ -47,7 +47,7 @@ public interface SpringDataTutoringSessionRepository extends JpaRepository<Tutor
   @Query("""
       SELECT s FROM TutoringSessionJpaEntity s
       WHERE (s.tutorId = :userId OR s.studentId = :userId)
-        AND s.startAt >= :from AND s.endAt <= :to
+        AND s.startAt < :to AND s.endAt > :from
       ORDER BY s.startAt ASC
   """)
   List<TutoringSessionJpaEntity> findCalendarSessions(
@@ -63,7 +63,7 @@ public interface SpringDataTutoringSessionRepository extends JpaRepository<Tutor
       SELECT s FROM TutoringSessionJpaEntity s
       WHERE s.tutorId = :tutorId
         AND s.status = 'SCHEDULED'
-        AND s.startAt >= :from AND s.endAt <= :to
+        AND s.startAt < :to AND s.endAt > :from
       ORDER BY s.startAt ASC
   """)
   List<TutoringSessionJpaEntity> findTutorBusySlots(
@@ -154,35 +154,53 @@ public interface SpringDataTutoringSessionRepository extends JpaRepository<Tutor
       @Param("to") Instant to
   );
 
-  /**
-   * Lấy danh sách buổi học của một lớp học theo khoảng thời gian (dùng cho Progress Session Timeline).
-   */
-  @Query("""
-      SELECT s FROM TutoringSessionJpaEntity s
-      WHERE s.classId = :classId
-        AND (:from IS NULL OR s.startAt >= :from)
-        AND (:to IS NULL OR s.startAt <= :to)
-      ORDER BY s.startAt ASC
-  """)
-  List<TutoringSessionJpaEntity> findByClassId(
-      @Param("classId") UUID classId,
-      @Param("from") Instant from,
-      @Param("to") Instant to
+  List<TutoringSessionJpaEntity> findByClassIdOrderByStartAtAsc(UUID classId);
+
+  List<TutoringSessionJpaEntity> findByClassIdAndStartAtGreaterThanEqualOrderByStartAtAsc(
+      UUID classId,
+      Instant from
+  );
+
+  List<TutoringSessionJpaEntity> findByClassIdAndStartAtLessThanEqualOrderByStartAtAsc(
+      UUID classId,
+      Instant to
+  );
+
+  List<TutoringSessionJpaEntity> findByClassIdAndStartAtGreaterThanEqualAndStartAtLessThanEqualOrderByStartAtAsc(
+      UUID classId,
+      Instant from,
+      Instant to
+  );
+
+  List<TutoringSessionJpaEntity> findByClassIdInOrderByStartAtAsc(
+      java.util.Collection<UUID> classIds
+  );
+
+  List<TutoringSessionJpaEntity> findByClassIdInAndStartAtGreaterThanEqualOrderByStartAtAsc(
+      java.util.Collection<UUID> classIds,
+      Instant from
+  );
+
+  List<TutoringSessionJpaEntity> findByClassIdInAndStartAtLessThanEqualOrderByStartAtAsc(
+      java.util.Collection<UUID> classIds,
+      Instant to
+  );
+
+  List<TutoringSessionJpaEntity> findByClassIdInAndStartAtGreaterThanEqualAndStartAtLessThanEqualOrderByStartAtAsc(
+      java.util.Collection<UUID> classIds,
+      Instant from,
+      Instant to
   );
 
   /**
-   * Batch query lấy danh sách buổi học theo nhiều mã lớp học (tránh N+1 query cho Progress Dashboard).
+   * Batch query đếm số buổi học theo trạng thái cho các lớp học (dùng cho SPI ClassScheduleStatusProvider).
    */
   @Query("""
-      SELECT s FROM TutoringSessionJpaEntity s
-      WHERE s.classId IN :classIds
-        AND (:from IS NULL OR s.startAt >= :from)
-        AND (:to IS NULL OR s.startAt <= :to)
-      ORDER BY s.startAt ASC
+      SELECT s.classId, s.status, COUNT(s) FROM TutoringSessionJpaEntity s
+      WHERE s.classId IN :classIds AND s.status IN ('SCHEDULED', 'COMPLETED')
+      GROUP BY s.classId, s.status
   """)
-  List<TutoringSessionJpaEntity> findByClassIdIn(
-      @Param("classIds") java.util.Collection<UUID> classIds,
-      @Param("from") Instant from,
-      @Param("to") Instant to
+  List<Object[]> countSessionsByClassIdsAndStatuses(
+      @Param("classIds") java.util.Collection<UUID> classIds
   );
 }
