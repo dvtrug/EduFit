@@ -30,7 +30,7 @@ Có **11 task M3-00–M3-10**: 1 preparation/audit đã xong và 10 task còn l�
 
 ## Phase 1 — Research 3.1
 
-### [ ] M3-02 — Evidence và ma trận policy/conflict
+### [x] M3-02 — Evidence và ma trận policy/conflict
 
 - **Dependency:** M3-00; có thể làm trong khi gate History pending.
 - **Acceptance:**
@@ -41,7 +41,7 @@ Có **11 task M3-00–M3-10**: 1 preparation/audit đã xong và 10 task còn l�
 - **Verify:** đối chiếu từng claim với source/assumption; review scope còn chỉ docs.
 - **Commit:** `docs(tuition): audit payment scope and policy decisions`.
 
-### [ ] M3-03 — Hoàn thiện Tuition Policy & Dispute Specification và wireframe flow
+### [x] M3-03 — Hoàn thiện Tuition Policy & Dispute Specification và wireframe flow
 
 - **Dependency:** M3-02.
 - **Acceptance:**
