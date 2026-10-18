@@ -7,9 +7,19 @@ import type {
   LoginInput,
   ForgotPasswordInput,
   ChangePasswordInput,
+  OAuthLoginPayload,
+  OAuthLoginResult,
+  CompleteOAuthRegistrationPayload,
 } from "../types";
 
-export type { AuthUser, UserRole, AccountStatus };
+export type {
+  AuthUser,
+  UserRole,
+  AccountStatus,
+  OAuthLoginPayload,
+  OAuthLoginResult,
+  CompleteOAuthRegistrationPayload,
+};
 
 export type RegisterPayload = RegisterInput;
 export type LoginPayload = LoginInput;
@@ -36,6 +46,28 @@ export const authApi = {
    */
   async login(payload: LoginPayload): Promise<ApiResponse<AuthUser>> {
     return fetchApi<AuthUser>("/api/v1/auth/login", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /**
+   * Xác thực và đăng nhập qua Google OAuth2 (UC1.2)
+   */
+  async loginWithGoogle(payload: OAuthLoginPayload): Promise<ApiResponse<OAuthLoginResult>> {
+    return fetchApi<OAuthLoginResult>("/api/v1/auth/oauth2/google", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /**
+   * Hoàn tất đăng ký tài khoản OAuth sau khi người dùng chọn vai trò
+   */
+  async completeOAuthRegistration(
+    payload: CompleteOAuthRegistrationPayload
+  ): Promise<ApiResponse<AuthUser>> {
+    return fetchApi<AuthUser>("/api/v1/auth/oauth2/complete-registration", {
       method: "POST",
       body: JSON.stringify(payload),
     });
@@ -86,6 +118,37 @@ export const authApi = {
     return fetchApi<null>("/api/v1/auth/change-password", {
       method: "POST",
       body: JSON.stringify(payload),
+    });
+  },
+
+  /**
+   * Tải lên tệp ảnh đại diện mới (Nhiệm vụ 1.3)
+   */
+  async uploadAvatar(file: File): Promise<ApiResponse<AuthUser>> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return fetchApi<AuthUser>("/api/v1/auth/avatar", {
+      method: "POST",
+      body: formData,
+    });
+  },
+
+  /**
+   * Cập nhật URL ảnh đại diện (preset hoặc URL ngoài)
+   */
+  async updateAvatarUrl(avatarUrl: string): Promise<ApiResponse<AuthUser>> {
+    return fetchApi<AuthUser>("/api/v1/auth/avatar", {
+      method: "PUT",
+      body: JSON.stringify({ avatarUrl }),
+    });
+  },
+
+  /**
+   * Xóa ảnh đại diện hiện tại và khôi phục về mặc định
+   */
+  async removeAvatar(): Promise<ApiResponse<AuthUser>> {
+    return fetchApi<AuthUser>("/api/v1/auth/avatar", {
+      method: "DELETE",
     });
   },
 };
