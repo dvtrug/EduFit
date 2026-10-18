@@ -10,6 +10,7 @@ interface DashboardShellProps {
     fullName: string;
     email: string;
     role: string;
+    avatarUrl?: string | null;
   };
   role: UserRole;
   onLogout: () => void;

@@ -23,6 +23,7 @@ interface TopHeaderProps {
     fullName: string;
     email: string;
     role: string;
+    avatarUrl?: string | null;
   };
   title?: string;
   onLogout: () => void;
@@ -123,9 +124,20 @@ export function TopHeader({
             onClick={() => setProfileMenuOpen(!profileMenuOpen)}
             className="flex items-center gap-2.5 p-1.5 pr-2.5 rounded-xl border border-stone-200/60 dark:border-stone-700/60 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors group cursor-pointer"
           >
-            <div className="size-8 rounded-lg bg-gradient-to-tr from-amber-500 to-orange-400 text-white font-bold text-xs flex items-center justify-center shadow-xs">
-              {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
-            </div>
+            {user.avatarUrl ? (
+              <div className="size-8 rounded-lg overflow-hidden border border-stone-200/80 dark:border-stone-700 shadow-xs shrink-0 bg-stone-100 dark:bg-stone-800">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={user.avatarUrl}
+                  alt={user.fullName || "Avatar"}
+                  className="size-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="size-8 rounded-lg bg-gradient-to-tr from-amber-500 to-orange-400 text-white font-bold text-xs flex items-center justify-center shadow-xs shrink-0">
+                {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
+              </div>
+            )}
             <div className="hidden sm:flex flex-col text-left">
               <span className="text-xs font-semibold text-neutral-800 dark:text-stone-100 leading-tight">
                 {user.fullName || "Tài khoản EduFit"}
@@ -143,14 +155,24 @@ export function TopHeader({
               />
               <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                 {/* 1. Header Profile Info */}
-                <div className="px-3 py-2.5 border-b border-stone-100 dark:border-stone-800 mb-1.5 bg-stone-50/60 dark:bg-stone-800/60 rounded-xl">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-bold text-neutral-900 dark:text-stone-100 truncate">{user.fullName}</p>
-                    <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-400 shrink-0">
-                      {roleLabel}
-                    </span>
+                <div className="px-3 py-2.5 border-b border-stone-100 dark:border-stone-800 mb-1.5 bg-stone-50/60 dark:bg-stone-800/60 rounded-xl flex items-center gap-2.5">
+                  <div className="size-9 rounded-lg overflow-hidden border border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 shrink-0 flex items-center justify-center">
+                    {user.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={user.avatarUrl} alt={user.fullName || "Avatar"} className="size-full object-cover" />
+                    ) : (
+                      <span className="font-bold text-xs text-amber-600 dark:text-amber-400">{user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}</span>
+                    )}
                   </div>
-                  <p className="text-[11px] text-neutral-400 dark:text-stone-400 truncate mt-0.5">{user.email}</p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <p className="text-xs font-bold text-neutral-900 dark:text-stone-100 truncate">{user.fullName}</p>
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-400 shrink-0">
+                        {roleLabel}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-neutral-400 dark:text-stone-400 truncate mt-0.5">{user.email}</p>
+                  </div>
                 </div>
 
                 {/* 2. Navigation items */}
