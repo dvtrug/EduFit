@@ -42,7 +42,7 @@ export function ParentDiscoveryView() {
   } = useTutorDetail();
 
   // 3. AI Matching Hook
-  const matching = useTutorMatching({ parent: true });
+  const matching = useTutorMatching({ parent: true, enabled: activeTab === "matches" });
   const {
     matches,
     isMatching,
@@ -53,12 +53,13 @@ export function ParentDiscoveryView() {
 
   // 4. Request connection state
   const [connectTutorId, setConnectTutorId] = useState<string | null>(null);
+  const activeGoal = matching.goal || matching.goals[0];
 
   const handleRequestConnect = (tutorId: string) => {
-    if (activeTab === "matches" && matching.goal) {
+    if (activeGoal) {
       setConnectTutorId(tutorId);
     } else {
-      showToast("Chuyển sang tab Gợi ý phù hợp để ghép lớp theo mục tiêu của con.", "info");
+      showToast("Cần thiết lập mục tiêu học tập cho con trước khi gửi yêu cầu kết nối.", "info");
       setActiveTab("matches");
     }
   };
@@ -251,10 +252,12 @@ export function ParentDiscoveryView() {
       {activeTab === "requests" && <SentRequests />}
 
       {/* 6. MODALS */}
-      {connectTutorId && matching.goal && (
+      {connectTutorId && activeGoal && (
         <ConnectionRequestDialog
           tutorId={connectTutorId}
-          goal={matching.goal}
+          goal={activeGoal}
+          goals={matching.goals}
+          onSelectGoal={(selected) => matching.setGoalId(selected.goalId)}
           onClose={() => setConnectTutorId(null)}
           onSent={() => {
             setConnectTutorId(null);

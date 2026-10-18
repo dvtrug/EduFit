@@ -196,6 +196,20 @@ export const profileService = {
     }
   },
 
+  async updateLearningGoal(goalId: string, payload: CreateLearningGoalPayload): Promise<LearningGoalData> {
+    const { availabilitySlots, ...goal } = payload;
+    const res = await apiClient.put<LearningGoalData>(`/api/v1/profiles/students/me/goals/${encodeURIComponent(goalId)}`, goal);
+    const saved = res.data as LearningGoalData;
+    if (availabilitySlots) {
+      const ready = await apiClient.put<LearningGoalData>(
+        `/api/v1/profiles/students/me/goals/${encodeURIComponent(goalId)}/availability`,
+        { slots: availabilitySlots }
+      );
+      return ready.data as LearningGoalData;
+    }
+    return saved;
+  },
+
   /**
    * Lấy hồ sơ gia sư
    */
