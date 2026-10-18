@@ -130,7 +130,7 @@ Có **11 task M3-00–M3-10**: 1 preparation/audit đã xong và 10 task còn l�
 
 ## Phase 4 — Verification và bàn giao
 
-### [ ] M3-10 — Scoped regression, browser evidence và final report
+### [x] M3-10 — Scoped regression, browser evidence và final report
 
 - **Dependency:** M3-03/M3-05/M3-06/M3-09 đạt acceptance; blocker phải ghi riêng.
 - **Acceptance:**
