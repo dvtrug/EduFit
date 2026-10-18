@@ -103,6 +103,31 @@ public class ConnectionController {
     return ApiResponse.success(new PageResponse<>(responses, p.page(), p.size(), p.totalElements(), p.totalPages()));
   }
 
+  @GetMapping("/admin/parent-student/links/all")
+  public ApiResponse<PageResponse<AdminParentStudentLinkResponse>> adminAllLinks(
+      @RequestParam(name = "status", required = false) String status,
+      @RequestParam(name = "search", required = false) String search,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    return ApiResponse.success(queries.adminGetAllLinks(user(), status, search, page, size));
+  }
+
+  @GetMapping("/admin/parent-student/links/stats")
+  public ApiResponse<AdminParentStudentLinkStatsResponse> adminLinkStats() {
+    return ApiResponse.success(queries.adminGetLinkStats(user()));
+  }
+
+  @PostMapping("/admin/parent-student/links/{id}/revoke")
+  public ApiResponse<Void> adminRevokeLink(
+      @PathVariable UUID id,
+      @RequestBody(required = false) RevokeBody body) {
+    String reason = (body != null && body.reason() != null && !body.reason().isBlank())
+        ? body.reason()
+        : "Hủy liên kết bởi Quản trị viên hệ thống";
+    linkService.revokeLink(user(), id, reason);
+    return ApiResponse.ok("Đã hủy liên kết thành công");
+  }
+
   @DeleteMapping("/parent-student/links/{id}")
   public ApiResponse<Void> revoke(@PathVariable UUID id, @RequestBody(required = false) RevokeBody body) {
     linkService.revokeLink(user(), id, body == null ? null : body.reason());

@@ -26,6 +26,26 @@ public interface ParentStudentLinkRepository extends JpaRepository<ParentStudent
       @org.springframework.data.repository.query.Param("studentId") UUID studentId,
       org.springframework.data.domain.Pageable pageable);
 
+  @org.springframework.data.jpa.repository.Query(
+      value = "select l from ParentStudentLink l order by l.confirmedAt desc, l.id desc",
+      countQuery = "select count(l) from ParentStudentLink l")
+  org.springframework.data.domain.Page<ParentStudentLink> findAllLinks(org.springframework.data.domain.Pageable pageable);
+
+  @org.springframework.data.jpa.repository.Query(
+      value = "select l from ParentStudentLink l where l.status = :status order by l.confirmedAt desc, l.id desc",
+      countQuery = "select count(l) from ParentStudentLink l where l.status = :status")
+  org.springframework.data.domain.Page<ParentStudentLink> findByStatus(
+      @org.springframework.data.repository.query.Param("status") String status,
+      org.springframework.data.domain.Pageable pageable);
+
+  long countByStatus(String status);
+
+  @org.springframework.data.jpa.repository.Query("select count(distinct l.parentUserId) from ParentStudentLink l where l.status = :status")
+  long countDistinctParentUserIdByStatus(@org.springframework.data.repository.query.Param("status") String status);
+
+  @org.springframework.data.jpa.repository.Query("select count(distinct l.studentId) from ParentStudentLink l where l.status = :status")
+  long countDistinctStudentIdByStatus(@org.springframework.data.repository.query.Param("status") String status);
+
   default Optional<ParentStudentLink> lockById(UUID id) {
     return lockFresh(ParentStudentLink.class, id);
   }
