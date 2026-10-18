@@ -19,6 +19,15 @@ export const connectionApi = {
   },
 
   /**
+   * Gửi lời mời liên kết phụ huynh - học sinh qua email
+   */
+  async inviteParentStudent(targetEmail: string): Promise<void> {
+    await apiClient.post<void>("/api/v1/connections/parent-student/invite", {
+      targetEmail,
+    });
+  },
+
+  /**
    * Lấy danh sách các yêu cầu kết nối đã gửi (phía học sinh hoặc phụ huynh)
    */
   async getSentRequests(studentId?: string): Promise<ConnectionRequest[]> {
@@ -57,6 +66,14 @@ export const connectionApi = {
     }
     const res = await apiClient.get<TutorInboxItem[]>("/api/v1/connections/requests");
     return res.data || [];
+  },
+
+  /**
+   * Lấy danh sách các yêu cầu kết nối đang chờ phản hồi (PENDING) cho gia sư
+   */
+  async getPendingRequests(): Promise<TutorInboxItem[]> {
+    const items = await this.getTutorInbox();
+    return items.filter((item) => item.status === "PENDING");
   },
 
   /**

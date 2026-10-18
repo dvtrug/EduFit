@@ -15,6 +15,28 @@ public record TutoringClassResult(
     String educationLevelName,
     String scheduleStatus,
     int sessionCount,
+    int completedCount,
+    int scheduledCount,
+    int totalCount,
     Instant startedAt,
     Instant endedAt
-) {}
+) {
+  public TutoringClassResult(
+      UUID classId,
+      UUID studentId,
+      UUID tutorId,
+      UUID goalId,
+      String status,
+      String studentDisplayName,
+      String tutorDisplayName,
+      String subjectName,
+      String educationLevelName,
+      String scheduleStatus,
+      int sessionCount,
+      Instant startedAt,
+      Instant endedAt
+  ) {
+    this(classId, studentId, tutorId, goalId, status, studentDisplayName, tutorDisplayName,
+        subjectName, educationLevelName, scheduleStatus, sessionCount, sessionCount, 0, sessionCount, startedAt, endedAt);
+  }
+}

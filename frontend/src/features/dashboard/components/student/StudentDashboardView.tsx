@@ -9,6 +9,10 @@ import { StudentActiveClasses } from "./StudentActiveClasses";
 import { StudentQuickActions } from "./StudentQuickActions";
 import { OnboardingGuideBanner } from "@/shared/ui/OnboardingGuideBanner";
 import { profileService, StudentProfileData } from "@/services/profile";
+import { connectionApi } from "@/features/connection/api/connectionApi";
+import { schedulingApi } from "@/features/scheduling";
+import type { TutoringClass } from "@/features/connection/types";
+import type { CalendarItem } from "@/features/scheduling/types";
 
 interface StudentDashboardViewProps {
   user: {
@@ -22,39 +26,44 @@ export function StudentDashboardView({ user }: StudentDashboardViewProps) {
   const studentName = user.fullName || "Minh Anh";
 
   const [profile, setProfile] = useState<StudentProfileData | null>(null);
-  const [activeClasses] = useState<any[]>([]);
-  const [nextSession] = useState<any | null>(null);
+  const [rawClasses, setRawClasses] = useState<TutoringClass[]>([]);
+  const [activeClasses, setActiveClasses] = useState<any[]>([]);
+  const [nextSession, setNextSession] = useState<any | null>(null);
   const [activeGoal, setActiveGoal] = useState<any | null>(null);
 
   useEffect(() => {
+    let ignore = false;
+
     async function loadData() {
       try {
         const studentProf = await profileService.getMyStudentProfile();
-        setProfile(studentProf);
+        if (!ignore) setProfile(studentProf);
 
         const savedGoalStr = localStorage.getItem("edufit_student_onboarding_goal");
         if (savedGoalStr) {
           try {
             const savedGoal = JSON.parse(savedGoalStr);
-            setActiveGoal({
-              id: "goal-1",
-              grade: savedGoal.grade || studentProf.educationLevelName || "Lớp 9",
-              title: savedGoal.title || "Ôn luyện mục tiêu",
-              roadmapDesc: `Môn: ${savedGoal.subjects?.join(", ") || "Toán"} · Khu vực: ${savedGoal.area || studentProf.area || "Hà Nội"}`,
-              progressPercent: 33,
-              completedMilestones: 1,
-              totalMilestones: 3,
-              milestones: [
-                { label: "1. Thiết lập mục tiêu & hồ sơ", completed: true },
-                { label: "2. Chọn & kết nối gia sư", completed: false },
-                { label: "3. Đặt lịch học thử 1-1", completed: false },
-              ],
-              nextSessionText: "Sẵn sàng kết nối gia sư",
-            });
+            if (!ignore) {
+              setActiveGoal({
+                id: "goal-1",
+                grade: savedGoal.grade || studentProf.educationLevelName || "Lớp 9",
+                title: savedGoal.title || "Ôn luyện mục tiêu",
+                roadmapDesc: `Môn: ${savedGoal.subjects?.join(", ") || "Toán"} · Khu vực: ${savedGoal.area || studentProf.area || "Hà Nội"}`,
+                progressPercent: 33,
+                completedMilestones: 1,
+                totalMilestones: 3,
+                milestones: [
+                  { label: "1. Thiết lập mục tiêu & hồ sơ", completed: true },
+                  { label: "2. Chọn & kết nối gia sư", completed: false },
+                  { label: "3. Đặt lịch học thử 1-1", completed: false },
+                ],
+                nextSessionText: "Sẵn sàng kết nối gia sư",
+              });
+            }
           } catch {
             // ignore JSON parse error
           }
-        } else if (studentProf.profileComplete) {
+        } else if (studentProf.profileComplete && !ignore) {
           setActiveGoal({
             id: "goal-1",
             grade: studentProf.educationLevelName || "Lớp 9",
@@ -71,13 +80,107 @@ export function StudentDashboardView({ user }: StudentDashboardViewProps) {
             nextSessionText: "Chưa xếp lịch học",
           });
         }
+
+        // Fetch real classes and calendar
+        const now = new Date();
+        const from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
+        const to = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7, 23, 59, 59).toISOString();
+
+        const [classesRes, calendarRes] = await Promise.allSettled([
+          connectionApi.getStudentClasses(),
+          schedulingApi.getCalendar({ from, to }),
+        ]);
+
+        if (ignore) return;
+
+        const classList = classesRes.status === "fulfilled" ? classesRes.value || [] : [];
+        setRawClasses(classList);
+
+        const activeList = classList.filter((c) => c.status === "ACTIVE");
+        const badgeColors = [
+          "bg-sky-50 text-sky-800",
+          "bg-amber-50 text-amber-800",
+          "bg-emerald-50 text-emerald-800",
+          "bg-purple-50 text-purple-800",
+        ];
+        const borderColors = [
+          "hover:border-sky-300",
+          "hover:border-amber-300",
+          "hover:border-emerald-300",
+          "hover:border-purple-300",
+        ];
+
+        const mappedActive = activeList.map((c, idx) => ({
+          subject: c.subjectName || "Môn học kèm",
+          badgeColor: badgeColors[idx % badgeColors.length],
+          borderColor: borderColors[idx % borderColors.length],
+          frequency: c.scheduleStatus === "SCHEDULED" ? "Đã chốt lịch" : "Chờ thống nhất lịch",
+          title: `${c.subjectName || "Môn học kèm"}${c.educationLevelName ? ` - ${c.educationLevelName}` : ""}`,
+          tutor: c.tutorDisplayName || "Gia sư EduFit",
+          progress: `Đã học ${c.completedCount ?? 0} / ${c.totalCount ?? c.sessionCount} buổi`,
+        }));
+        setActiveClasses(mappedActive);
+
+        // Next session: active/pending sessions that haven't ended yet
+        let sessions: CalendarItem[] = [];
+        if (calendarRes.status === "fulfilled" && calendarRes.value && Array.isArray(calendarRes.value.data)) {
+          sessions = calendarRes.value.data;
+        }
+
+        const validUpcoming = sessions
+          .filter(
+            (s) =>
+              (s.status === "SCHEDULED" || s.status === "PROPOSED") &&
+              new Date(s.endAt).getTime() >= Date.now()
+          )
+          .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+
+        if (validUpcoming.length > 0) {
+          const earliest = validUpcoming[0];
+          const classItem = classList.find((c) => c.classId === earliest.classId);
+          const start = new Date(earliest.startAt);
+          const end = new Date(earliest.endAt);
+          const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+          const dayShort = days[start.getDay()];
+          const dateNum = String(start.getDate());
+          const formatHour = (d: Date) =>
+            d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false });
+          const timeSlot = `${formatHour(start)} - ${formatHour(end)}`;
+
+          setNextSession({
+            id: earliest.sessionId,
+            dayShort,
+            dateNum,
+            lessonTitle: classItem?.subjectName
+              ? `${classItem.subjectName} · ${classItem.educationLevelName || "Kèm 1-1"}`
+              : "Buổi học kèm 1-1",
+            timeSlot,
+            tutorName: classItem?.tutorDisplayName || "Gia sư",
+            status: earliest.status === "SCHEDULED" ? "Đã xác nhận" : "Đề xuất",
+          });
+        } else {
+          setNextSession(null);
+        }
       } catch (err) {
         console.error("Lỗi khi tải dữ liệu học sinh:", err);
       }
     }
 
-    loadData();
+    void loadData();
+
+    return () => {
+      ignore = true;
+    };
   }, []);
+
+  const totalCompleted = rawClasses.reduce(
+    (acc, c) => acc + (c.completedCount ?? c.sessionCount ?? 0),
+    0
+  );
+  const totalPlanned = rawClasses.reduce(
+    (acc, c) => acc + (c.totalCount ?? c.sessionCount ?? 0),
+    0
+  );
 
   const onboardingSteps = [
     {
@@ -92,14 +195,14 @@ export function StudentDashboardView({ user }: StudentDashboardViewProps) {
       description: "Xem hồ sơ bằng cấp, đánh giá sao hoặc nhận danh sách AI Match chuẩn xác.",
       href: "/student/tutors",
       actionText: "Tìm gia sư",
-      completed: false,
+      completed: rawClasses.length > 0,
     },
     {
       title: "Gửi yêu cầu học thử 1-1",
       description: "Đăng ký buổi trao đổi đầu tiên để thống nhất lịch học và mục tiêu điểm số.",
       href: "/student/tutors",
       actionText: "Khám phá môn học",
-      completed: false,
+      completed: rawClasses.length > 0,
     },
   ];
 
@@ -113,7 +216,7 @@ export function StudentDashboardView({ user }: StudentDashboardViewProps) {
           </h2>
           <p className="text-xs sm:text-sm text-neutral-500 dark:text-stone-300 mt-1 font-medium">
             {nextSession
-              ? "Hôm nay bạn có 1 buổi học Toán lúc 19:00 · Lớp 9 Ôn thi vào 10"
+              ? `Bạn có buổi học ${nextSession.lessonTitle} lúc ${nextSession.timeSlot}`
               : "Chào mừng bạn đến với EduFit! Hãy bắt đầu bằng việc tìm gia sư phù hợp."}
           </p>
         </div>
@@ -153,7 +256,7 @@ export function StudentDashboardView({ user }: StudentDashboardViewProps) {
               <div>
                 <div className="text-[11px] text-neutral-500 dark:text-stone-300 font-semibold">Cột mốc hoàn thành</div>
                 <div className="text-xl font-extrabold font-heading text-neutral-900 dark:text-stone-100">
-                  {activeClasses.length > 0 ? "8 / 12" : "0 / 0"}
+                  {totalPlanned > 0 ? `${totalCompleted} / ${totalPlanned}` : "0 / 0"}
                 </div>
               </div>
             </div>

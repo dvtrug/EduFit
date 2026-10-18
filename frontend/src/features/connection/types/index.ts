@@ -61,6 +61,9 @@ export interface TutoringClass {
   educationLevelName?: string | null;
   scheduleStatus?: "PROPOSED" | "SCHEDULED" | "COMPLETED" | string;
   sessionCount: number;
+  completedCount?: number;
+  scheduledCount?: number;
+  totalCount?: number;
   startedAt: string;
   endedAt?: string | null;
   endReason?: string | null;

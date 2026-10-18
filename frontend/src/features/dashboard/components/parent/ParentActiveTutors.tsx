@@ -77,6 +77,12 @@ export function ParentActiveTutors({ tutors = [] }: ParentActiveTutorsProps) {
                     <span className="font-semibold text-neutral-700">{tutor.subject}</span>
                     <span>·</span>
                     <span className="text-amber-600 font-medium">{tutor.rating}</span>
+                    {tutor.progress && (
+                      <>
+                        <span>·</span>
+                        <span className="font-medium text-emerald-700">{tutor.progress}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
