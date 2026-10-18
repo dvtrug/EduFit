@@ -82,7 +82,7 @@ Có **11 task M3-00–M3-10**: 1 preparation/audit đã xong và 10 task còn l�
 
 ## Phase 3 — Tutor navigation và History 3.3
 
-### [ ] M3-06 — Sửa dashboard tới hàng đợi thực
+### [x] M3-06 — Sửa dashboard tới hàng đợi thực
 
 - **Dependency:** G-REQUESTS đã đạt theo M3-01. Có thể làm trước History khi destination sẵn.
 - **Acceptance:**
