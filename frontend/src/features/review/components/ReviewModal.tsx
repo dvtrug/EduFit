@@ -1,10 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Star, X, Loader2, AlertCircle, Tag, Check } from "lucide-react";
 import { reviewApi } from "../api/reviewApi";
 import { reviewFormSchema } from "../schemas/reviewSchema";
 import type { ReviewItem } from "../types";
+import { profileService } from "@/services/profile";
+import { connectionApi } from "@/features/connection/api/connectionApi";
+import type { UserRole } from "@/features/auth/types";
+import { ApiError } from "@/lib/api";
 
 export const QUICK_REVIEW_TAGS = [
   "Nhiệt tình",
@@ -21,7 +25,8 @@ interface ReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   tutorId: string;
-  studentId: string;
+  studentId?: string;
+  reviewerRole?: UserRole;
   tutorName?: string;
   existingReview?: ReviewItem | null;
   onSuccess?: (review: ReviewItem) => void;
@@ -32,6 +37,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   onClose,
   tutorId,
   studentId,
+  reviewerRole,
   tutorName,
   existingReview,
   onSuccess,
@@ -43,6 +49,59 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [studentChoices, setStudentChoices] = useState<Array<{ id: string; label: string }>>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState(studentId || "");
+  const [isLoadingStudent, setIsLoadingStudent] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || isEditing || studentId) {
+      return;
+    }
+
+    let cancelled = false;
+    const loadReviewStudent = async () => {
+      setIsLoadingStudent(true);
+      setError(null);
+      try {
+        if (reviewerRole === "STUDENT") {
+          const profile = await profileService.getMyStudentProfile();
+          if (!cancelled) {
+            setStudentChoices([{ id: profile.studentId, label: "Hồ sơ học sinh của bạn" }]);
+            setSelectedStudentId(profile.studentId);
+          }
+          return;
+        }
+
+        if (reviewerRole === "PARENT") {
+          const links = await connectionApi.getLinks();
+          const choices = links.map((link, index) => ({
+            id: link.studentId,
+            label: `Học sinh liên kết ${index + 1} (${link.studentId.slice(-8)})`,
+          }));
+          if (!cancelled) {
+            setStudentChoices(choices);
+            setSelectedStudentId(choices.length === 1 ? choices[0].id : "");
+          }
+          return;
+        }
+
+        if (!cancelled) {
+          setError("Không xác định được hồ sơ học sinh dùng để đánh giá.");
+        }
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Không thể tải hồ sơ học sinh.");
+        }
+      } finally {
+        if (!cancelled) setIsLoadingStudent(false);
+      }
+    };
+
+    void loadReviewStudent();
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditing, isOpen, reviewerRole, studentId]);
 
   if (!isOpen) return null;
 
@@ -60,6 +119,16 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    const effectiveStudentId = studentId || selectedStudentId;
+    if (!isEditing && !effectiveStudentId) {
+      setError(
+        reviewerRole === "PARENT"
+          ? "Vui lòng chọn học sinh được liên kết để gửi đánh giá."
+          : "Không tìm thấy hồ sơ học sinh. Vui lòng hoàn tất hồ sơ trước khi đánh giá."
+      );
+      return;
+    }
 
     const trimmedComment = comment.trim();
     // Build combined comment with quick tags if selected and not yet present in comment text
@@ -91,15 +160,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         response = await reviewApi.updateReview(existingReview.reviewId, {
           rating,
           comment: finalComment,
-          tags: selectedTags,
         });
       } else {
         response = await reviewApi.createReview({
           tutorId,
-          studentId,
+          studentId: effectiveStudentId,
           rating,
           comment: finalComment,
-          tags: selectedTags,
         });
       }
 
@@ -110,8 +177,14 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         setError(response?.message || "Có lỗi xảy ra khi gửi đánh giá.");
       }
     } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Đã xảy ra lỗi không xác định. Vui lòng thử lại.";
+      const fieldDetails = err instanceof ApiError
+        ? err.details?.map((detail) => detail.message).filter(Boolean)
+        : undefined;
+      const errorMessage = fieldDetails?.length
+        ? fieldDetails.join(" ")
+        : err instanceof Error
+          ? err.message
+          : "Đã xảy ra lỗi không xác định. Vui lòng thử lại.";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -155,6 +228,25 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             >
               <AlertCircle className="size-4 shrink-0 text-red-600 mt-0.5" />
               <span>{error}</span>
+            </div>
+          )}
+
+          {!isEditing && reviewerRole === "PARENT" && studentChoices.length > 1 && (
+            <div className="space-y-1.5">
+              <label htmlFor="review-student" className="text-xs font-semibold text-neutral-800">
+                Đánh giá cho học sinh <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="review-student"
+                value={selectedStudentId}
+                onChange={(event) => setSelectedStudentId(event.target.value)}
+                className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-neutral-800 focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20"
+              >
+                <option value="">Chọn học sinh</option>
+                {studentChoices.map((choice) => (
+                  <option key={choice.id} value={choice.id}>{choice.label}</option>
+                ))}
+              </select>
             </div>
           )}
 
@@ -255,17 +347,17 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              disabled={loading}
+              disabled={loading || isLoadingStudent}
               className="px-4 py-2.5 rounded-xl text-xs font-semibold text-neutral-600 hover:bg-stone-100 transition-colors cursor-pointer"
             >
               Hủy
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || isLoadingStudent}
               className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 active:bg-amber-800 disabled:opacity-50 transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
             >
-              {loading && <Loader2 className="size-3.5 animate-spin" />}
+              {(loading || isLoadingStudent) && <Loader2 className="size-3.5 animate-spin" />}
               {isEditing ? "Lưu thay đổi" : "Gửi đánh giá"}
             </button>
           </div>

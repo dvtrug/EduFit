@@ -26,3 +26,8 @@ AGENTS.md
 cookie*.txt
 *.cookie
 
+# Temporary document merge and reports
+.tmp_doc_merge*/
+Assignment-1_Report_*.docx
+tools/
+

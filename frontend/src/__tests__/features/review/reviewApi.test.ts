@@ -94,7 +94,6 @@ describe("Review API Client Tests", () => {
       studentId: "stu-1",
       rating: 5,
       comment: "[Nhiệt tình, Dễ hiểu] Gia sư giảng bài rất nhiệt tình và chu đáo.",
-      tags: ["Nhiệt tình", "Dễ hiểu"],
     };
 
     const fetchApiSpy = vi.spyOn(apiModule, "fetchApi").mockResolvedValue({
@@ -126,7 +125,6 @@ describe("Review API Client Tests", () => {
     const payload = {
       rating: 4,
       comment: "Cập nhật lại nhận xét: Gia sư rất đúng giờ và giảng dạy bài bản.",
-      tags: ["Đúng giờ"],
     };
 
     const fetchApiSpy = vi.spyOn(apiModule, "fetchApi").mockResolvedValue({

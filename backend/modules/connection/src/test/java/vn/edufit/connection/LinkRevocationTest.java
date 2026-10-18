@@ -45,9 +45,9 @@ class LinkRevocationTest {
     when(iam.findUserSummaryById(user)).thenReturn(Optional.of(new UserSummaryView(user,"actor@test.invalid","Actor",AccountRole.valueOf(role),AccountStatus.ACTIVE)));
     return actor;
   }
-  @ParameterizedTest @ValueSource(strings={"STUDENT","ADMIN"})
+  @ParameterizedTest @ValueSource(strings={"STUDENT","PARENT","ADMIN"})
   void ownerOrAdminSnapshotIncludesBothAccountsAndBusinessTime(String role) {
-    UUID user=role.equals("STUDENT")?studentUser:UUID.randomUUID();
+    UUID user=role.equals("STUDENT")?studentUser:role.equals("PARENT")?parent:UUID.randomUUID();
     service.revokeLink(actor(user,role),id,"private reason");
     var capture=ArgumentCaptor.forClass(AuditRecord.class);verify(audit).record(capture.capture());
     var record=capture.getValue();assertEquals(user,record.actorUserId());assertEquals(id,record.targetId());
@@ -60,8 +60,8 @@ class LinkRevocationTest {
     assertEquals(now,event.occurredAt());assertEquals("CONFIRMED",event.oldStatus());assertEquals("REVOKED",event.newStatus());
     verifyNoInteractions(notifications);
   }
-  @Test void parentCannotRevokeEvenOwnLink() {
-    assertThrows(ForbiddenOperationException.class,()->service.revokeLink(actor(parent,"PARENT"),id,"reason"));
+  @Test void otherParentCannotRevoke() {
+    assertThrows(ForbiddenOperationException.class,()->service.revokeLink(actor(UUID.randomUUID(),"PARENT"),id,"reason"));
     verifyNoInteractions(audit,notifications);assertEquals("CONFIRMED",row.getStatus());
   }
   @Test void otherStudentCannotRevoke() {

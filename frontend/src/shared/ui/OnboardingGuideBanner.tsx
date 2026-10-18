@@ -21,7 +21,10 @@ interface OnboardingGuideBannerProps {
 export function OnboardingGuideBanner({ role, steps, userName }: OnboardingGuideBannerProps) {
   const [closed, setClosed] = useState(false);
 
-  if (closed) return null;
+  // Khi đã hoàn tất tất cả các bước khởi tạo, tự động ẩn banner đi
+  const allCompleted = steps.length > 0 && steps.every((s) => s.completed);
+
+  if (closed || allCompleted) return null;
 
   const roleMeta = {
     STUDENT: {

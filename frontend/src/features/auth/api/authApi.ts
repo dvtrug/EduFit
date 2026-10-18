@@ -20,34 +20,54 @@ export interface ResetPasswordPayload {
 }
 export type ChangePasswordPayload = ChangePasswordInput;
 
+interface AuthUserResponse extends Omit<AuthUser, "id"> {
+  accountId: string;
+  id?: string;
+}
+
+function normalizeAuthResponse(response: ApiResponse<AuthUserResponse>): ApiResponse<AuthUser> {
+  if (!response.data) return response as ApiResponse<AuthUser>;
+  const { accountId, ...user } = response.data;
+  return {
+    ...response,
+    data: {
+      ...user,
+      id: response.data.id || accountId,
+    },
+  };
+}
+
 export const authApi = {
   /**
    * Đăng ký tài khoản người dùng mới (UC1.1)
    */
   async register(payload: RegisterPayload): Promise<ApiResponse<AuthUser>> {
-    return fetchApi<AuthUser>("/api/v1/auth/register", {
+    const response = await fetchApi<AuthUserResponse>("/api/v1/auth/register", {
       method: "POST",
       body: JSON.stringify(payload),
     });
+    return normalizeAuthResponse(response);
   },
 
   /**
    * Đăng nhập xác thực và thiết lập phiên EDUFIT_SESSION (UC1.2)
    */
   async login(payload: LoginPayload): Promise<ApiResponse<AuthUser>> {
-    return fetchApi<AuthUser>("/api/v1/auth/login", {
+    const response = await fetchApi<AuthUserResponse>("/api/v1/auth/login", {
       method: "POST",
       body: JSON.stringify(payload),
     });
+    return normalizeAuthResponse(response);
   },
 
   /**
    * Đọc thông tin người dùng từ phiên đăng nhập hiện tại
    */
   async getMe(): Promise<ApiResponse<AuthUser>> {
-    return fetchApi<AuthUser>("/api/v1/auth/me", {
+    const response = await fetchApi<AuthUserResponse>("/api/v1/auth/me", {
       method: "GET",
     });
+    return normalizeAuthResponse(response);
   },
 
   /**

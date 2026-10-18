@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/api";
 import type {
   ConnectionRequest,
+  LinkInvitation,
   SendConnectionRequestPayload,
   StudentLink,
   TutorInboxItem,
@@ -25,6 +26,29 @@ export const connectionApi = {
     await apiClient.post<void>("/api/v1/connections/parent-student/invite", {
       targetEmail,
     });
+  },
+
+  async getLinkInvitations(): Promise<LinkInvitation[]> {
+    const res = await apiClient.get<LinkInvitation[]>("/api/v1/connections/parent-student/invitations");
+    return res.data || [];
+  },
+
+  async respondLinkInvitation(invitationId: string, accept: boolean): Promise<StudentLink | null> {
+    const res = await apiClient.post<StudentLink | null>("/api/v1/connections/parent-student/respond", {
+      invitationId,
+      accept,
+    });
+    return res.data ?? null;
+  },
+
+  async withdrawLinkInvitation(invitationId: string): Promise<void> {
+    await apiClient.post<void>(
+      `/api/v1/connections/parent-student/invitations/${encodeURIComponent(invitationId)}/withdraw`
+    );
+  },
+
+  async revokeLink(linkId: string): Promise<void> {
+    await apiClient.delete<void>(`/api/v1/connections/parent-student/links/${encodeURIComponent(linkId)}`);
   },
 
   /**

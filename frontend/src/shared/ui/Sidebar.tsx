@@ -23,6 +23,7 @@ import {
   DollarSign,
   FileCheck2,
   HeartHandshake,
+  Star,
   BarChart3,
   LucideIcon,
 } from "lucide-react";
@@ -78,6 +79,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
         title: "TỔNG QUAN",
         items: [
           { label: "Dashboard", href: "/student/dashboard", icon: LayoutDashboard },
+          { label: "Liên kết phụ huynh", href: "/student/family", icon: HeartHandshake },
           { label: "Tiến độ học tập", href: "/student/progress", icon: TrendingUp },
         ],
       },
@@ -126,6 +128,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
           { label: "Lịch dạy", href: "/tutor/schedule", icon: Calendar },
           { label: "Lớp học 1-1", href: "/tutor/classes", icon: BookOpen },
           { label: "Yêu cầu học viên", href: "/tutor/requests", icon: UserCheck },
+          { label: "Đánh giá", href: "/tutor/reviews", icon: Star },
         ],
       },
       {
@@ -149,7 +152,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
         title: "TỔNG QUAN",
         items: [
           { label: "Dashboard", href: "/parent/dashboard", icon: LayoutDashboard },
-          { label: "Liên kết con em", href: "/parent/children", icon: HeartHandshake, badge: "2" },
+          { label: "Liên kết con em", href: "/parent/children", icon: HeartHandshake },
         ],
       },
       {

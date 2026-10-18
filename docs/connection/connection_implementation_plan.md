@@ -22,7 +22,7 @@ Phân hệ đảm nhiệm 3 mục tiêu chiến lược cốt lõi:
 1. **Xác lập Quan hệ Ủy quyền & Đồng thuận Gia đình (Parent-Student Consent - UC3.1, UC3.2, UC3.3):**
    - Thiết lập liên kết chính thức giữa Phụ huynh và Học sinh (`ParentStudentLink`). Khi và chỉ khi liên kết ở trạng thái `CONFIRMED`, Phụ huynh mới được cấp quyền hợp pháp để theo dõi tiến độ, xem mục tiêu học tập và thay mặt con gửi yêu cầu tìm gia sư.
    - Quản lý vòng đời lời mời gia đình (`LinkInvitation`) với cơ chế kiểm soát chống thư rác (Anti-Spam Quota: tối đa 10 lời mời/giờ) và thời gian sống có hạn (TTL 14 ngày).
-   - Bảo đảm quyền tự chủ của Học sinh: Học sinh sở hữu hoặc Quản trị viên (Admin) có toàn quyền thu hồi liên kết (`REVOKED`), trong khi Phụ huynh không thể tự ý đơn phương thu hồi để tránh phát sinh tranh chấp gia đình trên hệ thống.
+   - Học sinh và Phụ huynh có thể thu hồi liên kết (`REVOKED`) thuộc chính mình. Quản trị viên (Admin) có thể thu hồi khi nhập lý do; mọi thao tác đều được ghi audit để đối soát.
 
 2. **Khởi tạo & Điều phối Yêu cầu Học tập đến Gia sư (Tutor Connection Request - UC3.4, UC3.5):**
    - Học sinh hoặc Phụ huynh (đã có liên kết `CONFIRMED`) gửi yêu cầu kết nối học tập (`ConnectionRequest`) dựa trên Mục tiêu học tập đang hoạt động (`ACTIVE Goal`) và hồ sơ Gia sư đã được kiểm duyệt (`VERIFIED Tutor`).
@@ -298,7 +298,7 @@ backend/modules/connection/
 
 > [!IMPORTANT]
 > **Điểm 3: Quyền thu hồi liên kết Phụ huynh - Học sinh (UC3.3)**
-> - Nhóm tái khẳng định: **Chỉ Học sinh hoặc Admin mới có quyền thu hồi**. Phụ huynh gọi API thu hồi sẽ nhận về HTTP 403 `FORBIDDEN`. Quyết định này bảo vệ quyền tự chủ học tập của học sinh vị thành niên theo quy định của đề tài.
+> - Học sinh và Phụ huynh đều có thể thu hồi liên kết của chính mình; Admin có thể thu hồi khi nhập lý do. Yêu cầu thu hồi liên kết của người khác nhận HTTP 403 `FORBIDDEN`. Quyết định này cho phép phụ huynh quản lý trực tiếp danh sách con đã liên kết, đồng thời giới hạn thao tác theo quyền sở hữu.
 
 ---
 
@@ -339,9 +339,9 @@ Dưới đây là 4 câu hỏi vấn đáp chuyên sâu mà hội đồng giản
 > **Trả lời chuẩn kiến trúc:**  
 > `@Transactional` của Spring chỉ định nghĩa ranh giới giao dịch (Transaction Boundary) chứ không tự động ngăn chặn hiện tượng chạy đua (Race Condition) ở mức độ ứng dụng. Trong bài toán lời mời đối chiều (Phụ huynh mời Học sinh và Học sinh cùng lúc mời Phụ huynh), hai giao dịch chạy song song ở mức cô lập `READ COMMITTED` đều sẽ thấy chưa có bản ghi nào và cùng thực hiện lệnh `INSERT`. Nếu chỉ dựa vào bắt lỗi Unique Constraint của Database, hệ thống sẽ phát sinh lỗi hệ thống không kiểm soát và lãng phí tài nguyên kết nối. Bằng cách sử dụng **PostgreSQL Advisory Lock** với định danh chuẩn hóa `lockInvitationPair(min(a,b), max(a,b))`, hệ thống tuần tự hóa ngay từ đầu mọi thao tác giữa hai tài khoản, bảo đảm tính xác thực và triệt tiêu nguy cơ Deadlock ở tầng CSDL.
 
-> **Q2: "Tại sao quyền thu hồi liên kết Phụ huynh - Học sinh (Revoke Link) chỉ được cấp cho Học sinh và Admin mà không cho phép Phụ huynh tự thu hồi?"**  
+> **Q2: "Phụ huynh được thu hồi liên kết trong trường hợp nào?"**
 > **Trả lời chuẩn kiến trúc:**  
-> Đây là quyết định thiết kế dựa trên đặc thù bảo vệ quyền lợi người học (Learner Autonomy). Trong quan hệ giáo dục, Phụ huynh là người trả phí và giám sát, nhưng Học sinh mới là chủ thể tiếp nhận kiến thức. Nếu Phụ huynh tự ý thu hồi liên kết một cách tùy tiện khi xảy ra mâu thuẫn gia đình, các yêu cầu học tập và lịch học của học sinh có thể bị gián đoạn đột ngột. Do đó, hệ thống quy định Phụ huynh chỉ có quyền tạo và duy trì liên kết; việc đơn phương chấm dứt liên kết chỉ thuộc về chính Học sinh hoặc phải thông qua Quản trị viên (Admin) xử lý khi có khiếu nại chính thức. Khi Admin thu hồi, hệ thống bắt buộc nhập lý do và ghi nhận vào bảng `audit_log` bất biến để phục vụ hậu kiểm.
+> Phụ huynh chỉ được thu hồi liên kết khi `parentUserId` của bản ghi trùng tài khoản đang đăng nhập; học sinh chỉ được thu hồi liên kết gắn với hồ sơ của mình. Admin được thu hồi sau khi nhập lý do. Mọi lần thu hồi đều ghi `audit_log` và phát sự kiện thông báo cho hai bên để phục vụ đối soát.
 
 > **Q3: "Làm thế nào để hệ thống giải quyết triệt để vấn nạn N+1 Query khi Gia sư mở hộp thư đến chứa hàng trăm yêu cầu kết nối?"**  
 > **Trả lời chuẩn kiến trúc:**  

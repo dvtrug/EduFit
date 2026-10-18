@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { X, CalendarPlus, AlertTriangle, Video, MapPin, Loader2 } from "lucide-react";
+import { ApiError } from "@/lib/api";
 import { schedulingApi, isConflictError, getConflictMessage } from "../api/schedulingApi";
 import { proposeSessionSchema } from "../schemas/schedulingSchemas";
 import {
@@ -147,6 +148,9 @@ export function ProposeSessionModal({
             "Khung giờ này đã bị trùng với lịch khác! Vui lòng chọn một khung giờ khác."
           )
         );
+      } else if (err instanceof ApiError && err.details && err.details.length > 0) {
+        const detailMsg = err.details.map((d) => d.message).filter(Boolean).join(", ");
+        setErrorMessage(detailMsg || err.message);
       } else {
         setErrorMessage(
           err instanceof Error
@@ -255,6 +259,7 @@ export function ProposeSessionModal({
               <input
                 id="session-date"
                 type="date"
+                min={formatLocalDateToIso(new Date())}
                 value={dateStr}
                 onChange={(e) => setDateStr(e.target.value)}
                 className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-800 focus:border-sky-500 focus:outline-hidden"

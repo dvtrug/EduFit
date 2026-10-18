@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ReviewModal, QUICK_REVIEW_TAGS } from "@/features/review/components/ReviewModal";
 import { reviewApi } from "@/features/review/api/reviewApi";
 import type { ReviewItem } from "@/features/review/types";
+import { profileService } from "@/services/profile";
 
 describe("ReviewModal Component Tests", () => {
   beforeEach(() => {
@@ -123,11 +124,58 @@ describe("ReviewModal Component Tests", () => {
           studentId: "stu-789",
           rating: 5,
           comment: expect.stringContaining("[Nhiệt tình, Dễ hiểu]"),
-          tags: ["Nhiệt tình", "Dễ hiểu"],
         })
       );
       expect(defaultProps.onSuccess).toHaveBeenCalledWith(mockCreatedReview);
       expect(defaultProps.onClose).toHaveBeenCalled();
+    });
+  });
+
+  it("dùng studentId từ hồ sơ học sinh thay vì ID tài khoản đăng nhập", async () => {
+    vi.spyOn(profileService, "getMyStudentProfile").mockResolvedValue({
+      studentId: "student-profile-789",
+      userId: "account-123",
+      profileComplete: true,
+    });
+    const createSpy = vi.spyOn(reviewApi, "createReview").mockResolvedValue({
+      success: true,
+      data: {
+        reviewId: "review-1",
+        tutorId: "tut-456",
+        studentId: "student-profile-789",
+        reviewerName: "Học sinh",
+        reviewerType: "STUDENT",
+        rating: 5,
+        comment: "Gia sư giảng bài rất dễ hiểu.",
+        isEdited: false,
+        completedSessionsAtReview: 1,
+        createdAt: "2026-10-18T10:00:00Z",
+        updatedAt: "2026-10-18T10:00:00Z",
+      },
+      message: "OK",
+    });
+
+    render(
+      <ReviewModal
+        {...defaultProps}
+        studentId={undefined}
+        reviewerRole="STUDENT"
+      />
+    );
+
+    fireEvent.change(screen.getByPlaceholderText(/Chia sẻ trải nghiệm học tập/i), {
+      target: { value: "Gia sư giảng bài rất dễ hiểu." },
+    });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Gửi đánh giá" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "Gửi đánh giá" }));
+
+    await waitFor(() => {
+      expect(createSpy).toHaveBeenCalledWith({
+        tutorId: "tut-456",
+        studentId: "student-profile-789",
+        rating: 5,
+        comment: "Gia sư giảng bài rất dễ hiểu.",
+      });
     });
   });
 

@@ -114,7 +114,10 @@ public class MatchExplanationService {
             ? fallback.get(i) : new Explanation(text, true);
       }).toList();
     } catch (RuntimeException ex) {
-      log.warn("Không thể tạo giải thích matching theo nhóm [type: {}]", ex.getClass().getSimpleName());
+      log.warn(
+          "Không thể tạo giải thích matching theo nhóm [type: {}, message: {}]",
+          ex.getClass().getSimpleName(),
+          ex.getMessage());
       return fallback;
     }
   }

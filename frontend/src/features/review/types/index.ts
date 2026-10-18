@@ -28,13 +28,11 @@ export interface CreateReviewPayload {
   studentId: string;
   rating: number;
   comment: string;
-  tags?: string[];
 }
 
 export interface UpdateReviewPayload {
   rating: number;
   comment: string;
-  tags?: string[];
 }
 
 export interface SpringPage<T> {

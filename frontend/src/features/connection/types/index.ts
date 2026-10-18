@@ -10,8 +10,22 @@ export interface ConnectionRequest {
 
 export interface StudentLink {
   linkId: string;
+  parentUserId: string;
   studentId: string;
   status: string;
+  confirmedAt: string;
+}
+
+export interface LinkInvitation {
+  invitationId: string;
+  inviterUserId: string;
+  invitedUserId: string;
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "WITHDRAWN" | "EXPIRED";
+  createdAt: string;
+  expiresAt: string;
+  reinviteAfter?: string | null;
+  inviterName?: string | null;
+  inviterRole?: string | null;
 }
 
 export interface SendConnectionRequestPayload {
