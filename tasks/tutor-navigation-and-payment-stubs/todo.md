@@ -67,7 +67,7 @@ Có **11 task M3-00–M3-10**: 1 preparation/audit đã xong và 10 task còn l�
 - **Verify:** focused component/render tests và type-check; browser direct URL/auth theo role khi server test sẵn sàng.
 - **Commit:** `fix(payments): add honest coming-soon pages for finance routes`.
 
-### [ ] M3-05 — Sidebar badge và Payment CTA nhất quán
+### [x] M3-05 — Sidebar badge và Payment CTA nhất quán
 
 - **Dependency:** M3-04.
 - **Acceptance:**

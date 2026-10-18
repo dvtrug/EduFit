@@ -235,10 +235,13 @@ export function ParentDashboardView({ user }: ParentDashboardViewProps) {
           </Link>
           <Link
             href="/parent/billing"
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors shrink-0"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-stone-50 border border-stone-200 text-neutral-800 rounded-xl text-xs font-bold shadow-2xs transition-colors shrink-0"
           >
-            <CreditCard className="size-3.5" />
-            <span>Thanh toán học phí</span>
+            <CreditCard className="size-3.5 text-neutral-500" />
+            <span>Thông tin học phí</span>
+            <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-100 text-amber-800">
+              Sắp ra mắt
+            </span>
           </Link>
         </div>
       </div>
