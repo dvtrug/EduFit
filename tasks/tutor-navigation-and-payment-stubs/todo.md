@@ -93,7 +93,7 @@ Có **11 task M3-00–M3-10**: 1 preparation/audit đã xong và 10 task còn l�
 - **Verify:** click flow bằng Tutor session qua browser; href regression và API responses thực.
 - **Commit:** `fix(tutor): route dashboard request actions to the real inbox`.
 
-### [ ] M3-07 — Typed History API client và read hooks
+### [x] M3-07 — Typed History API client và read hooks
 
 - **Dependency:** G-HISTORY/M3-01 và upstream contracts đã sẵn.
 - **Acceptance:**
