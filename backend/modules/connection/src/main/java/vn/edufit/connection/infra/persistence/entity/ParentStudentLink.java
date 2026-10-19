@@ -38,4 +38,7 @@ public class ParentStudentLink {
   public UUID getStudentId() { return studentId; }
   public String getStatus() { return status; }
   public Instant getConfirmedAt() { return confirmedAt; }
+  public Instant getRevokedAt() { return revokedAt; }
+  public UUID getRevokedBy() { return revokedBy; }
+  public String getRevokeReason() { return revokeReason; }
 }

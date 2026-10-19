@@ -2,6 +2,8 @@ package vn.edufit.connection.application.service;
 
 import java.time.Instant;
 import java.time.Clock;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -12,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.edufit.connection.api.ClassScheduleStatusProvider;
 import vn.edufit.connection.api.ConnectionFacade;
 import vn.edufit.connection.api.TutorScheduleConflictChecker;
+import vn.edufit.connection.application.dto.AdminParentStudentLinkResponse;
+import vn.edufit.connection.application.dto.AdminParentStudentLinkStatsResponse;
 import vn.edufit.connection.application.dto.InvitationResult;
 import vn.edufit.connection.application.dto.ParentStudentLinkResult;
 import vn.edufit.connection.application.dto.ConnectionRequestResult;
@@ -276,6 +280,106 @@ public class ConnectionQueryService {
     } else {
       return PageResponse.of(List.of(), page, size, 0L);
     }
+  }
+
+  @Transactional(readOnly = true)
+  public PageResponse<AdminParentStudentLinkResponse> adminGetAllLinks(
+      CurrentUser actor,
+      String status,
+      String search,
+      int page,
+      int size
+  ) {
+    requireRole(actor, "ADMIN");
+    validatePageAndSize(page, size);
+    org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+
+    org.springframework.data.domain.Page<ParentStudentLink> p;
+    if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
+      p = links.findByStatus(status.toUpperCase(), pageable);
+    } else {
+      p = links.findAllLinks(pageable);
+    }
+
+    List<ParentStudentLink> content = p.getContent();
+    if (content.isEmpty()) {
+      return PageResponse.of(List.of(), page, size, p.getTotalElements());
+    }
+
+    // Resolve Parents
+    List<UUID> parentUserIds = content.stream().map(ParentStudentLink::getParentUserId).distinct().toList();
+    Map<UUID, UserSummaryView> parentSummaries = iam.findUserSummariesByIds(parentUserIds);
+
+    // Resolve Students
+    List<UUID> studentIds = content.stream().map(ParentStudentLink::getStudentId).distinct().toList();
+    Map<UUID, StudentSummaryDto> studentProfiles = new HashMap<>();
+    List<UUID> studentUserIds = new ArrayList<>();
+    for (UUID sId : studentIds) {
+      profile.findStudentById(sId).ifPresent(s -> {
+        studentProfiles.put(sId, s);
+        if (s.userId() != null) {
+          studentUserIds.add(s.userId());
+        }
+      });
+    }
+    Map<UUID, UserSummaryView> studentUserSummaries = iam.findUserSummariesByIds(studentUserIds);
+
+    List<AdminParentStudentLinkResponse> responses = content.stream().map(link -> {
+      UserSummaryView parent = parentSummaries.get(link.getParentUserId());
+      String parentName = parent != null ? parent.fullName() : "Chưa cập nhật";
+      String parentEmail = parent != null ? parent.email() : "";
+
+      StudentSummaryDto studentProfile = studentProfiles.get(link.getStudentId());
+      UUID studentUserId = studentProfile != null ? studentProfile.userId() : null;
+      UserSummaryView studentUser = studentUserId != null ? studentUserSummaries.get(studentUserId) : null;
+      String studentName = studentUser != null ? studentUser.fullName() : "Học sinh";
+      String studentEmail = studentUser != null ? studentUser.email() : "";
+
+      return new AdminParentStudentLinkResponse(
+          link.getId(),
+          link.getParentUserId(),
+          parentName,
+          parentEmail,
+          link.getStudentId(),
+          studentUserId,
+          studentName,
+          studentEmail,
+          link.getStatus(),
+          link.getConfirmedAt(),
+          link.getRevokedAt(),
+          link.getRevokeReason()
+      );
+    }).toList();
+
+    if (search != null && !search.isBlank()) {
+      String q = search.trim().toLowerCase();
+      responses = responses.stream().filter(r ->
+          (r.parentFullName() != null && r.parentFullName().toLowerCase().contains(q)) ||
+          (r.parentEmail() != null && r.parentEmail().toLowerCase().contains(q)) ||
+          (r.studentFullName() != null && r.studentFullName().toLowerCase().contains(q)) ||
+          (r.studentEmail() != null && r.studentEmail().toLowerCase().contains(q))
+      ).toList();
+    }
+
+    return PageResponse.of(responses, page, size, p.getTotalElements());
+  }
+
+  @Transactional(readOnly = true)
+  public AdminParentStudentLinkStatsResponse adminGetLinkStats(CurrentUser actor) {
+    requireRole(actor, "ADMIN");
+    long totalLinks = links.count();
+    long activeLinks = links.countByStatus("CONFIRMED");
+    long revokedLinks = links.countByStatus("REVOKED");
+    long uniqueParents = links.countDistinctParentUserIdByStatus("CONFIRMED");
+    long uniqueStudents = links.countDistinctStudentIdByStatus("CONFIRMED");
+
+    return new AdminParentStudentLinkStatsResponse(
+        totalLinks,
+        activeLinks,
+        revokedLinks,
+        uniqueParents,
+        uniqueStudents
+    );
   }
 
   @Transactional

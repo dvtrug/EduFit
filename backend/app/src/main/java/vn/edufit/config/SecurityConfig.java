@@ -70,6 +70,7 @@ public class SecurityConfig {
                 "/api/v1/auth/logout",
                 "/api/v1/auth/forgot-password",
                 "/api/v1/auth/reset-password",
+                "/api/v1/auth/oauth2/**",
                 "/api/v1/catalogs/**",
                 "/v3/api-docs/**",
                 "/swagger-ui/**",
@@ -79,6 +80,7 @@ public class SecurityConfig {
             ).permitAll()
             .requestMatchers(HttpMethod.GET, "/api/v1/discovery/tutors", "/api/v1/discovery/tutors/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/v1/reviews/tutors/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/v1/auth/avatar/**").permitAll()
 
             // 2.2. Phân quyền dành riêng cho Quản trị viên (ADMIN)
             .requestMatchers(

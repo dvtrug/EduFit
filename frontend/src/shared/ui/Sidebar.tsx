@@ -193,8 +193,12 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "QUẢN LÝ DỮ LIỆU",
         items: [
+          { label: "Học sinh & Phụ huynh", href: "/admin/learners", icon: Users },
+          { label: "Gia sư", href: "/admin/tutors-management", icon: GraduationCap },
+          { label: "Liên kết Phụ huynh - Con", href: "/admin/family-links", icon: HeartHandshake },
           { label: "Danh mục môn học", href: "/admin/catalogs", icon: BookOpen },
           { label: "Liên kết hệ thống", href: "/admin/links", icon: HeartHandshake },
+          { label: "Khiếu nại & Tranh chấp", href: "/admin/disputes", icon: AlertTriangle, badge: "2" },
         ],
       },
       {
@@ -215,6 +219,7 @@ interface SidebarProps {
   user?: {
     fullName: string;
     email: string;
+    avatarUrl?: string | null;
   };
 }
 
@@ -412,9 +417,20 @@ export function Sidebar({
               collapsed ? "justify-center gap-0" : "gap-2"
             }`}
           >
-            <div className="size-7 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 font-bold text-xs flex items-center justify-center shrink-0 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/60 transition-colors">
-              {user.fullName.charAt(0).toUpperCase()}
-            </div>
+            {user.avatarUrl ? (
+              <div className="size-7 rounded-lg overflow-hidden border border-stone-200/80 dark:border-stone-700 shrink-0 bg-stone-100 dark:bg-stone-800">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={user.avatarUrl}
+                  alt={user.fullName}
+                  className="size-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="size-7 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 font-bold text-xs flex items-center justify-center shrink-0 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/60 transition-colors">
+                {user.fullName.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div
               aria-hidden={collapsed}
               className={`flex flex-col overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ${
