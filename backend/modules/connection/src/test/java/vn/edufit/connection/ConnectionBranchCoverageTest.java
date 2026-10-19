@@ -240,9 +240,10 @@ class ConnectionBranchCoverageTest {
     CurrentUser parent = mockActor(userId, "PARENT");
     CurrentUser student = mockActor(userId, "STUDENT");
     CurrentUser admin = mockActor(userId, "ADMIN");
+    CurrentUser stranger = mockActor(userId, "GUEST");
 
-    // Parent cannot revoke (403)
-    assertThrows(ForbiddenOperationException.class, () -> service.revokeLink(parent, linkId, null));
+    // Stranger / non-allowed role cannot revoke (403)
+    assertThrows(ForbiddenOperationException.class, () -> service.revokeLink(stranger, linkId, null));
 
     // Link not found (404)
     when(linkRepo.findById(linkId)).thenReturn(Optional.empty());
@@ -263,6 +264,21 @@ class ConnectionBranchCoverageTest {
     when(iam.findUserSummaryById(userId)).thenReturn(Optional.of(new UserSummaryView(userId, "u@test.com", "U", AccountRole.STUDENT, AccountStatus.ACTIVE)));
     when(profile.findStudentById(activeLink.getStudentId())).thenReturn(Optional.of(new StudentSummaryDto(activeLink.getStudentId(), UUID.randomUUID(), 4, null, true)));
     assertThrows(ForbiddenOperationException.class, () -> service.revokeLink(student, linkId, null));
+
+    // Parent is not owner of link (403)
+    when(iam.findUserSummaryById(userId)).thenReturn(Optional.of(new UserSummaryView(userId, "p@test.com", "P", AccountRole.PARENT, AccountStatus.ACTIVE)));
+    assertThrows(ForbiddenOperationException.class, () -> service.revokeLink(parent, linkId, null));
+
+    // Owner parent succeeds
+    UUID ownerParentId = activeLink.getParentUserId();
+    CurrentUser ownerParent = mockActor(ownerParentId, "PARENT");
+    when(iam.findUserSummaryById(ownerParentId)).thenReturn(Optional.of(new UserSummaryView(ownerParentId, "op@test.com", "OP", AccountRole.PARENT, AccountStatus.ACTIVE)));
+    ParentStudentLink activeLink2 = new ParentStudentLink(ownerParentId, activeLink.getStudentId(), NOW);
+    UUID linkId2 = UUID.randomUUID();
+    when(linkRepo.findById(linkId2)).thenReturn(Optional.of(activeLink2));
+    when(linkRepo.lockById(linkId2)).thenReturn(Optional.of(activeLink2));
+    assertDoesNotThrow(() -> service.revokeLink(ownerParent, linkId2, null));
+    assertEquals("REVOKED", activeLink2.getStatus());
 
     // Admin without reason (400)
     when(iam.findUserSummaryById(userId)).thenReturn(Optional.of(new UserSummaryView(userId, "admin@test.com", "Admin", AccountRole.ADMIN, AccountStatus.ACTIVE)));

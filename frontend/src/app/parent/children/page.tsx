@@ -6,6 +6,7 @@ import { ArrowLeft, UserPlus, Users } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { connectionApi } from "@/features/connection/api/connectionApi";
 import type { LinkInvitation, StudentLink } from "@/features/connection/types";
+import { RevokeLinkModal } from "@/features/connection/components/RevokeLinkModal";
 import { progressApi } from "@/features/progress";
 import { useToast } from "@/shared/ui/Toast";
 
@@ -19,6 +20,7 @@ export default function ParentChildrenPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [linkToRevoke, setLinkToRevoke] = useState<StudentLink | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -73,15 +75,16 @@ export default function ParentChildrenPage() {
     }
   };
 
-  const revoke = async (link: StudentLink) => {
-    if (!window.confirm(`Hủy liên kết với ${names[link.studentId] || `học sinh ${link.studentId.slice(0, 8)}`}?`)) return;
+  const handleConfirmRevoke = async (link: StudentLink, reason?: string) => {
     setBusyId(link.linkId);
     try {
-      await connectionApi.revokeLink(link.linkId);
+      await connectionApi.revokeLink(link.linkId, reason);
       showToast("Đã hủy liên kết.");
+      setLinkToRevoke(null);
       await loadData();
     } catch (cause) {
       showToast(cause instanceof Error ? cause.message : "Không thể hủy liên kết.", "error");
+      throw cause;
     } finally {
       setBusyId(null);
     }
@@ -116,7 +119,7 @@ export default function ParentChildrenPage() {
                 <div className="flex flex-wrap gap-2">
                   <Link href="/parent/schedule" className="rounded-lg border border-stone-200 px-3 py-2 text-xs font-semibold">Lịch học</Link>
                   <Link href="/parent/progress" className="rounded-lg border border-stone-200 px-3 py-2 text-xs font-semibold">Tiến độ</Link>
-                  <button type="button" disabled={busyId !== null} onClick={() => void revoke(link)} className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-700 disabled:opacity-50">Hủy liên kết</button>
+                  <button type="button" disabled={busyId !== null} onClick={() => setLinkToRevoke(link)} className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 transition-colors disabled:opacity-50 cursor-pointer">Hủy liên kết</button>
                 </div>
               </article>)}
 
@@ -127,7 +130,7 @@ export default function ParentChildrenPage() {
               <p className="text-sm font-semibold text-neutral-800">Đang chờ học sinh xác nhận</p>
               <p className="text-xs text-neutral-500">Mã lời mời: {item.invitationId.slice(0, 8)} · Hết hạn: {new Date(item.expiresAt).toLocaleDateString("vi-VN")}</p>
             </div>
-            <button type="button" disabled={busyId !== null} onClick={() => void withdraw(item.invitationId)} className="text-xs font-bold text-rose-700 disabled:opacity-50">Rút lời mời</button>
+            <button type="button" disabled={busyId !== null} onClick={() => void withdraw(item.invitationId)} className="text-xs font-bold text-rose-700 disabled:opacity-50 cursor-pointer">Rút lời mời</button>
           </div>)}
         </section>
 
@@ -137,10 +140,18 @@ export default function ParentChildrenPage() {
           <form onSubmit={invite} className="space-y-3">
             <label htmlFor="child-email" className="block text-xs font-bold text-neutral-700">Email học sinh</label>
             <input id="child-email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="con@example.com" className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-sm focus:outline-emerald-500" />
-            <button type="submit" disabled={busyId !== null} className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{busyId === "invite" ? "Đang gửi..." : "Gửi lời mời"}</button>
+            <button type="submit" disabled={busyId !== null} className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50 cursor-pointer">{busyId === "invite" ? "Đang gửi..." : "Gửi lời mời"}</button>
           </form>
         </section>
       </div>
+
+      <RevokeLinkModal
+        link={linkToRevoke}
+        studentName={linkToRevoke ? names[linkToRevoke.studentId] : undefined}
+        isOpen={linkToRevoke !== null}
+        onClose={() => setLinkToRevoke(null)}
+        onConfirm={handleConfirmRevoke}
+      />
     </main>
   );
 }

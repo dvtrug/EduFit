@@ -30,14 +30,18 @@ describe("liên kết gia đình", () => {
     await waitFor(() => expect(withdraw).toHaveBeenCalledWith("invite-1"));
   });
 
-  it("phụ huynh xác nhận trước khi hủy liên kết", async () => {
+  it("phụ huynh mở modern modal xác nhận trước khi hủy liên kết", async () => {
     vi.spyOn(connectionApi, "getLinks").mockResolvedValue([{ linkId: "link-1", parentUserId: "parent-1", studentId: "student-1", status: "CONFIRMED", confirmedAt: "2026-10-18T00:00:00Z" }]);
     vi.spyOn(connectionApi, "getLinkInvitations").mockResolvedValue([]);
     const revoke = vi.spyOn(connectionApi, "revokeLink").mockResolvedValue();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     render(<ParentChildrenPage />);
     fireEvent.click(await screen.findByRole("button", { name: "Hủy liên kết" }));
-    await waitFor(() => expect(revoke).toHaveBeenCalledWith("link-1"));
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("Hủy liên kết học sinh")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận hủy liên kết" }));
+    await waitFor(() => expect(revoke).toHaveBeenCalledWith("link-1", undefined));
   });
 
   it("học sinh chấp nhận hoặc từ chối lời mời nhận được", async () => {
@@ -60,7 +64,7 @@ describe("liên kết gia đình", () => {
     expect(screen.getByRole("button", { name: "Đồng ý" })).toBeEnabled();
   });
 
-  it("học sinh xem và hủy được liên kết phụ huynh đã xác nhận", async () => {
+  it("học sinh mở modern modal xác nhận và hủy được liên kết phụ huynh đã xác nhận", async () => {
     vi.spyOn(connectionApi, "getLinkInvitations").mockResolvedValue([]);
     vi.spyOn(connectionApi, "getLinks").mockResolvedValue([{
       linkId: "student-link-1",
@@ -70,13 +74,17 @@ describe("liên kết gia đình", () => {
       confirmedAt: "2026-10-18T00:00:00Z",
     }]);
     const revoke = vi.spyOn(connectionApi, "revokeLink").mockResolvedValue();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
 
     render(<StudentLinkInvitations />);
 
     expect(await screen.findByText("Mã tài khoản: parent-account-1")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Hủy liên kết" }));
-    await waitFor(() => expect(revoke).toHaveBeenCalledWith("student-link-1"));
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("Hủy liên kết phụ huynh")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận hủy liên kết" }));
+    await waitFor(() => expect(revoke).toHaveBeenCalledWith("student-link-1", undefined));
   });
 
   it("kiểm tra lại lời mời khi học sinh đang mở dashboard", async () => {

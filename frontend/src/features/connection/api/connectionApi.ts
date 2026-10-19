@@ -47,8 +47,13 @@ export const connectionApi = {
     );
   },
 
-  async revokeLink(linkId: string): Promise<void> {
-    await apiClient.delete<void>(`/api/v1/connections/parent-student/links/${encodeURIComponent(linkId)}`);
+  async revokeLink(linkId: string, reason?: string): Promise<void> {
+    const url = `/api/v1/connections/parent-student/links/${encodeURIComponent(linkId)}`;
+    if (reason) {
+      await apiClient.delete<void>(url, { body: JSON.stringify({ reason }) });
+    } else {
+      await apiClient.delete<void>(url);
+    }
   },
 
   /**

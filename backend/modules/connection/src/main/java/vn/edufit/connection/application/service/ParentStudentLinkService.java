@@ -51,7 +51,7 @@ public class ParentStudentLinkService {
 
   @Transactional
   public void revokeLink(CurrentUser actor, UUID id, String reason) {
-    requireRole(actor, "STUDENT", "ADMIN");
+    requireRole(actor, "STUDENT", "ADMIN", "PARENT");
     ParentStudentLink initial = links.findById(id).orElseThrow(() -> EntityNotFoundException.of("Link", id));
     lock.lockStudent(initial.getStudentId());
     ParentStudentLink link = links.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Link", id));
@@ -64,8 +64,19 @@ public class ParentStudentLinkService {
     var student = profile.findStudentById(link.getStudentId())
         .filter(value -> value.studentId().equals(link.getStudentId()) && value.userId() != null)
         .orElseThrow(() -> new InvalidOperationException("Không thể xác định tài khoản học sinh"));
-    if (!actor.hasRole("ADMIN") && !student.userId().equals(actor.getUserId()))
-      throw new ForbiddenOperationException("Không phải học sinh sở hữu liên kết");
+    if (!actor.hasRole("ADMIN")) {
+      boolean isOwnerParent = actor.hasRole("PARENT") && link.getParentUserId().equals(actor.getUserId());
+      boolean isOwnerStudent = actor.hasRole("STUDENT") && student.userId().equals(actor.getUserId());
+      if (!isOwnerParent && !isOwnerStudent) {
+        if (actor.hasRole("PARENT")) {
+          throw new ForbiddenOperationException("Không phải phụ huynh sở hữu liên kết");
+        }
+        if (actor.hasRole("STUDENT")) {
+          throw new ForbiddenOperationException("Không phải học sinh sở hữu liên kết");
+        }
+        throw new ForbiddenOperationException("Không có quyền thực hiện thao tác này");
+      }
+    }
     Instant now = clock.instant();
     link.revoke(actor.getUserId(), reason, now);
     audit.record(new AuditRecord(actor.getUserId(), "LINK_REVOKED", "PARENT_STUDENT_LINK", id, reason, now,

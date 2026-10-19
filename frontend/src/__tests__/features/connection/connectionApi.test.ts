@@ -21,12 +21,14 @@ describe("connectionApi client", () => {
     await connectionApi.respondLinkInvitation("inv-1", false);
     await connectionApi.withdrawLinkInvitation("inv-1");
     await connectionApi.revokeLink("link-1");
+    await connectionApi.revokeLink("link-2", "Lý do cá nhân");
 
     expect(get).toHaveBeenCalledWith("/api/v1/connections/parent-student/invitations");
     expect(post).toHaveBeenCalledWith("/api/v1/connections/parent-student/respond", { invitationId: "inv-1", accept: true });
     expect(post).toHaveBeenCalledWith("/api/v1/connections/parent-student/respond", { invitationId: "inv-1", accept: false });
     expect(post).toHaveBeenCalledWith("/api/v1/connections/parent-student/invitations/inv-1/withdraw");
     expect(remove).toHaveBeenCalledWith("/api/v1/connections/parent-student/links/link-1");
+    expect(remove).toHaveBeenCalledWith("/api/v1/connections/parent-student/links/link-2", { body: JSON.stringify({ reason: "Lý do cá nhân" }) });
   });
 
   it("getTutorInbox gọi GET /api/v1/connections/requests khi không truyền phân trang", async () => {

@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/shared/ui/Toast";
 
 import { HeartHandshake } from "lucide-react";
+import { RevokeLinkModal } from "./RevokeLinkModal";
 
 interface StudentLinkInvitationsProps {
   variant?: "full" | "dashboard-banner";
@@ -20,6 +21,7 @@ export function StudentLinkInvitations({ variant = "full" }: StudentLinkInvitati
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [linkToRevoke, setLinkToRevoke] = useState<StudentLink | null>(null);
 
   const refresh = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
@@ -68,15 +70,16 @@ export function StudentLinkInvitations({ variant = "full" }: StudentLinkInvitati
     }
   };
 
-  const revoke = async (linkId: string) => {
-    if (!window.confirm("Bạn có chắc muốn hủy liên kết với phụ huynh này?")) return;
-    setBusyId(linkId);
+  const handleConfirmRevoke = async (link: StudentLink, reason?: string) => {
+    setBusyId(link.linkId);
     try {
-      await connectionApi.revokeLink(linkId);
+      await connectionApi.revokeLink(link.linkId, reason);
       showToast("Đã hủy liên kết với phụ huynh.");
+      setLinkToRevoke(null);
       await refresh();
     } catch (cause) {
       showToast(cause instanceof Error ? cause.message : "Không thể hủy liên kết.", "error");
+      throw cause;
     } finally {
       setBusyId(null);
     }
@@ -196,8 +199,8 @@ export function StudentLinkInvitations({ variant = "full" }: StudentLinkInvitati
               <button
                 type="button"
                 disabled={busyId !== null}
-                onClick={() => void revoke(link.linkId)}
-                className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                onClick={() => setLinkToRevoke(link)}
+                className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 Hủy liên kết
               </button>
@@ -205,6 +208,14 @@ export function StudentLinkInvitations({ variant = "full" }: StudentLinkInvitati
           ))
         )}
       </div>
+
+      <RevokeLinkModal
+        link={linkToRevoke}
+        targetRole="parent"
+        isOpen={linkToRevoke !== null}
+        onClose={() => setLinkToRevoke(null)}
+        onConfirm={handleConfirmRevoke}
+      />
     </section>
   );
 }
