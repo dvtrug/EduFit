@@ -115,5 +115,12 @@ export const apiClient = {
       method: "PUT",
       body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
     }),
+  patch: <T>(url: string, body?: unknown, init?: RequestInit) =>
+    fetchApi<T>(url, {
+      ...init,
+      method: "PATCH",
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
+    }),
   delete: <T>(url: string, init?: RequestInit) => fetchApi<T>(url, { ...init, method: "DELETE" }),
 };
+
