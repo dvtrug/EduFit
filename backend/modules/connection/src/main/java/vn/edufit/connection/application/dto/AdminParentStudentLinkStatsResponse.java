@@ -1,4 +1,4 @@
-package vn.edufit.connection.web.response;
+package vn.edufit.connection.application.dto;
 
 /**
  * Thống kê các chỉ số liên kết Phụ huynh - Học sinh dành cho Quản trị viên.

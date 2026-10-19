@@ -59,7 +59,7 @@ class FlywayMigrationScriptTest {
           .toList();
 
       assertFalse(sqlFiles.isEmpty(), "Phải có ít nhất một file migration SQL trong db/migration");
-      assertEquals(14, sqlFiles.size(), "Giữ lịch sử và thêm audit metadata ở V1.14");
+      assertEquals(15, sqlFiles.size(), "Giữ lịch sử và thêm OAuth/social accounts ở V1.15");
       assertEquals(sqlFiles.size(), sqlFiles.stream()
           .map(path -> path.getFileName().toString().split("__", 2)[0])
           .distinct().count(), "Version Flyway phải duy nhất trên tất cả module");
@@ -78,6 +78,8 @@ class FlywayMigrationScriptTest {
           "Connection chỉ đổi version migration, giữ nguyên SQL");
 
       assertTrue(Files.exists(migrationRootDir.resolve("platform/V1.14__add_structured_audit_metadata.sql")));
+      assertTrue(Files.exists(migrationRootDir.resolve("iam/V1.15__add_oauth_and_social_accounts.sql")),
+          "Migration cho OAuth và user social account phải tồn tại");
       for (Path file : sqlFiles) {
         String fileName = file.getFileName().toString();
         assertTrue(

@@ -1,4 +1,4 @@
-package vn.edufit.connection.web.response;
+package vn.edufit.connection.application.dto;
 
 import java.time.Instant;
 import java.util.UUID;
