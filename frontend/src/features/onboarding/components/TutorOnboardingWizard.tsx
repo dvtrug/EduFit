@@ -85,9 +85,11 @@ export function TutorOnboardingWizard() {
   const [headline, setHeadline] = useState("");
   const [bio, setBio] = useState("");
   const [teachingMethod, setTeachingMethod] = useState("");
-  const [credentialType, setCredentialType] = useState<"DEGREE" | "CERTIFICATE" | "IDENTITY_CARD">("DEGREE");
+  const [credentialType, setCredentialType] = useState<
+    "DEGREE" | "CERTIFICATE" | "TEACHING_LICENCE" | "STUDENT_CARD" | "OTHER"
+  >("DEGREE");
   const [credentialInstitution, setCredentialInstitution] = useState("");
-  const [credentialYear, setCredentialYear] = useState<number>(new Date().getFullYear());
+  const [credentialYear, setCredentialYear] = useState<number | undefined>(new Date().getFullYear());
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   // AI Bio Tool state
@@ -328,7 +330,7 @@ export function TutorOnboardingWizard() {
             {
               type: credentialType,
               institution: credentialInstitution.trim(),
-              year: credentialYear,
+              year: credentialYear ? Number(credentialYear) : undefined,
               note: `Hồ sơ đăng ký gia sư chuyên môn ${selectedSubjectIds.length} môn`,
               fileIndexes: selectedFiles.map((_, index) => index),
             },
@@ -745,12 +747,22 @@ export function TutorOnboardingWizard() {
                   <select
                     id="credential-type"
                     value={credentialType}
-                    onChange={(event) => setCredentialType(event.target.value as typeof credentialType)}
+                    onChange={(event) => {
+                      const newType = event.target.value as typeof credentialType;
+                      setCredentialType(newType);
+                      if (newType === "OTHER") {
+                        setCredentialYear(undefined);
+                      } else if (!credentialYear) {
+                        setCredentialYear(new Date().getFullYear());
+                      }
+                    }}
                     className="mt-1.5 w-full px-3 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-hidden focus:border-amber-500"
                   >
                     <option value="DEGREE">Bằng cấp</option>
                     <option value="CERTIFICATE">Chứng chỉ</option>
-                    <option value="IDENTITY_CARD">Giấy tờ định danh</option>
+                    <option value="TEACHING_LICENCE">Chứng chỉ sư phạm</option>
+                    <option value="STUDENT_CARD">Thẻ sinh viên</option>
+                    <option value="OTHER">Giấy tờ khác / CCCD</option>
                   </select>
                 </div>
                 <div className="sm:col-span-2">
@@ -769,15 +781,18 @@ export function TutorOnboardingWizard() {
                 </div>
                 <div>
                   <label htmlFor="credential-year" className="text-xs font-bold text-neutral-700">
-                    Năm cấp
+                    Năm cấp {credentialType === "OTHER" ? "(Không bắt buộc)" : ""}
                   </label>
                   <input
                     id="credential-year"
                     type="number"
                     min={1950}
                     max={new Date().getFullYear() + 10}
-                    value={credentialYear}
-                    onChange={(event) => setCredentialYear(Number(event.target.value))}
+                    value={credentialYear ?? ""}
+                    onChange={(event) =>
+                      setCredentialYear(event.target.value ? Number(event.target.value) : undefined)
+                    }
+                    placeholder={credentialType === "OTHER" ? "Để trống nếu là CCCD" : "Ví dụ: 2024"}
                     className="mt-1.5 w-full px-3 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-hidden focus:border-amber-500"
                   />
                 </div>
@@ -984,6 +999,22 @@ export function TutorOnboardingWizard() {
                 </p>
                 <p className="text-xs text-neutral-700">
                   Kinh nghiệm: <strong>{experienceYears} năm</strong>
+                </p>
+                <p className="text-xs text-neutral-700">
+                  Minh chứng:{" "}
+                  <strong>
+                    {credentialType === "DEGREE"
+                      ? "Bằng cấp"
+                      : credentialType === "CERTIFICATE"
+                      ? "Chứng chỉ"
+                      : credentialType === "TEACHING_LICENCE"
+                      ? "Chứng chỉ sư phạm"
+                      : credentialType === "STUDENT_CARD"
+                      ? "Thẻ sinh viên"
+                      : "Giấy tờ khác / CCCD"}
+                  </strong>{" "}
+                  ({credentialInstitution || "Chưa nhập"}
+                  {credentialYear ? ` - Năm ${credentialYear}` : ""})
                 </p>
                 <p className="text-xs text-emerald-700 font-semibold flex items-center gap-1">
                   <ShieldCheck className="size-3.5" />
