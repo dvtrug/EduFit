@@ -14,6 +14,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import vn.edufit.shared.exception.BaseBusinessException;
 import vn.edufit.shared.exception.EntityNotFoundException;
@@ -248,6 +249,19 @@ public class GlobalExceptionHandler {
         "Định dạng nội dung gửi lên (Content-Type) không được hỗ trợ: " + ex.getContentType()
     );
     return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(error);
+  }
+
+  /**
+   * Bắt lỗi dung lượng tệp tin tải lên vượt quá giới hạn cho phép (MaxUploadSizeExceededException) -> HTTP 413 Payload Too Large.
+   */
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<ApiError> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException ex) {
+    log.warn("Max upload size exceeded: {}", ex.getMessage());
+    ApiError error = ApiError.of(
+        "PAYLOAD_TOO_LARGE",
+        "Kích thước tệp tải lên vượt quá giới hạn cho phép (tối đa 10MB cho mỗi tệp và 20MB cho toàn bộ yêu cầu)."
+    );
+    return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(error);
   }
 
   /**

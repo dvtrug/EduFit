@@ -158,6 +158,8 @@ export function TutorDashboardView({ user }: TutorDashboardViewProps) {
     profile && profile.subjects.length > 0 && profile.availabilitySlots.length > 0
   );
 
+  const isProfileVerified = profile?.status === "VERIFIED" || Boolean(profile?.verifiedAt);
+
   const onboardingSteps = [
     {
       title: "Thiết lập môn dạy & Lịch rảnh",
@@ -170,13 +172,16 @@ export function TutorDashboardView({ user }: TutorDashboardViewProps) {
       title: "Xác minh bằng cấp năng lực (KYC)",
       description: "Tải chứng chỉ sư phạm, bằng đại học để nhận huy hiệu Gia Sư Uy Tín.",
       href: "/tutor/verification",
-      actionText: "Nộp bằng cấp",
-      completed: verificationStatus === "VERIFIED" || verificationStatus === "APPROVED",
+      actionText: isProfileVerified ? "Bổ sung bằng cấp" : "Nộp bằng cấp",
+      completed:
+        verificationStatus === "VERIFIED" ||
+        verificationStatus === "APPROVED" ||
+        isProfileVerified,
     },
     {
       title: "Nhận yêu cầu & Bắt đầu dạy",
       description: "Chấp nhận lời mời học thử từ học sinh và tạo lớp học 1-1 trực tiếp.",
-      href: "/tutor/dashboard",
+      href: "/tutor/requests",
       actionText: "Xem hàng đợi",
       completed: activeClasses.length > 0,
     },
@@ -227,6 +232,7 @@ export function TutorDashboardView({ user }: TutorDashboardViewProps) {
       <TutorVerificationBanner
         status={verificationStatus}
         onOpenUploadModal={() => setIsUploadModalOpen(true)}
+        isProfileVerified={isProfileVerified}
       />
 
       {/* 4. Thẻ KPI */}

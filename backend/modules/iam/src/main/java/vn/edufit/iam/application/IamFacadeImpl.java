@@ -61,4 +61,17 @@ public class IamFacadeImpl implements IamFacade {
     }
     return accountRepository.existsById(id);
   }
+
+  @Override
+  public long countTotalUsers() {
+    return accountRepository.count();
+  }
+
+  @Override
+  public long countUsersByRole(vn.edufit.iam.api.AccountRole role) {
+    if (role == null) {
+      return 0L;
+    }
+    return accountRepository.countByRole(role);
+  }
 }

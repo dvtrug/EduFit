@@ -26,7 +26,12 @@ export function ParentQuickActions() {
       >
         <div className="flex items-center gap-2.5">
           <CreditCard className="size-4 text-amber-600" />
-          <span>Xem hóa đơn & thanh toán</span>
+          <div className="flex items-center gap-2">
+            <span>Thông tin học phí & gói học</span>
+            <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-100 text-amber-800">
+              Sắp ra mắt
+            </span>
+          </div>
         </div>
         <ChevronRight className="size-4 text-neutral-400" />
       </Link>

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
@@ -130,5 +131,13 @@ class SessionFacadeImplTest {
     assertThat(stats2.completedCount()).isEqualTo(0);
     assertThat(stats2.absentCount()).isEqualTo(1);
     assertThat(stats2.upcomingCount()).isEqualTo(0);
+  }
+
+  @Test
+  @DisplayName("countCompletedSessions: tra ve tong so luong buoi hoc COMPLETED")
+  void countCompletedSessions_ReturnsRepositoryCount() {
+    when(sessionRepository.countCompletedSessions()).thenReturn(25L);
+    assertThat(sessionFacade.countCompletedSessions()).isEqualTo(25L);
+    verify(sessionRepository).countCompletedSessions();
   }
 }

@@ -153,4 +153,36 @@ describe("TutorDashboardView Component", () => {
     // Không có badge 'Chờ xác nhận' sai lệch cho buổi học COMPLETED
     expect(screen.queryByText("Chờ xác nhận")).not.toBeInTheDocument();
   });
+
+  it("giữ nguyên trạng thái hoàn tất bước KYC trong onboarding guide và hiển thị nút 'Bổ sung bằng cấp' khi gia sư đã VERIFIED nhưng có yêu cầu PENDING bổ sung", async () => {
+    vi.spyOn(verificationService, "getMyRequest").mockResolvedValue({
+      status: "PENDING",
+    } as any);
+
+    vi.spyOn(profileService, "getMyTutorProfile").mockResolvedValue({
+      status: "VERIFIED",
+      verifiedAt: "2026-01-01T00:00:00Z",
+      subjects: [{ subjectId: 1, subjectName: "Toán", educationLevelId: 4, educationLevelName: "Lớp 9" }],
+      availabilitySlots: [{ slotId: "s1", dayOfWeek: 1, startTime: "08:00:00", endTime: "10:00:00" }],
+      pricePerSession: 250000,
+      ratingAvg: 4.9,
+      reviewCount: 15,
+    } as any);
+
+    vi.spyOn(connectionApi, "getTutorClasses").mockResolvedValue(mockClasses);
+    vi.spyOn(connectionApi, "getPendingRequests").mockResolvedValue([]);
+    vi.spyOn(schedulingApi, "getCalendar").mockResolvedValue({
+      success: true,
+      data: [],
+    });
+
+    render(<TutorDashboardView user={mockUser} />);
+
+    expect(await screen.findByText("Chào Thầy/Cô Thầy Hưng 👋")).toBeInTheDocument();
+
+    // Bước KYC vẫn phải hiển thị nút "Bổ sung bằng cấp" thay vì "Nộp bằng cấp"
+    expect(screen.getByRole("link", { name: /Bổ sung bằng cấp/i })).toBeInTheDocument();
+    // Banner trạng thái hiển thị thông điệp duyệt bằng bổ sung
+    expect(screen.getByText("Đang duyệt bằng bổ sung")).toBeInTheDocument();
+  });
 });

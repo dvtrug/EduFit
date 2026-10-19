@@ -20,4 +20,9 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
    * Kiểm tra sự tồn tại của email trong hệ thống (BR-01).
    */
   boolean existsByEmail(String email);
+
+  /**
+   * Đếm số lượng tài khoản theo vai trò (Role).
+   */
+  long countByRole(vn.edufit.iam.api.AccountRole role);
 }

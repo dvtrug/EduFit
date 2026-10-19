@@ -42,7 +42,7 @@ public record VerificationRequestDetailResponse(
       List<FileResponse> files
   ) {
 
-    static CredentialResponse from(Credential credential) {
+    public static CredentialResponse from(Credential credential) {
       return new CredentialResponse(
           credential.getCredentialId(),
           credential.getType().name(),
@@ -65,7 +65,7 @@ public record VerificationRequestDetailResponse(
       Instant uploadedAt
   ) {
 
-    static FileResponse from(CredentialFile file) {
+    public static FileResponse from(CredentialFile file) {
       return new FileResponse(
           file.getFileId(),
           file.getFileName(),

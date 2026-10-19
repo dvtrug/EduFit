@@ -149,7 +149,15 @@ public class TutorVerificationService {
       }
 
       VerificationRequest saved = verificationRequestRepository.save(verificationRequest);
-      profileFacade.markTutorPendingVerification(tutorId);
+
+      boolean isAlreadyVerified = profileFacade.findTutorById(tutorId)
+          .map(t -> "VERIFIED".equalsIgnoreCase(t.status()))
+          .orElse(false);
+
+      if (!isAlreadyVerified) {
+        profileFacade.markTutorPendingVerification(tutorId);
+      }
+
       return VerificationRequestDetailResponse.from(saved);
     } catch (RuntimeException ex) {
       storedKeys.forEach(credentialStorageService::delete);
@@ -161,14 +169,48 @@ public class TutorVerificationService {
   public VerificationRequestDetailResponse getMyLatestRequest(CurrentUser currentUser) {
     ensureTutor(currentUser);
     UUID tutorId = profileFacade.getTutorIdByUserId(currentUser.getUserId());
-    VerificationRequest request = verificationRequestRepository
-        .findWithCredentialsByRequestId(
-            verificationRequestRepository.findFirstByTutorIdOrderBySubmittedAtDesc(tutorId)
-                .orElseThrow(() -> new EntityNotFoundException("Gia sư chưa có hồ sơ xác minh"))
-                .getRequestId()
-        )
+    VerificationRequest latestRequest = verificationRequestRepository
+        .findFirstByTutorIdOrderBySubmittedAtDesc(tutorId)
         .orElseThrow(() -> new EntityNotFoundException("Gia sư chưa có hồ sơ xác minh"));
-    return VerificationRequestDetailResponse.from(request);
+
+    VerificationRequest fullRequest = verificationRequestRepository
+        .findWithCredentialsByRequestId(latestRequest.getRequestId())
+        .orElse(latestRequest);
+
+    List<VerificationRequest> allRequests = verificationRequestRepository
+        .findByTutorIdOrderBySubmittedAtAsc(tutorId);
+
+    List<VerificationRequestDetailResponse.CredentialResponse> allCredentials = new ArrayList<>();
+    if (allRequests == null || allRequests.isEmpty()) {
+      allCredentials.addAll(
+          fullRequest.getCredentials().stream()
+              .map(VerificationRequestDetailResponse.CredentialResponse::from)
+              .toList()
+      );
+    } else {
+      java.util.Set<UUID> seenCredIds = new java.util.HashSet<>();
+      for (VerificationRequest req : allRequests) {
+        boolean isCurrent = req == fullRequest || (req.getRequestId() != null && req.getRequestId().equals(fullRequest.getRequestId()));
+        if (isCurrent || req.getStatus() == VerificationRequest.Status.APPROVED) {
+          for (Credential cred : req.getCredentials()) {
+            if (cred.getCredentialId() == null || seenCredIds.add(cred.getCredentialId())) {
+              allCredentials.add(VerificationRequestDetailResponse.CredentialResponse.from(cred));
+            }
+          }
+        }
+      }
+    }
+
+    return new VerificationRequestDetailResponse(
+        fullRequest.getRequestId(),
+        fullRequest.getTutorId(),
+        fullRequest.getStatus().name(),
+        fullRequest.getRejectionReason(),
+        fullRequest.getSubmittedAt(),
+        fullRequest.getReviewedBy(),
+        fullRequest.getReviewedAt(),
+        allCredentials
+    );
   }
 
   private MultipartFile getFile(List<MultipartFile> files, Integer fileIndex) {

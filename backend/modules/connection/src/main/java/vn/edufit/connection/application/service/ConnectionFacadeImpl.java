@@ -100,6 +100,11 @@ public class ConnectionFacadeImpl implements ConnectionFacade {
         .toList();
   }
 
+  @Override
+  public long countActiveClasses() {
+    return classes.countByStatus("ACTIVE");
+  }
+
   private ClassDetailView toClassDetailView(vn.edufit.connection.infra.persistence.entity.TutoringClass c) {
     return new ClassDetailView(
         c.getId(),

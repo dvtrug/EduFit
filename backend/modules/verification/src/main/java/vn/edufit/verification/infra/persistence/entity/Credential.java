@@ -32,7 +32,19 @@ public class Credential {
     CERTIFICATE,
     TEACHING_LICENCE,
     STUDENT_CARD,
-    OTHER
+    OTHER;
+
+    @com.fasterxml.jackson.annotation.JsonCreator
+    public static Type fromString(String value) {
+      if (value == null || value.isBlank()) {
+        return null;
+      }
+      String normalized = value.trim().toUpperCase();
+      if ("IDENTITY_CARD".equals(normalized)) {
+        return OTHER;
+      }
+      return Type.valueOf(normalized);
+    }
   }
 
   @Id

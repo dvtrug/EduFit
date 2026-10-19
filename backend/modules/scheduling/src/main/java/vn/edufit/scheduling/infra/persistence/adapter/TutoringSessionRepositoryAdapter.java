@@ -140,5 +140,10 @@ public class TutoringSessionRepositoryAdapter implements TutoringSessionDomainRe
         .map(sessionMapper::toDomain)
         .toList();
   }
+
+  @Override
+  public long countCompletedSessions() {
+    return springDataRepository.countByStatus("COMPLETED");
+  }
 }
 
