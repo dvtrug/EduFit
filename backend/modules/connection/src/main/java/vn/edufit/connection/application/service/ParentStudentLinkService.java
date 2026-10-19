@@ -51,7 +51,7 @@ public class ParentStudentLinkService {
 
   @Transactional
   public void revokeLink(CurrentUser actor, UUID id, String reason) {
-    requireRole(actor, "STUDENT", "PARENT", "ADMIN");
+    requireRole(actor, "STUDENT", "ADMIN");
     ParentStudentLink initial = links.findById(id).orElseThrow(() -> EntityNotFoundException.of("Link", id));
     lock.lockStudent(initial.getStudentId());
     ParentStudentLink link = links.lockById(id).orElseThrow(() -> EntityNotFoundException.of("Link", id));
@@ -64,9 +64,7 @@ public class ParentStudentLinkService {
     var student = profile.findStudentById(link.getStudentId())
         .filter(value -> value.studentId().equals(link.getStudentId()) && value.userId() != null)
         .orElseThrow(() -> new InvalidOperationException("Không thể xác định tài khoản học sinh"));
-    if (actor.hasRole("PARENT") && !link.getParentUserId().equals(actor.getUserId()))
-      throw new ForbiddenOperationException("Không phải phụ huynh sở hữu liên kết");
-    if (actor.hasRole("STUDENT") && !student.userId().equals(actor.getUserId()))
+    if (!actor.hasRole("ADMIN") && !student.userId().equals(actor.getUserId()))
       throw new ForbiddenOperationException("Không phải học sinh sở hữu liên kết");
     Instant now = clock.instant();
     link.revoke(actor.getUserId(), reason, now);
