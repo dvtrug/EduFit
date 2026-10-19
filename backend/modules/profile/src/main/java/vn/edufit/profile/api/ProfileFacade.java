@@ -60,6 +60,8 @@ public interface ProfileFacade {
   void markTutorVerified(UUID tutorId, Instant verifiedAt);
 
   void markTutorRejected(UUID tutorId);
+ 
+  void markTutorUnverified(UUID tutorId);
 
   Optional<StudentSummaryDto> findStudentByUserId(UUID userId);
 

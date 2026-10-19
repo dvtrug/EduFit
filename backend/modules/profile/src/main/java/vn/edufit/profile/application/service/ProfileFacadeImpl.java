@@ -265,6 +265,15 @@ public class ProfileFacadeImpl implements ProfileFacade {
   }
 
   @Override
+  @Transactional
+  public void markTutorUnverified(UUID tutorId) {
+    TutorProfile tutor = tutorProfileRepository.findById(tutorId)
+        .orElseThrow(() -> EntityNotFoundException.of("TutorProfile", tutorId));
+    tutor.markUnverified();
+    tutorProfileRepository.save(tutor);
+  }
+
+  @Override
   @Transactional(readOnly = true)
   public Optional<StudentSummaryDto> findStudentByUserId(UUID userId) {
     return studentProfileRepository.findByUserId(userId).map(this::toStudentDto);

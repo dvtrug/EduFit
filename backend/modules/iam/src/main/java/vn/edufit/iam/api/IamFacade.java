@@ -40,4 +40,19 @@ public interface IamFacade {
    * @return true nếu tài khoản tồn tại
    */
   boolean existsById(UUID id);
+
+  /**
+   * Đếm tổng số lượng tài khoản trong hệ thống.
+   *
+   * @return tổng số tài khoản
+   */
+  long countTotalUsers();
+
+  /**
+   * Đếm số lượng tài khoản theo vai trò cụ thể.
+   *
+   * @param role vai trò tài khoản
+   * @return số lượng tài khoản có vai trò tương ứng
+   */
+  long countUsersByRole(AccountRole role);
 }

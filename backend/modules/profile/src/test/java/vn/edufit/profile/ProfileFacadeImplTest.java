@@ -3,6 +3,7 @@ package vn.edufit.profile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -345,5 +346,23 @@ class ProfileFacadeImplTest {
   void shouldReturnEmptyMapWhenGoalIdsEmptyOrNull() {
     assertTrue(profileFacade.findGoalsForConnection(List.of()).isEmpty());
     assertTrue(profileFacade.findGoalsForConnection(null).isEmpty());
+  }
+
+  @Test
+  @DisplayName("Giáng cấp gia sư về UNVERIFIED thành công")
+  void shouldMarkTutorUnverified() {
+    UUID tutorId = UUID.randomUUID();
+    TutorProfile profile = new TutorProfile(UUID.randomUUID(), "Gia sư B", TeachingMode.ONLINE, 200_000L);
+    profile.markVerified(Instant.now());
+    assertEquals(TutorStatus.VERIFIED, profile.getStatus());
+
+    when(tutorProfileRepository.findById(tutorId)).thenReturn(Optional.of(profile));
+    when(tutorProfileRepository.save(any(TutorProfile.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    profileFacade.markTutorUnverified(tutorId);
+
+    assertEquals(TutorStatus.UNVERIFIED, profile.getStatus());
+    assertNull(profile.getVerifiedAt());
+    verify(tutorProfileRepository).save(profile);
   }
 }

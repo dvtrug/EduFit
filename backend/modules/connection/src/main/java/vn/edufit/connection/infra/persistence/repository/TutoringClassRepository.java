@@ -17,4 +17,5 @@ public interface TutoringClassRepository extends JpaRepository<TutoringClass, UU
   Optional<TutoringClass> findByIdAndStatus(UUID classId, String status);
   List<TutoringClass> findByStudentId(UUID studentId);
   List<TutoringClass> findByTutorId(UUID tutorId);
+  long countByStatus(String status);
 }

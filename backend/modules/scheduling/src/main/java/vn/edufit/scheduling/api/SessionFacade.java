@@ -79,4 +79,9 @@ public interface SessionFacade {
    * Lấy thống kê số buổi học theo danh sách các mã lớp học (Batch query tránh N+1).
    */
   java.util.Map<UUID, vn.edufit.scheduling.api.dto.ClassSessionStatsView> getSessionStatsByClassIds(List<UUID> classIds, Instant from, Instant to);
+
+  /**
+   * Đếm tổng số buổi học đã hoàn thành (COMPLETED) trên toàn hệ thống.
+   */
+  long countCompletedSessions();
 }

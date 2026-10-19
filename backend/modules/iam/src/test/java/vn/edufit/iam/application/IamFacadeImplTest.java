@@ -107,4 +107,19 @@ class IamFacadeImplTest {
     when(accountRepository.existsById(id)).thenReturn(true);
     assertTrue(facade.existsById(id));
   }
+
+  @Test
+  void countTotalUsersReturnsRepositoryCount() {
+    when(accountRepository.count()).thenReturn(42L);
+    assertEquals(42L, facade.countTotalUsers());
+    verify(accountRepository).count();
+  }
+
+  @Test
+  void countUsersByRoleReturnsRoleCount() {
+    when(accountRepository.countByRole(AccountRole.TUTOR)).thenReturn(10L);
+    assertEquals(10L, facade.countUsersByRole(AccountRole.TUTOR));
+    assertEquals(0L, facade.countUsersByRole(null));
+    verify(accountRepository).countByRole(AccountRole.TUTOR);
+  }
 }

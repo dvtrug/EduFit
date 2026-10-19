@@ -203,4 +203,6 @@ public interface SpringDataTutoringSessionRepository extends JpaRepository<Tutor
   List<Object[]> countSessionsByClassIdsAndStatuses(
       @Param("classIds") java.util.Collection<UUID> classIds
   );
+
+  long countByStatus(String status);
 }

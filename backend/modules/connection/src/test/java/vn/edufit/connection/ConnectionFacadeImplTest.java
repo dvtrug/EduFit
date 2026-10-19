@@ -163,4 +163,11 @@ class ConnectionFacadeImplTest {
     assertTrue(facade.findConfirmedParentUserIds(null).isEmpty());
     assertTrue(facade.findConfirmedStudentIds(null).isEmpty());
   }
+
+  @Test
+  void countActiveClassesDelegatesToRepository() {
+    when(classes.countByStatus("ACTIVE")).thenReturn(15L);
+    assertEquals(15L, facade.countActiveClasses());
+    verify(classes).countByStatus("ACTIVE");
+  }
 }
