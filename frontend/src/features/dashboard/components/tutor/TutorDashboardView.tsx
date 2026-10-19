@@ -176,7 +176,7 @@ export function TutorDashboardView({ user }: TutorDashboardViewProps) {
     {
       title: "Nhận yêu cầu & Bắt đầu dạy",
       description: "Chấp nhận lời mời học thử từ học sinh và tạo lớp học 1-1 trực tiếp.",
-      href: "/tutor/dashboard",
+      href: "/tutor/requests",
       actionText: "Xem hàng đợi",
       completed: activeClasses.length > 0,
     },

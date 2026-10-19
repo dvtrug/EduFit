@@ -26,7 +26,12 @@ export function StudentQuickActions() {
       >
         <div className="flex items-center gap-2.5">
           <CreditCard className="size-4 text-neutral-500 dark:text-stone-400" />
-          <span>Nạp học phí / Thanh toán</span>
+          <div className="flex items-center gap-2">
+            <span>Thông tin học phí</span>
+            <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+              Sắp ra mắt
+            </span>
+          </div>
         </div>
         <ChevronRight className="size-4 text-neutral-400 dark:text-stone-400" />
       </Link>

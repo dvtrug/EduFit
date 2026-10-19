@@ -99,7 +99,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "TÀI CHÍNH",
         items: [
-          { label: "Học phí & Thanh toán", href: "/student/payments", icon: CreditCard },
+          { label: "Học phí & Thanh toán", href: "/student/payments", icon: CreditCard, badge: "Sắp ra mắt" },
         ],
       },
       {
@@ -125,13 +125,14 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
         items: [
           { label: "Lịch dạy", href: "/tutor/schedule", icon: Calendar },
           { label: "Lớp học 1-1", href: "/tutor/classes", icon: BookOpen },
+          { label: "Lịch sử giảng dạy", href: "/tutor/history", icon: GraduationCap },
           { label: "Yêu cầu học viên", href: "/tutor/requests", icon: UserCheck },
         ],
       },
       {
         title: "THU NHẬP",
         items: [
-          { label: "Báo cáo thu nhập", href: "/tutor/earnings", icon: DollarSign },
+          { label: "Báo cáo thu nhập", href: "/tutor/earnings", icon: DollarSign, badge: "Sắp ra mắt" },
         ],
       },
       {
@@ -163,7 +164,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "TÀI CHÍNH",
         items: [
-          { label: "Gói học & Thanh toán", href: "/parent/billing", icon: CreditCard },
+          { label: "Gói học & Thanh toán", href: "/parent/billing", icon: CreditCard, badge: "Sắp ra mắt" },
         ],
       },
       {
@@ -252,7 +253,7 @@ function SidebarNav({
                     ? "bg-amber-500/10 dark:bg-amber-500/20 text-amber-900 dark:text-amber-400 font-semibold shadow-xs"
                     : "text-neutral-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-neutral-900 dark:hover:text-stone-100"
                 }`}
-                title={collapsed ? item.label : undefined}
+                title={collapsed ? (item.badge ? `${item.label} (${item.badge})` : item.label) : undefined}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Icon
@@ -273,7 +274,7 @@ function SidebarNav({
                 </div>
 
                 {!collapsed && item.badge && (
-                  <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-500 text-white leading-none shadow-xs">
+                  <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-500 text-white leading-none shadow-xs shrink-0">
                     {item.badge}
                   </span>
                 )}
@@ -358,7 +359,7 @@ export function Sidebar({
                             ? "bg-amber-500/10 dark:bg-amber-500/20 text-amber-900 dark:text-amber-400 font-semibold shadow-xs"
                             : "text-neutral-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-neutral-900 dark:hover:text-stone-100"
                         }`}
-                        title={collapsed ? item.label : undefined}
+                        title={collapsed ? (item.badge ? `${item.label} (${item.badge})` : item.label) : undefined}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
                           <Icon
@@ -378,7 +379,7 @@ export function Sidebar({
                           </span>
                         </div>
                         {!collapsed && item.badge && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-500 text-white leading-none shadow-xs">
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-500 text-white leading-none shadow-xs shrink-0">
                             {item.badge}
                           </span>
                         )}
