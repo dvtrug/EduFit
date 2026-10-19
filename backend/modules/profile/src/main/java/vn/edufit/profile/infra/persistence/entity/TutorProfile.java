@@ -112,6 +112,10 @@ public class TutorProfile {
     this.updatedAt = Instant.now();
   }
 
+  public void markUnverified() {
+    markRejected();
+  }
+
   public UUID getTutorId() {
     return tutorId;
   }

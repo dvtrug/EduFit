@@ -1,0 +1,10 @@
+export * from "./types";
+export * from "./schemas/adminSchemas";
+export { adminApi } from "./api/adminApi";
+export { AdminDashboardView } from "./components/AdminDashboardView";
+export { AdminKpiGrid } from "./components/AdminKpiGrid";
+export { AdminCatalogView } from "./components/AdminCatalogView";
+export { CreateSubjectModal } from "./components/CreateSubjectModal";
+export { AdminAuditLogsView } from "./components/AdminAuditLogsView";
+export { AdminLinksView } from "./components/AdminLinksView";
+export { AdminSidebar, ADMIN_NAV_SECTIONS } from "./components/AdminSidebar";

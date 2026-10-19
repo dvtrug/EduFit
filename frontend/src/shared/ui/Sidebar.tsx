@@ -24,6 +24,7 @@ import {
   FileCheck2,
   HeartHandshake,
   BarChart3,
+  ScrollText,
   LucideIcon,
 } from "lucide-react";
 
@@ -182,21 +183,20 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
         title: "HỆ THỐNG",
         items: [
           { label: "Tổng quan", href: "/admin/dashboard", icon: LayoutDashboard },
-          { label: "Duyệt bằng cấp KYC", href: "/admin/verification-queue", icon: ShieldCheck, badge: "5" },
+          { label: "Duyệt bằng cấp KYC", href: "/admin/verification-queue", icon: ShieldCheck },
+          { label: "Nhật ký kiểm toán", href: "/admin/audit-logs", icon: ScrollText },
         ],
       },
       {
-        title: "QUẢN LÝ NGƯỜI DÙNG",
+        title: "QUẢN LÝ DỮ LIỆU",
         items: [
-          { label: "Học sinh & Phụ huynh", href: "/admin/learners", icon: Users },
-          { label: "Gia sư", href: "/admin/tutors-management", icon: GraduationCap },
-          { label: "Khiếu nại & Tranh chấp", href: "/admin/disputes", icon: AlertTriangle, badge: "2" },
+          { label: "Danh mục môn học", href: "/admin/catalogs", icon: BookOpen },
+          { label: "Liên kết hệ thống", href: "/admin/links", icon: HeartHandshake },
         ],
       },
       {
         title: "CẤU HÌNH",
         items: [
-          { label: "Danh mục môn học", href: "/admin/catalogs", icon: BookOpen },
           { label: "Cài đặt hệ thống", href: "/admin/settings", icon: Settings },
         ],
       },

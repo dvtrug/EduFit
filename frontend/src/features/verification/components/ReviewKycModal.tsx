@@ -22,10 +22,19 @@ import {
  * Endpoint: POST /api/v1/admin/verifications/{id}/review
  * Controller: vn.edufit.verification.web.AdminVerificationController#review
  * Security: @PreAuthorize("hasRole('ADMIN')")
- * Request Body: ReviewVerificationRequest { decision: 'APPROVED'|'REJECTED', rejectionReason }
+ * Request Body: ReviewVerificationRequest { action: 'APPROVE'|'REJECT', reason }
  * Business Rule: BR-06 - Từ chối bắt buộc phải có lý do giải thích
  * =========================================================================
  */
+
+const CREDENTIAL_TYPE_LABELS: Record<string, string> = {
+  DEGREE: "Bằng cấp",
+  CERTIFICATE: "Chứng chỉ",
+  TEACHING_LICENCE: "Chứng chỉ sư phạm",
+  STUDENT_CARD: "Thẻ sinh viên",
+  OTHER: "Giấy tờ khác / CCCD",
+  IDENTITY_CARD: "Giấy tờ khác / CCCD",
+};
 
 interface ReviewKycModalProps {
   item: PendingQueueItem | null;
@@ -163,7 +172,7 @@ export function ReviewKycModal({ item, isOpen, onClose, onReviewed }: ReviewKycM
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-neutral-900">{cred.institution}</span>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-800">
-                      {cred.type} {cred.year ? `(${cred.year})` : ""}
+                      {CREDENTIAL_TYPE_LABELS[cred.type] || cred.type} {cred.year ? `(${cred.year})` : ""}
                     </span>
                   </div>
                   {cred.note && <p className="text-[11px] text-neutral-500 italic">"{cred.note}"</p>}

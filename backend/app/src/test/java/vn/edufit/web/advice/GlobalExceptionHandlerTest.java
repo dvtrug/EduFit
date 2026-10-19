@@ -154,6 +154,16 @@ class GlobalExceptionHandlerTest {
           .andExpect(jsonPath("$.message", notNullValue()))
           .andExpect(jsonPath("$.timestamp", notNullValue()));
     }
+
+    @Test
+    @DisplayName("MaxUploadSizeExceededException phải map thành HTTP 413 Payload Too Large")
+    void shouldReturn413WhenMaxUploadSizeExceeded() throws Exception {
+      mockMvc.perform(get("/test/max-upload-size"))
+          .andExpect(status().isPayloadTooLarge())
+          .andExpect(jsonPath("$.code", is("PAYLOAD_TOO_LARGE")))
+          .andExpect(jsonPath("$.message", notNullValue()))
+          .andExpect(jsonPath("$.timestamp", notNullValue()));
+    }
   }
 
   // =========================================================================
@@ -196,6 +206,11 @@ class GlobalExceptionHandlerTest {
     @PostMapping("/test/validate")
     public void validateInput(@Valid @RequestBody SampleRequest request) {
       // Endpoint kiểm tra validation
+    }
+
+    @GetMapping("/test/max-upload-size")
+    public void throwMaxUploadSize() {
+      throw new org.springframework.web.multipart.MaxUploadSizeExceededException(10485760L);
     }
 
     @GetMapping("/test/crash")

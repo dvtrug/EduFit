@@ -40,4 +40,6 @@ public interface TutoringSessionDomainRepository {
   List<TutoringSession> findByClassId(UUID classId, Instant from, Instant to);
 
   List<TutoringSession> findByClassIds(java.util.Collection<UUID> classIds, Instant from, Instant to);
+
+  long countCompletedSessions();
 }
