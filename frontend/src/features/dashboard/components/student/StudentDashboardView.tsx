@@ -39,46 +39,9 @@ export function StudentDashboardView({ user }: StudentDashboardViewProps) {
         const studentProf = await profileService.getMyStudentProfile();
         if (!ignore) setProfile(studentProf);
 
-        const savedGoalStr = localStorage.getItem("edufit_student_onboarding_goal");
-        if (savedGoalStr) {
-          try {
-            const savedGoal = JSON.parse(savedGoalStr);
-            if (!ignore) {
-              setActiveGoal({
-                id: "goal-1",
-                grade: savedGoal.grade || studentProf.educationLevelName || "Lớp 9",
-                title: savedGoal.title || "Ôn luyện mục tiêu",
-                roadmapDesc: `Môn: ${savedGoal.subjects?.join(", ") || "Toán"} · Khu vực: ${savedGoal.area || studentProf.area || "Hà Nội"}`,
-                progressPercent: 33,
-                completedMilestones: 1,
-                totalMilestones: 3,
-                milestones: [
-                  { label: "1. Thiết lập mục tiêu & hồ sơ", completed: true },
-                  { label: "2. Chọn & kết nối gia sư", completed: false },
-                  { label: "3. Đặt lịch học thử 1-1", completed: false },
-                ],
-                nextSessionText: "Sẵn sàng kết nối gia sư",
-              });
-            }
-          } catch {
-            // ignore JSON parse error
-          }
-        } else if (studentProf.profileComplete && !ignore) {
-          setActiveGoal({
-            id: "goal-1",
-            grade: studentProf.educationLevelName || "Lớp 9",
-            title: "Mục tiêu: Đạt điểm 8+ và luyện thi vào 10",
-            roadmapDesc: `Lộ trình học tập cá nhân hóa tại ${studentProf.area || "Hà Nội"}`,
-            progressPercent: 33,
-            completedMilestones: 1,
-            totalMilestones: 3,
-            milestones: [
-              { label: "1. Thiết lập mục tiêu & hồ sơ", completed: true },
-              { label: "2. Chọn & kết nối gia sư", completed: false },
-              { label: "3. Đặt lịch học thử 1-1", completed: false },
-            ],
-            nextSessionText: "Chưa xếp lịch học",
-          });
+        // Mục tiêu học tập: Để trống khi học sinh chưa thiết lập mục tiêu thật
+        if (!ignore) {
+          setActiveGoal(null);
         }
 
         // Fetch real classes and calendar

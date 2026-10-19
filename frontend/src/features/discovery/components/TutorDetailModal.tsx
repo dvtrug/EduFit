@@ -320,7 +320,7 @@ export function TutorDetailModal({
             setEditingReview(null);
           }}
           tutorId={tutor.tutorId}
-          studentId={user?.id || ""}
+          reviewerRole={user?.role}
           tutorName={tutor.displayName}
           existingReview={editingReview}
           onSuccess={() => {

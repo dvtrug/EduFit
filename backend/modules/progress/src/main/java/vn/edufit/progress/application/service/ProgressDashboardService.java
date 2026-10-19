@@ -85,6 +85,12 @@ public class ProgressDashboardService {
       UUID specifiedClassId,
       String range
   ) {
+    if (actor.hasRole("STUDENT")) {
+      UUID actorStudentId = profileFacade.getStudentIdByUserId(actor.getUserId());
+      if (actor.getUserId().equals(studentId) && actorStudentId != null) {
+        studentId = actorStudentId;
+      }
+    }
     requireStudentAccess(actor, studentId);
 
     StudentSummaryDto student = profileFacade.findStudentById(studentId).orElse(null);
@@ -375,8 +381,9 @@ public class ProgressDashboardService {
     if (actor.hasRole("ADMIN")) return;
 
     if (actor.hasRole("STUDENT")) {
+      if (actor.getUserId().equals(studentId)) return;
       UUID actorStudentId = profileFacade.getStudentIdByUserId(actor.getUserId());
-      if (actorStudentId != null && actorStudentId.equals(studentId)) return;
+      if (actorStudentId != null && (actorStudentId.equals(studentId) || actor.getUserId().equals(studentId))) return;
     }
 
     if (actor.hasRole("PARENT")) {

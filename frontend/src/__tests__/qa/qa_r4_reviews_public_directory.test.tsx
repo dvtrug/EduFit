@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { ReviewModal, QUICK_REVIEW_TAGS } from "@/features/review/components/ReviewModal";
+import { ReviewModal } from "@/features/review/components/ReviewModal";
 import { reviewApi } from "@/features/review/api/reviewApi";
 import TutorsPage from "@/app/tutors/page";
 import TutorDetailPage from "@/app/tutors/[id]/page";
@@ -226,7 +226,6 @@ describe("QA R4: Đánh giá Gia sư & Thư mục Công khai (Reviews & Public D
           studentId: "stu-qa-001",
           rating: 5,
           comment: "[Nhiệt tình, Đúng giờ] Thầy dạy rất dễ hiểu và kiên nhẫn giảng bài.",
-          tags: ["Nhiệt tình", "Đúng giờ"],
         });
         expect(handleSuccess).toHaveBeenCalled();
         expect(handleClose).toHaveBeenCalled();

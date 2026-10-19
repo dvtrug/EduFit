@@ -49,15 +49,16 @@ export function TopHeader({
   const { theme, setTheme } = useTheme();
 
   React.useEffect(() => {
-    notificationApi
-      .getUnreadCount()
-      .then((res) => {
-        if (res.success && res.data) {
-          setUnreadNotifications(res.data.unreadCount || 0);
-        }
-      })
-      .catch(() => {});
-  }, []);
+    let active = true;
+    const refreshCount = () => {
+      void notificationApi.getUnreadCount().then((res) => {
+        if (active && res.success && res.data) setUnreadNotifications(res.data.unreadCount);
+      }).catch(() => {});
+    };
+    refreshCount();
+    const interval = window.setInterval(refreshCount, 60_000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, [user.email]);
 
   const roleLabel = ROLE_LABEL_MAP[role] || "Thành viên";
   const roleBase = role.toLowerCase();
@@ -110,6 +111,7 @@ export function TopHeader({
 
           {notificationOpen && (
             <NotificationDropdown
+              role={role}
               onClose={() => setNotificationOpen(false)}
               onUnreadCountChange={(cnt) => setUnreadNotifications(cnt)}
             />

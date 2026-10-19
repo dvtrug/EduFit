@@ -37,11 +37,12 @@ export function StudentQuickActions() {
       </Link>
       <button
         type="button"
-        className="w-full p-2.5 rounded-xl hover:bg-stone-50 dark:hover:bg-stone-800 flex items-center justify-between text-xs font-semibold text-neutral-700 dark:text-stone-200 transition-colors text-left cursor-pointer"
+        disabled
+        className="w-full p-2.5 rounded-xl flex items-center justify-between text-xs font-semibold text-neutral-500 dark:text-stone-400 text-left cursor-not-allowed"
       >
         <div className="flex items-center gap-2.5">
           <MessageSquare className="size-4 text-neutral-500 dark:text-stone-400" />
-          <span>Nhắn tin cho gia sư</span>
+          <span>Nhắn tin cho gia sư · Sắp ra mắt</span>
         </div>
         <ChevronRight className="size-4 text-neutral-400 dark:text-stone-400" />
       </button>

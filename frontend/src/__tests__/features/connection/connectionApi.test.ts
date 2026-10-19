@@ -7,6 +7,28 @@ describe("connectionApi client", () => {
     vi.restoreAllMocks();
   });
 
+  it("gọi đúng các endpoint lời mời và hủy liên kết gia đình", async () => {
+    const invitation = {
+      invitationId: "inv-1", inviterUserId: "parent-1", invitedUserId: "student-1",
+      status: "PENDING", createdAt: "2026-10-18T00:00:00Z", expiresAt: "2026-11-01T00:00:00Z",
+    };
+    const get = vi.spyOn(apiClient, "get").mockResolvedValue({ success: true, data: [invitation] });
+    const post = vi.spyOn(apiClient, "post").mockResolvedValue({ success: true, data: null });
+    const remove = vi.spyOn(apiClient, "delete").mockResolvedValue({ success: true });
+
+    expect(await connectionApi.getLinkInvitations()).toEqual([invitation]);
+    await connectionApi.respondLinkInvitation("inv-1", true);
+    await connectionApi.respondLinkInvitation("inv-1", false);
+    await connectionApi.withdrawLinkInvitation("inv-1");
+    await connectionApi.revokeLink("link-1");
+
+    expect(get).toHaveBeenCalledWith("/api/v1/connections/parent-student/invitations");
+    expect(post).toHaveBeenCalledWith("/api/v1/connections/parent-student/respond", { invitationId: "inv-1", accept: true });
+    expect(post).toHaveBeenCalledWith("/api/v1/connections/parent-student/respond", { invitationId: "inv-1", accept: false });
+    expect(post).toHaveBeenCalledWith("/api/v1/connections/parent-student/invitations/inv-1/withdraw");
+    expect(remove).toHaveBeenCalledWith("/api/v1/connections/parent-student/links/link-1");
+  });
+
   it("getTutorInbox gọi GET /api/v1/connections/requests khi không truyền phân trang", async () => {
     const mockInbox = [
       {

@@ -1,28 +1,114 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   Bell,
-  Check,
   CheckCheck,
   Calendar,
   UserCheck,
   Star,
-  Clock,
-  Sparkles,
   Inbox,
   AlertCircle,
-  ExternalLink,
 } from "lucide-react";
 import { notificationApi } from "../api/notificationApi";
 import type { NotificationItem } from "../types";
+import type { UserRole } from "@/shared/ui/Sidebar";
 
 interface NotificationDropdownProps {
+  role?: UserRole;
   onClose?: () => void;
   onUnreadCountChange?: (count: number) => void;
 }
 
+export function getNotificationRoute(item: NotificationItem, role: UserRole = "STUDENT"): string {
+  const type = item.type?.toUpperCase() || "";
+  const targetType = item.targetType?.toUpperCase() || "";
+  const normalizedRole = role.toUpperCase();
+
+  // 1. Liên kết gia đình (Parent-Student Link)
+  if (
+    type.startsWith("LINK_") ||
+    targetType === "PARENT_STUDENT_LINK" ||
+    targetType === "LINK_INVITATION"
+  ) {
+    return normalizedRole === "PARENT" ? "/parent/children" : "/student/family";
+  }
+
+  // 2. Buổi học / Lịch học / Đổi lịch (Sessions & Scheduling)
+  if (
+    type.startsWith("SESSION_") ||
+    type.includes("RESCHEDULE") ||
+    targetType === "TUTORING_SESSION" ||
+    targetType === "SESSION" ||
+    targetType === "RESCHEDULE_PROPOSAL"
+  ) {
+    if (normalizedRole === "TUTOR") return "/tutor/schedule";
+    if (normalizedRole === "PARENT") return "/parent/schedule";
+    return "/student/schedule";
+  }
+
+  // 3. Yêu cầu kết nối / Mời học (Connection Requests)
+  if (
+    type.startsWith("CONNECTION_") ||
+    targetType === "CONNECTION_REQUEST"
+  ) {
+    if (type === "CONNECTION_ACCEPTED") {
+      if (normalizedRole === "TUTOR") return "/tutor/classes";
+      if (normalizedRole === "PARENT") return "/parent/children";
+      return "/student/classes";
+    }
+    if (normalizedRole === "TUTOR") return "/tutor/requests";
+    if (normalizedRole === "PARENT") return "/parent/tutors";
+    return "/student/classes";
+  }
+
+  // 4. Lớp học (Classes)
+  if (targetType === "CLASS" || type.startsWith("CLASS_")) {
+    if (normalizedRole === "TUTOR") return "/tutor/classes";
+    if (normalizedRole === "PARENT") return "/parent/children";
+    return "/student/classes";
+  }
+
+  // 5. Đánh giá (Reviews)
+  if (type.startsWith("REVIEW_") || targetType === "REVIEW") {
+    if (normalizedRole === "TUTOR") return "/tutor/reviews";
+    return normalizedRole === "PARENT" ? "/parent/dashboard" : "/student/classes";
+  }
+
+  // 6. Cột mốc & Tiến độ học tập (Milestones & Progress)
+  if (
+    type.startsWith("MILESTONE_") ||
+    type.startsWith("PROGRESS_") ||
+    targetType === "LEARNING_PLAN" ||
+    targetType === "MILESTONE"
+  ) {
+    if (normalizedRole === "PARENT") return "/parent/progress";
+    if (normalizedRole === "TUTOR") return "/tutor/classes";
+    return "/student/progress";
+  }
+
+  // 7. Xác thực hồ sơ KYC (Verification)
+  if (type.startsWith("KYC_") || targetType === "VERIFICATION" || targetType === "KYC") {
+    if (normalizedRole === "ADMIN") return "/admin/kyc";
+    return "/tutor/verification";
+  }
+
+  // Mặc định: về Dashboard của vai trò tương ứng
+  switch (normalizedRole) {
+    case "TUTOR":
+      return "/tutor/dashboard";
+    case "PARENT":
+      return "/parent/dashboard";
+    case "ADMIN":
+      return "/admin/dashboard";
+    default:
+      return "/student/dashboard";
+  }
+}
+
 export function NotificationDropdown({
+  role = "STUDENT",
   onClose,
   onUnreadCountChange,
 }: NotificationDropdownProps) {
@@ -32,6 +118,7 @@ export function NotificationDropdown({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // Load notifications
   const loadNotifications = async (unreadOnly = filterUnread) => {
@@ -97,6 +184,15 @@ export function NotificationDropdown({
     }
   };
 
+  const handleNotificationClick = async (item: NotificationItem) => {
+    if (!item.isRead) await handleMarkRead(item.notificationId);
+    const destination = getNotificationRoute(item, role);
+    if (destination) {
+      router.push(destination);
+    }
+    onClose?.();
+  };
+
   // Helper relative time
   const formatRelativeTime = (isoString: string) => {
     try {
@@ -119,20 +215,23 @@ export function NotificationDropdown({
 
   // Notification icon by type
   const renderNotificationIcon = (type: string) => {
-    switch (type) {
-      case "LINK_INVITED":
-      case "LINK_CONFIRMED":
-      case "LINK_REVOKED":
-      case "CONNECTION_REQUEST":
-        return <UserCheck className="size-4 text-blue-500" />;
-      case "SESSION_PROPOSAL":
-      case "SESSION_UPDATE":
-        return <Calendar className="size-4 text-emerald-500" />;
-      case "REVIEW_RECEIVED":
-        return <Star className="size-4 text-amber-500 fill-amber-500" />;
-      default:
-        return <Bell className="size-4 text-neutral-400" />;
+    const upper = type?.toUpperCase() || "";
+    if (upper.startsWith("LINK_")) {
+      return <UserCheck className="size-4 text-blue-500" />;
     }
+    if (upper.startsWith("CONNECTION_")) {
+      return <UserCheck className="size-4 text-indigo-500" />;
+    }
+    if (upper.startsWith("SESSION_") || upper.includes("RESCHEDULE")) {
+      return <Calendar className="size-4 text-emerald-500" />;
+    }
+    if (upper.startsWith("REVIEW_")) {
+      return <Star className="size-4 text-amber-500 fill-amber-500" />;
+    }
+    if (upper.startsWith("MILESTONE_") || upper.startsWith("PROGRESS_")) {
+      return <CheckCheck className="size-4 text-teal-500" />;
+    }
+    return <Bell className="size-4 text-neutral-400" />;
   };
 
   return (
@@ -213,10 +312,11 @@ export function NotificationDropdown({
           </div>
         ) : (
           notifications.map((item) => (
-            <div
+            <button
+              type="button"
               key={item.notificationId}
-              onClick={() => !item.isRead && handleMarkRead(item.notificationId)}
-              className={`p-3.5 flex gap-3 text-left transition-colors cursor-pointer ${
+              onClick={() => void handleNotificationClick(item)}
+              className={`w-full p-3.5 flex gap-3 text-left transition-colors cursor-pointer ${
                 item.isRead
                   ? "bg-white dark:bg-stone-900 opacity-80 hover:bg-stone-50 dark:hover:bg-stone-800/60"
                   : "bg-amber-50/40 dark:bg-amber-950/20 hover:bg-amber-50/70 dark:hover:bg-amber-950/30"
@@ -249,14 +349,10 @@ export function NotificationDropdown({
 
               {!item.isRead && (
                 <div className="flex items-center shrink-0">
-                  <span
-                    title="Đánh dấu đã đọc"
-                    onClick={(e) => handleMarkRead(item.notificationId, e)}
-                    className="size-2 rounded-full bg-amber-500"
-                  />
+                  <span className="size-2 rounded-full bg-amber-500" />
                 </div>
               )}
-            </div>
+            </button>
           ))
         )}
       </div>

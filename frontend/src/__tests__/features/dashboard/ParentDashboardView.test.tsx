@@ -14,8 +14,8 @@ describe("ParentDashboardView Component", () => {
   };
 
   const mockLinks: StudentLink[] = [
-    { linkId: "link-1", studentId: "stu-1", status: "CONFIRMED" },
-    { linkId: "link-2", studentId: "stu-2", status: "CONFIRMED" },
+    { linkId: "link-1", parentUserId: "parent-1", studentId: "stu-1", status: "CONFIRMED", confirmedAt: "2026-10-18T00:00:00Z" },
+    { linkId: "link-2", parentUserId: "parent-1", studentId: "stu-2", status: "CONFIRMED", confirmedAt: "2026-10-18T00:00:00Z" },
   ];
 
   const mockClasses: TutoringClass[] = [

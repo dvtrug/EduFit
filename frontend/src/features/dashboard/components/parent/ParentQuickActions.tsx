@@ -37,11 +37,12 @@ export function ParentQuickActions() {
       </Link>
       <button
         type="button"
-        className="w-full p-2.5 rounded-xl hover:bg-stone-50 flex items-center justify-between text-xs font-semibold text-neutral-700 transition-colors text-left"
+        disabled
+        className="w-full p-2.5 rounded-xl flex items-center justify-between text-xs font-semibold text-neutral-500 text-left cursor-not-allowed"
       >
         <div className="flex items-center gap-2.5">
           <MessageSquare className="size-4 text-sky-600" />
-          <span>Nhóm trò chuyện cùng gia sư</span>
+          <span>Nhóm trò chuyện cùng gia sư · Sắp ra mắt</span>
         </div>
         <ChevronRight className="size-4 text-neutral-400" />
       </button>
