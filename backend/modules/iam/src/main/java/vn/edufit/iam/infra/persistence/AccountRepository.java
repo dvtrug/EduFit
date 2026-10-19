@@ -41,6 +41,9 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
       Pageable pageable
   );
 
+  /**
+   * Đếm số lượng tài khoản theo vai trò (Role).
+   */
   long countByRole(AccountRole role);
 
   long countByStatus(AccountStatus status);

@@ -74,10 +74,10 @@ class ConnectionTransactionPostgresTest {
 
   @BeforeEach void resetCollaborators() { reset(iam, profile, audit, notifications); }
 
-  private CurrentUser actor(UUID id, String role) {
+  private synchronized CurrentUser actor(UUID id, String role) {
     CurrentUser actor = mock(CurrentUser.class);
     lenient().when(actor.getUserId()).thenReturn(id);
-    when(actor.hasRole(anyString())).thenAnswer(i -> role.equals(i.getArgument(0)));
+    lenient().when(actor.hasRole(anyString())).thenAnswer(i -> role.equals(i.getArgument(0)));
     lenient().when(iam.findUserSummaryById(id)).thenReturn(Optional.of(new vn.edufit.iam.api.dto.UserSummaryView(id,
         "actor@test.invalid", "Fixture", vn.edufit.iam.api.AccountRole.valueOf(role), vn.edufit.iam.api.AccountStatus.ACTIVE)));
     return actor;
@@ -1518,6 +1518,8 @@ class ConnectionTransactionPostgresTest {
     UUID student = UUID.randomUUID(), link = UUID.randomUUID(), goal = UUID.randomUUID();
     UUID tutorUser = account("TUTOR"), tutor = UUID.randomUUID();
     actor(tutorUser, "TUTOR");
+    var studentActor = actor(studentUser, "STUDENT");
+    var parentActor = actor(parent, "PARENT");
 
     jdbc.update("insert into student_profile(student_id,user_id,education_level_id) values (?,?,4)", student, studentUser);
     jdbc.update("insert into parent_student_link(link_id,parent_user_id,student_id,confirmed_at,status) values (?,?,?,now(),'CONFIRMED')", link, parent, student);
@@ -1533,13 +1535,15 @@ class ConnectionTransactionPostgresTest {
     int threads = 2;
     var latch = new CountDownLatch(threads);
     var startBarrier = new CountDownLatch(1);
+    var revokeError = new java.util.concurrent.atomic.AtomicReference<Throwable>();
 
     try (var pool = Executors.newFixedThreadPool(threads)) {
       pool.submit(() -> {
         try {
           startBarrier.await();
-          links.revokeLink(actor(studentUser, "STUDENT"), link, null);
-        } catch (Exception ignored) {
+          links.revokeLink(studentActor, link, null);
+        } catch (Throwable t) {
+          revokeError.set(t);
         } finally {
           latch.countDown();
         }
@@ -1547,7 +1551,7 @@ class ConnectionTransactionPostgresTest {
       pool.submit(() -> {
         try {
           startBarrier.await();
-          requests.request(actor(parent, "PARENT"), goal, tutor, List.of("Tue 19:00"), null);
+          requests.request(parentActor, goal, tutor, List.of("Tue 19:00"), null);
         } catch (Exception ignored) {
         } finally {
           latch.countDown();
@@ -1555,6 +1559,10 @@ class ConnectionTransactionPostgresTest {
       });
       startBarrier.countDown();
       assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    if (revokeError.get() != null) {
+      org.junit.jupiter.api.Assertions.fail("revokeLink failed concurrently: " + revokeError.get().getMessage(), revokeError.get());
     }
 
     // Link must end up in REVOKED status regardless of concurrency interleaving

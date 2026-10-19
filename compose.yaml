@@ -40,6 +40,9 @@ services:
       AI_PROVIDER: ${AI_PROVIDER:-stub}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
+      STORAGE_CREDENTIALS_ROOT: ${STORAGE_CREDENTIALS_ROOT:-/app/var/credentials}
+    volumes:
+      - credential_data:/app/var/credentials
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
@@ -57,3 +60,4 @@ services:
 
 volumes:
   postgres_data:
+  credential_data:

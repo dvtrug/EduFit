@@ -18,6 +18,7 @@ public interface ConnectionFacade {
   List<ClassDetailView> findClassesByTutor(UUID tutorId);
   List<UUID> findConfirmedParentUserIds(UUID studentId);
   List<UUID> findConfirmedStudentIds(UUID parentUserId);
+  long countActiveClasses();
 
   record ActiveClassView(UUID classId, UUID studentId, UUID tutorId, UUID goalId) {}
 

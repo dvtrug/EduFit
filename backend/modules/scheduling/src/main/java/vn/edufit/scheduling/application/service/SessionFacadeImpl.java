@@ -138,5 +138,10 @@ public class SessionFacadeImpl implements SessionFacade {
 
     return result;
   }
+
+  @Override
+  public long countCompletedSessions() {
+    return sessionRepository.countCompletedSessions();
+  }
 }
 

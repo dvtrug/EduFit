@@ -1,5 +1,6 @@
 package vn.edufit.verification.web.request;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -15,15 +16,19 @@ public record SubmitVerificationRequest(
 
   public record CredentialItem(
       @NotNull(message = "Loại bằng cấp là bắt buộc")
+      @JsonAlias({"type", "documentType"})
       Credential.Type type,
 
       @NotNull(message = "Tên đơn vị cấp bằng là bắt buộc")
       @Size(min = 1, max = 200, message = "Tên đơn vị cấp bằng phải từ 1 đến 200 ký tự")
+      @JsonAlias({"institution", "institutionName"})
       String institution,
 
+      @JsonAlias({"year", "graduationYear"})
       Short year,
 
       @Size(max = 500, message = "Ghi chú tối đa 500 ký tự")
+      @JsonAlias({"note", "notes"})
       String note,
 
       @NotEmpty(message = "Mỗi bằng cấp cần ít nhất một file đính kèm")
