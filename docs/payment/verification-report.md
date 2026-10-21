@@ -14,3 +14,6 @@
 
 - Browser phát hiện lỗi `ORDER BY created_at is ambiguous` ở topup/withdrawal history. Regression test tái hiện RED trên PostgreSQL; sửa projection thành danh sách cột duy nhất và sort theo timestamp gốc + id. Bao phủ ví từng chủ sở hữu, danh sách Admin, dữ liệu rỗng/có dữ liệu và offset.
 - Sau sửa history: PaymentFlowIT 11/11 + PaymentApplicationIT 1/1 PASS, package reactor SUCCESS; không thay migration.
+
+- History hotfix `3f5b4d7` đã push.
+- P04a: SDK typed + WalletPanel + 2 tests cấu hình kênh nạp/không tự credit. Nằm trong FE gate 24 PASS, type-check/lint PASS.
