@@ -29,6 +29,8 @@ Cấu hình mặc định cho môi trường local hoạt động mà không c�
 
 PostgreSQL mặc định được mở tại cổng `5433` trên máy host để tránh trùng với cổng phổ biến của PostgreSQL đã cài sẵn. Bên trong mạng Compose, các container vẫn kết nối qua cổng `5432`.
 
+Nếu cổng `5433` đang được dự án khác sử dụng, đặt `POSTGRES_PORT=5434` (hoặc cổng trống khác) trong `.env`, rồi chạy `docker compose up -d db`. Backend chạy từ IDE cần nạp cùng `.env`: các biến `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT` được dùng làm cấu hình mặc định. Các biến `DB_URL`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`/`DB_USER`, `DB_PASSWORD` vẫn được ưu tiên nếu có. Không xóa volume khi đổi cổng; `POSTGRES_PASSWORD` phải khớp mật khẩu đã khởi tạo trong volume cũ.
+
 ## Khởi tạo hoặc kiểm tra schema rỗng
 
 PostgreSQL entrypoint tự chạy `database/init/001-create-schema.sql` trong lần khởi động đầu tiên. Script có tính lặp an toàn và có thể chạy lại thủ công.

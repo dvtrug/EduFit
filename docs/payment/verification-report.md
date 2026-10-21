@@ -39,3 +39,7 @@
 - Flyway: thực thi 16 migrations trên schema PostgreSQL 17 mới, validate và migrate lại không áp dụng thêm. Giữ nguyên migration history trước Payment.
 - Không kiểm chứng live payOS/tiền ngân hàng thật vì chưa có bộ cấu hình merchant thật. Test chữ ký và kiểm tra payload là offline; manual bank-confirm chỉ mô phỏng trên DB riêng. Payout ngân hàng vẫn do Admin thực hiện bên ngoài và xác nhận sau đối soát.
 - Tất cả commit chỉ push `origin/feat/payment`; không merge develop/main. Danh sách commit có thể xem `git log b1ea5cd..feat/payment --oneline`.
+
+## Sửa kết nối local khi Flyway báo 28P01
+
+Backend đang trỏ cổng 5433 thuộc PostgreSQL dự án khác. Đã bật lại container EduFit với volume cũ tại cổng local 5434; `.env` local giữ credentials của container EduFit. Cấu hình backend hỗ trợ fallback `POSTGRES_*` cùng Docker Compose, vẫn ưu tiên `DB_*`. Maven package PASS; khởi động với `.env` thật, validate 16 migrations, apply V1.15/V1.16 thành công và HTTP health UP. Dữ liệu cũ được giữ nguyên.
