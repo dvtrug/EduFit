@@ -77,6 +77,20 @@ export async function fetchApi<T = unknown>(
     }));
 
     if (!response.ok || data.success === false) {
+      // Global 401 Interceptor: Điều hướng về /login khi hết hạn phiên, tránh infinite loop nếu đang ở /login
+      if (response.status === 401 && typeof window !== "undefined") {
+        const pathname = window.location.pathname || "";
+        if (pathname !== "/login" && !pathname.startsWith("/login")) {
+          const currentPath = pathname + (window.location.search || "");
+          const targetUrl = `/login?expired=1&returnUrl=${encodeURIComponent(currentPath)}`;
+          try {
+            window.location.href = targetUrl;
+          } catch {
+            window.location.assign?.(targetUrl);
+          }
+        }
+      }
+
       throw new ApiError(
         data.message || "Đã xảy ra lỗi khi kết nối với máy chủ",
         response.status,

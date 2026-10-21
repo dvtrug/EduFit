@@ -8,22 +8,6 @@ const nextConfig: NextConfig = {
         destination: "/admin/verification-queue",
         permanent: true,
       },
-      {
-        source: "/admin/learners",
-        destination: "/admin/links",
-        permanent: true,
-      },
-      {
-        source: "/admin/tutors-management",
-        destination: "/admin/verification-queue",
-        permanent: true,
-      },
-      {
-        source: "/admin/disputes",
-        destination: "/admin/dashboard",
-        permanent: true,
-      },
-
     ];
   },
   async rewrites() {

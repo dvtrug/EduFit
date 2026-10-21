@@ -71,14 +71,26 @@ export function LearnersManagementView() {
       });
 
       if (res.success && res.data) {
-        // If ALL was selected, filter out TUTOR and ADMIN since this is the Learners page
         let list = res.data.users;
+        let count = res.data.totalElements;
+        let pages = Math.max(1, res.data.totalPages);
+
         if (selectedRoleTab === "ALL") {
-          list = list.filter((u) => u.role === "STUDENT" || u.role === "PARENT");
+          const nonLearnersCount = res.data.users.filter(
+            (u) => u.role !== "STUDENT" && u.role !== "PARENT"
+          ).length;
+          list = res.data.users.filter(
+            (u) => u.role === "STUDENT" || u.role === "PARENT"
+          );
+          if (nonLearnersCount > 0) {
+            count = Math.max(list.length, res.data.totalElements - nonLearnersCount);
+            pages = Math.max(1, Math.ceil(count / 15));
+          }
         }
+
         setUsers(list);
-        setTotalPages(res.data.totalPages);
-        setTotalElements(res.data.totalElements);
+        setTotalPages(pages);
+        setTotalElements(count);
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -497,32 +509,36 @@ export function LearnersManagementView() {
             </table>
 
             {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between p-4 border-t border-stone-200 bg-stone-50/50">
+            {users.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-stone-200 bg-stone-50/50">
                 <span className="text-xs text-neutral-500">
-                  Hiển thị {users.length} trên tổng số {totalElements} tài khoản
+                  Hiển thị {users.length} trên tổng số {totalElements} người học
                 </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.max(0, p - 1))}
-                    disabled={page === 0}
-                    className="p-2 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 disabled:opacity-50 text-neutral-700 transition-colors"
-                  >
-                    <ChevronLeft className="size-4" />
-                  </button>
-                  <span className="text-xs font-bold text-neutral-700 px-2">
-                    Trang {page + 1} / {totalPages}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                    disabled={page >= totalPages - 1}
-                    className="p-2 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 disabled:opacity-50 text-neutral-700 transition-colors"
-                  >
-                    <ChevronRight className="size-4" />
-                  </button>
-                </div>
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                      disabled={page === 0}
+                      aria-label="Trang trước"
+                      className="p-2 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 disabled:opacity-50 text-neutral-700 transition-colors"
+                    >
+                      <ChevronLeft className="size-4" />
+                    </button>
+                    <span className="text-xs font-bold text-neutral-700 px-2">
+                      Trang {page + 1} / {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={page >= totalPages - 1}
+                      aria-label="Trang sau"
+                      className="p-2 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 disabled:opacity-50 text-neutral-700 transition-colors"
+                    >
+                      <ChevronRight className="size-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

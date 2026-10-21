@@ -156,12 +156,12 @@ public class ConnectionRequestService {
       }
     }
     requests.flush();
-    if (requests.existsByStudentIdAndTutorIdAndStatus(goal.studentId(), tutorId, "PENDING"))
-      return TransitionResult.conflict("PENDING", "Đã có yêu cầu chờ gia sư này");
+    if (requests.existsByStudentIdAndTutorIdAndGoalIdAndStatus(goal.studentId(), tutorId, goalId, "PENDING"))
+      return TransitionResult.conflict("PENDING", "Đã có yêu cầu chờ gia sư này cho mục tiêu này");
     if (requests.countByStudentIdAndStatus(goal.studentId(), "PENDING") >= 5)
       return TransitionResult.conflict("PENDING", "Đã đạt giới hạn 5 yêu cầu chờ");
-    if (classes.existsByStudentIdAndTutorIdAndStatus(goal.studentId(), tutorId, "ACTIVE"))
-      return TransitionResult.conflict("ACTIVE", "Đã có lớp đang hoạt động");
+    if (classes.existsByStudentIdAndTutorIdAndGoalIdAndStatus(goal.studentId(), tutorId, goalId, "ACTIVE"))
+      return TransitionResult.conflict("ACTIVE", "Đã có lớp đang hoạt động cho mục tiêu này");
     ConnectionRequest created = requests.save(new ConnectionRequest(goal.studentId(), tutorId, goalId,
         actor.getUserId(), desiredSlots, message, now));
     events.publishEvent(new ConnectionRequestChangedEvent(UUID.randomUUID(), created.getId(),
@@ -240,8 +240,8 @@ public class ConnectionRequestService {
       return TransitionResult.success(null);
     }
 
-    if (classes.existsByStudentIdAndTutorIdAndStatus(request.getStudentId(), tutorId, "ACTIVE"))
-      return TransitionResult.conflict("ACTIVE", "Đã có lớp đang hoạt động");
+    if (classes.existsByStudentIdAndTutorIdAndGoalIdAndStatus(request.getStudentId(), tutorId, request.getGoalId(), "ACTIVE"))
+      return TransitionResult.conflict("ACTIVE", "Đã có lớp đang hoạt động cho mục tiêu này");
 
     ConnectionGoalDto goal = profile.findGoalForConnection(request.getGoalId())
         .orElseThrow(() -> new InvalidOperationException("Mục tiêu không còn hợp lệ"));

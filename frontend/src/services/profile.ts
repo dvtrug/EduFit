@@ -210,6 +210,10 @@ export const profileService = {
     return saved;
   },
 
+  async archiveLearningGoal(goalId: string): Promise<void> {
+    await apiClient.post(`/api/v1/profiles/students/me/goals/${encodeURIComponent(goalId)}/archive`);
+  },
+
   /**
    * Lấy hồ sơ gia sư
    */

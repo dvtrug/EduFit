@@ -101,8 +101,8 @@ class ConnectionRequestRulesTest {
     verifyNoInteractions(events);
   }
   @ParameterizedTest @ValueSource(strings={"duplicate","limit","class"}) void conflictsDoNotWriteRequest(String kind) {
-    if(kind.equals("duplicate")) when(rows.existsByStudentIdAndTutorIdAndStatus(student,tutor,"PENDING")).thenReturn(true);
-    if(kind.equals("class")) when(classes.existsByStudentIdAndTutorIdAndStatus(student,tutor,"ACTIVE")).thenReturn(true);
+    if(kind.equals("duplicate")) when(rows.existsByStudentIdAndTutorIdAndGoalIdAndStatus(student,tutor,goal,"PENDING")).thenReturn(true);
+    if(kind.equals("class")) when(classes.existsByStudentIdAndTutorIdAndGoalIdAndStatus(student,tutor,goal,"ACTIVE")).thenReturn(true);
     if(kind.equals("limit")) {
       when(rows.countByStudentIdAndStatus(student,"PENDING")).thenReturn(5L);
       when(rows.findByStudentIdAndStatus(student,"PENDING")).thenReturn(Collections.nCopies(5,new ConnectionRequest(student,tutor,goal,studentUser,List.of("Tue 19:00"),null,now)));
@@ -254,5 +254,32 @@ class ConnectionRequestRulesTest {
     assertDoesNotThrow(() -> service.respondRequest(actor(tutorUser, "TUTOR"), id, false, "Declining"));
     assertEquals("REJECTED", row.getStatus());
     verify(classes, never()).save(any());
+  }
+
+  @Test
+  void multiSubjectConnectionRequestAndClassAllowedBetweenSameStudentAndTutor() {
+    UUID goal1 = goal;
+    UUID goal2 = UUID.randomUUID();
+
+    // 1. Student already has ACTIVE class for goal 1 with tutor
+    when(classes.existsByStudentIdAndTutorIdAndGoalIdAndStatus(student, tutor, goal1, "ACTIVE")).thenReturn(true);
+    // But does NOT have active class or pending request for goal 2 with tutor
+    when(classes.existsByStudentIdAndTutorIdAndGoalIdAndStatus(student, tutor, goal2, "ACTIVE")).thenReturn(false);
+    when(rows.existsByStudentIdAndTutorIdAndGoalIdAndStatus(student, tutor, goal2, "PENDING")).thenReturn(false);
+
+    when(profile.findGoalForConnection(goal2))
+        .thenReturn(Optional.of(new ConnectionGoalDto(goal2, student, studentUser, 2, 4, "IMPROVE_GRADES", null, "ACTIVE")));
+    when(profile.tutorTeaches(tutor, 2, 4)).thenReturn(true);
+
+    // Act: Student sends request for goal 2
+    var result = service.request(actor(studentUser, "STUDENT"), goal2, tutor, List.of("Thu 19:00"), "Muốn học thêm môn Lý");
+
+    // Assert: Request creation succeeds for goal 2 even with existing active class for goal 1
+    assertInstanceOf(TransitionResult.Success.class, result);
+    verify(rows, times(1)).save(any(ConnectionRequest.class));
+
+    // 2. But if student sends duplicate request for goal 1, it's rejected with conflict
+    var duplicateResult = service.request(actor(studentUser, "STUDENT"), goal1, tutor, List.of("Fri 19:00"), "Gửi trùng môn Toán");
+    assertInstanceOf(TransitionResult.Conflict.class, duplicateResult);
   }
 }

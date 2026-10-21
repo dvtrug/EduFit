@@ -57,8 +57,9 @@ public class SessionNoteService {
     Map<UUID, SessionNote> noteMap = noteRepository.findBySessionIdIn(sessionIds).stream()
         .collect(Collectors.toMap(SessionNote::getSessionId, n -> n));
 
-    // 3. Kết hợp session và note
+    // 3. Kết hợp session và note (loại trừ các buổi học đã hủy không có biên bản ghi chú sư phạm)
     List<SessionNoteTimelineView> combined = sessions.stream()
+        .filter(s -> !"CANCELLED".equalsIgnoreCase(s.status()) || noteMap.containsKey(s.sessionId()))
         .map(s -> {
           SessionNote note = noteMap.get(s.sessionId());
           return new SessionNoteTimelineView(
