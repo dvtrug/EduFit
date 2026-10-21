@@ -1,7 +1,5 @@
 package vn.edufit.payment.infra;
 
-import java.time.Clock;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.Scheduled;
 import vn.edufit.payment.application.SessionPaymentService;
@@ -12,11 +10,6 @@ public class PaymentDeadlineJob {
 
   public PaymentDeadlineJob(SessionPaymentService service) {
     this.service = service;
-  }
-
-  @Bean("paymentClock")
-  static Clock paymentClock() {
-    return Clock.systemUTC();
   }
 
   @Scheduled(fixedDelayString = "${edufit.payment.deadline-delay-ms:30000}")

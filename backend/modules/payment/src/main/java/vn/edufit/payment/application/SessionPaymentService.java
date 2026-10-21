@@ -23,7 +23,7 @@ public class SessionPaymentService {
   private final SessionFacade sessions;
   private final ProfileFacade profiles;
   private final ConnectionFacade connections;
-  private final Clock clock;
+  private final PaymentTime clock;
 
   public SessionPaymentService(
       PaymentStore store,
@@ -31,7 +31,7 @@ public class SessionPaymentService {
       SessionFacade sessions,
       ProfileFacade profiles,
       ConnectionFacade connections,
-      @org.springframework.beans.factory.annotation.Qualifier("paymentClock") Clock clock) {
+      PaymentTime clock) {
     this.store = store;
     this.access = access;
     this.sessions = sessions;

@@ -189,7 +189,7 @@ class PaymentFlowIT {
             sessions,
             profiles,
             connections,
-            clock);
+            new PaymentTime(clock));
     store.locked(
         () -> {
           store.move(parentUser, 1000000, 0, "seed:" + sessionId, "TOPUP", sessionId);

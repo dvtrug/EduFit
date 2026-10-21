@@ -15,14 +15,14 @@ public class WalletService {
   private final PaymentAccess access;
   private final PaymentSettings settings;
   private final PayosGateway gateway;
-  private final Clock clock;
+  private final PaymentTime clock;
 
   public WalletService(
       PaymentStore store,
       PaymentAccess access,
       PaymentSettings settings,
       PayosGateway gateway,
-      @org.springframework.beans.factory.annotation.Qualifier("paymentClock") Clock clock) {
+      PaymentTime clock) {
     this.store = store;
     this.access = access;
     this.settings = settings;

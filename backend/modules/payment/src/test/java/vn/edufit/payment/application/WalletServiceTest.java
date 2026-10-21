@@ -14,7 +14,7 @@ class WalletServiceTest {
  WalletService service() {
   settings.bankAccount="12345678";
   when(store.locked(any())).thenAnswer(i->((Supplier<?>)i.getArgument(0)).get());
-  return new WalletService(store,mock(PaymentAccess.class),settings,gateway,Clock.systemUTC());
+  return new WalletService(store,mock(PaymentAccess.class),settings,gateway,new PaymentTime(Clock.systemUTC()));
  }
  Map<String,Object> topup() {return Map.of("id",UUID.randomUUID(),"provider","PAYOS","amount",100000L,"provider_id","link42");}
  @Test void signedRegistrationProbeNeverCreditsAnyWallet() {
