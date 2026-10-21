@@ -260,6 +260,8 @@ class PaymentFlowIT {
     dispute();
     service.act(actor(studentUser, "STUDENT"), sessionId, "report", "Đồng ý 100k", 100000L);
     service.act(actor(tutorUser, "TUTOR"), sessionId, "report", "Đã thống nhất", 100000L);
+    assertEquals(sessionId, store.adminCharges(0).getFirst().sessionId());
+    assertTrue(store.adminCharges(50).isEmpty());
     now.set(end.plusSeconds(200000));
     service.processDeadlines();
     assertEquals(300000, store.wallet(parentUser).held());
@@ -395,6 +397,8 @@ class PaymentFlowIT {
 
   @Test
   void walletAndAdminHistoriesLoadAndPaginateWithoutAmbiguousColumns() {
+    assertTrue(store.adminCharges(0).isEmpty());
+    assertTrue(store.adminCharges(50).isEmpty());
     assertTrue(store.topups(parentUser, 0).isEmpty());
     assertTrue(store.withdrawals(tutorUser, 0).isEmpty());
     var topup = store.locked(() -> store.createTopup(parentUser, 100000, "MANUAL", end));

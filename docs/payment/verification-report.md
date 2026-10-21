@@ -17,3 +17,4 @@
 
 - History hotfix `3f5b4d7` đã push.
 - P04a: SDK typed + WalletPanel + 2 tests cấu hình kênh nạp/không tự credit. Nằm trong FE gate 24 PASS, type-check/lint PASS.
+- Browser Admin phát hiện thiếu bind `offset` ở danh sách tranh chấp. Regression RED tái hiện syntax error; GREEN 11 PaymentFlowIT PASS sau sửa, gồm hàng đợi rỗng/có báo cáo và phân trang.

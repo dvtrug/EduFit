@@ -102,7 +102,8 @@ public class PaymentStore {
     return db.query(
         "select * from payment_charge where status='AWAITING_ADMIN' order by updated_at limit 50"
             + " offset ?",
-        this::mapCharge);
+        this::mapCharge,
+        offset);
   }
 
   public void insert(Charge c) {
