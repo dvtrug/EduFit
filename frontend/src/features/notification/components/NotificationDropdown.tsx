@@ -88,9 +88,16 @@ export function getNotificationRoute(item: NotificationItem, role: UserRole = "S
     return "/student/progress";
   }
 
-  // 7. Xác thực hồ sơ KYC (Verification)
-  if (type.startsWith("KYC_") || targetType === "VERIFICATION" || targetType === "KYC") {
-    if (normalizedRole === "ADMIN") return "/admin/kyc";
+  // 7. Xác thực hồ sơ KYC hoặc thẩm định bằng cấp (Verification)
+  if (
+    type.startsWith("KYC_") ||
+    type.startsWith("VERIFICATION_") ||
+    type.startsWith("QUALIFICATION_") ||
+    targetType === "VERIFICATION" ||
+    targetType === "KYC" ||
+    targetType === "QUALIFICATION"
+  ) {
+    if (normalizedRole === "ADMIN") return "/admin/verification-queue";
     return "/tutor/verification";
   }
 

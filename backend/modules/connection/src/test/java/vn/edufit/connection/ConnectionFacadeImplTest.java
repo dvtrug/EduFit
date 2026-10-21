@@ -52,6 +52,30 @@ class ConnectionFacadeImplTest {
   }
 
   @Test
+  void findActiveClassesReturnsListOfActiveViews() {
+    UUID student = UUID.randomUUID(), tutor = UUID.randomUUID(), goal1 = UUID.randomUUID(), goal2 = UUID.randomUUID();
+    var req1 = new ConnectionRequest(student, tutor, goal1, UUID.randomUUID(), List.of("Tue 19:00"), null, Instant.now());
+    var class1 = new TutoringClass(req1, Instant.now());
+    UUID id1 = UUID.randomUUID();
+    ReflectionTestUtils.setField(class1, "id", id1);
+
+    var req2 = new ConnectionRequest(student, tutor, goal2, UUID.randomUUID(), List.of("Thu 19:00"), null, Instant.now());
+    var class2 = new TutoringClass(req2, Instant.now());
+    UUID id2 = UUID.randomUUID();
+    ReflectionTestUtils.setField(class2, "id", id2);
+
+    when(classes.findAllByStudentIdAndTutorIdAndStatus(student, tutor, "ACTIVE"))
+        .thenReturn(List.of(class1, class2));
+
+    var result = facade.findActiveClasses(student, tutor);
+    assertEquals(2, result.size());
+    assertEquals(id1, result.get(0).classId());
+    assertEquals(id2, result.get(1).classId());
+    assertTrue(facade.findActiveClasses(null, tutor).isEmpty());
+    assertTrue(facade.findActiveClasses(student, null).isEmpty());
+  }
+
+  @Test
   void contextResolvesExactlyOnePublicFacadeBean() {
     try (var context = new AnnotationConfigApplicationContext()) {
       context.registerBean(ParentStudentLinkRepository.class, () -> links);

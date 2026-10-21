@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
   GraduationCap,
@@ -44,6 +44,11 @@ export function TutorTeachingHistoryView() {
   const [plan, setPlan] = useState<PlanResponse | null>(null);
   const [planLoading, setPlanLoading] = useState<boolean>(false);
   const [planError, setPlanError] = useState<string | null>(null);
+
+  // Lọc chỉ giữ các buổi học thực tế (COMPLETED, ABSENT) hoặc các buổi có ghi chú, loại bỏ các lịch bị hủy thuần túy
+  const visibleNotes = useMemo(() => {
+    return notes.filter((n) => n.status?.toUpperCase() !== "CANCELLED" || Boolean(n.noteText?.trim()));
+  }, [notes]);
 
   // Fetch Teaching History Classes
   const fetchHistory = useCallback(async () => {
@@ -129,10 +134,10 @@ export function TutorTeachingHistoryView() {
 
   const renderStatusBadge = (status: string) => {
     const s = status.toUpperCase();
-    if (s === "COMPLETED") {
+    if (s === "COMPLETED" || s === "ENDED") {
       return (
         <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-          Đã hoàn thành
+          Đã kết thúc
         </span>
       );
     }
@@ -227,7 +232,7 @@ export function TutorTeachingHistoryView() {
                 }`}
               >
                 <FileText className="size-3.5" />
-                <span>Buổi học & Ghi chú ({notes.length})</span>
+                <span>Buổi học & Ghi chú ({visibleNotes.length})</span>
               </button>
               <button
                 type="button"
@@ -272,7 +277,7 @@ export function TutorTeachingHistoryView() {
                     Thử lại
                   </button>
                 </div>
-              ) : notes.length === 0 ? (
+              ) : visibleNotes.length === 0 ? (
                 <EmptyState
                   icon={BookOpen}
                   title="Chưa có buổi học nào được ghi nhận"
@@ -281,9 +286,10 @@ export function TutorTeachingHistoryView() {
                 />
               ) : (
                 <div className="space-y-3">
-                  {notes.map((note, idx) => {
+                  {visibleNotes.map((note, idx) => {
                     const isCompleted = note.status.toUpperCase() === "COMPLETED";
                     const isAbsent = note.status.toUpperCase() === "ABSENT";
+                    const isCancelled = note.status.toUpperCase() === "CANCELLED";
 
                     return (
                       <div
@@ -314,7 +320,13 @@ export function TutorTeachingHistoryView() {
                                 Vắng mặt
                               </span>
                             )}
-                            {!isCompleted && !isAbsent && (
+                            {isCancelled && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300">
+                                <Clock className="size-3" />
+                                Đã hủy
+                              </span>
+                            )}
+                            {!isCompleted && !isAbsent && !isCancelled && (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300">
                                 <Clock className="size-3" />
                                 {note.status}
@@ -469,8 +481,7 @@ export function TutorTeachingHistoryView() {
               >
                 <option value="">Tất cả trạng thái lớp</option>
                 <option value="ACTIVE">Đang diễn ra (ACTIVE)</option>
-                <option value="COMPLETED">Đã hoàn thành (COMPLETED)</option>
-                <option value="TERMINATED">Đã kết thúc (TERMINATED)</option>
+                <option value="ENDED">Đã kết thúc / Hoàn thành (ENDED)</option>
               </select>
             </div>
 
@@ -527,9 +538,9 @@ export function TutorTeachingHistoryView() {
             <div className="space-y-3">
               {items.map((item) => {
                 const stats = item.sessionStats;
-                const completedCount = stats?.completedSessions ?? 0;
-                const absentCount = stats?.absentSessions ?? 0;
-                const cancelledCount = stats?.cancelledSessions ?? 0;
+                const completedCount = stats?.completedCount ?? stats?.completedSessions ?? 0;
+                const absentCount = stats?.absentCount ?? stats?.absentSessions ?? 0;
+                const cancelledCount = stats?.cancelledCount ?? stats?.cancelledSessions ?? 0;
 
                 return (
                   <div

@@ -9,7 +9,6 @@ import {
   XCircle,
   X,
   FileText,
-  AlertTriangle,
   Loader2,
   Calendar,
   ExternalLink,
@@ -52,13 +51,22 @@ export function ReviewKycModal({ item, isOpen, onClose, onReviewed }: ReviewKycM
   const [detail, setDetail] = useState<VerificationRequestDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  const currentRequestId = isOpen && item ? item.requestId : null;
+  const [prevRequestId, setPrevRequestId] = useState<string | null>(null);
+
+  if (currentRequestId !== prevRequestId) {
+    setPrevRequestId(currentRequestId);
+    setDetail(null);
+    setLoadingDetail(Boolean(currentRequestId));
+    setRejectionReason("");
+    setDecision("APPROVED");
+  }
+
   useEffect(() => {
     if (!isOpen || !item) {
-      setDetail(null);
       return;
     }
     let active = true;
-    setLoadingDetail(true);
     verificationService.getVerificationDetail(item.requestId)
       .then((data) => {
         if (active) setDetail(data);

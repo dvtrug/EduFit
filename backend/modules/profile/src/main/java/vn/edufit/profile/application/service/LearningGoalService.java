@@ -72,6 +72,9 @@ public class LearningGoalService {
     LearningGoal goal = ownedForUpdate(goalId, student);
     ensureActive(goal);
     validate(input);
+    if (input.subjectId() != null && !input.subjectId().equals(goal.getSubjectId())) {
+      throw new InvalidOperationException("Môn học của mục tiêu không được phép thay đổi. Hãy tạo mục tiêu mới cho môn học khác.");
+    }
     apply(goal, input);
     return view(goal, student);
   }

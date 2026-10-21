@@ -11,6 +11,7 @@ import {
   useTutorDetail,
   useTutorMatching,
 } from "@/features/discovery";
+import type { TutorDiscoveryCard, TutorDetail } from "@/features/discovery/types";
 import { useToast } from "@/shared/ui/Toast";
 import { GoalSelector } from "@/features/discovery/components/GoalSelector";
 import { ConnectionRequestDialog, SentRequests } from "@/features/connection";
@@ -52,16 +53,20 @@ export function ParentDiscoveryView() {
   } = matching;
 
   // 4. Request connection state
-  const [connectTutorId, setConnectTutorId] = useState<string | null>(null);
+  const [connectTutor, setConnectTutor] = useState<TutorDiscoveryCard | TutorDetail | { tutorId: string; displayName: string; subjects: any[] } | null>(null);
   const activeGoal = matching.goal || matching.goals[0];
 
   const handleRequestConnect = (tutorId: string) => {
-    if (activeGoal) {
-      setConnectTutorId(tutorId);
-    } else {
-      showToast("Cần thiết lập mục tiêu học tập cho con trước khi gửi yêu cầu kết nối.", "info");
-      setActiveTab("matches");
-    }
+    const match = matching.matches.find((m) => m.tutorId === tutorId);
+    const found =
+      tutors.find((t) => t.tutorId === tutorId) ||
+      (selectedTutor?.tutorId === tutorId ? selectedTutor : null) ||
+      match?.tutorInfo || {
+        tutorId,
+        displayName: "Gia sư",
+        subjects: [],
+      };
+    setConnectTutor(found);
   };
 
   return (
@@ -252,15 +257,22 @@ export function ParentDiscoveryView() {
       {activeTab === "requests" && <SentRequests />}
 
       {/* 6. MODALS */}
-      {connectTutorId && activeGoal && (
+      {connectTutor && (
         <ConnectionRequestDialog
-          tutorId={connectTutorId}
+          tutorId={connectTutor.tutorId}
+          tutor={connectTutor}
           goal={activeGoal}
           goals={matching.goals}
+          userRole="PARENT"
+          selectedChildName={matching.studentId ? `Học sinh (${matching.studentId.slice(-6)})` : undefined}
           onSelectGoal={(selected) => matching.setGoalId(selected.goalId)}
-          onClose={() => setConnectTutorId(null)}
+          onGoalCreated={async (newGoal) => {
+            await matching.refreshGoals?.();
+            matching.setGoalId(newGoal.goalId);
+          }}
+          onClose={() => setConnectTutor(null)}
           onSent={() => {
-            setConnectTutorId(null);
+            setConnectTutor(null);
             showToast("Đã gửi yêu cầu kết nối thành công.", "success");
             setActiveTab("requests");
           }}

@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { connectionApi } from "@/features/connection/api/connectionApi";
 import { profileService } from "@/services/profile";
 import { loginSchema } from "../schemas/authSchemas";
 import type { LoginInput, AuthFieldErrors, AuthUser } from "../types";
@@ -18,6 +19,13 @@ export function shouldRedirectTutorToOnboarding(
         Boolean(profile.area))
   );
   return !hasBasicProfile && !hasOnboarded;
+}
+
+export function shouldRedirectParentToOnboarding(
+  hasLinks: boolean,
+  hasOnboarded: boolean
+): boolean {
+  return !hasLinks && !hasOnboarded;
 }
 
 export function useLoginForm() {
@@ -84,10 +92,23 @@ export function useLoginForm() {
       } else if (user.role === "PARENT") {
         const hasOnboarded =
           typeof window !== "undefined" &&
-          localStorage.getItem("edufit_parent_onboarding_completed");
-        if (!hasOnboarded) {
-          router.push("/onboarding/parent");
-          return;
+          Boolean(localStorage.getItem("edufit_parent_onboarding_completed"));
+
+        try {
+          const links = await connectionApi.getLinks();
+          const hasLinks = Array.isArray(links) && links.length > 0;
+          if (hasLinks && typeof window !== "undefined") {
+            localStorage.setItem("edufit_parent_onboarding_completed", "true");
+          }
+          if (shouldRedirectParentToOnboarding(hasLinks, hasOnboarded)) {
+            router.push("/onboarding/parent");
+            return;
+          }
+        } catch {
+          if (!hasOnboarded) {
+            router.push("/onboarding/parent");
+            return;
+          }
         }
       }
 

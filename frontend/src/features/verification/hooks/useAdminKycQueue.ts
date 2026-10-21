@@ -15,7 +15,13 @@ export function useAdminKycQueue(initialTab: KycQueueTab = "PENDING") {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
 
-  const loadQueue = useCallback(
+  const [prevTab, setPrevTab] = useState<KycQueueTab>(initialTab);
+  if (activeTab !== prevTab) {
+    setPrevTab(activeTab);
+    setLoading(true);
+  }
+
+  const refreshQueue = useCallback(
     async (tabToLoad?: KycQueueTab) => {
       const tab = tabToLoad ?? activeTab;
       setLoading(true);
@@ -37,8 +43,30 @@ export function useAdminKycQueue(initialTab: KycQueueTab = "PENDING") {
   );
 
   useEffect(() => {
-    void loadQueue(activeTab);
-  }, [activeTab, loadQueue]);
+    let ignore = false;
+    verificationService
+      .getVerifications(activeTab, 0, 50)
+      .then((res) => {
+        if (!ignore) {
+          setItems(res.items || []);
+          setTotalElements(res.totalElements ?? (res.items?.length || 0));
+          setTotalPages(res.totalPages ?? 1);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          console.error("Lỗi khi tải danh sách hàng đợi KYC:", err);
+          setItems([]);
+          setTotalElements(0);
+          setTotalPages(0);
+          setLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [activeTab]);
 
   const handleTabChange = useCallback((newTab: KycQueueTab) => {
     setActiveTab(newTab);
@@ -55,8 +83,8 @@ export function useAdminKycQueue(initialTab: KycQueueTab = "PENDING") {
 
   const handleReviewSuccess = useCallback(() => {
     setIsReviewModalOpen(false);
-    void loadQueue(activeTab);
-  }, [activeTab, loadQueue]);
+    void refreshQueue(activeTab);
+  }, [activeTab, refreshQueue]);
 
   const handleOpenRevoke = useCallback((item: PendingQueueItem) => {
     setSelectedItem(item);
@@ -70,8 +98,8 @@ export function useAdminKycQueue(initialTab: KycQueueTab = "PENDING") {
   const handleRevokeSuccess = useCallback(() => {
     setIsRevokeModalOpen(false);
     // Tải lại dữ liệu tab hiện tại, hoặc chuyển sang tab REJECTED để xem hồ sơ đã thu hồi
-    void loadQueue(activeTab);
-  }, [activeTab, loadQueue]);
+    void refreshQueue(activeTab);
+  }, [activeTab, refreshQueue]);
 
   return {
     activeTab,
@@ -83,7 +111,7 @@ export function useAdminKycQueue(initialTab: KycQueueTab = "PENDING") {
     selectedItem,
     isReviewModalOpen,
     isRevokeModalOpen,
-    loadQueue: () => loadQueue(activeTab),
+    loadQueue: () => refreshQueue(activeTab),
     handleOpenReview,
     handleCloseReview,
     handleReviewSuccess,

@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { TutorTeachingHistoryView } from "@/features/progress/components/TutorTeachingHistoryView";
 import { progressApi } from "@/features/progress/api/progressApi";
-import type { TeachingHistoryItem, PageResponse, SessionNoteTimelineResponse, PlanResponse } from "@/features/progress/types";
+import type { TeachingHistoryItem, SessionNoteTimelineResponse, PlanResponse } from "@/features/progress/types";
 
 vi.mock("@/features/progress/api/progressApi", () => ({
   progressApi: {
@@ -24,8 +24,12 @@ describe("TutorTeachingHistoryView Component Tests", () => {
     sessionStats: {
       totalSessions: 10,
       completedSessions: 8,
+      completedCount: 8,
       absentSessions: 1,
+      absentCount: 1,
       cancelledSessions: 1,
+      cancelledCount: 1,
+      upcomingCount: 0,
     },
   };
 
