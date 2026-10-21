@@ -28,3 +28,14 @@
 - P04c `0cb5c2a` đã push.
 - P05: Admin nạp/rút/duyệt hai báo cáo; navigation mới, bỏ redirect cũ `/admin/disputes`, bỏ KPI tiền giả. 2 Admin form tests + 7 sidebar/CTA tests PASS (đã xử lý act warning trong test Parent).
 - Browser Chrome production frontend + Spring Boot + PostgreSQL riêng: 4 vai trò PASS; QR không tự credit, Admin manual bank-confirm cập nhật đúng ví, ví Parent độc lập, Tutor không thể rút khi số dư 0, Student Admin API 403, disputes route không redirect, không pageerror. Không có chuyển tiền thật; bank confirmation được mô phỏng trên DB riêng.
+
+- P05 `e80751b` đã push. P06: đồng bộ 7 bảng vào DBML, đánh dấu tài liệu tuition cũ được thay thế, bổ sung lệnh flow/startup tests trong runbook.
+
+## Tổng hợp kiểm chứng cuối
+
+- Backend gate ban đầu: 61 PASS (17 unit Payment + 33 architecture/migration naming + 10 PG flows + 1 app startup). Sau bổ sung regression history/Admin: 11 PG flows PASS; startup 1 PASS; package SUCCESS. Tổng 62 test case khác nhau qua các gate, không tuyên bố chạy lại toàn bộ repository.
+- FE: 24 tests / 8 files PASS; Sidebar 7/7 chạy lại sau sửa act warning; type-check PASS; lint phần Payment 0 errors/0 warnings. Production Webpack build PASS. Các thay đổi sau build là test/format và backend query fixes.
+- Browser kiểm tra 4 vai trò PASS trên Chrome với production frontend và API thật. Ảnh màn hình đã xem cho Student/Parent/Tutor/Admin; không lỗi hiển thị ở viewport kiểm tra 1440px.
+- Flyway: thực thi 16 migrations trên schema PostgreSQL 17 mới, validate và migrate lại không áp dụng thêm. Giữ nguyên migration history trước Payment.
+- Không kiểm chứng live payOS/tiền ngân hàng thật vì chưa có bộ cấu hình merchant thật. Test chữ ký và kiểm tra payload là offline; manual bank-confirm chỉ mô phỏng trên DB riêng. Payout ngân hàng vẫn do Admin thực hiện bên ngoài và xác nhận sau đối soát.
+- Tất cả commit chỉ push `origin/feat/payment`; không merge develop/main. Danh sách commit có thể xem `git log b1ea5cd..feat/payment --oneline`.

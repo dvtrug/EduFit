@@ -25,7 +25,8 @@ Gia sư gửi yêu cầu với ngân hàng/số tài khoản/chủ tài khoản.
 ## Kiểm thử
 
 - Domain/provider/access/validation: `backend/mvnw.cmd -f backend/pom.xml -pl modules/payment -am test -Dtest=SessionChargeTest,PayosGatewayTest,PaymentAccessTest,PaymentValidationTest,WalletServiceTest -Dsurefire.failIfNoSpecifiedTests=false`.
-- PostgreSQL: `PaymentFlowIT` mặc định dùng Testcontainers postgres:17-alpine; Docker bắt buộc, không silently skip. Hoặc cung cấp `PAYMENT_TEST_JDBC`, `PAYMENT_TEST_USER`, `PAYMENT_TEST_PASSWORD` tới **DB kiểm thử riêng** có quyền tạo schema. Test tạo schema ngẫu nhiên; không dùng DB sản xuất.
+- PostgreSQL: `PaymentFlowIT` và `PaymentApplicationIT` mặc định dùng Testcontainers postgres:17-alpine; Docker bắt buộc, không silently skip. Hoặc cung cấp `PAYMENT_TEST_JDBC`, `PAYMENT_TEST_USER`, `PAYMENT_TEST_PASSWORD` tới **DB kiểm thử riêng** có quyền tạo schema. Test tạo schema ngẫu nhiên; không dùng DB sản xuất.
+- Chạy cả flow + khởi động HTTP: `backend/mvnw.cmd -f backend/pom.xml -pl app -am test -Dtest=PaymentFlowIT,PaymentApplicationIT -Dsurefire.failIfNoSpecifiedTests=false`.
 - FE: `npm test -- src/__tests__/features/payment src/__tests__/shared/SidebarNavigation.test.tsx src/__tests__/features/dashboard`, type-check, lint, build.
 
 Windows ở phiên triển khai: Docker lỗi startup riêng của máy; đã dùng PostgreSQL 17 portable trong ignored `.codex-doc-review`, cổng 55439 cho IT. Nếu Next/Turbopack lỗi spawn CSS, có thể kiểm chứng `npm run build -- --webpack`; dùng CA Windows cho Node khi môi trường có TLS proxy, không tắt TLS verification.

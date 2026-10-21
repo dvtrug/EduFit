@@ -1,5 +1,7 @@
 # Đề xuất Thiết kế Luồng Màn hình Quản lý Học phí & Đối soát
 ## (Tuition Wireframe & Screen Flow Proposal)
+> Lưu trữ nghiên cứu ngày 18/10/2026. Phạm vi Payment mới ngày 21/10/2026 đã thay thế phương án D5/thanh toán trực tiếp tại đây. Xem [plan Payment hiện hành](../payment/implementation-plan.md) và [API contract](../payment/api-contract.md). Không dùng các quy tắc 24h tự xác nhận hoặc tỷ lệ phạt trong tài liệu cũ để triển khai.
+
 
 - **Mã tài liệu:** FLOW-M3-TUITION-02
 - **Tài liệu gốc đi kèm:** [tuition-policy-and-dispute-specification.md](tuition-policy-and-dispute-specification.md)
