@@ -392,4 +392,29 @@ class PaymentFlowIT {
                   return null;
                 }));
   }
+
+  @Test
+  void walletAndAdminHistoriesLoadAndPaginateWithoutAmbiguousColumns() {
+    assertTrue(store.topups(parentUser, 0).isEmpty());
+    assertTrue(store.withdrawals(tutorUser, 0).isEmpty());
+    var topup = store.locked(() -> store.createTopup(parentUser, 100000, "MANUAL", end));
+    store.locked(
+        () -> {
+          store.creditTopup((UUID) topup.get("id"), "HISTORY_TEST", adminUser);
+          store.move(tutorUser, 50000, 0, "history-seed", "TEST", sessionId);
+          return null;
+        });
+    store.locked(() -> store.createWithdrawal(tutorUser, 20000, "Bank", "12345678", "Tutor"));
+    assertEquals(1, store.topups(parentUser, 0).size());
+    assertEquals(1, store.topups(null, 0).size());
+    assertTrue(store.topups(studentUser, 0).isEmpty());
+    assertTrue(store.topups(parentUser, 50).isEmpty());
+    assertEquals(1, store.withdrawals(tutorUser, 0).size());
+    assertEquals(1, store.withdrawals(null, 0).size());
+    assertTrue(store.withdrawals(parentUser, 0).isEmpty());
+    assertTrue(store.withdrawals(tutorUser, 50).isEmpty());
+    assertEquals(2, store.entries(parentUser, 0).size());
+    assertTrue(store.entries(parentUser, 50).isEmpty());
+    assertNotNull(store.topups(parentUser, 0).getFirst().get("created_at"));
+  }
 }

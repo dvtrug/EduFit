@@ -197,12 +197,16 @@ public class PaymentStore {
   public List<Map<String, Object>> topups(UUID owner, int offset) {
     return owner == null
         ? db.queryForList(
-            "select *,created_at::text as created_at,expires_at::text as expires_at from"
-                + " payment_topup order by created_at desc limit 50 offset ?",
+            "select"
+                + " id,user_id,order_code,amount,provider,status,checkout_url,provider_id,transaction_reference,created_at::text"
+                + " as created_at,expires_at::text as expires_at from payment_topup order by"
+                + " payment_topup.created_at desc,id limit 50 offset ?",
             offset)
         : db.queryForList(
-            "select *,created_at::text as created_at,expires_at::text as expires_at from"
-                + " payment_topup where user_id=? order by created_at desc limit 50 offset ?",
+            "select"
+                + " id,user_id,order_code,amount,provider,status,checkout_url,provider_id,transaction_reference,created_at::text"
+                + " as created_at,expires_at::text as expires_at from payment_topup where user_id=?"
+                + " order by payment_topup.created_at desc,id limit 50 offset ?",
             owner,
             offset);
   }
@@ -260,12 +264,16 @@ public class PaymentStore {
   public List<Map<String, Object>> withdrawals(UUID owner, int offset) {
     return owner == null
         ? db.queryForList(
-            "select *,created_at::text as created_at from payment_withdrawal order by created_at"
-                + " desc limit 50 offset ?",
+            "select"
+                + " id,user_id,amount,status,bank_name,bank_account,bank_holder,transaction_reference,admin_note,created_at::text"
+                + " as created_at from payment_withdrawal order by payment_withdrawal.created_at"
+                + " desc,id limit 50 offset ?",
             offset)
         : db.queryForList(
-            "select *,created_at::text as created_at from payment_withdrawal where user_id=? order"
-                + " by created_at desc limit 50 offset ?",
+            "select"
+                + " id,user_id,amount,status,bank_name,bank_account,bank_holder,transaction_reference,admin_note,created_at::text"
+                + " as created_at from payment_withdrawal where user_id=? order by"
+                + " payment_withdrawal.created_at desc,id limit 50 offset ?",
             owner,
             offset);
   }
