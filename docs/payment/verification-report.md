@@ -21,3 +21,6 @@
 
 - P04a `c32f518` và Admin pagination hotfix `2c5c105` đã push.
 - P04b: SessionPaymentCard + 6 tests: xác nhận chủ động, chặn trước COMPLETED, mở tranh chấp, báo cáo mức tiền một phần, hết hạn/phân quyền, xác nhận giá trước cấp tiền. FE gate PASS.
+
+- P04b `6fb85d9` đã push.
+- P04c: workspace thật cho Student/Parent/Tutor, lọc tháng, sổ ví/lịch sử/phân trang và polling; tích hợp học phí vào modal buổi học. Type-check và production build PASS.
