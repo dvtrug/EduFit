@@ -102,7 +102,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "TÀI CHÍNH",
         items: [
-          { label: "Học phí & Thanh toán", href: "/student/payments", icon: CreditCard, badge: "Sắp ra mắt" },
+          { label: "Ví & Học phí", href: "/student/payments", icon: CreditCard },
         ],
       },
       {
@@ -136,7 +136,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "THU NHẬP",
         items: [
-          { label: "Báo cáo thu nhập", href: "/tutor/earnings", icon: DollarSign, badge: "Sắp ra mắt" },
+          { label: "Thu nhập & Rút tiền", href: "/tutor/earnings", icon: DollarSign },
         ],
       },
       {
@@ -168,7 +168,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
       {
         title: "TÀI CHÍNH",
         items: [
-          { label: "Gói học & Thanh toán", href: "/parent/billing", icon: CreditCard, badge: "Sắp ra mắt" },
+          { label: "Ví & Học phí", href: "/parent/billing", icon: CreditCard },
         ],
       },
       {
@@ -187,6 +187,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
         items: [
           { label: "Tổng quan", href: "/admin/dashboard", icon: LayoutDashboard },
           { label: "Duyệt bằng cấp KYC", href: "/admin/verification-queue", icon: ShieldCheck },
+          { label: "Đối soát thanh toán", href: "/admin/payments", icon: CreditCard },
           { label: "Nhật ký kiểm toán", href: "/admin/audit-logs", icon: ScrollText },
         ],
       },
@@ -198,7 +199,7 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
           { label: "Liên kết Phụ huynh - Con", href: "/admin/family-links", icon: HeartHandshake },
           { label: "Danh mục môn học", href: "/admin/catalogs", icon: BookOpen },
           { label: "Liên kết hệ thống", href: "/admin/links", icon: HeartHandshake },
-          { label: "Khiếu nại & Tranh chấp", href: "/admin/disputes", icon: AlertTriangle, badge: "2" },
+          { label: "Khiếu nại & Tranh chấp", href: "/admin/disputes", icon: AlertTriangle },
         ],
       },
       {

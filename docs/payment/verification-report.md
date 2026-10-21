@@ -24,3 +24,7 @@
 
 - P04b `6fb85d9` đã push.
 - P04c: workspace thật cho Student/Parent/Tutor, lọc tháng, sổ ví/lịch sử/phân trang và polling; tích hợp học phí vào modal buổi học. Type-check và production build PASS.
+
+- P04c `0cb5c2a` đã push.
+- P05: Admin nạp/rút/duyệt hai báo cáo; navigation mới, bỏ redirect cũ `/admin/disputes`, bỏ KPI tiền giả. 2 Admin form tests + 7 sidebar/CTA tests PASS (đã xử lý act warning trong test Parent).
+- Browser Chrome production frontend + Spring Boot + PostgreSQL riêng: 4 vai trò PASS; QR không tự credit, Admin manual bank-confirm cập nhật đúng ví, ví Parent độc lập, Tutor không thể rút khi số dư 0, Student Admin API 403, disputes route không redirect, không pageerror. Không có chuyển tiền thật; bank confirmation được mô phỏng trên DB riêng.

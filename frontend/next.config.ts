@@ -18,11 +18,6 @@ const nextConfig: NextConfig = {
         destination: "/admin/verification-queue",
         permanent: true,
       },
-      {
-        source: "/admin/disputes",
-        destination: "/admin/dashboard",
-        permanent: true,
-      },
 
     ];
   },
