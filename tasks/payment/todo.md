@@ -3,7 +3,7 @@
 Mỗi task hoàn thành: cập nhật bằng chứng, commit riêng theo phần, push `feat/payment`.
 
 - [x] P00: audit develop, chốt quy tắc và ghi plan. Kiểm chứng: working tree sạch trước triển khai; hoa hồng được user chọn 10%.
-- [ ] P01: module, state machine thu phí/tranh chấp và tests. AC: 1h chỉ auto phía learner, 24h trả held nếu chưa đồng thuận; hai báo cáo khớp chờ Admin.
+- [x] P01: module, state machine thu phí/tranh chấp và tests. AC: 1h chỉ auto phía learner, 24h trả held nếu chưa đồng thuận; hai báo cáo khớp chờ Admin.
 - [ ] P02: migration, ví/sổ, cấp tiền, xác nhận/tất toán và scheduler. AC: transaction/idempotence/authorization; hoàn đúng payer; migration mới không đổi history.
 - [ ] P03: nạp QR/payOS webhook và manual đối soát; rút tiền/Admin. AC: không tự credit, chữ ký/amount/reference đúng, xử lý trùng; Admin review có mã giao dịch và audit.
 - [ ] P04: SDK và FE Student/Parent/Tutor. AC: nạp, sổ, cấp tiền, confirm, dispute/report, rút; error/empty/pending và không dữ liệu giả.
