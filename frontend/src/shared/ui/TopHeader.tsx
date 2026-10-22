@@ -71,6 +71,9 @@ export function TopHeader({
         {onToggleSidebar && (
           <button
             type="button"
+            aria-label="Mở menu điều hướng"
+            aria-haspopup="dialog"
+            aria-controls="dashboard-mobile-navigation"
             onClick={onToggleSidebar}
             className="lg:hidden p-2 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 text-neutral-600 dark:text-stone-300 transition-colors"
           >
