@@ -17,16 +17,12 @@ import vn.edufit.shared.exception.InvalidOperationException;
 @Component
 public class PayosGateway {
   private final PaymentSettings settings;
+  private final PayosTransport transport;
   private final ObjectMapper json = new ObjectMapper();
 
-  private static class ClientHolder {
-    private static final HttpClient CLIENT =
-        HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
-  }
-
-  public PayosGateway(PaymentSettings settings) {
-    this.settings = settings;
-  }
+  public PayosGateway(PaymentSettings settings) { this(settings,new PayosTransport()); }
+  @org.springframework.beans.factory.annotation.Autowired
+  public PayosGateway(PaymentSettings settings,PayosTransport transport) {this.settings=settings;this.transport=transport;}
 
   public record Checkout(String url, String id) {}
 
@@ -52,32 +48,17 @@ public class PayosGateway {
     String signature = sign(canonical(data), settings.checksumKey);
     data.put("signature", signature);
     data.put("expiredAt", expires.getEpochSecond());
-    try {
-      var req =
-          HttpRequest.newBuilder(URI.create("https://api-merchant.payos.vn/v2/payment-requests"))
-              .timeout(Duration.ofSeconds(20))
-              .header("Content-Type", "application/json")
-              .header("x-client-id", settings.clientId)
-              .header("x-api-key", settings.apiKey)
-              .POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(data)))
-              .build();
-      var response = ClientHolder.CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
-      var body = json.readTree(response.body());
-      if (response.statusCode() != 200 || !"00".equals(body.path("code").asText()))
-        throw new InvalidOperationException(
-            "Không tạo được QR payOS; hãy thử lại hoặc liên hệ hỗ trợ");
-      var result = body.path("data");
-      String url = result.path("checkoutUrl").asText();
-      String id = result.path("paymentLinkId").asText();
-      if (!url.startsWith("https://pay.payos.vn/") || id.isBlank())
-        throw new InvalidOperationException("Dữ liệu checkout không hợp lệ");
-      return new Checkout(url, id);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new InvalidOperationException("Yêu cầu thanh toán bị gián đoạn");
-    } catch (java.io.IOException e) {
-      throw new InvalidOperationException("Không kết nối được payOS; chưa ghi tăng số dư");
-    }
+    var result=transport.call("POST","/v2/payment-requests",data,settings.clientId,settings.apiKey,settings.checksumKey,false,null);
+    String url=result.path("checkoutUrl").asText(),id=result.path("paymentLinkId").asText();
+    if (!url.startsWith("https://pay.payos.vn/") || id.isBlank()
+        || !settings.bankAccount.equals(result.path("accountNumber").asText()))
+      throw new InvalidOperationException("Dữ liệu checkout/tài khoản nhận không hợp lệ");
+    return new Checkout(url,id);
+  }
+
+  public JsonNode lookup(long order) {
+    if(!settings.payos())throw new InvalidOperationException("Chưa cấu hình payOS");
+    return transport.call("GET","/v2/payment-requests/"+order,null,settings.clientId,settings.apiKey,settings.checksumKey,false,null);
   }
 
   public Receipt verify(String payload) {
