@@ -20,7 +20,7 @@ Ghi SHA và kiểm chứng sau mỗi phần tại `docs/payment/verification-rep
 ## Hoàn thiện kết nối payOS (23/10/2026)
 
 - [x] P07: cấu hình .env.example/Compose, trạng thái readiness cho Admin; để trống toàn bộ credentials. Kiểm chứng khởi động thiếu khóa, không lộ secret.
-- [ ] P08: đối soát nạp tiền server-to-server khi webhook chậm, khóa/idempotence và thông báo ví cùng transaction. Kiểm chứng chữ ký, sai số tiền/tài khoản, duplicate, provider timeout.
-- [ ] P09: chi hộ sau Admin duyệt, reference ổn định, PROCESSING giữ tiền; đối soát kết quả cuối, chặn manual settle khi đã gửi. Kiểm chứng timeout/crash/retry/concurrency, thành công/thất bại/mismatch.
+- [x] P08: đối soát nạp tiền server-to-server khi webhook chậm, khóa/idempotence và thông báo ví cùng transaction. Kiểm chứng chữ ký, sai số tiền/tài khoản, duplicate, provider timeout.
+- [x] P09: chi hộ sau Admin duyệt, reference ổn định, PROCESSING giữ tiền; đối soát kết quả cuối, chặn manual settle khi đã gửi. Kiểm chứng timeout/crash/retry/concurrency, thành công/thất bại/mismatch.
 - [ ] P10: FE trạng thái cấu hình, refresh nạp tiền, bank BIN và payout Admin, liên kết notification; kiểm thử hành vi/type/lint/build/browser.
 - [ ] P11: hướng dẫn config local/deploy/webhook/kênh chi, cập nhật API/schema/report; commit push từng phần, giữ feat/payment.

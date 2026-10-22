@@ -2,11 +2,9 @@ package vn.edufit.payment.infra;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.net.URI;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import javax.crypto.Mac;
@@ -20,9 +18,15 @@ public class PayosGateway {
   private final PayosTransport transport;
   private final ObjectMapper json = new ObjectMapper();
 
-  public PayosGateway(PaymentSettings settings) { this(settings,new PayosTransport()); }
+  public PayosGateway(PaymentSettings settings) {
+    this(settings, new PayosTransport());
+  }
+
   @org.springframework.beans.factory.annotation.Autowired
-  public PayosGateway(PaymentSettings settings,PayosTransport transport) {this.settings=settings;this.transport=transport;}
+  public PayosGateway(PaymentSettings settings, PayosTransport transport) {
+    this.settings = settings;
+    this.transport = transport;
+  }
 
   public record Checkout(String url, String id) {}
 
@@ -48,17 +52,35 @@ public class PayosGateway {
     String signature = sign(canonical(data), settings.checksumKey);
     data.put("signature", signature);
     data.put("expiredAt", expires.getEpochSecond());
-    var result=transport.call("POST","/v2/payment-requests",data,settings.clientId,settings.apiKey,settings.checksumKey,false,null);
-    String url=result.path("checkoutUrl").asText(),id=result.path("paymentLinkId").asText();
-    if (!url.startsWith("https://pay.payos.vn/") || id.isBlank()
+    var result =
+        transport.call(
+            "POST",
+            "/v2/payment-requests",
+            data,
+            settings.clientId,
+            settings.apiKey,
+            settings.checksumKey,
+            false,
+            null);
+    String url = result.path("checkoutUrl").asText(), id = result.path("paymentLinkId").asText();
+    if (!url.startsWith("https://pay.payos.vn/")
+        || id.isBlank()
         || !settings.bankAccount.equals(result.path("accountNumber").asText()))
       throw new InvalidOperationException("Dữ liệu checkout/tài khoản nhận không hợp lệ");
-    return new Checkout(url,id);
+    return new Checkout(url, id);
   }
 
   public JsonNode lookup(long order) {
-    if(!settings.payos())throw new InvalidOperationException("Chưa cấu hình payOS");
-    return transport.call("GET","/v2/payment-requests/"+order,null,settings.clientId,settings.apiKey,settings.checksumKey,false,null);
+    if (!settings.payos()) throw new InvalidOperationException("Chưa cấu hình payOS");
+    return transport.call(
+        "GET",
+        "/v2/payment-requests/" + order,
+        null,
+        settings.clientId,
+        settings.apiKey,
+        settings.checksumKey,
+        false,
+        null);
   }
 
   public Receipt verify(String payload) {

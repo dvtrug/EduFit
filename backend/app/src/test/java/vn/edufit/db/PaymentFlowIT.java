@@ -59,7 +59,7 @@ class PaymentFlowIT {
             .schemas(schema)
             .locations("classpath:db/migration")
             .load();
-    assertEquals(16, flyway.migrate().migrationsExecuted);
+    assertEquals(17, flyway.migrate().migrationsExecuted);
     flyway.validate();
     assertEquals(0, flyway.migrate().migrationsExecuted);
   }
@@ -420,5 +420,213 @@ class PaymentFlowIT {
     assertEquals(2, store.entries(parentUser, 0).size());
     assertTrue(store.entries(parentUser, 50).isEmpty());
     assertNotNull(store.topups(parentUser, 0).getFirst().get("created_at"));
+  }
+
+  vn.edufit.payment.infra.PayosPayoutGateway payoutGateway;
+
+  PaymentPayoutService payouts() {
+    payoutGateway = mock(vn.edufit.payment.infra.PayosPayoutGateway.class);
+    var settings = new vn.edufit.payment.infra.PaymentSettings();
+    settings.payoutEnabled = true;
+    settings.payoutClientId = "test";
+    settings.payoutApiKey = "test";
+    settings.payoutChecksumKey = "test";
+    return new PaymentPayoutService(
+        store,
+        new PaymentAccess(profiles, connections),
+        settings,
+        payoutGateway,
+        new PaymentTime(Clock.fixed(now.get(), ZoneOffset.UTC)));
+  }
+
+  UUID requestPayout() {
+    return store.locked(
+        () -> {
+          store.move(tutorUser, 90000, 0, "payout-seed", "TEST", sessionId);
+          return (UUID)
+              store
+                  .createWithdrawal(tutorUser, 50000, "Bank", "12345678", "Tutor", "970422")
+                  .get("id");
+        });
+  }
+
+  com.fasterxml.jackson.databind.JsonNode payoutData(UUID id, String state, long amount) {
+    return new com.fasterxml.jackson.databind.ObjectMapper()
+        .valueToTree(
+            Map.of(
+                "id",
+                "payout_" + id,
+                "referenceId",
+                id.toString(),
+                "transactions",
+                List.of(
+                    Map.of(
+                        "referenceId",
+                        id.toString(),
+                        "state",
+                        state,
+                        "amount",
+                        amount,
+                        "toBin",
+                        "970422",
+                        "toAccountNumber",
+                        "12345678"))));
+  }
+
+  @Test
+  void payoutProcessingKeepsFundsAndConcurrentApprovalSubmitsOnlyOnce() throws Exception {
+    var p = payouts();
+    UUID id = requestPayout();
+    when(payoutGateway.create(anyMap())).thenReturn(payoutData(id, "PROCESSING", 50000));
+    try (var pool = Executors.newFixedThreadPool(4)) {
+      var calls = new ArrayList<Callable<Object>>();
+      for (int i = 0; i < 4; i++)
+        calls.add(() -> p.approve(actor(adminUser, "ADMIN"), id, "Duyệt"));
+      for (var f : pool.invokeAll(calls)) f.get();
+    }
+    verify(payoutGateway, times(1)).create(anyMap());
+    assertEquals(50000, store.wallet(tutorUser).held());
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            store.locked(
+                () -> {
+                  store.reviewWithdrawal(id, true, "MANUAL123", "Sai", adminUser);
+                  return null;
+                }));
+    when(payoutGateway.lookup(anyMap())).thenReturn(payoutData(id, "SUCCEEDED", 50000));
+    db.update("update payment_withdrawal set reconcile_after='epoch' where id=?", id);
+    p.refresh(actor(adminUser, "ADMIN"), id);
+    p.refresh(actor(adminUser, "ADMIN"), id);
+    assertEquals("PAID", store.withdrawal(id).get("status"));
+    assertEquals(0, store.wallet(tutorUser).held());
+    assertEquals(40000, store.wallet(tutorUser).available());
+    assertEquals(
+        1,
+        db.queryForObject(
+            "select count(*) from payment_entry where event_key=?",
+            Integer.class,
+            "withdraw-result:" + id));
+  }
+
+  @Test
+  void timeoutNeverRefundsOrResubmitsAndVerifiedFailureReturnsFundsOnce() {
+    var p = payouts();
+    UUID id = requestPayout();
+    when(payoutGateway.create(anyMap())).thenThrow(new IllegalStateException("timeout"));
+    p.approve(actor(adminUser, "ADMIN"), id, "Duyệt");
+    p.approve(actor(adminUser, "ADMIN"), id, "Duyệt lại");
+    verify(payoutGateway, times(1)).create(anyMap());
+    assertEquals(50000, store.wallet(tutorUser).held());
+    when(payoutGateway.lookup(anyMap())).thenReturn(payoutData(id, "FAILED", 50000));
+    db.update("update payment_withdrawal set reconcile_after='epoch' where id=?", id);
+    p.refresh(actor(adminUser, "ADMIN"), id);
+    assertEquals("FAILED", store.withdrawal(id).get("status"));
+    assertEquals(90000, store.wallet(tutorUser).available());
+    assertEquals(0, store.wallet(tutorUser).held());
+  }
+
+  @Test
+  void mismatchedPayoutAmountAndUnauthorizedReviewCannotReleaseFunds() {
+    var p = payouts();
+    UUID id = requestPayout();
+    assertThrows(
+        RuntimeException.class, () -> p.approve(actor(studentUser, "STUDENT"), id, "Hack"));
+    verifyNoInteractions(payoutGateway);
+    when(payoutGateway.create(anyMap())).thenReturn(payoutData(id, "SUCCEEDED", 60000));
+    p.approve(actor(adminUser, "ADMIN"), id, "Duyệt");
+    assertEquals("PROCESSING", store.withdrawal(id).get("status"));
+    assertEquals(50000, store.wallet(tutorUser).held());
+  }
+
+  @Test
+  void notificationAndWalletCommitTogetherAndDuplicateWebhookNotifiesOnlyOnce() {
+    var sink = mock(vn.edufit.shared.notification.NotificationSink.class);
+    var notified = new PaymentStore(db, new DataSourceTransactionManager(datasource), sink);
+    var topup = store.locked(() -> store.createTopup(parentUser, 30000, "PAYOS", end));
+    UUID id = (UUID) topup.get("id");
+    doThrow(new IllegalStateException("notification unavailable"))
+        .when(sink)
+        .notify(any(), isNull(), anyString(), anyString(), anyString(), anyString(), any());
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            notified.locked(
+                () -> {
+                  notified.creditTopup(id, "NOTIFYREF1", null);
+                  return null;
+                }));
+    assertEquals("PENDING", store.topup(id).get("status"));
+    assertEquals(1000000, store.wallet(parentUser).available());
+    reset(sink);
+    for (int i = 0; i < 2; i++)
+      notified.locked(
+          () -> {
+            notified.creditTopup(id, "NOTIFYREF1", null);
+            return null;
+          });
+    assertEquals(1030000, store.wallet(parentUser).available());
+    verify(sink, times(1))
+        .notify(
+            eq(parentUser),
+            isNull(),
+            eq("PAYMENT_TOPUP"),
+            anyString(),
+            anyString(),
+            eq("PAYMENT_WALLET"),
+            eq(id));
+  }
+
+  @Test
+  void upgradesV116WithoutLosingWalletOrPendingWithdrawal() {
+    String schema = "payment_upgrade_" + UUID.randomUUID().toString().replace("-", "");
+    var ds =
+        new DriverManagerDataSource(
+            datasource.getUrl().replaceAll("currentSchema=[^&]+", "currentSchema=" + schema),
+            datasource.getUsername(),
+            datasource.getPassword());
+    Flyway old =
+        Flyway.configure()
+            .dataSource(ds)
+            .schemas(schema)
+            .locations("classpath:db/migration")
+            .target("1.16")
+            .load();
+    assertEquals(16, old.migrate().migrationsExecuted);
+    var jdbc = new JdbcTemplate(ds);
+    UUID user =
+        jdbc.queryForObject("select user_id from account where role='TUTOR' limit 1", UUID.class);
+    UUID id = UUID.randomUUID();
+    jdbc.update("insert into payment_wallet(user_id,available,held) values (?,40000,50000)", user);
+    jdbc.update(
+        "insert into"
+            + " payment_withdrawal(id,user_id,amount,status,bank_name,bank_account,bank_holder)"
+            + " values (?, ?,50000,'PENDING','Bank','12345678','Tutor')",
+        id,
+        user);
+    var upgraded =
+        Flyway.configure()
+            .dataSource(ds)
+            .schemas(schema)
+            .locations("classpath:db/migration")
+            .load();
+    assertEquals(1, upgraded.migrate().migrationsExecuted);
+    upgraded.validate();
+    assertEquals(0, upgraded.migrate().migrationsExecuted);
+    assertEquals(
+        50000,
+        jdbc.queryForObject("select held from payment_wallet where user_id=?", Long.class, user));
+    assertNull(
+        jdbc.queryForMap("select bank_bin from payment_withdrawal where id=?", id).get("bank_bin"));
+    jdbc.update("update payment_withdrawal set status='PROCESSING' where id=?", id);
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            jdbc.update(
+                "insert into"
+                    + " payment_withdrawal(id,user_id,amount,status,bank_name,bank_account,bank_holder)"
+                    + " values (?, ?,10000,'PENDING','Bank','12345678','Tutor')",
+                UUID.randomUUID(),
+                user));
   }
 }

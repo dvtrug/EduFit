@@ -47,3 +47,7 @@ Backend đang trỏ cổng 5433 thuộc PostgreSQL dự án khác. Đã bật l�
 ## Hoàn thiện payOS 23/10/2026
 
 P07: Compose truyền toàn bộ cấu hình Payment; .env.example để trống secrets; .env local bổ sung biến thiếu không thay giá trị đã có. API Admin configuration chỉ trả readiness/frontend URL/webhook path. PaymentSettingsTest và gateway/wallet tests PASS; placeholder `...` không bật kênh live.
+
+P07 `de6b336` đã push. Gateway `d16e468` đã push: ký/xác minh BODY cho kênh thu, HEADER + URI encoding cho kênh chi; đối chiếu API và source SDK chính thức, không thực hiện request giao dịch thật.
+
+P08/P09: PostgreSQL 17 fresh 17 migrations + upgrade V1.16 có số dư/rút chờ, rerun no-op PASS. Gate backend 73 PASS (23 Payment unit + 50 app/architecture/PG/startup). Payout concurrent approval chỉ gọi create một lần, timeout giữ tiền và không repost, processing không được manual paid/refund, signed success ghi sổ một lần, failure trả ví, mismatch/unauthorized không release. Notification failure rollback cùng ví; duplicate credit chỉ notify một lần. Topup reconcile owner-only, không credit khi sai amount/account hoặc timeout; lease chặn refresh storm. Package SUCCESS. Provider calls dùng mock/test fixtures, chưa xác minh merchant live.

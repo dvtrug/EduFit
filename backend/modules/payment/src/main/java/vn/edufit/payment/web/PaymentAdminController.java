@@ -15,12 +15,17 @@ import vn.edufit.shared.response.ApiResponse;
 @Validated
 public class PaymentAdminController {
   private final WalletService wallets;
+  private final PaymentPayoutService payouts;
   private final SessionPaymentService sessions;
   private final ObjectProvider<CurrentUser> actors;
 
   public PaymentAdminController(
-      WalletService wallets, SessionPaymentService sessions, ObjectProvider<CurrentUser> actors) {
+      WalletService wallets,
+      SessionPaymentService sessions,
+      ObjectProvider<CurrentUser> actors,
+      PaymentPayoutService payouts) {
     this.wallets = wallets;
+    this.payouts = payouts;
     this.sessions = sessions;
     this.actors = actors;
   }
@@ -31,7 +36,9 @@ public class PaymentAdminController {
       @Size(max = 200) String reference) {}
 
   @GetMapping("/configuration")
-  public ApiResponse<?> configuration() { return ApiResponse.success(wallets.configuration(actors.getObject())); }
+  public ApiResponse<?> configuration() {
+    return ApiResponse.success(wallets.configuration(actors.getObject()));
+  }
 
   @GetMapping
   public ApiResponse<?> list(@RequestParam(defaultValue = "0") @Min(0) @Max(100000) int offset) {
@@ -55,6 +62,16 @@ public class PaymentAdminController {
     wallets.reviewWithdrawal(
         actors.getObject(), id, input.approve(), input.reference(), input.note());
     return ApiResponse.ok();
+  }
+
+  @PostMapping("/withdrawals/{id}/payout")
+  public ApiResponse<?> payout(@PathVariable UUID id, @Valid @RequestBody Review input) {
+    return ApiResponse.success(payouts.approve(actors.getObject(), id, input.note()));
+  }
+
+  @PostMapping("/withdrawals/{id}/refresh")
+  public ApiResponse<?> refreshPayout(@PathVariable UUID id) {
+    return ApiResponse.success(payouts.refresh(actors.getObject(), id));
   }
 
   @PostMapping("/disputes/{id}/review")

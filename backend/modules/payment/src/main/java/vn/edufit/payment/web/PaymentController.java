@@ -17,12 +17,17 @@ import vn.edufit.shared.response.ApiResponse;
 @Validated
 public class PaymentController {
   private final WalletService wallets;
+  private final PaymentReconciliationService reconciliation;
   private final SessionPaymentService sessions;
   private final ObjectProvider<CurrentUser> actors;
 
   public PaymentController(
-      WalletService wallets, SessionPaymentService sessions, ObjectProvider<CurrentUser> actors) {
+      WalletService wallets,
+      SessionPaymentService sessions,
+      ObjectProvider<CurrentUser> actors,
+      PaymentReconciliationService reconciliation) {
     this.wallets = wallets;
+    this.reconciliation = reconciliation;
     this.sessions = sessions;
     this.actors = actors;
   }
@@ -47,7 +52,8 @@ public class PaymentController {
           BigDecimal amount,
       @NotBlank @Size(max = 100) String bank,
       @Pattern(regexp = "[0-9]{5,34}") @NotNull String account,
-      @NotBlank @Size(max = 150) String holder) {}
+      @NotBlank @Size(max = 150) String holder,
+      @Pattern(regexp = "[0-9]{6}") String bankBin) {}
 
   @GetMapping("/wallet")
   public ApiResponse<?> wallet(@RequestParam(defaultValue = "0") @Min(0) @Max(100000) int offset) {
@@ -59,6 +65,11 @@ public class PaymentController {
     return ApiResponse.success(wallets.topup(actors.getObject(), input.amount().longValueExact()));
   }
 
+  @PostMapping("/topups/{id}/refresh")
+  public ApiResponse<?> refreshTopup(@PathVariable UUID id) {
+    return ApiResponse.success(reconciliation.refresh(actors.getObject(), id));
+  }
+
   @PostMapping("/withdrawals")
   public ApiResponse<?> withdraw(@Valid @RequestBody Withdrawal input) {
     return ApiResponse.success(
@@ -67,7 +78,8 @@ public class PaymentController {
             input.amount().longValueExact(),
             input.bank(),
             input.account(),
-            input.holder()));
+            input.holder(),
+            input.bankBin()));
   }
 
   @GetMapping("/sessions")

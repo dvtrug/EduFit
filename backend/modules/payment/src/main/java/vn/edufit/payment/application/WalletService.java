@@ -144,8 +144,15 @@ public class WalletService {
 
   public Map<String, Object> withdraw(
       CurrentUser a, long amount, String bank, String account, String holder) {
+    return withdraw(a, amount, bank, account, holder, null);
+  }
+
+  public Map<String, Object> withdraw(
+      CurrentUser a, long amount, String bank, String account, String holder, String bankBin) {
     access.tutorRole(a);
     money(amount);
+    if (bankBin != null && !bankBin.matches("[0-9]{6}"))
+      throw new InvalidOperationException("Mã BIN ngân hàng gồm 6 số");
     if (bank == null
         || bank.isBlank()
         || bank.length() > 100
@@ -158,7 +165,8 @@ public class WalletService {
     return store.locked(
         () -> {
           var w =
-              store.createWithdrawal(a.getUserId(), amount, bank.trim(), account, holder.trim());
+              store.createWithdrawal(
+                  a.getUserId(), amount, bank.trim(), account, holder.trim(), bankBin);
           store.audit(a.getUserId(), (UUID) w.get("id"), "WITHDRAW_REQUESTED", "VND=" + amount);
           return w;
         });
@@ -177,12 +185,20 @@ public class WalletService {
         });
   }
 
-  public Map<String, Object> configuration(CurrentUser a) { access.admin(a); return settings.readiness(); }
+  public Map<String, Object> configuration(CurrentUser a) {
+    access.admin(a);
+    return settings.readiness();
+  }
 
   public Map<String, Object> admin(CurrentUser a, int offset) {
     access.admin(a);
     return Map.of(
-        "topups", store.topups(null, offset), "withdrawals", store.withdrawals(null, offset));
+        "topups",
+        store.topups(null, offset),
+        "withdrawals",
+        store.withdrawals(null, offset),
+        "configuration",
+        settings.readiness());
   }
 
   private static void money(long amount) {

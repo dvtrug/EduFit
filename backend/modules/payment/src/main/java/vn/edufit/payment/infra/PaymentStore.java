@@ -17,11 +17,25 @@ import vn.edufit.shared.exception.InvalidOperationException;
 public class PaymentStore {
   private final JdbcTemplate db;
   private final TransactionTemplate tx;
+  private final vn.edufit.shared.notification.NotificationSink notifications;
 
   public PaymentStore(
       JdbcTemplate db, org.springframework.transaction.PlatformTransactionManager manager) {
+    this(db, manager, (user, student, type, title, text, target, id) -> {});
+  }
+
+  @org.springframework.beans.factory.annotation.Autowired
+  public PaymentStore(
+      JdbcTemplate db,
+      org.springframework.transaction.PlatformTransactionManager manager,
+      vn.edufit.shared.notification.NotificationSink notifications) {
     this.db = db;
     this.tx = new TransactionTemplate(manager);
+    this.notifications = notifications;
+  }
+
+  public void notice(UUID user, UUID ref, String type, String title, String text) {
+    notifications.notify(user, null, "PAYMENT_" + type, title, text, "PAYMENT_WALLET", ref);
   }
 
   // One DB row serializes monetary mutations across application instances. No network calls inside.
@@ -67,6 +81,29 @@ public class PaymentStore {
         available,
         held,
         ref);
+    if (user != null) {
+      String title =
+          switch (kind) {
+            case "TOPUP" -> "Nạp tiền thành công";
+            case "WITHDRAW_RESERVED" -> "Đã tiếp nhận yêu cầu rút tiền";
+            case "WITHDRAW_PAID" -> "Rút tiền thành công";
+            case "WITHDRAW_REJECTED", "WITHDRAW_FAILED" -> "Khoản rút đã được hoàn về ví";
+            case "TUITION_INCOME" -> "Đã nhận thu nhập buổi học";
+            case "SESSION_SETTLED" -> "Đã xử lý học phí buổi học";
+            default -> null;
+          };
+      if (title != null)
+        notice(
+            user,
+            ref,
+            kind,
+            title,
+            "Số dư thay đổi "
+                + available
+                + " VND; đang giữ thay đổi "
+                + held
+                + " VND. Xem sổ ví để biết chi tiết.");
+    }
   }
 
   public void audit(UUID actor, UUID ref, String action, String detail) {
@@ -124,6 +161,27 @@ public class PaymentStore {
 
   public void save(Charge c) {
     var s = c.state();
+    String oldStatus =
+        db.queryForObject(
+            "select status from payment_charge where session_id=?", String.class, c.sessionId());
+    if (!s.status.equals(oldStatus) && Set.of("DISPUTED", "AWAITING_ADMIN").contains(s.status)) {
+      String title =
+          s.status.equals("DISPUTED")
+              ? "Học phí đang được tạm giữ do tranh chấp"
+              : "Hai báo cáo đã thống nhất, chờ Admin tất toán";
+      notice(
+          c.payerId(),
+          c.sessionId(),
+          s.status,
+          title,
+          "Mở học phí để xem thời hạn và báo cáo hai phía.");
+      notice(
+          c.tutorUserId(),
+          c.sessionId(),
+          s.status,
+          title,
+          "Mở học phí để xem thời hạn và báo cáo hai phía.");
+    }
     db.update(
         "update payment_charge set"
             + " end_at=?,status=?,learner_accepted=?,tutor_accepted=?,auto_accepted=?,dispute_reason=?,dispute_opened_at=?,learner_report=?,tutor_report=?,learner_amount=?,tutor_amount=?,settled_amount=?,updated_at=now()"
@@ -232,29 +290,38 @@ public class PaymentStore {
 
   public Map<String, Object> createWithdrawal(
       UUID user, long amount, String bank, String account, String holder) {
+    return createWithdrawal(user, amount, bank, account, holder, null);
+  }
+
+  public Map<String, Object> createWithdrawal(
+      UUID user, long amount, String bank, String account, String holder, String bin) {
     var pending =
         db.queryForList(
-            "select * from payment_withdrawal where user_id=? and status='PENDING'", user);
+            "select * from payment_withdrawal where user_id=? and status in"
+                + " ('PENDING','PROCESSING')",
+            user);
     if (!pending.isEmpty()) {
       var previous = pending.getFirst();
       if (((Number) previous.get("amount")).longValue() == amount
           && bank.equals(previous.get("bank_name"))
           && account.equals(previous.get("bank_account"))
-          && holder.equals(previous.get("bank_holder"))) return previous;
+          && holder.equals(previous.get("bank_holder"))
+          && Objects.equals(bin, previous.get("bank_bin"))) return previous;
       throw new InvalidOperationException("Đã có yêu cầu rút đang chờ xử lý");
     }
     UUID id = UUID.randomUUID();
     move(user, -amount, amount, "withdraw-reserve:" + id, "WITHDRAW_RESERVED", id);
     db.update(
         "insert into"
-            + " payment_withdrawal(id,user_id,amount,status,bank_name,bank_account,bank_holder)"
-            + " values (?,?,?,'PENDING',?,?,?)",
+            + " payment_withdrawal(id,user_id,amount,status,bank_name,bank_account,bank_holder,bank_bin)"
+            + " values (?,?,?,'PENDING',?,?,?,?)",
         id,
         user,
         amount,
         bank,
         account,
-        holder);
+        holder,
+        bin);
     return withdrawal(id);
   }
 
@@ -266,13 +333,13 @@ public class PaymentStore {
     return owner == null
         ? db.queryForList(
             "select"
-                + " id,user_id,amount,status,bank_name,bank_account,bank_holder,transaction_reference,admin_note,created_at::text"
+                + " id,user_id,amount,status,bank_name,bank_account,bank_holder,bank_bin,provider_id,provider_state,provider_message,transaction_reference,admin_note,created_at::text"
                 + " as created_at from payment_withdrawal order by payment_withdrawal.created_at"
                 + " desc,id limit 50 offset ?",
             offset)
         : db.queryForList(
             "select"
-                + " id,user_id,amount,status,bank_name,bank_account,bank_holder,transaction_reference,admin_note,created_at::text"
+                + " id,user_id,amount,status,bank_name,bank_account,bank_holder,bank_bin,provider_id,provider_state,provider_message,transaction_reference,admin_note,created_at::text"
                 + " as created_at from payment_withdrawal where user_id=? order by"
                 + " payment_withdrawal.created_at desc,id limit 50 offset ?",
             owner,
@@ -299,6 +366,95 @@ public class PaymentStore {
         note,
         id);
     audit(actor, id, paid ? "WITHDRAW_PAID" : "WITHDRAW_REJECTED", note + " | " + reference);
+  }
+
+  public boolean claimTopup(UUID id, Instant now) {
+    return db.update(
+            "update payment_topup set reconcile_after=? where id=? and status='PENDING' and"
+                + " provider='PAYOS' and reconcile_after<=?",
+            ts(now.plusSeconds(30)),
+            id,
+            ts(now))
+        == 1;
+  }
+
+  public List<Map<String, Object>> reconcileTopups(Instant now) {
+    return db.queryForList(
+        "select * from payment_topup where status='PENDING' and provider='PAYOS' and"
+            + " reconcile_after<=? order by reconcile_after,created_at limit 20",
+        ts(now));
+  }
+
+  public boolean startPayout(UUID id, String note, UUID actor, Instant now) {
+    var w = withdrawal(id);
+    if ("PROCESSING".equals(w.get("status"))) return false;
+    if (!"PENDING".equals(w.get("status")))
+      throw new InvalidOperationException("Yêu cầu rút đã kết thúc");
+    if (w.get("bank_bin") == null)
+      throw new InvalidOperationException(
+          "Yêu cầu cũ thiếu mã BIN; chỉ được đối soát thủ công hoặc từ chối để gửi lại");
+    db.update(
+        "update payment_withdrawal set"
+            + " status='PROCESSING',payout_requested_at=?,reconcile_after=?,admin_note=?,provider_state='SUBMITTING'"
+            + " where id=?",
+        ts(now),
+        ts(now.plusSeconds(60)),
+        note,
+        id);
+    audit(actor, id, "PAYOUT_APPROVED", note);
+    return true;
+  }
+
+  public List<Map<String, Object>> reconcilePayouts(Instant now) {
+    return db.queryForList(
+        "select * from payment_withdrawal where status='PROCESSING' and reconcile_after<=? order by"
+            + " reconcile_after,created_at limit 20",
+        ts(now));
+  }
+
+  public boolean claimPayout(UUID id, Instant now) {
+    return db.update(
+            "update payment_withdrawal set reconcile_after=? where id=? and status='PROCESSING' and"
+                + " reconcile_after<=?",
+            ts(now.plusSeconds(60)),
+            id,
+            ts(now))
+        == 1;
+  }
+
+  public void payoutUnknown(UUID id) {
+    db.update(
+        "update payment_withdrawal set provider_message=? where id=? and status='PROCESSING'",
+        "Chưa xác nhận kết quả. Tiền đang được giữ để đối soát tự động.",
+        id);
+  }
+
+  public void payoutResult(UUID id, String providerId, String state) {
+    var w = withdrawal(id);
+    if (!"PROCESSING".equals(w.get("status"))) return;
+    boolean paid = "SUCCEEDED".equals(state),
+        failed = Set.of("FAILED", "CANCELLED", "REVERSED").contains(state);
+    db.update(
+        "update payment_withdrawal set provider_id=?,provider_state=?,provider_message=null where"
+            + " id=?",
+        providerId,
+        state,
+        id);
+    if (!paid && !failed) return;
+    long amount = ((Number) w.get("amount")).longValue();
+    move(
+        (UUID) w.get("user_id"),
+        paid ? 0 : amount,
+        -amount,
+        "withdraw-result:" + id,
+        paid ? "WITHDRAW_PAID" : "WITHDRAW_FAILED",
+        id);
+    db.update(
+        "update payment_withdrawal set status=?,transaction_reference=? where id=?",
+        paid ? "PAID" : "FAILED",
+        providerId,
+        id);
+    audit(null, id, "PAYOUT_" + state, "Đã xác minh phản hồi payOS");
   }
 
   private Map<String, Object> one(String sql, Object id) {

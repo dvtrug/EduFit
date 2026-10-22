@@ -88,7 +88,7 @@ class FlywayMigrationIT {
             .validateOnMigrate(true)
             .baselineOnMigrate(false)
             .load();
-    assertEquals(7, upgraded.migrate().migrationsExecuted);
+    assertEquals(8, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted, "Rerun không thực thi lại migration");
     try (Connection connection =
@@ -150,7 +150,7 @@ class FlywayMigrationIT {
     // 3. Kiểm chứng kết quả thực thi của Flyway
     assertTrue(result.success, "Quá trình migrate của Flyway phải thành công 100%");
     assertEquals(
-        16, result.migrationsExecuted, "Phải thực thi đúng 16 file migration V1.01 -> V1.16");
+        17, result.migrationsExecuted, "Phải thực thi đúng 17 file migration V1.01 -> V1.17");
 
     // 4. Kiểm tra trực tiếp các bảng và ràng buộc đã được tạo trong PostgreSQL
     try (Connection connection =
@@ -186,7 +186,7 @@ class FlywayMigrationIT {
               "SELECT COUNT(*) FROM flyway_schema_history WHERE success = true")) {
         assertTrue(rs.next());
         assertEquals(
-            16, rs.getInt(1), "Lịch sử migration phải ghi nhận đúng 16 bản ghi thành công");
+            17, rs.getInt(1), "Lịch sử migration phải ghi nhận đúng 17 bản ghi thành công");
       }
     }
   }
@@ -204,7 +204,7 @@ class FlywayMigrationIT {
     }
     var upgraded = Flyway.configure().dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
         .locations("classpath:db/migration").schemas(schema).load();
-    assertEquals(3, upgraded.migrate().migrationsExecuted);
+    assertEquals(4, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted);
     try (var connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
@@ -249,7 +249,7 @@ class FlywayMigrationIT {
             .locations("classpath:db/migration")
             .schemas(schema)
             .load();
-    assertEquals(5, upgraded.migrate().migrationsExecuted);
+    assertEquals(6, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted);
     try (var connection =
@@ -359,7 +359,7 @@ class FlywayMigrationIT {
             .validateOnMigrate(true)
             .baselineOnMigrate(false)
             .load();
-    assertEquals(6, upgraded.migrate().migrationsExecuted, "Phải thực thi đúng 6 migrations: V1.11 -> V1.16");
+    assertEquals(7, upgraded.migrate().migrationsExecuted, "Phải thực thi đúng 7 migrations: V1.11 -> V1.17");
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted, "Rerun phải là no-op");
 
