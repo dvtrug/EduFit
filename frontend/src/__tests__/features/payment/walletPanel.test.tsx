@@ -69,3 +69,27 @@ describe("Wallet funding", () => {
     expect(screen.queryByText(/Đã nạp thành công/)).not.toBeInTheDocument();
   });
 });
+
+it("submits beneficiary BIN with a withdrawal and requires all bank details", async () => {
+  render(
+    <WalletPanel data={overview} tutor={true} busy={false} execute={execute} />,
+  );
+  expect(screen.getByRole("combobox", { name: "Ngân hàng" })).toBeRequired();
+  fireEvent.change(screen.getByRole("combobox", { name: "Ngân hàng" }), {
+    target: { value: "970422" },
+  });
+  fireEvent.change(screen.getByLabelText("Số tài khoản"), {
+    target: { value: "12345678" },
+  });
+  fireEvent.change(screen.getByLabelText("Chủ tài khoản"), {
+    target: { value: "Tutor" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Gửi yêu cầu rút tiền" }));
+  expect(paymentApi.withdraw).toHaveBeenCalledWith(
+    100000,
+    "MBBank",
+    "12345678",
+    "Tutor",
+    "970422",
+  );
+});

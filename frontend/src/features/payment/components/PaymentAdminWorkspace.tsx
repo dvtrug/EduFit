@@ -12,6 +12,7 @@ interface ReviewTarget {
   id: string;
   approve: boolean;
   label: string;
+  payout?: boolean;
 }
 export function PaymentAdminWorkspace() {
   const [data, setData] = useState<AdminOverview | null>(null);
@@ -67,13 +68,15 @@ export function PaymentAdminWorkspace() {
     setBusy(true);
     setError(null);
     try {
-      await paymentApi.review(
-        target.kind,
-        target.id,
-        target.approve,
-        note,
-        reference,
-      );
+      if (target.payout) await paymentApi.payout(target.id, note);
+      else
+        await paymentApi.review(
+          target.kind,
+          target.id,
+          target.approve,
+          note,
+          reference,
+        );
       setTarget(null);
       await load();
     } catch (e) {
@@ -94,6 +97,38 @@ export function PaymentAdminWorkspace() {
           Xác minh giao dịch ngân hàng và duyệt kết quả hai bên đã thống nhất.
         </p>
       </div>
+      {data?.configuration && (
+        <section
+          className="rounded-2xl border bg-white p-5 space-y-2"
+          aria-label="Trạng thái kênh thanh toán"
+        >
+          <h2 className="font-bold">Kết nối thanh toán</h2>
+          <p>
+            Nạp tự động payOS:{" "}
+            {data.configuration.topupReady
+              ? "Đã có cấu hình"
+              : "Chưa đủ cấu hình"}
+          </p>
+          <p>
+            QR đối soát thủ công:{" "}
+            {data.configuration.manualReady
+              ? "Đã có cấu hình"
+              : "Chưa cấu hình"}
+          </p>
+          <p>
+            Chi hộ payOS:{" "}
+            {data.configuration.payoutReady
+              ? "Đã bật và có cấu hình"
+              : data.configuration.payoutEnabled
+                ? "Đã bật nhưng thiếu khóa"
+                : "Chưa bật"}
+          </p>
+          <p className="text-xs text-neutral-500">
+            Trạng thái trên phản ánh cấu hình backend. Cần kiểm tra kênh trên
+            payOS và webhook thực tế trước khi nhận tiền.
+          </p>
+        </section>
+      )}
       {error && (
         <p
           role="alert"
@@ -120,7 +155,7 @@ export function PaymentAdminWorkspace() {
               className="mt-1 w-full rounded-lg border bg-white p-2"
             />
           </label>
-          {target.kind !== "disputes" && target.approve && (
+          {target.kind !== "disputes" && target.approve && !target.payout && (
             <label className="block text-sm">
               Mã giao dịch ngân hàng đã xác minh
               <input
@@ -277,23 +312,78 @@ export function PaymentAdminWorkspace() {
             <p>
               {w.bank_name} · {w.bank_account} · {w.bank_holder}
             </p>
-            <p>Ví gia sư {w.user_id}</p>
-            {w.status === "PENDING" && (
-              <div className="flex gap-2">
+            <p>
+              Ví gia sư {w.user_id} · BIN {w.bank_bin ?? "Chưa có"}
+            </p>
+            {w.provider_state && <p>Trạng thái chi hộ: {w.provider_state}</p>}
+            {w.provider_message && (
+              <p role="status" className="text-amber-800">
+                {w.provider_message}
+              </p>
+            )}
+            {w.status === "PROCESSING" && (
+              <div className="space-y-2">
+                <p>
+                  Đang giữ tiền để xác minh kết quả ngân hàng. Không chuyển lại
+                  thủ công.
+                </p>
                 <button
                   disabled={busy}
                   className={button}
-                  onClick={() =>
-                    select({
-                      kind: "withdrawals",
-                      id: w.id,
-                      approve: true,
-                      label: `Xác nhận đã chuyển ngân hàng ${money(w.amount)}`,
-                    })
-                  }
+                  onClick={async () => {
+                    setBusy(true);
+                    try {
+                      await paymentApi.refreshPayout(w.id);
+                      await load();
+                    } catch (e) {
+                      setError(paymentError(e));
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
                 >
-                  Đã chuyển ngân hàng
+                  Đối soát kết quả chi
                 </button>
+              </div>
+            )}
+            {w.status === "PENDING" && (
+              <div className="flex gap-2">
+                {data.configuration?.payoutReady && w.bank_bin ? (
+                  <button
+                    disabled={busy}
+                    className={button}
+                    onClick={() =>
+                      select({
+                        kind: "withdrawals",
+                        id: w.id,
+                        approve: true,
+                        payout: true,
+                        label: `Duyệt chi hộ ${money(w.amount)} đến ${
+                          w.bank_account
+                        }`,
+                      })
+                    }
+                  >
+                    Duyệt và chuyển qua payOS
+                  </button>
+                ) : (
+                  <button
+                    disabled={busy}
+                    className={button}
+                    onClick={() =>
+                      select({
+                        kind: "withdrawals",
+                        id: w.id,
+                        approve: true,
+                        label: `Xác nhận đã chuyển ngân hàng ${money(
+                          w.amount,
+                        )}`,
+                      })
+                    }
+                  >
+                    Đã chuyển ngân hàng
+                  </button>
+                )}
                 <button
                   disabled={busy}
                   className={button}

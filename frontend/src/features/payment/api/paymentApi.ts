@@ -25,7 +25,10 @@ export interface Withdrawal {
   id: string;
   user_id: string;
   amount: number;
-  status: "PENDING" | "PAID" | "REJECTED";
+  status: "PENDING" | "PROCESSING" | "PAID" | "REJECTED" | "FAILED";
+  bank_bin?: string;
+  provider_state?: string;
+  provider_message?: string;
   bank_name: string;
   bank_account: string;
   bank_holder: string;
@@ -83,7 +86,16 @@ export interface Checkout {
   description?: string;
   amount?: number;
 }
+export interface PaymentConfiguration {
+  topupReady: boolean;
+  manualReady: boolean;
+  payoutReady: boolean;
+  payoutEnabled: boolean;
+  webhookPath: string;
+  frontendUrl: string;
+}
 export interface AdminOverview {
+  configuration?: PaymentConfiguration;
   topups: Topup[];
   withdrawals: Withdrawal[];
 }
@@ -102,6 +114,17 @@ export const paymentApi = {
   session: (id: string) =>
     fetchApi<PaymentSession>(`${base}/sessions/${encodeURIComponent(id)}`),
   topup: (amount: number) => post<Checkout>(`${base}/topups`, { amount }),
+  refreshTopup: (id: string) =>
+    post<Topup>(`${base}/topups/${encodeURIComponent(id)}/refresh`),
+  payout: (id: string, note: string) =>
+    post<Withdrawal>(
+      `/api/v1/admin/payment/withdrawals/${encodeURIComponent(id)}/payout`,
+      { approve: true, note },
+    ),
+  refreshPayout: (id: string) =>
+    post<Withdrawal>(
+      `/api/v1/admin/payment/withdrawals/${encodeURIComponent(id)}/refresh`,
+    ),
   fund: (id: string, amount: number) =>
     post<PaymentSession>(`${base}/sessions/${encodeURIComponent(id)}/fund`, {
       amount,
@@ -117,8 +140,20 @@ export const paymentApi = {
       amount,
       text,
     }),
-  withdraw: (amount: number, bank: string, account: string, holder: string) =>
-    post<Withdrawal>(`${base}/withdrawals`, { amount, bank, account, holder }),
+  withdraw: (
+    amount: number,
+    bank: string,
+    account: string,
+    holder: string,
+    bankBin?: string,
+  ) =>
+    post<Withdrawal>(`${base}/withdrawals`, {
+      amount,
+      bank,
+      account,
+      holder,
+      bankBin,
+    }),
   admin: (offset = 0) =>
     fetchApi<AdminOverview>(`/api/v1/admin/payment?offset=${offset}`),
   disputes: (offset = 0) =>
@@ -161,5 +196,6 @@ export const entryLabels: Record<string, string> = {
   TUITION_INCOME: "Thu nhập buổi dạy",
   WITHDRAW_RESERVED: "Giữ tiền rút",
   WITHDRAW_PAID: "Đã chuyển ngân hàng",
+  WITHDRAW_FAILED: "Chi tiền thất bại · đã hoàn ví",
   WITHDRAW_REJECTED: "Hoàn yêu cầu rút",
 };

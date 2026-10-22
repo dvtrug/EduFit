@@ -1,5 +1,6 @@
 "use client";
 import { useState, type FormEvent } from "react";
+import banks from "../data/banks.json";
 import { Wallet, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import {
   paymentApi,
@@ -15,7 +16,8 @@ interface Props {
 }
 export function WalletPanel({ data, tutor, busy, execute }: Props) {
   const [amount, setAmount] = useState("100000");
-  const [bank, setBank] = useState("");
+  const [bankBin, setBankBin] = useState("");
+  const bank = banks.find((b) => b.bin === bankBin)?.name ?? "";
   const [account, setAccount] = useState("");
   const [holder, setHolder] = useState("");
   const [checkout, setCheckout] = useState<Checkout | null>(null);
@@ -23,7 +25,13 @@ export function WalletPanel({ data, tutor, busy, execute }: Props) {
     e.preventDefault();
     await execute(async () => {
       if (tutor)
-        return paymentApi.withdraw(Number(amount), bank, account, holder);
+        return paymentApi.withdraw(
+          Number(amount),
+          bank,
+          account,
+          holder,
+          bankBin,
+        );
       const response = await paymentApi.topup(Number(amount));
       if (response.data) setCheckout(response.data);
     });
@@ -93,13 +101,19 @@ export function WalletPanel({ data, tutor, busy, execute }: Props) {
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="text-sm">
               Ngân hàng
-              <input
+              <select
                 required
-                maxLength={100}
-                value={bank}
-                onChange={(e) => setBank(e.target.value)}
+                value={bankBin}
+                onChange={(e) => setBankBin(e.target.value)}
                 className="mt-1 w-full rounded-lg border p-2"
-              />
+              >
+                <option value="">Chọn ngân hàng nhận</option>
+                {banks.map((bank) => (
+                  <option key={bank.bin} value={bank.bin}>
+                    {bank.name} — {bank.fullName}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="text-sm">
               Số tài khoản
@@ -136,7 +150,7 @@ export function WalletPanel({ data, tutor, busy, execute }: Props) {
         </button>
         <p className="text-xs text-neutral-500">
           {tutor
-            ? "Admin đối soát và chuyển tiền vào tài khoản bạn cung cấp. Kiểm tra kỹ thông tin trước khi gửi."
+            ? "Admin duyệt yêu cầu trước khi chi trả. Tiền đang xử lý sẽ được giữ cho đến khi có kết quả cuối cùng. Kiểm tra kỹ ngân hàng và tài khoản nhận."
             : "Số dư chỉ tăng khi giao dịch đã được xác minh. Thanh toán thành công không phụ thuộc việc quay lại trang này."}
         </p>
       </form>

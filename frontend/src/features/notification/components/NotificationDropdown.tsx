@@ -26,6 +26,13 @@ export function getNotificationRoute(item: NotificationItem, role: UserRole = "S
   const targetType = item.targetType?.toUpperCase() || "";
   const normalizedRole = role.toUpperCase();
 
+  if(type.startsWith("PAYMENT_")||targetType==="PAYMENT_WALLET") {
+    if(normalizedRole==="TUTOR")return "/tutor/earnings";
+    if(normalizedRole==="PARENT")return "/parent/billing";
+    if(normalizedRole==="ADMIN")return "/admin/payments";
+    return "/student/payments";
+  }
+
   // 1. Liên kết gia đình (Parent-Student Link)
   if (
     type.startsWith("LINK_") ||

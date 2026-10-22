@@ -26,6 +26,7 @@ export function PaymentWorkspace({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const balance = useRef<string | null>(null);
   const generation = useRef(0);
   const alive = useRef(true);
   const load = useCallback(async () => {
@@ -41,6 +42,14 @@ export function PaymentWorkspace({
         ),
       ]);
       if (alive.current && current === generation.current) {
+        const currentBalance = wallet.data
+          ? `${wallet.data.wallet.available}:${wallet.data.wallet.held}`
+          : null;
+        if (balance.current !== null && currentBalance !== balance.current)
+          setNotice(
+            "Số dư ví vừa được cập nhật. Xem sổ giao dịch để biết chi tiết.",
+          );
+        balance.current = currentBalance;
         setData(wallet.data ?? null);
         setSessions(list.data ?? []);
         setError(null);
@@ -57,11 +66,14 @@ export function PaymentWorkspace({
     }
     void initial();
     const timer = setInterval(() => {
-      void load();
+      if (!document.hidden) void load();
     }, 15000);
+    const focused = () => void load();
+    window.addEventListener("focus", focused);
     return () => {
       alive.current = false;
       clearInterval(timer);
+      window.removeEventListener("focus", focused);
     };
   }, [load]);
   async function execute(work: () => Promise<unknown>) {
@@ -179,7 +191,22 @@ export function PaymentWorkspace({
                   {t.order_code.toString(36).toUpperCase()}
                 </span>
                 <span>
-                  {t.status === "PAID" ? "Đã cộng ví" : "Chờ xác minh"}{" "}
+                  {t.status === "PAID"
+                    ? "Đã cộng ví"
+                    : t.status === "CANCELLED"
+                      ? "Đã hủy"
+                      : "Chờ xác minh"}{" "}
+                  {t.provider === "PAYOS" && t.status === "PENDING" && (
+                    <button
+                      disabled={busy}
+                      className="ml-2 text-sky-700 underline"
+                      onClick={() =>
+                        void execute(() => paymentApi.refreshTopup(t.id))
+                      }
+                    >
+                      Kiểm tra tiền đã chuyển
+                    </button>
+                  )}
                   {t.checkout_url && t.status === "PENDING" && (
                     <a
                       className="ml-2 text-sky-700 underline"
@@ -198,9 +225,11 @@ export function PaymentWorkspace({
                 Rút {money(w.amount)} · {w.bank_name} / {w.bank_account} ·{" "}
                 {w.status === "PAID"
                   ? "Đã chuyển ngân hàng"
-                  : w.status === "REJECTED"
+                  : w.status === "REJECTED" || w.status === "FAILED"
                     ? "Đã từ chối, hoàn ví"
-                    : "Chờ Admin chi trả"}
+                    : w.status === "PROCESSING"
+                      ? "Đang chuyển ngân hàng · đang giữ tiền"
+                      : "Chờ Admin chi trả"}
               </p>
             ))}
           </section>
