@@ -530,16 +530,23 @@ Table payment_topup {
   provider_id varchar(150)
   transaction_reference varchar(200) [unique]
   expires_at timestamptz [not null]
+  reconcile_after timestamptz [not null, note: 'V1.17 reconciliation lease']
   created_at timestamptz [not null]
 }
 Table payment_withdrawal {
   id uuid [pk]
   user_id uuid [not null, ref: > account.user_id]
   amount bigint [not null]
-  status varchar(20) [not null, note: 'PENDING, PAID, REJECTED; at most one PENDING per user']
+  status varchar(20) [not null, note: 'PENDING, PROCESSING, PAID, REJECTED, FAILED; at most one PENDING/PROCESSING per user']
   bank_name varchar(100) [not null]
   bank_account varchar(50) [not null]
   bank_holder varchar(150) [not null]
+  bank_bin varchar(6) [note: 'V1.17; NULL only for legacy/manual requests']
+  provider_id varchar(150) [unique]
+  provider_state varchar(40)
+  provider_message varchar(500)
+  payout_requested_at timestamptz
+  reconcile_after timestamptz [not null, note: 'V1.17 reconciliation lease']
   transaction_reference varchar(200) [unique]
   admin_note varchar(2000)
   created_at timestamptz [not null]

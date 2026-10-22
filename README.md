@@ -75,3 +75,7 @@ Tài liệu backend hiện thực: [mục lục](docs/README.md), [Discovery API
 2. Áp dụng các quy tắc bảo vệ branch trong `docs/github-branch-protection.md`.
 3. Mở một PR thử nghiệm có lỗi lint hoặc lỗi biên dịch cố ý, sau đó xác nhận `Backend CI` thất bại và PR bị chặn merge.
 4. Sửa lỗi và xác nhận cùng một kiểm tra chuyển sang trạng thái thành công trong vòng năm phút.
+
+## Cấu hình Payment
+
+Xem [hướng dẫn payOS](docs/payment/payos-setup.md) để bật nạp QR tự động, đăng ký webhook HTTPS và chi hộ sau Admin duyệt. Các biến mẫu trong `.env.example` để trống; kênh chi tắt mặc định. Trạng thái cấu hình hiển thị tại `/admin/payments`.

@@ -32,3 +32,16 @@ Mọi settlement ghi payer release, tutor income, commission và audit cùng tra
 ## Lịch sử dữ liệu
 
 V1.16 thêm payment_wallet, payment_charge, payment_topup, payment_withdrawal, payment_entry, payment_audit và payment_mutex. File SQL mới là schema thực thi; không sửa V1.01–V1.15. `payment_entry` là sổ bất biến; trạng thái payment_charge là aggregate điều phối tất toán. Refund tiền giữ là trả số dư nội bộ, không tự hoàn chuyển khoản ra ngân hàng.
+
+
+## payOS completion V1.17
+
+- `GET /api/v1/admin/payment/configuration`: Admin-only readiness booleans + frontendUrl/webhookPath, no secrets. Admin overview also includes `configuration`.
+- `POST /api/v1/payment/topups/{id}/refresh`: owner/Admin; query signed provider status outside DB transaction, rate-limited by persisted 30s lease, exact order/amount/account/link/reference before idempotent credit. Return current topup. No front-end success flag accepted.
+- Withdrawal input adds optional `bankBin` matching six digits; current UI always sends selected bank BIN. Legacy clients/rows without BIN remain manual only.
+- `POST /api/v1/admin/payment/withdrawals/{id}/payout` body `{approve:true,note}`: Admin-only, requires payout-enabled/credentials and BIN; persists PROCESSING before HTTP, same withdrawal UUID used for reference/idempotency; repeated approval never creates another external request.
+- `POST /api/v1/admin/payment/withdrawals/{id}/refresh`: Admin-only reconciliation; 60s lease shared by API and job. Job queries only, never reposts transfer after timeout.
+- Withdrawal views add `bank_bin`, `provider_id`, `provider_state`, `provider_message`. Status adds PROCESSING and FAILED. Manual review is blocked after PROCESSING; verified terminal failure releases funds, uncertain status retains held.
+- Payment notifications use shared sink, type prefix PAYMENT_, target PAYMENT_WALLET; transaction failure rolls back both wallet and notification. No notification module internals imported.
+
+See `payos-setup.md` for kênh thu/kênh chi configuration and handling ambiguous outcomes. Provider request/response signatures follow official payOS Java SDK (BODY raw query vs HEADER URI-encoded deep-sorted data).

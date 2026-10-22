@@ -1,5 +1,7 @@
 # Vận hành và kiểm thử Payment
 
+Cập nhật V1.17: xem [hướng dẫn cấu hình payOS](payos-setup.md) cho nạp tự động, chi hộ sau Admin duyệt, trạng thái PROCESSING và đối soát. Hướng dẫn này thay thế giới hạn payout thủ công của bản đầu bên dưới.
+
 ## Kênh nạp tiền
 
 Không tạo số dư demo ở runtime. Thiếu cấu hình: FE báo chưa bật kênh nạp, không cho tạo QR.
@@ -20,7 +22,7 @@ Tranh chấp: hai phía gửi text và số tiền đã thống nhất trong h�
 
 ## Rút tiền
 
-Gia sư gửi yêu cầu với ngân hàng/số tài khoản/chủ tài khoản. Tiền chuyển sang held của gia sư. Admin kiểm tra người thụ hưởng và thực hiện chuyển tiền ngoài app; chỉ bấm đã chuyển sau khi xác minh kết quả cuối, nhập reference thật. Từ chối sẽ giải phóng held. Không tự thử lại chuyển ngân hàng khi chưa biết giao dịch cũ thành công hay thất bại. Bản đầu tự động chuyển vào ví gia sư, chưa tự động payout qua ngân hàng.
+Gia sư gửi yêu cầu với ngân hàng/số tài khoản/chủ tài khoản. Tiền chuyển sang held của gia sư. Admin kiểm tra người thụ hưởng và thực hiện chuyển tiền ngoài app; chỉ bấm đã chuyển sau khi xác minh kết quả cuối, nhập reference thật. Từ chối sẽ giải phóng held. Không tự thử lại chuyển ngân hàng khi chưa biết giao dịch cũ thành công hay thất bại. Khi bật kênh chi V1.17, Admin dùng API payout và theo dõi PROCESSING; xem payos-setup.md. Khi kênh chi chưa cấu hình, tiếp tục quy trình chuyển ngoài app và đối soát này.
 
 ## Kiểm thử
 
