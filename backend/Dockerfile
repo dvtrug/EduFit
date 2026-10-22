@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Stage 1: Build the multi-module application
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM eclipse-temurin:21-jdk-noble AS builder
 WORKDIR /workspace
 
 # Copy Maven wrapper & configurations
@@ -23,12 +23,13 @@ RUN --mount=type=cache,target=/root/.m2 \
         -Daether.connector.requestTimeout=60000
 
 # Stage 2: Minimal runtime image
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre-noble
 WORKDIR /app
 
-# Non-root user for security and su-exec for entrypoint privilege dropping
-RUN apk add --no-cache su-exec \
-    && addgroup -S edufit && adduser -S edufit -G edufit \
+# Non-root user for security and gosu for entrypoint privilege dropping
+RUN apt-get update && apt-get install -y --no-install-recommends gosu wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd -r edufit && useradd -r -g edufit -d /app -s /usr/sbin/nologin edufit \
     && mkdir -p /app/var/credentials \
     && chown -R edufit:edufit /app
 
