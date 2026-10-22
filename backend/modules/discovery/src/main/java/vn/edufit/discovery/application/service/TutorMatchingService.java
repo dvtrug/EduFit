@@ -8,7 +8,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import vn.edufit.connection.api.ConnectionFacade;
 import vn.edufit.discovery.api.event.MatchingExecutedEvent;
 import vn.edufit.discovery.application.dto.TutorMatchResult;
@@ -56,7 +55,6 @@ public class TutorMatchingService {
     this.eventPublisher = eventPublisher;
   }
 
-  @Transactional
   public List<TutorMatchResult> match(CurrentUser currentUser, UUID goalId, int topN) {
     if (currentUser == null || currentUser.getUserId() == null
         || (!currentUser.hasRole("STUDENT") && !currentUser.hasRole("PARENT"))) {
