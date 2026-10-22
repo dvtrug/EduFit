@@ -43,3 +43,7 @@
 ## Sửa kết nối local khi Flyway báo 28P01
 
 Backend đang trỏ cổng 5433 thuộc PostgreSQL dự án khác. Đã bật lại container EduFit với volume cũ tại cổng local 5434; `.env` local giữ credentials của container EduFit. Cấu hình backend hỗ trợ fallback `POSTGRES_*` cùng Docker Compose, vẫn ưu tiên `DB_*`. Maven package PASS; khởi động với `.env` thật, validate 16 migrations, apply V1.15/V1.16 thành công và HTTP health UP. Dữ liệu cũ được giữ nguyên.
+
+## Hoàn thiện payOS 23/10/2026
+
+P07: Compose truyền toàn bộ cấu hình Payment; .env.example để trống secrets; .env local bổ sung biến thiếu không thay giá trị đã có. API Admin configuration chỉ trả readiness/frontend URL/webhook path. PaymentSettingsTest và gateway/wallet tests PASS; placeholder `...` không bật kênh live.

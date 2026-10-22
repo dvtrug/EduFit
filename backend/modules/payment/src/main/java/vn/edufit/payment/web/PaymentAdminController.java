@@ -30,6 +30,9 @@ public class PaymentAdminController {
       @NotBlank @Size(max = 2000) String note,
       @Size(max = 200) String reference) {}
 
+  @GetMapping("/configuration")
+  public ApiResponse<?> configuration() { return ApiResponse.success(wallets.configuration(actors.getObject())); }
+
   @GetMapping
   public ApiResponse<?> list(@RequestParam(defaultValue = "0") @Min(0) @Max(100000) int offset) {
     return ApiResponse.success(wallets.admin(actors.getObject(), offset));

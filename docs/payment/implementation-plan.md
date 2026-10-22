@@ -38,3 +38,14 @@ Theo `tasks/payment/todo.md`. Mỗi phần kiểm chứng trước khi commit/pu
 ## Giới hạn cần theo dõi
 
 Khóa tài chính dùng một hàng điều phối trong DB cho MVP: tránh deadlock/race, đánh đổi throughput; không gọi API bên ngoài khi giữ khóa. Hàng đợi tự động xử lý theo batch, lỗi từng khoản không làm dừng tất cả. Nhà cung cấp phải cho phép mô hình nạp số dư/chi trả này trước khi vận hành tiền thật. Tài liệu payOS ngày 21/10/2026 ghi không có sandbox riêng; kiểm thử offline không thực hiện chuyển tiền thật.
+
+
+## Hoàn thiện payOS 23/10/2026
+
+Nạp: khai báo 5 biến kênh thu và Compose env passthrough. Admin có readiness/status không trả secret. Reconcile một yêu cầu nạp bằng truy vấn payOS có chữ ký, khớp order/amount/account/link/currency trước khi credit; webhook vẫn đường chính, không tin return URL. QR thủ công giữ đối soát Admin.
+
+Chi: kênh chi riêng, `PAYOS_PAYOUT_ENABLED=false` mặc định, credentials riêng; cần merchant được cấp quyền và số dư tài khoản chi thực tế. Gia sư chọn mã BIN ngân hàng. Admin duyệt mới gửi API, immutable withdrawal UUID dùng reference/idempotency. PROCESSING được lưu trước HTTP; timeout/mismatch không hoàn tiền và không tự gửi lại; truy vấn theo reference/provider ID để tìm kết quả. Terminal SUCCEEDED debit held một lần, FAILED/CANCELLED/REVERSED có xác minh đúng giao dịch mới hoàn held. Scheduler chỉ reconcile, không tạo lệnh chi mới. Dùng lease DB tránh nhiều instance gọi đồng thời, HTTP ngoài transaction. Không cho xác nhận manual khi đã dispatch.
+
+Thông báo: gọi Shared NotificationSink trong transaction ghi sổ, lỗi notification rollback cùng tiền; giữ ranh giới module. FE dùng refresh định kỳ và khi trở lại tab, hiển thị kết quả/sổ ví; liên kết notification về ví đúng role. Chưa cần hạ tầng websocket riêng.
+
+Không sửa migration V1.16 đã áp dụng: thêm V1.17 cho payout metadata/trạng thái và reconcile timing. Những yêu cầu rút cũ thiếu BIN tiếp tục đối soát thủ công. Không thực hiện giao dịch live; test dùng transport mock và PostgreSQL riêng. Secrets để trống, hướng dẫn merchant tự điền local/deploy.

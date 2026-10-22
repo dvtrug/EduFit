@@ -177,6 +177,8 @@ public class WalletService {
         });
   }
 
+  public Map<String, Object> configuration(CurrentUser a) { access.admin(a); return settings.readiness(); }
+
   public Map<String, Object> admin(CurrentUser a, int offset) {
     access.admin(a);
     return Map.of(
