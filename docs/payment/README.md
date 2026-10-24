@@ -4,6 +4,7 @@ Cập nhật 24/10/2026 trên `feat/payment`, đối chiếu code `3966d54`. Đ�
 
 | Tài liệu | Dùng khi nào? |
 |---|---|
+| [Luồng, rule và cơ chế Payment — có ảnh diagram](payment-flow-and-rules.md) | Đọc từ góc nhìn người dùng: 7 ảnh, từng bước xử lý, 30 rule và ví dụ tiền trước/sau |
 | [Giải trình kiến trúc và cơ chế](payment_implementation_plan.md) | Nghiệp vụ, tiền, module, file, schema và Q&A |
 | [Task chi tiết từng phase](../../tasks/payment/plan.md) | Phạm vi, phụ thuộc, AC, commit/checkpoint |
 | [Checklist](../../tasks/payment/todo.md) | Trạng thái code và việc vận hành còn mở |

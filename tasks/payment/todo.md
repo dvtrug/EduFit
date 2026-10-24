@@ -75,6 +75,10 @@ Giữ ID task đã triển khai. P04a/P04b/P04c là ba task trong Phase 4; commi
 - [x] Chuẩn hóa API/runbook/chỉ mục; giữ liên kết implementation-plan cũ.
 - [x] Đối chiếu code, link tương đối và diff; kết quả tại verification-report.
 
+## Bổ sung giải thích luồng và ảnh diagram — 24/10/2026
+
+- [x] Bổ sung tài liệu luồng/rule/cơ chế và 7 ảnh diagram PNG/SVG; đối chiếu code, kiểm bố cục ảnh và liên kết tài liệu. Đây là bàn giao docs, không phải kiểm chứng giao dịch live.
+
 ## Vận hành còn chờ — không đánh dấu đã làm
 
 - [ ] Xác thực merchant/ngân hàng và điều kiện dùng cho EduFit.

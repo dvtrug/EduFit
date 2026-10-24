@@ -70,3 +70,11 @@ P10 mobile fix `a3dfd37` và FE provider `31ccac8` đã push. P11: hướng dẫ
 - Đồng bộ API/runbook/setup và chỉ mục; implementation-plan.md cũ tiếp tục dẫn tới nguồn chính. Ghi đúng khác biệt webhook/lookup, endpoint confirm/payout, trạng thái topup và commission snapshot; không tuyên bố chức năng chưa có.
 - Kiểm tra tài liệu: 9 Markdown trong docs/payment và tasks/payment, 53 link nội bộ, 6 khối Mermaid có fence cân bằng, 21 commit tham chiếu, thứ tự mục 0–9/phase 0–11 và 14 ID task đều PASS. File/test được tham chiếu đã đối chiếu trong repository.
 - Đây là thay đổi Markdown; không thay code/SQL/env, không chạy lại gate BE/FE hay chuyển tiền thật. Số test ở các phần trước là bằng chứng lịch sử, không phải test mới của đợt docs.
+
+## Giải thích nghiệp vụ và ảnh diagram — 24/10/2026
+
+- Bổ sung [luồng, rule và cơ chế Payment](payment-flow-and-rules.md): ba vòng đời tiền, available/held, QR checkout hiện tại, receipt/lookup/manual, fund/confirmation/1h, dispute/report/24h/Admin, fee/partial/refund, withdrawal/manual/payout và 30 rule có nguồn thực thi.
+- Thêm 7 PNG nhúng trực tiếp vào tài liệu nghiệp vụ và kiến trúc, kèm 7 SVG chỉnh sửa được. Có script Python/Pillow để tái tạo; không gọi provider hoặc thay đổi dữ liệu ứng dụng.
+- Render cả 7 ảnh PASS với kiểm khung chữ/box không chồng; đã xem toàn bộ qua contact sheet và xem riêng ảnh tranh chấp/rút tiền ở kích thước chi tiết. Nội dung tiền/thời gian/nhánh xử lý đã đối chiếu code hiện tại.
+- Kiểm tra tài liệu: link nội bộ và image reference, thứ tự đủ PAY-01..PAY-30, PNG đọc được/không trống, SVG XML hợp lệ, AST Python và git diff --check PASS. Các file/link cũ vẫn tồn tại.
+- Không thay code FE/BE, schema, env hoặc chạy giao dịch live. Không chạy lại các gate test nghiệp vụ chỉ vì bổ sung tài liệu/ảnh; các số test trước đây giữ nguyên phạm vi lịch sử.

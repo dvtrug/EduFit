@@ -25,6 +25,7 @@ Thư mục này lưu trữ toàn bộ tài liệu kiến trúc, đặc tả yêu
 ## 3. Kế Hoạch Hiện Thực Hóa & Giải Trình Kiến Trúc Phân Hệ (Module Implementation Plans)
 
 - **[Payment Documentation](payment/README.md):** Ví học phí, giữ tiền theo buổi, xác nhận/tranh chấp, hoa hồng 10%, nạp QR/payOS và chi trả gia sư; có giải trình kiến trúc theo mẫu Discovery, task theo phase, API, setup và bằng chứng kiểm thử.
+- **[Payment Flows & Rules](payment/payment-flow-and-rules.md):** Giải thích từng bước theo nghiệp vụ, 30 rule, ví dụ số dư/hoa hồng và 7 ảnh diagram PNG kèm SVG chỉnh sửa được.
 - **[Connection Implementation Plan](connection/connection_implementation_plan.md):** Kế hoạch hiện thực hóa và giải trình kiến trúc phân hệ Connection (Kết nối Phụ huynh - Học sinh, Yêu cầu kết nối Gia sư, Gatekeeper chống trùng lịch).
 - **[Scheduling Implementation Plan](scheduling/scheduling_implementation_plan.md):** Kế hoạch hiện thực hóa và giải trình kiến trúc phân hệ Scheduling (Quản lý buổi học, Chống Race Condition/Double-Booking, Batch Operations, Đổi lịch học UC4.8).
 - **[Progress Implementation Plan](progress/progress_implementation_plan.md):** Kế hoạch hiện thực hóa và giải trình kiến trúc phân hệ Progress (Kế hoạch bài giảng, Cột mốc Milestones, Thuật toán tính tiến độ, Ghi chú buổi học, Progress Dashboard).

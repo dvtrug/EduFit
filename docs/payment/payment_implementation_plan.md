@@ -8,6 +8,8 @@
 
 Tài liệu này giải thích **làm gì, tại sao và hoạt động thế nào**. [Task theo phase](../../tasks/payment/plan.md) mô tả phạm vi, phụ thuộc, acceptance criteria và commit; [todo](../../tasks/payment/todo.md) theo dõi trạng thái. Không coi cấu hình merchant/live test đã xong chỉ vì code đã có.
 
+Để đọc từng bước theo nghiệp vụ, xem [luồng, 30 rule và cơ chế Payment có 7 ảnh diagram](payment-flow-and-rules.md). Các ảnh được nhúng bên dưới; Mermaid vẫn giữ làm sơ đồ chi tiết dạng văn bản.
+
 ## 0. Đối chiếu hiện trạng & phạm vi thay đổi
 
 ### 0.1. Từ màn hình stub đến nghiệp vụ thanh toán
@@ -38,6 +40,8 @@ Payment hiện dùng JDBC và `PaymentStore`; application gọi adapter nội b�
 
 ## 1. Mục tiêu & bối cảnh kỹ thuật
 
+![Tổng quan nạp tiền, học phí nội bộ và rút ngân hàng](images/payment-overview.png)
+
 Payment quản lý ba vòng đời:
 
 1. **Nạp:** ngân hàng xác nhận đã nhận → tăng ví người nạp.
@@ -65,6 +69,8 @@ Quy tắc đã chốt: Student/Parent nạp ví cá nhân; payer cấp tiền t�
 
 ### 2.2. Cấp tiền và snapshot giá
 
+![Cấp tiền, chờ xác nhận và tất toán học phí](images/payment-session-flow.png)
+
 Giá lấy từ `ProfileFacade.findTutorById(...).pricePerSession()`. FE hiển thị; payer gửi lại `amount` để backend kiểm đúng giá hiện hành. Giá đổi thì từ chối và yêu cầu tải lại. Khi cấp tiền, lưu amount, payer, tutor user ID và `commission_bps`; thay giá hồ sơ sau đó không đổi khoản đã giữ.
 
 Điều kiện hiện tại: Student của buổi hoặc Parent có confirmed link; nguồn buổi `SCHEDULED`/`COMPLETED`; server **trước** `endAt+1h`; đủ available; payer không phải tutor nhận tiền. `session_id` là PK nên một buổi chỉ có một charge; khoản terminal không được cấp lại bằng charge thứ hai.
@@ -72,6 +78,8 @@ Giá lấy từ `ProfileFacade.findTutorById(...).pricePerSession()`. FE hiển 
 Cấp tiền là thao tác riêng. Chưa có gate Scheduling bắt buộc cấp tiền trước lúc bắt đầu học, chưa có bảng hợp đồng giá theo lớp, không suy diễn giá lịch sử. Tỷ lệ hiện tại được code gán `1000` basis points và snapshot vào charge; chưa có UI/config runtime đổi hoa hồng.
 
 ### 2.3. State machine xác nhận/tranh chấp
+
+![Hai báo cáo trong 24 giờ, Admin duyệt hoặc hết hạn hoàn ví](images/payment-dispute-flow.png)
 
 ```mermaid
 stateDiagram-v2
@@ -109,6 +117,8 @@ Job fixed delay mặc định 30s, xử lý theo batch; 1h/24h là điều kiệ
 
 ### 2.4. Công thức tiền và hoa hồng
 
+![Số dư trước sau khi tất toán đủ, một phần hoặc hoàn toàn bộ](images/payment-settlement-examples.png)
+
 Với `A` đã giữ, `S` thực tất toán, `B=1000` basis points:
 
 ```text
@@ -130,6 +140,8 @@ Tiền là `long`/`bigint` VND nguyên, không dùng số thực tính phí. Sta
 
 ### 2.5. Transaction, idempotency và đồng thời
 
+![Khóa DB, transaction, ledger và thông báo nguyên tử](images/payment-atomic-ledger.png)
+
 `PaymentStore.locked()` mở transaction, khóa hàng `payment_mutex` bằng `SELECT ... FOR UPDATE`. Nhiều instance dùng cùng DB tranh cùng khóa. `payment_entry.event_key` unique là lớp bổ sung: `topup:<id>`, `settle-payer:<sessionId>`, `settle-tutor:<sessionId>`, `commission:<sessionId>`.
 
 - Kiểm số dư và cập nhật cùng vùng khóa; DB check ngăn available/held âm.
@@ -141,6 +153,8 @@ Tiền là `long`/`bigint` VND nguyên, không dùng số thực tính phí. Sta
 Đánh đổi: mutex toàn cục giới hạn throughput. Chưa đo tải production hoặc cam kết p95 cụ thể.
 
 ### 2.6. Nạp QR/payOS và phục hồi webhook
+
+![Nhập số tiền, mở QR payOS và xác minh trước credit](images/payment-topup-flow.png)
 
 Topup lưu PENDING rồi tạo checkout ngoài khóa; yêu cầu checkout có thời hạn 30 phút. Hết thời gian hiển thị không chứng minh tiền chưa đến/đã hoàn. Webhook là đường chính; query trạng thái là đường phục hồi; cùng kết thúc tại `creditTopup()`.
 
@@ -155,6 +169,8 @@ Không suy diễn lookup kiểm cùng mọi field webhook: lookup hiện không 
 Webhook mẫu đã ký nhưng không khớp order được ACK, không credit. Refresh chỉ owner/Admin; lease DB 30s hạn chế lặp. Job query topup chờ khi kênh thu đã cấu hình.
 
 ### 2.7. Rút tiền và kết quả ngân hàng chưa rõ
+
+![Admin duyệt chi và xử lý kết quả ngân hàng chắc chắn hoặc chưa rõ](images/payment-payout-flow.png)
 
 Tạo withdrawal giữ W ngay: available -W, held +W; chưa chuyển ngân hàng.
 
