@@ -1,47 +1,91 @@
 # Payment API contract
 
-Base: `/api/v1/payment`. Cookie `EDUFIT_SESSION`, CSRF như SDK `fetchApi`. Actor lấy từ phiên đăng nhập; VND nguyên; không lưu balance ở client.
+Cập nhật 24/10/2026 theo code `3966d54`. Nghiệp vụ tại [implementation plan](payment_implementation_plan.md), vận hành tại [runbook](runbook.md).
 
-| Method | Path | Nội dung |
+## 1. Quy ước
+
+- Base learner/tutor: `/api/v1/payment`; Admin: `/api/v1/admin/payment`.
+- Dùng cookie `EDUFIT_SESSION` và CSRF như SDK `fetchApi`. Actor từ CurrentUser, không nhận userId/role tin cậy từ body.
+- Tiền VND nguyên; UUID cho ID nội bộ. Không lưu balance ở client.
+- API thông thường trả qua `ApiResponse`; webhook thành công trả `{"success":true}`.
+- Wallet/history/Admin overview dùng `offset` mặc định 0, trong khoảng 0..100000; từng danh sách tối đa 50 dòng, không phải page number.
+- Ví/topup/withdrawal history trả field snake_case của projection DB; session view dùng camelCase. FE types ở `frontend/src/features/payment/api/paymentApi.ts`.
+- Validation request và lỗi nghiệp vụ theo exception handler chung. Anonymous wallet 401, actor không đủ quyền 403; không dựa vào ẩn nút FE để cấp quyền.
+
+## 2. Ví và nạp/rút
+
+| Method/path sau base | Input | Quyền và kết quả |
 |---|---|---|
-| GET | /wallet?offset=0 | Wallet available/held; entries, topups, withdrawals (50/trang); capability cấu hình |
-| POST | /topups | `{amount}` từ 10.000 tới 100.000.000; trả payOS checkout hoặc manual QR; chưa credit |
-| GET | /sessions?from=ISO&to=ISO | Theo lớp được phép xem, khoảng tối đa 93 ngày; giá snapshot hoặc báo giá hiện hành |
-| GET | /sessions/{sessionId} | Báo giá/trạng thái buổi, dùng trong chi tiết lịch học |
-| POST | /sessions/{id}/fund | `{amount}` phải khớp giá được hiển thị; reserve ví actor; một payer/buổi |
-| POST | /sessions/{id}/confirm | Gia sư hoặc learner hợp lệ xác nhận; chỉ COMPLETED và sau endAt |
-| POST | /sessions/{id}/dispute | `{text}` tối đa 2000 ký tự; giữ tiền; deadline server mở +24h |
-| POST | /sessions/{id}/report | `{amount,text}` trong 24h; số tiền 0..amount đã giữ; text tối đa 4000 |
-| POST | /withdrawals | `{amount,bank,account,holder}`; TUTOR; reserve tiền và chờ Admin, một yêu cầu pending/tài khoản |
-| POST | /webhooks/payos | Public, miễn CSRF chỉ URL này; bắt buộc HMAC, order/amount/account/link/currency đúng; probe ký hợp lệ không có order chỉ ACK, không credit |
+| GET /wallet?offset=0 | Không body | Authenticated, chỉ ví actor; wallet, entries, topups, withdrawals, topupEnabled/topupProvider |
+| POST /topups | `{amount}` | Student/Parent; 10.000..100.000.000; tạo PENDING và checkout/QR, chưa credit |
+| POST /topups/{id}/refresh | Không body | Owner/Admin; lookup payOS có chữ ký, lease 30s; trả topup hiện tại |
+| POST /withdrawals | `{amount,bank,account,holder,bankBin?}` | Tutor; giữ tiền, tạo PENDING; một yêu cầu đang chờ/xử lý |
+| POST /webhooks/payos | Raw JSON payOS có signature | Public, miễn CSRF chỉ path này; xác minh receipt rồi credit một lần |
 
-Admin: `/api/v1/admin/payment`, role ADMIN bắt buộc cả HTTP security và application.
+Withdrawal: amount 10.000..100.000.000; bank không trống tối đa 100 ký tự; account 5..34 chữ số; holder không trống tối đa 150; bankBin nếu có là 6 chữ số. UI hiện gửi BIN từ lựa chọn ngân hàng. Bản ghi/client cũ không BIN tiếp tục manual, không tự đoán theo tên.
 
-- GET `?offset=0`: nạp/rút, 50/trang.
-- GET `/disputes?offset=0`: hai báo cáo thống nhất chờ duyệt.
-- POST `/topups/{id}/confirm`: `{approve:true,note,reference}`. Chỉ manual, phải đối soát giao dịch thật; reference duy nhất, chuẩn hóa khoảng trắng.
-- POST `/withdrawals/{id}/review`: `{approve,note,reference}`. Approve có nghĩa đã chuyển ngân hàng thật, không chỉ duyệt yêu cầu.
-- POST `/disputes/{sessionId}/review`: `{approve,note}`. Duyệt đúng mức hai bên thống nhất; từ chối hoàn tất cả held; khoản tính phí >0 chỉ khi buổi COMPLETED.
+Checkout response: id/provider và checkoutUrl cho PAYOS; manual trả qrUrl, bankAccount, bankHolder, description, amount. Tạo lại topup là yêu cầu mới, không có client idempotency key cho tạo topup.
 
-## Trạng thái và thời hạn
+Wallet trả `available`/`held`. Topup status: PENDING/PAID/CANCELLED trong schema; không có workflow tự đồng bộ đầy đủ trạng thái hủy/hết hạn provider. Withdrawal status: PENDING/PROCESSING/PAID/REJECTED/FAILED.
 
-UNFUNDED -> FUNDED -> AWAITING_CONFIRMATION -> SETTLED. Autoaccept phía learner tại endAt+1h chỉ khi COMPLETED; tutor phải xác nhận riêng. DISPUTED không autoaccept. Hai báo cáo cùng mức -> AWAITING_ADMIN (không hết hạn trong lúc Admin xử lý). DISPUTED hết 24h -> EXPIRED và trả held về payer. Admin từ chối hoặc mức thống nhất 0 -> REFUNDED.
+Webhook kiểm chữ ký, order/provider, amount, currency VND, tài khoản nhận và link ID. Probe ký hợp lệ không khớp order chỉ ACK, không credit. Lookup kiểm response ký, order/amount/PAID/amountPaid và đúng một transaction khớp tài khoản/amount/reference/link; không có bước currency riêng như webhook.
 
-Mọi settlement ghi payer release, tutor income, commission và audit cùng transaction. 10% tính trên settledAmount, làm tròn xuống VND. Parent khác payer chỉ được đọc nếu còn link, không xác nhận tài chính. Student của lớp có thể xác nhận/report dù Parent trả. Parent revoked mất quyền xem buổi; entry ví cá nhân vẫn giữ nhưng chỉ có reference ID, không kèm dữ liệu học sinh.
+Thiếu khóa payOS nhưng đủ manual config thì dùng manual QR. Thiếu cả hai thì topupEnabled=false và tạo topup bị từ chối. Bấm return URL không thay đổi tiền.
 
-## Lịch sử dữ liệu
+## 3. Học phí theo buổi
 
-V1.16 thêm payment_wallet, payment_charge, payment_topup, payment_withdrawal, payment_entry, payment_audit và payment_mutex. File SQL mới là schema thực thi; không sửa V1.01–V1.15. `payment_entry` là sổ bất biến; trạng thái payment_charge là aggregate điều phối tất toán. Refund tiền giữ là trả số dư nội bộ, không tự hoàn chuyển khoản ra ngân hàng.
+| Method/path sau base | Input | Điều kiện |
+|---|---|---|
+| GET /sessions?from=ISO&to=ISO | Instant có timezone | Buổi của lớp actor được xem, khoảng tối đa 93 ngày |
+| GET /sessions/{id} | UUID session | Student/linked Parent/tutor buổi đó |
+| POST /sessions/{id}/fund | `{amount}` | Student/confirmed Parent; 1..100.000.000, khớp giá hiện hành; đủ available |
+| POST /sessions/{id}/confirm | Không body | Learner có quyền hoặc tutor; COMPLETED và qua endAt |
+| POST /sessions/{id}/dispute | `{text}` | Participant; text 1..2000; chưa terminal, sau endAt |
+| POST /sessions/{id}/report | `{amount,text}` | Participant; amount 0..charge.amount; text 1..4000; trước deadline 24h |
 
+Session response gồm sessionId/classId/studentId/tutorName/sessionStatus/startAt/endAt, amount/commissionBps/payerId/status, hai accepted flags/autoAccepted, disputeDeadline/reason, hai amount/report, settledAmount và canFund/canActAsLearner/canActAsTutor.
 
-## payOS completion V1.17
+Status view: UNFUNDED/FUNDED/AWAITING_CONFIRMATION/DISPUTED/AWAITING_ADMIN/SETTLED/REFUNDED/EXPIRED. UNFUNDED không có charge trong DB.
 
-- `GET /api/v1/admin/payment/configuration`: Admin-only readiness booleans + frontendUrl/webhookPath, no secrets. Admin overview also includes `configuration`.
-- `POST /api/v1/payment/topups/{id}/refresh`: owner/Admin; query signed provider status outside DB transaction, rate-limited by persisted 30s lease, exact order/amount/account/link/reference before idempotent credit. Return current topup. No front-end success flag accepted.
-- Withdrawal input adds optional `bankBin` matching six digits; current UI always sends selected bank BIN. Legacy clients/rows without BIN remain manual only.
-- `POST /api/v1/admin/payment/withdrawals/{id}/payout` body `{approve:true,note}`: Admin-only, requires payout-enabled/credentials and BIN; persists PROCESSING before HTTP, same withdrawal UUID used for reference/idempotency; repeated approval never creates another external request.
-- `POST /api/v1/admin/payment/withdrawals/{id}/refresh`: Admin-only reconciliation; 60s lease shared by API and job. Job queries only, never reposts transfer after timeout.
-- Withdrawal views add `bank_bin`, `provider_id`, `provider_state`, `provider_message`. Status adds PROCESSING and FAILED. Manual review is blocked after PROCESSING; verified terminal failure releases funds, uncertain status retains held.
-- Payment notifications use shared sink, type prefix PAYMENT_, target PAYMENT_WALLET; transaction failure rolls back both wallet and notification. No notification module internals imported.
+- Fund chỉ khi nguồn SCHEDULED/COMPLETED và trước endAt+1h; snapshot giá và commission 1000 bps.
+- Student được confirm/report khi Parent trả; Parent cần là payer và còn confirmed link. Parent khác payer chỉ đọc nếu còn link.
+- Autoaccept chỉ learner, chỉ khi COMPLETED và now>=endAt+1h; tutor vẫn xác nhận riêng.
+- Hai báo cáo cùng mức trong 24h → AWAITING_ADMIN; không tự hết hạn lúc chờ Admin.
+- DISPUTED hết 24h chưa khớp → EXPIRED và hoàn held về payer.
+- Các state cuối không mở lại charge/cấp tiền lần hai.
+- Hoàn held là tăng available nội bộ, không phải chuyển khoản hoàn ngân hàng.
 
-See `payos-setup.md` for kênh thu/kênh chi configuration and handling ambiguous outcomes. Provider request/response signatures follow official payOS Java SDK (BODY raw query vs HEADER URI-encoded deep-sorted data).
+## 4. Admin
+
+Role ADMIN được kiểm ở HTTP security và application.
+
+| Method/path sau Admin base | Input | Tác dụng |
+|---|---|---|
+| GET ?offset=0 | Offset | Topups/withdrawals và configuration |
+| GET /configuration | Không | topupReady/manualReady/payoutReady/payoutEnabled/frontendUrl/webhookPath; không secret |
+| GET /disputes?offset=0 | Offset | Các charge AWAITING_ADMIN có hai báo cáo khớp |
+| POST /topups/{id}/confirm | `{approve:true,note,reference}` | Chỉ manual; Admin đã đối chiếu receipt, reference thực 6..200 ký tự |
+| POST /withdrawals/{id}/review | `{approve,note,reference?}` | Chỉ PENDING; true=đã chuyển thủ công thật, false=từ chối/hoàn held |
+| POST /withdrawals/{id}/payout | `{approve:true,note}` | Dispatch chi qua provider; yêu cầu kênh chi sẵn sàng và BIN |
+| POST /withdrawals/{id}/refresh | Không | Lookup payout, lease 60s; không tạo lại lệnh |
+| POST /disputes/{id}/review | `{approve,note}` | Duyệt đúng mức thống nhất hoặc từ chối/hoàn toàn bộ |
+
+DTO Review dùng chung: approve boolean; note bắt buộc 1..2000 ký tự; reference nếu có tối đa 200. Khi manual paid, reference thực bắt buộc và trim. Dispute review không nhận số tiền mới.
+
+Lưu ý contract hiện có: topup confirm dùng reference, không có nhánh từ chối topup; approve/note vẫn qua DTO validation nhưng không điều khiển credit. Endpoint payout tự mang nghĩa duyệt chi và dùng note, không đọc approve; muốn từ chối PENDING dùng endpoint review với approve=false. Không gửi approve=false tới confirm/payout với ý định hủy.
+
+## 5. Payout, idempotency và thông báo
+
+- Trước HTTP: lưu PROCESSING, cố định UUID withdrawal làm referenceId và x-idempotency-key.
+- Approve đồng thời/lặp không dispatch lần hai. PROCESSING không được manual confirm/reject.
+- Chữ ký và provider ID/reference, số tiền, BIN/tài khoản phải khớp đúng một transaction.
+- SUCCEEDED đã xác minh → PAID/trừ held một lần. FAILED/CANCELLED/REVERSED đã xác minh → FAILED/hoàn held một lần.
+- Không rõ/timeout/mismatch → giữ tiền. API/job chỉ lookup; không retry create. Job mặc định 30s, lease từng payout 60s.
+- Notification dùng shared sink cùng transaction ghi tiền; type PAYMENT_*, target PAYMENT_WALLET. FE tự route về ví role.
+- Readiness chỉ chứng minh đủ cấu hình, không xác nhận merchant/key/bank thực sự hợp lệ.
+
+## 6. Schema và tài liệu liên quan
+
+[V1.16](../../backend/app/src/main/resources/db/migration/payment/V1.16__create_payment_wallet_and_settlement.sql) tạo bảy bảng; [V1.17](../../backend/app/src/main/resources/db/migration/payment/V1.17__add_payment_provider_reconciliation.sql) bổ sung metadata/status/lease/index. Không sửa migration đã áp dụng. Ledger event key/reference unique và mutex DB bảo vệ thao tác tiền.
+
+Xem [setup](payos-setup.md) cho cấu hình thu/chi riêng; [verification](verification-report.md) cho test thực chạy. Chưa kiểm chứng tiền thật.

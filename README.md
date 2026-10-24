@@ -78,4 +78,6 @@ Tài liệu backend hiện thực: [mục lục](docs/README.md), [Discovery API
 
 ## Cấu hình Payment
 
+Đọc [bộ tài liệu Payment](docs/payment/README.md) để xem giải trình kiến trúc, luồng tiền và task chi tiết từng phase theo mẫu Discovery.
+
 Xem [hướng dẫn payOS](docs/payment/payos-setup.md) để bật nạp QR tự động, đăng ký webhook HTTPS và chi hộ sau Admin duyệt. Các biến mẫu trong `.env.example` để trống; kênh chi tắt mặc định. Trạng thái cấu hình hiển thị tại `/admin/payments`.

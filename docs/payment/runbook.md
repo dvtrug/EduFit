@@ -1,34 +1,112 @@
-# Vận hành và kiểm thử Payment
+# Vận hành và đối soát Payment
 
-Cập nhật V1.17: xem [hướng dẫn cấu hình payOS](payos-setup.md) cho nạp tự động, chi hộ sau Admin duyệt, trạng thái PROCESSING và đối soát. Hướng dẫn này thay thế giới hạn payout thủ công của bản đầu bên dưới.
+Cập nhật 24/10/2026 theo code `3966d54`. Đọc [cơ chế](payment_implementation_plan.md), [API](api-contract.md) và [cấu hình payOS](payos-setup.md) trước khi vận hành. Không chỉnh balance bằng SQL hoặc tạo receipt giả để xử lý sự cố.
 
-## Kênh nạp tiền
+## 1. Kiểm tra trước khi bật kênh thanh toán
 
-Không tạo số dư demo ở runtime. Thiếu cấu hình: FE báo chưa bật kênh nạp, không cho tạo QR.
+1. Đúng repository/branch và môi trường DB; migration V1.16/V1.17 áp dụng bằng Flyway.
+2. Env thu/chi được truyền vào process/container; restart sau thay đổi env theo setup.
+3. Admin mở /admin/payments, kiểm readiness; đây không phải phép thử khóa/ngân hàng live.
+4. Kênh thu có ngân hàng nhận đúng, webhook HTTPS public đúng path.
+5. Nếu chi: credentials/quyền dịch vụ/nguồn tiền chi riêng; không mặc định tiền thu tự chuyển sang nguồn chi.
+6. Khóa chỉ backend, không log/commit/copy vào ảnh trao đổi.
 
-Chuyển khoản QR thủ công: cấu hình `PAYMENT_BANK_BIN` (BIN 6 số), `PAYMENT_BANK_ACCOUNT`, `PAYMENT_BANK_HOLDER`. Student/Parent tạo yêu cầu, chuyển đúng tiền/nội dung trên QR. Admin vào `/admin/payments`, kiểm tra tài khoản ngân hàng thật rồi nhập mã giao dịch để credit. QR được lưu theo yêu cầu và mở lại từ lịch sử. Chỉ xác nhận giao dịch duy nhất; không dùng mã ví dụ.
+## 2. Nạp qua payOS
 
-payOS: cấu hình `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY`, **`PAYMENT_BANK_ACCOUNT`** (đúng tài khoản nhận) và `PAYMENT_FRONTEND_URL` (origin FE). Cấu hình webhook HTTPS public tới `/api/v1/payment/webhooks/payos`. Chữ ký sai, sai tiền, sai tài khoản, sai link/currency: không cộng ví. Mất webhook: đối soát và yêu cầu gửi lại webhook từ nhà cung cấp, không tự sửa balance SQL. Không in secret trong log/docs.
+Student/Parent tạo yêu cầu trong ví; kiểm đúng số tiền/tài khoản trên checkout trước chuyển. Ví chỉ tăng khi webhook hoặc signed lookup hợp lệ, không theo ảnh biên lai/return URL.
 
-Tài liệu chính thức đã đối chiếu: https://payos.vn/docs/, https://payos.vn/docs/api/, https://payos.vn/docs/moi-truong-test. payOS ghi không có sandbox riêng; test tự động dùng dữ liệu test/mock và PostgreSQL riêng, không gửi tiền thật.
+Khi đã chuyển mà ví chưa tăng:
 
-## Buổi học
+1. Mở đúng yêu cầu nạp, bấm Kiểm tra tiền đã chuyển; owner/Admin mới được refresh.
+2. Job cũng query theo batch; lease mỗi khoản 30s, không bấm liên tục.
+3. Đối chiếu order, số tiền, tài khoản nhận, link/reference và trạng thái provider.
+4. Kiểm public webhook, log lỗi không secret và liên kết đúng kênh thu.
+5. Nếu nhiều lần chuyển/sai tổng tiền/mismatch: giữ trạng thái chờ, hỗ trợ đối soát với provider. Không manual-confirm khoản PAYOS.
+6. Nếu đã credit, gọi lặp không được tăng lần hai; kiểm entry và notification cùng reference.
 
-Cấp tiền trong `/student/payments`, `/parent/billing` hoặc chi tiết lịch học. Payer kiểm tra giá trước khi reserve; đủ available mới được cấp. Ví chung của phụ huynh không tự chuyển sở hữu sang học sinh. Tutor ghi nhận kết quả COMPLETED theo Scheduling rồi xác nhận thanh toán trong cùng khối học phí hoặc trang thu nhập.
+Có thời hạn checkout 30 phút không đồng nghĩa đã hủy giao dịch ngân hàng. Code hiện chưa đồng bộ mọi trạng thái hết hạn/hủy thành topup CANCELLED. Không hứa tự hoàn ngân hàng khi QR hết hạn.
 
-Student hoặc Parent payer còn link xác nhận. Khi đủ hai xác nhận, sổ ví tất toán tự động. Job 30 giây kiểm tra autoaccept learner endAt+1h và timeout dispute +24h. Độ trễ thực thi phụ thuộc hàng đợi; API vẫn kiểm hạn bằng server clock. Source scheduling được kiểm lại khi quyết toán; hủy/vắng mặt hoàn tiền không phạt.
+## 3. Nạp QR thủ công
 
-Tranh chấp: hai phía gửi text và số tiền đã thống nhất trong hạn. Admin xem cả hai báo cáo tại `/admin/disputes`, duyệt tất toán hoặc từ chối trả hết khoản giữ. Fee 10% chỉ trên phần thực trả; Admin không thay đổi số tiền hai phía đã đồng ý. Chưa có appeal sau tất toán trong bản đầu.
+Cấu hình `PAYMENT_BANK_BIN`, `PAYMENT_BANK_ACCOUNT`, `PAYMENT_BANK_HOLDER`. Tạo yêu cầu MANUAL, chuyển đúng tiền/nội dung, Admin kiểm sao kê thật rồi nhập transaction reference duy nhất tại /admin/payments.
 
-## Rút tiền
+Chỉ bấm xác nhận khi đã nhận được tiền; tạo QR không credit. Không dùng endpoint confirm để từ chối yêu cầu, vì endpoint này chỉ xác nhận. Bản hiện tại chưa có luồng Admin cancel topup riêng.
 
-Gia sư gửi yêu cầu với ngân hàng/số tài khoản/chủ tài khoản. Tiền chuyển sang held của gia sư. Admin kiểm tra người thụ hưởng và thực hiện chuyển tiền ngoài app; chỉ bấm đã chuyển sau khi xác minh kết quả cuối, nhập reference thật. Từ chối sẽ giải phóng held. Không tự thử lại chuyển ngân hàng khi chưa biết giao dịch cũ thành công hay thất bại. Khi bật kênh chi V1.17, Admin dùng API payout và theo dõi PROCESSING; xem payos-setup.md. Khi kênh chi chưa cấu hình, tiếp tục quy trình chuyển ngoài app và đối soát này.
+## 4. Học phí từng buổi
 
-## Kiểm thử
+- Student/confirmed Parent kiểm giá rồi cấp tiền; available sang held của payer. Chưa có gate chặn bắt đầu học nếu chưa cấp tiền.
+- Tutor cập nhật buổi COMPLETED qua Scheduling, sau đó xác nhận thanh toán.
+- Student hoặc Parent payer còn link xác nhận learner; parent khác payer không được thay xác nhận.
+- Đủ hai phía thì tự tất toán trong ví. Sau endAt+1h job chỉ auto learner nếu COMPLETED, không auto tutor.
+- Hủy/vắng mặt: deadline job giải phóng khoản giữ, không tự phạt.
+- Dời lịch: dùng endAt hiện hành cho kiểm hạn, không đổi giá snapshot.
+- Job mặc định fixed delay 30s; batch có thể gây trễ thực thi. Không coi quá mốc vài giây là đã mất dữ liệu.
 
-- Domain/provider/access/validation: `backend/mvnw.cmd -f backend/pom.xml -pl modules/payment -am test -Dtest=SessionChargeTest,PayosGatewayTest,PaymentAccessTest,PaymentValidationTest,WalletServiceTest -Dsurefire.failIfNoSpecifiedTests=false`.
-- PostgreSQL: `PaymentFlowIT` và `PaymentApplicationIT` mặc định dùng Testcontainers postgres:17-alpine; Docker bắt buộc, không silently skip. Hoặc cung cấp `PAYMENT_TEST_JDBC`, `PAYMENT_TEST_USER`, `PAYMENT_TEST_PASSWORD` tới **DB kiểm thử riêng** có quyền tạo schema. Test tạo schema ngẫu nhiên; không dùng DB sản xuất.
-- Chạy cả flow + khởi động HTTP: `backend/mvnw.cmd -f backend/pom.xml -pl app -am test -Dtest=PaymentFlowIT,PaymentApplicationIT -Dsurefire.failIfNoSpecifiedTests=false`.
-- FE: `npm test -- src/__tests__/features/payment src/__tests__/shared/SidebarNavigation.test.tsx src/__tests__/features/dashboard`, type-check, lint, build.
+## 5. Tranh chấp
 
-Windows ở phiên triển khai: Docker lỗi startup riêng của máy; đã dùng PostgreSQL 17 portable trong ignored `.codex-doc-review`, cổng 55439 cho IT. Nếu Next/Turbopack lỗi spawn CSS, có thể kiểm chứng `npm run build -- --webpack`; dùng CA Windows cho Node khi môi trường có TLS proxy, không tắt TLS verification.
+1. Một phía mở dispute khi khoản còn chờ xác nhận, sau endAt.
+2. Hệ thống lưu thời điểm mở/deadline 24h; tiền vẫn held.
+3. Learner và tutor gửi riêng báo cáo và mức tiền thống nhất trước deadline.
+4. Hai mức khớp → AWAITING_ADMIN, tiếp tục giữ tiền; không tự hết hạn lúc chờ Admin.
+5. Admin tại /admin/disputes xem cả hai báo cáo, duyệt đúng mức hoặc từ chối với lý do.
+6. Chưa khớp khi đủ 24h → EXPIRED/hoàn toàn bộ held về payer, không thu phí.
+
+Mức thực tất toán S: commission=floor(S*10%), tutor nhận S-commission, phần chưa tính phí hoàn payer. Hoàn là về ví nội bộ, không trả ngân hàng. Khoản đã terminal chưa có appeal/reopen trong bản hiện tại.
+
+## 6. Rút thủ công
+
+Tutor yêu cầu rút, available sang held. Admin kiểm người thụ hưởng, chuyển tiền ngoài app và xác minh kết quả cuối. Chỉ sau đó dùng review approve=true với reference thật và note. Nếu chưa chuyển và từ chối, approve=false trả held về available.
+
+Chỉ xử lý manual khi PENDING; không chuyển ngoài app cho yêu cầu đã PROCESSING. Legacy thiếu BIN dùng manual hoặc từ chối để gửi lại, không đoán BIN từ tên tự do.
+
+## 7. Rút qua kênh chi payOS
+
+Admin chọn Duyệt và chuyển qua payOS, ghi note. Backend lưu PROCESSING trước gửi, một UUID/reference/key cố định; UI chỉ cho đối soát sau dispatch.
+
+| Kết quả | Xử lý |
+|---|---|
+| Signed SUCCEEDED và khớp transaction | PAID, trừ held một lần |
+| Signed FAILED/CANCELLED/REVERSED và khớp | FAILED, hoàn held một lần |
+| PROCESSING/RECEIVED/ON_HOLD | Giữ tiền, tiếp tục lookup |
+| Timeout/mismatch/chữ ký sai/chưa tìm thấy | Giữ PROCESSING, không hoàn, không gửi lệnh mới |
+
+API refresh và job dùng lease 60s. Nếu crash giữa lưu PROCESSING và provider nhận request, có thể không tìm thấy lệnh: lưu withdrawal UUID/provider ID, đối chiếu với hỗ trợ provider. Không reset trạng thái/retry create/chi thủ công trước khi xác minh chắc chắn không phát sinh chi; chưa có UI xử lý tự động trường hợp này.
+
+## 8. Sự cố thường gặp
+
+| Dấu hiệu | Kiểm tra |
+|---|---|
+| Flyway SQLState 28P01 | Sai DB endpoint/credentials; kiểm process/container/port trước, không sửa migration |
+| Local 5433 trỏ DB dự án khác | Phiên triển khai đã dùng EduFit 5434; đọc env hiện tại, không đổi mật khẩu/kill DB dự án khác |
+| Validate checksum mismatch | Xác định migration bị đổi/nhánh/schema; giữ dữ liệu, không tự repair/clean/reset |
+| UI báo liên hệ Admin | Backend thiếu config kênh thu và manual; kiểm env process và readiness |
+| Readiness true nhưng tạo checkout lỗi | Kiểm khóa/quyền/bank/kết nối provider; readiness chỉ kiểm đủ biến |
+| Webhook không vào local | Dùng HTTPS public/tunnel, cập nhật khi URL đổi; không đăng ký localhost |
+| Có tiền ngân hàng nhưng ví chờ | Làm quy trình reconcile mục 2, không cộng tay |
+| Rút PROCESSING lâu | Lookup/hỗ trợ provider mục 7, không hoàn/chi thêm |
+| Notification sink lỗi | Transaction tiền rollback; kiểm DB/log và source receipt rồi thử lại đúng nghiệp vụ |
+
+Không in khóa hoặc payload chứa thông tin nhạy cảm khi báo lỗi. Ghi ID/order/reference, thời điểm và kết quả cần đối soát.
+
+## 9. Tái kiểm thử trong môi trường riêng
+
+Từ repository root:
+
+```powershell
+& .\backend\mvnw.cmd -f backend/pom.xml -pl modules/payment -am test
+& .\backend\mvnw.cmd -f backend/pom.xml -pl app -am test '-Dtest=PaymentFlowIT,PaymentApplicationIT' '-Dsurefire.failIfNoSpecifiedTests=false'
+```
+
+Integration tests dùng Testcontainers postgres:17-alpine, hoặc `PAYMENT_TEST_JDBC`, `PAYMENT_TEST_USER`, `PAYMENT_TEST_PASSWORD` tới DB test riêng có quyền tạo schema. Không dùng DB vận hành. Tests không được coi skip vì thiếu Docker là pass.
+
+Từ frontend:
+
+```powershell
+npm test -- src/__tests__/features/payment src/__tests__/shared/DashboardShell.test.tsx
+npm run type-check
+npm run build -- --webpack
+```
+
+Chạy thêm sidebar/dashboard tests khi đổi navigation. Windows/Turbopack từng lỗi spawn CSS; gate đã dùng Webpack. Môi trường TLS proxy dùng CA tin cậy, không tắt xác minh TLS.
+
+[Báo cáo](verification-report.md) ghi test đã chạy; provider dùng mock, chưa live. Khả năng/môi trường test payOS cần đối chiếu tài liệu chính thức lúc sử dụng; không coi thông tin sandbox cũ trong lịch sử là điều kiện đã xác nhận cho merchant hiện tại.

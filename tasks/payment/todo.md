@@ -1,26 +1,86 @@
-# Checklist triển khai Payment
+# Payment: commit checklist
 
-Mỗi task hoàn thành: cập nhật bằng chứng, commit riêng theo phần, push `feat/payment`.
+Nguồn chi tiết: [plan theo phase](plan.md) và [giải trình kiến trúc](../../docs/payment/payment_implementation_plan.md). Cập nhật 24/10/2026 trên `feat/payment`.
 
-- [x] P00: audit develop, chốt quy tắc và ghi plan. Kiểm chứng: working tree sạch trước triển khai; hoa hồng được user chọn 10%.
-- [x] P01: module, state machine thu phí/tranh chấp và tests. AC: 1h chỉ auto phía learner, 24h trả held nếu chưa đồng thuận; hai báo cáo khớp chờ Admin.
-- [x] P02: migration, ví/sổ, cấp tiền, xác nhận/tất toán và scheduler. AC: transaction/idempotence/authorization; hoàn đúng payer; migration mới không đổi history.
-- [x] P03: nạp QR/payOS webhook và manual đối soát; rút tiền/Admin. AC: không tự credit, chữ ký/amount/reference đúng, xử lý trùng; Admin review có mã giao dịch và audit.
-- [x] P04a: SDK typed và form ví nạp/rút. AC: capability cấu hình; QR không tự credit; thông tin người thụ hưởng hợp lệ.
-- [x] P04b: thẻ học phí/xác nhận/tranh chấp. AC: role, thời hạn, báo cáo mức tiền rõ ràng, không duplicate click.
-- [x] P04c: workspace Student/Parent/Tutor và tích hợp chi tiết lịch. AC: dữ liệu API, sổ ví, lọc tháng, loading/error/empty/pending, không dữ liệu giả.
-- [x] P05: FE Admin và tích hợp navigation/dashboard. AC: duyệt hai báo cáo, nạp/rút; bỏ số liệu thanh toán giả, badge sắp ra mắt.
-- [x] P06: kiểm thử tích hợp, security review, lint/type-check/build, tài liệu vận hành và báo cáo. AC: ghi rõ kết quả thực chạy và cấu hình cần có.
+Giữ ID task đã triển khai. P04a/P04b/P04c là ba task trong Phase 4; commit hotfix không làm tăng số phase. Mỗi increment: kiểm chứng, review diff, commit rồi push đúng nhánh.
 
-## Commit / push
+## Phase 0 — Baseline
 
-Ghi SHA và kiểm chứng sau mỗi phần tại `docs/payment/verification-report.md`.
+- [x] P00: Audit base develop, branch, quy tắc ví/1h/24h và commission 10%. Commit `435da1b`.
+- [x] Checkpoint 0: Plan đủ phạm vi, không giả định fee.
 
+## Phase 1 — Domain
 
-## Hoàn thiện kết nối payOS (23/10/2026)
+- [x] P01: SessionCharge state/time/report/terminal, domain tests. Commit `73195ff`.
+- [x] Checkpoint 1: Auto learner không thay tutor, biên 24h rõ.
 
-- [x] P07: cấu hình .env.example/Compose, trạng thái readiness cho Admin; để trống toàn bộ credentials. Kiểm chứng khởi động thiếu khóa, không lộ secret.
-- [x] P08: đối soát nạp tiền server-to-server khi webhook chậm, khóa/idempotence và thông báo ví cùng transaction. Kiểm chứng chữ ký, sai số tiền/tài khoản, duplicate, provider timeout.
-- [x] P09: chi hộ sau Admin duyệt, reference ổn định, PROCESSING giữ tiền; đối soát kết quả cuối, chặn manual settle khi đã gửi. Kiểm chứng timeout/crash/retry/concurrency, thành công/thất bại/mismatch.
-- [x] P10: FE trạng thái cấu hình, refresh nạp tiền, bank BIN và payout Admin, liên kết notification; kiểm thử hành vi/type/lint/build/browser.
-- [x] P11: hướng dẫn config local/deploy/webhook/kênh chi, cập nhật API/schema/report; commit push từng phần, giữ feat/payment.
+## Phase 2 — Ledger và session
+
+- [x] P02: V1.16, wallet/held/entry/audit/mutex, snapshot, quyền, settlement/deadline. Commit `a4d4ea4`; startup/time fix `db23f8f`.
+- [x] Checkpoint 2: PG transaction/idempotency/race, hoàn đúng payer, không Clock ambiguity.
+
+## Phase 3 — Nạp/rút/Admin backend
+
+- [x] P03: QR/payOS webhook, manual credit, tutor withdrawal/Admin review. Commit `5deafa9`.
+- [x] Hotfix history `3f5b4d7`, pagination tranh chấp `2c5c105`.
+- [x] Checkpoint 3: Receipt/reference đúng mới ghi tiền, history dùng được.
+
+## Phase 4 — Learner/Tutor frontend
+
+- [x] P04a: Typed SDK và form ví/nạp/rút. Commit `c32f518`.
+- [x] P04b: Cấp tiền/xác nhận/dispute/report theo buổi. Commit `6fb85d9`.
+- [x] P04c: Workspace ba role, tích hợp chi tiết lịch. Commit `0cb5c2a`.
+- [x] Checkpoint 4: Dữ liệu API, quyền, loading/error/empty/pending, không số dư giả.
+
+## Phase 5 — Admin frontend
+
+- [x] P05: Đối soát nạp/rút/báo cáo, navigation và bỏ KPI/stub tiền giả. Commit `e80751b`.
+- [x] Checkpoint 5: Admin flow/quyền/browser.
+
+## Phase 6 — Bàn giao đầu
+
+- [x] P06: PG/startup/architecture, FE type/lint/build/browser, DBML/API/runbook/report. Commit `db147f9`.
+- [x] Hotfix local DB config `1192d79`, không sửa checksum migration.
+- [x] Checkpoint 6: Bằng chứng và giới hạn ghi rõ.
+
+## Phase 7 — Cấu hình provider
+
+- [x] P07: Env/Compose passthrough, readiness Admin-only, secrets để trống. Commit `de6b336`.
+- [x] Checkpoint 7: Thiếu khóa vẫn chạy, readiness không lộ secret.
+
+## Phase 8 — Phục hồi nạp và notification
+
+- [x] P08: Signed lookup, owner/Admin, lease, idempotent credit và atomic notification. Transport `d16e468`, triển khai chung P08/P09 `710b9af`.
+- [x] Checkpoint 8: Mismatch không credit; duplicate một credit/notify; sink failure rollback.
+
+## Phase 9 — Chi ngân hàng
+
+- [x] P09: Admin dispatch, PROCESSING trước HTTP, stable key/reference, lookup, terminal verified. Commit chung `710b9af`; test `354cfbb`.
+- [x] Checkpoint 9: Timeout giữ tiền/không repost, manual bị chặn sau dispatch, PG concurrency/upgrade.
+
+## Phase 10 — FE provider và mobile
+
+- [x] P10: Refresh nạp, chọn BIN, readiness/payout Admin, notification routing, mobile dialog. Commits `a3dfd37`, `31ccac8`.
+- [x] Checkpoint 10: FE 25 tests/8 files ở gate cuối, type/lint/build và Chrome desktop/mobile.
+
+## Phase 11 — Bàn giao cuối
+
+- [x] P11: payOS setup thu/chi/webhook/unknown payout, API/schema/report. Commit `3966d54`.
+- [x] Checkpoint 11: Code bàn giao, secrets không commit, merchant/live còn chờ.
+
+## Viết lại docs theo Discovery — 24/10/2026
+
+- [x] Giải trình mục 0–9: cơ chế, sơ đồ Mermaid, từng file/schema, ma trận kiểm thử và Q&A.
+- [x] Task chi tiết từng phase có dependency/AC/kiểm chứng/SHA; giữ lịch sử task.
+- [x] Chuẩn hóa API/runbook/chỉ mục; giữ liên kết implementation-plan cũ.
+- [x] Đối chiếu code, link tương đối và diff; kết quả tại verification-report.
+
+## Vận hành còn chờ — không đánh dấu đã làm
+
+- [ ] Xác thực merchant/ngân hàng và điều kiện dùng cho EduFit.
+- [ ] Điền khóa kênh thu, tài khoản nhận, frontend URL và restart backend.
+- [ ] Cấu hình HTTPS public webhook và xác minh hoạt động thực tế.
+- [ ] Nếu cần payout: kích hoạt kênh chi, khóa riêng, nguồn tiền/hạn mức/điều kiện provider.
+- [ ] Kiểm chứng giao dịch live được chủ tài khoản cho phép, đối soát ngân hàng/ví/ledger/notification.
+
+Các kết quả test đã ghi ở [verification-report](../../docs/payment/verification-report.md); lần sửa Markdown này không phải lần chạy lại các gate code.

@@ -1,5 +1,9 @@
 # Payment verification
 
+Đây là lịch sử bằng chứng theo từng đợt, không phải một lần chạy tất cả test. Bản code tham chiếu mới nhất khi chuẩn hóa docs 24/10/2026 là `3966d54`: V1.17, có reconcile nạp và payout sau Admin duyệt; 74 case BE khác nhau qua các gate, gate FE cuối 25 tests/8 files. Chưa kiểm chứng giao dịch payOS/merchant thật. Các mô tả payout thủ công và số lượng test ít hơn bên dưới thuộc bản đầu, trước P07–P11.
+
+Tài liệu đọc kèm: [giải trình kiến trúc](payment_implementation_plan.md), [task từng phase](../../tasks/payment/plan.md), [API](api-contract.md), [setup](payos-setup.md), [runbook](runbook.md).
+
 - P00: `435da1b` — plan/checklist đã push.
 - P01: domain state machine: RED testCompile thiếu SessionCharge; GREEN 7 tests SessionChargeTest, Maven reactor SUCCESS. Test mốc 1h/24h, uncompleted session, double confirm, báo cáo lệch, partial và full refund.
 
@@ -31,7 +35,7 @@
 
 - P05 `e80751b` đã push. P06: đồng bộ 7 bảng vào DBML, đánh dấu tài liệu tuition cũ được thay thế, bổ sung lệnh flow/startup tests trong runbook.
 
-## Tổng hợp kiểm chứng cuối
+## Tổng hợp kiểm chứng bản đầu (trước P07–P11)
 
 - Backend gate ban đầu: 61 PASS (17 unit Payment + 33 architecture/migration naming + 10 PG flows + 1 app startup). Sau bổ sung regression history/Admin: 11 PG flows PASS; startup 1 PASS; package SUCCESS. Tổng 62 test case khác nhau qua các gate, không tuyên bố chạy lại toàn bộ repository.
 - FE: 24 tests / 8 files PASS; Sidebar 7/7 chạy lại sau sửa act warning; type-check PASS; lint phần Payment 0 errors/0 warnings. Production Webpack build PASS. Các thay đổi sau build là test/format và backend query fixes.
@@ -57,3 +61,12 @@ P08/P09 `710b9af` đã push; bổ sung header-signature + stable idempotency tes
 P10: FE/notification 24 tests PASS, sau phát hiện mobile sidebar chiếm chiều ngang đã thêm native dialog navigation và RED/GREEN test. Gate cuối 25 tests / 8 files PASS; type-check/lint Payment + DashboardShell PASS, production Webpack build PASS. Chrome dùng backend thật + schema PG test riêng: 4 vai trò, manual topup không tự credit, Admin bank-confirm cập nhật đúng ví, persisted PAYMENT_TOPUP notification đúng một lần mỗi lần credit, readiness Admin-only, unsigned webhook bị từ chối, 390px không overflow và menu mở/đóng bằng Escape; zero page errors. Đã xem ảnh mobile và desktop. Test payout API bên ngoài dùng HTTP/provider mock; không chuyển tiền thật.
 
 P10 mobile fix `a3dfd37` và FE provider `31ccac8` đã push. P11: hướng dẫn `payos-setup.md`, README, API và DBML đã đồng bộ V1.17. Kênh thu 5 biến để người dùng điền; kênh chi có bộ khóa riêng và PAYOS_PAYOUT_ENABLED=false mặc định. Không có secret trong commit; .env local ignored. Các tiến trình FE/BE/PG dành riêng cho kiểm thử đã dừng. Toàn bộ thay đổi trên feat/payment, không merge main/develop.
+
+## Chuẩn hóa docs theo mẫu Discovery — 24/10/2026
+
+- Đọc bản Discovery gốc, tasks/plan.md và tasks/todo.md; đối chiếu Payment domain/application/store/controllers, V1.16/V1.17, FE SDK và lịch sử Git tại code `3966d54`.
+- Bổ sung payment_implementation_plan.md theo mục 0–9: audit delta, mục tiêu, cơ chế tiền/state/time/fee, boundary/workflows Mermaid, từng file/schema, quyết định/việc mở, phase, verification và Q&A.
+- Bổ sung tasks/payment/plan.md, tổ chức lại checklist theo 12 phase và 14 task lịch sử; giữ SHA thực tế, tách checkpoint khỏi task và việc vận hành còn chờ.
+- Đồng bộ API/runbook/setup và chỉ mục; implementation-plan.md cũ tiếp tục dẫn tới nguồn chính. Ghi đúng khác biệt webhook/lookup, endpoint confirm/payout, trạng thái topup và commission snapshot; không tuyên bố chức năng chưa có.
+- Kiểm tra tài liệu: 9 Markdown trong docs/payment và tasks/payment, 53 link nội bộ, 6 khối Mermaid có fence cân bằng, 21 commit tham chiếu, thứ tự mục 0–9/phase 0–11 và 14 ID task đều PASS. File/test được tham chiếu đã đối chiếu trong repository.
+- Đây là thay đổi Markdown; không thay code/SQL/env, không chạy lại gate BE/FE hay chuyển tiền thật. Số test ở các phần trước là bằng chứng lịch sử, không phải test mới của đợt docs.
