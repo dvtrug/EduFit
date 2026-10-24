@@ -1,8 +1,8 @@
 # Kế hoạch triển khai & giải trình kiến trúc chi tiết: Payment — EduFit
 
 - **Nhánh:** `feat/payment`; base triển khai ban đầu: `develop@b1ea5cd`.
-- **Ngày đối chiếu:** 24/10/2026; code tham chiếu: `3966d54`.
-- **Trạng thái:** đã triển khai FE/BE và kiểm thử theo [báo cáo](verification-report.md); chưa kiểm chứng giao dịch payOS bằng merchant thật.
+- **Ngày đối chiếu:** 24/10/2026; code tham chiếu ban đầu: `3966d54`, cập nhật bản sửa tài khoản ảo V1.18 tại [báo cáo](verification-report.md).
+- **Trạng thái:** đã triển khai FE/BE; bằng chứng kiểm thử bản V1.17 và biên dịch bản sửa V1.18 tại [báo cáo](verification-report.md). V1.18 chưa chạy test/migration; chưa kiểm chứng giao dịch payOS bằng merchant thật.
 - **Mẫu trình bày:** bản Discovery gốc `D:/backend_discovery_implementation_plan.md`, [plan Discovery](../../tasks/plan.md) và [checklist Discovery](../../tasks/todo.md). Dùng cấu trúc giải thích, sơ đồ, file mapping, phase và bằng chứng; ví dụ mã trong mẫu không phải yêu cầu đổi kiến trúc Payment.
 - **Căn cứ:** [SADS](../software-architecture-design-specification.md), [module guide](../backend-module-structure-guide.md), [schema DBML](../edufit-schema.dbml), code và yêu cầu người dùng đã chốt. Quy tắc ví mới thay thế giới hạn nghiên cứu cũ trong `docs/tuition`.
 
@@ -355,7 +355,7 @@ backend/modules/payment/src/main/java/vn/edufit/payment/
 |---|---|---|
 | payment_wallet | PK user, available/held không âm | Ví cá nhân và nghĩa vụ đã giữ |
 | payment_charge | PK session, payer/tutor/student/class, amount/fee, state/report/time | Snapshot và điều phối từng buổi |
-| payment_topup | Order unique, provider, amount/status/link/reference unique | Ghép đúng yêu cầu nạp |
+| payment_topup | Order unique, provider, amount/status/link/reference unique, provider_account_number | Ghép đúng yêu cầu nạp và tài khoản nhận riêng của checkout |
 | payment_withdrawal | Thụ hưởng/status/reference, một yêu cầu đang xử lý/user | Theo dõi chi ngân hàng |
 | payment_entry | Event key unique, delta/reference/time | Truy vết tiền |
 | payment_audit | Actor/action/detail/reference | Ai đã làm gì |
@@ -363,6 +363,7 @@ backend/modules/payment/src/main/java/vn/edufit/payment/
 
 - [V1.16](../../backend/app/src/main/resources/db/migration/payment/V1.16__create_payment_wallet_and_settlement.sql) tạo bảy bảng, bổ sung thiết kế cho yêu cầu ví mới; không giả định schema ban đầu đã có ví.
 - [V1.17](../../backend/app/src/main/resources/db/migration/payment/V1.17__add_payment_provider_reconciliation.sql) thêm BIN, provider ID/state/message, payout requested time, reconcile lease/index và status chi mới.
+- [V1.18](../../backend/app/src/main/resources/db/migration/payment/V1.18__store_payos_checkout_receiving_account.sql) lưu tài khoản nhận từ checkout đã ký và khớp order/amount/VND; payOS có thể cấp tài khoản ảo khác ngân hàng gốc. Webhook/lookup đối chiếu snapshot qua accountNumber/virtualAccountNumber. NULL giữ dữ liệu cũ và fallback tài khoản gốc; không backfill từ receipt chưa có snapshot. Không thay số dư, không đổi SQL cũ. [Nguồn payOS](https://payos.vn/docs/cau-hoi-thuong-gap/).
 - `bank_bin` định danh ngân hàng gửi API, không dùng tên tự do; cho null để dữ liệu cũ xử lý manual.
 - `provider_id`/`provider_state` phân biệt ID/status ngoài hệ thống, phục hồi sau timeout.
 - `reconcile_after` là lease DB dùng chung API/job/instance.
@@ -444,7 +445,7 @@ P04a/P04b/P04c là ba task FE trong cùng phase 4, giữ ID để đối chiếu
 | Thu | Chữ ký/amount/account/link sai; order lạ; webhook lặp; lookup timeout |
 | Chi | Approve đồng thời; key ổn định; timeout; signed terminal; mismatch; manual bị chặn |
 | Notification | Credit một lần/notify một lần; sink lỗi rollback tiền |
-| Migration | Fresh V1.17; upgrade V1.16 có dữ liệu; validate/no-op |
+| Migration | Fresh V1.18; upgrade V1.16/V1.17 có dữ liệu; validate/no-op; nguồn regression V1.18 đã viết nhưng chưa chạy |
 | Startup/architecture | Clock bean, health, anonymous/forbidden, module boundaries |
 | FE/browser | Form/quyền/deadline/readiness/refresh/payout, 4 role, mobile/runtime |
 

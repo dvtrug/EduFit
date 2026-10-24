@@ -528,6 +528,7 @@ Table payment_topup {
   status varchar(20) [not null, note: 'PENDING, PAID, CANCELLED']
   checkout_url text [note: 'Hosted checkout or manual QR snapshot including recipient/amount/reference']
   provider_id varchar(150)
+  provider_account_number varchar(100) [note: 'V1.18: receiving account from signed payOS checkout; can be an order-specific virtual account; NULL for legacy/manual']
   transaction_reference varchar(200) [unique]
   expires_at timestamptz [not null]
   reconcile_after timestamptz [not null, note: 'V1.17 reconciliation lease']

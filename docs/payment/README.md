@@ -1,6 +1,6 @@
 # Payment — tài liệu ví, học phí và chi trả
 
-Cập nhật 24/10/2026 trên `feat/payment`, đối chiếu code `3966d54`. Đọc theo thứ tự:
+Cập nhật 24/10/2026 trên `feat/payment`, gồm bản sửa tài khoản ảo V1.18; phạm vi biên dịch/kiểm thử ghi tại báo cáo. Đọc theo thứ tự:
 
 | Tài liệu | Dùng khi nào? |
 |---|---|

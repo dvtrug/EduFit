@@ -4,7 +4,7 @@ Cập nhật 24/10/2026 theo code `3966d54`. Đọc [cơ chế](payment_implemen
 
 ## 1. Kiểm tra trước khi bật kênh thanh toán
 
-1. Đúng repository/branch và môi trường DB; migration V1.16/V1.17 áp dụng bằng Flyway.
+1. Đúng repository/branch và môi trường DB; migration V1.16/V1.17/V1.18 áp dụng bằng Flyway. V1.18 chưa được thực thi trong đợt sửa tài khoản ảo, cần kiểm tra lúc nâng cấp.
 2. Env thu/chi được truyền vào process/container; restart sau thay đổi env theo setup.
 3. Admin mở /admin/payments, kiểm readiness; đây không phải phép thử khóa/ngân hàng live.
 4. Kênh thu có ngân hàng nhận đúng, webhook HTTPS public đúng path.
@@ -81,12 +81,15 @@ API refresh và job dùng lease 60s. Nếu crash giữa lưu PROCESSING và prov
 | Validate checksum mismatch | Xác định migration bị đổi/nhánh/schema; giữ dữ liệu, không tự repair/clean/reset |
 | UI báo liên hệ Admin | Backend thiếu config kênh thu và manual; kiểm env process và readiness |
 | Readiness true nhưng tạo checkout lỗi | Kiểm khóa/quyền/bank/kết nối provider; readiness chỉ kiểm đủ biến |
+| Dữ liệu checkout/tài khoản nhận không hợp lệ ở bản cũ | Kiểm phiên bản; V1.18 hỗ trợ tài khoản ảo theo checkout đã ký. Không đổi PAYMENT_BANK_ACCOUNT thành tài khoản ảo; restart backend để Flyway thêm cột mới |
 | Webhook không vào local | Dùng HTTPS public/tunnel, cập nhật khi URL đổi; không đăng ký localhost |
 | Có tiền ngân hàng nhưng ví chờ | Làm quy trình reconcile mục 2, không cộng tay |
 | Rút PROCESSING lâu | Lookup/hỗ trợ provider mục 7, không hoàn/chi thêm |
 | Notification sink lỗi | Transaction tiền rollback; kiểm DB/log và source receipt rồi thử lại đúng nghiệp vụ |
 
 Không in khóa hoặc payload chứa thông tin nhạy cảm khi báo lỗi. Ghi ID/order/reference, thời điểm và kết quả cần đối soát.
+
+V1.18 lưu tài khoản nhận theo từng topup; receipt phải khớp snapshot qua accountNumber/virtualAccountNumber. Hàng cũ NULL fallback tài khoản gốc. Nếu chưa chuyển tiền cho order lỗi có thể tạo yêu cầu mới sau khi nâng cấp. Nếu đã chuyển, giữ order/reference và đối soát hỗ trợ; không tạo/chuyển thêm hoặc cập nhật snapshot bằng tài khoản do webhook cung cấp. Bản sửa này chưa chạy migration/test/live; xem [báo cáo](verification-report.md).
 
 ## 9. Tái kiểm thử trong môi trường riêng
 

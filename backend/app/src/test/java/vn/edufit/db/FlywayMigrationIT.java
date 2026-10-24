@@ -150,7 +150,7 @@ class FlywayMigrationIT {
     // 3. Kiểm chứng kết quả thực thi của Flyway
     assertTrue(result.success, "Quá trình migrate của Flyway phải thành công 100%");
     assertEquals(
-        17, result.migrationsExecuted, "Phải thực thi đúng 17 file migration V1.01 -> V1.17");
+        18, result.migrationsExecuted, "Phải thực thi đúng 18 file migration V1.01 -> V1.18");
 
     // 4. Kiểm tra trực tiếp các bảng và ràng buộc đã được tạo trong PostgreSQL
     try (Connection connection =
@@ -186,7 +186,7 @@ class FlywayMigrationIT {
               "SELECT COUNT(*) FROM flyway_schema_history WHERE success = true")) {
         assertTrue(rs.next());
         assertEquals(
-            17, rs.getInt(1), "Lịch sử migration phải ghi nhận đúng 17 bản ghi thành công");
+            18, rs.getInt(1), "Lịch sử migration phải ghi nhận đúng 18 bản ghi thành công");
       }
     }
   }
@@ -359,7 +359,7 @@ class FlywayMigrationIT {
             .validateOnMigrate(true)
             .baselineOnMigrate(false)
             .load();
-    assertEquals(7, upgraded.migrate().migrationsExecuted, "Phải thực thi đúng 7 migrations: V1.11 -> V1.17");
+    assertEquals(8, upgraded.migrate().migrationsExecuted, "Phải thực thi đúng 8 migrations: V1.11 -> V1.18");
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted, "Rerun phải là no-op");
 

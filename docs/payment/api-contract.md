@@ -1,6 +1,6 @@
 # Payment API contract
 
-Cập nhật 24/10/2026 theo code `3966d54`. Nghiệp vụ tại [implementation plan](payment_implementation_plan.md), vận hành tại [runbook](runbook.md).
+Cập nhật 24/10/2026, gồm bản sửa tài khoản ảo V1.18 sau code `3966d54`. Nghiệp vụ tại [implementation plan](payment_implementation_plan.md), vận hành tại [runbook](runbook.md).
 
 ## 1. Quy ước
 
@@ -87,5 +87,7 @@ Lưu ý contract hiện có: topup confirm dùng reference, không có nhánh t�
 ## 6. Schema và tài liệu liên quan
 
 [V1.16](../../backend/app/src/main/resources/db/migration/payment/V1.16__create_payment_wallet_and_settlement.sql) tạo bảy bảng; [V1.17](../../backend/app/src/main/resources/db/migration/payment/V1.17__add_payment_provider_reconciliation.sql) bổ sung metadata/status/lease/index. Không sửa migration đã áp dụng. Ledger event key/reference unique và mutex DB bảo vệ thao tác tiền.
+
+[V1.18](../../backend/app/src/main/resources/db/migration/payment/V1.18__store_payos_checkout_receiving_account.sql) bổ sung `payment_topup.provider_account_number`: tài khoản nhận từ checkout có chữ ký, có thể là tài khoản ảo riêng cho đơn. Response tạo checkout phải khớp order/amount/VND và URL HTTPS đúng host payOS; lỗi validation trả message riêng theo nguyên nhân. Webhook/lookup khớp snapshot qua `accountNumber` hoặc `virtualAccountNumber`, cùng các điều kiện receipt cũ. Snapshot là metadata nội bộ, không thêm field vào wallet/history projection; chữ ký vẫn bắt buộc. Hàng cũ NULL fallback `PAYMENT_BANK_ACCOUNT`, không học tài khoản mới từ webhook.
 
 Xem [setup](payos-setup.md) cho cấu hình thu/chi riêng; [verification](verification-report.md) cho test thực chạy. Chưa kiểm chứng tiền thật.

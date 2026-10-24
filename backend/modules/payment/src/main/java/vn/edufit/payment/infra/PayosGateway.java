@@ -3,6 +3,7 @@ package vn.edufit.payment.infra;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.http.*;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
@@ -28,7 +29,7 @@ public class PayosGateway {
     this.transport = transport;
   }
 
-  public record Checkout(String url, String id) {}
+  public record Checkout(String url, String id, String accountNumber) {}
 
   public record Receipt(
       long orderCode,
@@ -36,7 +37,22 @@ public class PayosGateway {
       String reference,
       String account,
       String paymentLinkId,
-      String currency) {}
+      String currency,
+      String virtualAccount) {
+    public Receipt(long orderCode, long amount, String reference, String account,
+        String paymentLinkId, String currency) {
+      this(orderCode, amount, reference, account, paymentLinkId, currency, "");
+    }
+
+    public boolean matchesAccount(String expected) {
+      return matchesReceivingAccount(expected, account, virtualAccount);
+    }
+  }
+
+  public static boolean matchesReceivingAccount(String expected, String account, String virtualAccount) {
+    return expected != null && !expected.isBlank()
+        && (expected.equals(account) || expected.equals(virtualAccount));
+  }
 
   public Checkout create(long order, long amount, String returnPath, Instant expires) {
     if (!settings.payos()) throw new InvalidOperationException("Chưa cấu hình payOS");
@@ -63,11 +79,32 @@ public class PayosGateway {
             false,
             null);
     String url = result.path("checkoutUrl").asText(), id = result.path("paymentLinkId").asText();
-    if (!url.startsWith("https://pay.payos.vn/")
-        || id.isBlank()
-        || !settings.bankAccount.equals(result.path("accountNumber").asText()))
-      throw new InvalidOperationException("Dữ liệu checkout/tài khoản nhận không hợp lệ");
-    return new Checkout(url, id);
+    URI checkout;
+    try {
+      checkout = URI.create(url);
+    } catch (IllegalArgumentException e) {
+      throw new InvalidOperationException("URL thanh toán payOS không hợp lệ");
+    }
+    if (!"https".equalsIgnoreCase(checkout.getScheme())
+        || !"pay.payos.vn".equalsIgnoreCase(checkout.getHost())
+        || checkout.getUserInfo() != null
+        || checkout.getPort() != -1 && checkout.getPort() != 443)
+      throw new InvalidOperationException("URL thanh toán payOS không hợp lệ");
+    if (!id.matches("[A-Za-z0-9_-]{1,150}"))
+      throw new InvalidOperationException("payOS không trả mã link thanh toán hợp lệ");
+    if (!result.path("orderCode").isIntegralNumber()
+        || !result.path("orderCode").canConvertToLong()
+        || result.path("orderCode").longValue() != order
+        || !result.path("amount").isIntegralNumber()
+        || !result.path("amount").canConvertToLong()
+        || result.path("amount").longValue() != amount
+        || !"VND".equals(result.path("currency").asText()))
+      throw new InvalidOperationException("Checkout payOS không khớp mã yêu cầu/số tiền/VND");
+    // A signed checkout may contain an order-specific virtual account, not the merchant's bank account.
+    String account = result.path("accountNumber").asText();
+    if (!account.matches("[A-Za-z0-9]{1,100}"))
+      throw new InvalidOperationException("payOS không trả tài khoản nhận hợp lệ cho yêu cầu nạp");
+    return new Checkout(url, id, account);
   }
 
   public JsonNode lookup(long order) {
@@ -121,7 +158,8 @@ public class PayosGateway {
           reference,
           data.path("accountNumber").asText(),
           data.path("paymentLinkId").asText(),
-          data.path("currency").asText());
+          data.path("currency").asText(),
+          data.path("virtualAccountNumber").asText());
     } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
       throw new InvalidOperationException("Webhook không phải JSON hợp lệ");
     }

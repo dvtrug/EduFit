@@ -59,7 +59,7 @@ class PaymentFlowIT {
             .schemas(schema)
             .locations("classpath:db/migration")
             .load();
-    assertEquals(17, flyway.migrate().migrationsExecuted);
+    assertEquals(18, flyway.migrate().migrationsExecuted);
     flyway.validate();
     assertEquals(0, flyway.migrate().migrationsExecuted);
   }
@@ -610,7 +610,7 @@ class PaymentFlowIT {
             .schemas(schema)
             .locations("classpath:db/migration")
             .load();
-    assertEquals(1, upgraded.migrate().migrationsExecuted);
+    assertEquals(2, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted);
     assertEquals(
@@ -628,5 +628,59 @@ class PaymentFlowIT {
                     + " values (?, ?,10000,'PENDING','Bank','12345678','Tutor')",
                 UUID.randomUUID(),
                 user));
+  }
+
+  @Test
+  void storesTheSignedVirtualAccountAndCreditsItsWebhookOnlyOnce() {
+    var topup = store.locked(() -> store.createTopup(parentUser, 100000, "PAYOS", end));
+    UUID id = (UUID) topup.get("id");
+    long order = ((Number) topup.get("order_code")).longValue();
+    store.locked(() -> {
+      store.checkout(id, "https://pay.payos.vn/web/virtual-link", "virtual-link", "VQR123456789");
+      return null;
+    });
+    assertEquals("VQR123456789", store.topup(id).get("provider_account_number"));
+    assertThrows(RuntimeException.class, () -> store.locked(() -> {
+      store.checkout(id, "https://pay.payos.vn/web/virtual-link", "virtual-link", "VQR_DIFFERENT");
+      return null;
+    }));
+    var gateway = mock(vn.edufit.payment.infra.PayosGateway.class);
+    var settings = new vn.edufit.payment.infra.PaymentSettings();
+    settings.bankAccount = "12345678";
+    var wallet = new WalletService(store, new PaymentAccess(profiles, connections), settings, gateway,
+        new PaymentTime(Clock.fixed(end, ZoneOffset.UTC)));
+    when(gateway.verify("virtual-paid")).thenReturn(new vn.edufit.payment.infra.PayosGateway.Receipt(
+        order, 100000, "VIRTUALBANKREF", "12345678", "virtual-link", "VND", "VQR123456789"));
+    wallet.webhook("virtual-paid");
+    wallet.webhook("virtual-paid");
+    assertEquals(1100000, store.wallet(parentUser).available());
+    assertEquals("PAID", store.topup(id).get("status"));
+    assertEquals(1, db.queryForObject(
+        "select count(*) from payment_entry where event_key=?", Integer.class, "topup:" + id));
+  }
+
+  @Test
+  void upgradesV117WithoutInventingAReceivingAccountForExistingTopups() {
+    String schema = "payment_va_upgrade_" + UUID.randomUUID().toString().replace("-", "");
+    var ds = new DriverManagerDataSource(
+        datasource.getUrl().replaceAll("currentSchema=[^&]+", "currentSchema=" + schema),
+        datasource.getUsername(), datasource.getPassword());
+    Flyway old = Flyway.configure().dataSource(ds).schemas(schema)
+        .locations("classpath:db/migration").target("1.17").load();
+    assertEquals(17, old.migrate().migrationsExecuted);
+    var jdbc = new JdbcTemplate(ds);
+    UUID owner = jdbc.queryForObject("select user_id from account where role='PARENT' limit 1", UUID.class);
+    UUID id = UUID.randomUUID();
+    jdbc.update("insert into payment_topup(id,user_id,amount,provider,status,expires_at)"
+        + " values (?,?,100000,'PAYOS','PENDING',now())", id, owner);
+    Flyway upgraded = Flyway.configure().dataSource(ds).schemas(schema)
+        .locations("classpath:db/migration").load();
+    assertEquals(1, upgraded.migrate().migrationsExecuted);
+    upgraded.validate();
+    assertEquals(0, upgraded.migrate().migrationsExecuted);
+    var saved = jdbc.queryForMap("select amount,status,provider_account_number from payment_topup where id=?", id);
+    assertEquals(100000L, saved.get("amount"));
+    assertEquals("PENDING", saved.get("status"));
+    assertNull(saved.get("provider_account_number"));
   }
 }

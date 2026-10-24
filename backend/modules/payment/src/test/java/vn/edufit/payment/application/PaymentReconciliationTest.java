@@ -93,4 +93,18 @@ class PaymentReconciliationTest {
     service.refresh(actor(owner), id);
     verifyNoInteractions(gateway);
   }
+
+  @Test
+  void reconciliationUsesTheStoredVirtualAccountAndRejectsAnotherAccount() {
+    var service = service();
+    when(store.topup(id)).thenReturn(Map.of(
+        "id", id, "user_id", owner, "order_code", 42L, "amount", 100000L,
+        "provider_id", "link42", "provider_account_number", "VQR123456789"));
+    when(gateway.lookup(42)).thenReturn(new ObjectMapper().valueToTree(status(100000, "12345678")));
+    assertThrows(RuntimeException.class, () -> service.refresh(actor(owner), id));
+    verify(store, never()).creditTopup(any(), any(), any());
+    when(gateway.lookup(42)).thenReturn(new ObjectMapper().valueToTree(status(100000, "VQR123456789")));
+    service.refresh(actor(owner), id);
+    verify(store).creditTopup(id, "BANKREF1", null);
+  }
 }

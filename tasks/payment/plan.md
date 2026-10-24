@@ -169,6 +169,7 @@ Cập nhật 24/10/2026, nhánh `feat/payment`, đối chiếu code `3966d54`. N
 
 - Kiểm `git status`, branch và diff; chỉ stage phần task.
 - Code thay đổi: chọn tests theo behavior/risk; migration phải chạy DB test; FE đổi behavior phải test tương ứng.
+- Ngoại lệ được người dùng yêu cầu ngày 24/10: chưa chạy test hoặc gọi payOS khi tích hợp khóa thật. Hotfix V1.18 chỉ biên dịch main/test source; kiểm chứng migration và regression vẫn để mở trong checklist, không báo PASS thay cho kết quả chưa chạy.
 - Docs-only: đối chiếu code/contract, link nội bộ, code fence, task ID/SHA và `git diff --check`; không cần khởi động lại tiền/DB chỉ để đổi Markdown.
 - Ghi kết quả thực chạy, điểm chưa kiểm chứng và commit/push; không sửa lại lịch sử SHA đã bàn giao.
 
@@ -185,3 +186,10 @@ Cập nhật 24/10/2026, nhánh `feat/payment`, đối chiếu code `3966d54`. N
 - Việc làm: tài liệu kiến trúc mục 0–9, workflow Mermaid, file/schema mapping, Q&A; task từng phase và chỉ mục; đồng bộ API/runbook.
 - AC: một nguồn chính về nghiệp vụ; đường dẫn cũ còn dùng được; trạng thái code tách khỏi merchant/live; không thay code, SQL hoặc secrets.
 - Kiểm chứng: link tương đối, file/test/route/SHA tham chiếu và diff. Kết quả đợt docs ghi trong verification-report.
+
+## 7. Hotfix tài khoản ảo payOS — 24/10/2026
+
+- Phạm vi: tạo checkout chấp nhận tài khoản ảo theo response có chữ ký và đúng order/amount/VND; V1.18 lưu snapshot tài khoản nhận; webhook/lookup so receipt với snapshot. Tách message lỗi URL/link/order/amount/VND/account để chẩn đoán rõ hơn.
+- AC: không bỏ kiểm chữ ký; không dùng tài khoản tự khai từ webhook làm chuẩn; không thay snapshot/link đã gắn; receipt sai không credit; duplicate chỉ một credit; giữ dữ liệu cũ NULL/fallback tài khoản gốc; không đổi env hoặc migration cũ.
+- Nguồn regression: PayosGatewayTest, WalletServiceTest, PaymentReconciliationTest, PaymentFlowIT; cập nhật migration count lên 18. Chưa chạy theo yêu cầu người dùng. Maven offline test-compile BUILD SUCCESS; không start backend, migrate DB hay gọi provider.
+- Bàn giao: cập nhật DBML/API/setup/runbook/luồng/report; commit/push riêng hotfix trên feat/payment. Fresh/upgrade V1.18 và regression vẫn còn chờ thực thi; kết quả ghi tại [verification-report](../../docs/payment/verification-report.md).

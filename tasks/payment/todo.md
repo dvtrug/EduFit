@@ -79,6 +79,11 @@ Giữ ID task đã triển khai. P04a/P04b/P04c là ba task trong Phase 4; commi
 
 - [x] Bổ sung tài liệu luồng/rule/cơ chế và 7 ảnh diagram PNG/SVG; đối chiếu code, kiểm bố cục ảnh và liên kết tài liệu. Đây là bàn giao docs, không phải kiểm chứng giao dịch live.
 
+## Hotfix tài khoản ảo — 24/10/2026
+
+- [x] Bản sửa checkout tài khoản ảo: snapshot từ response đã ký, đối chiếu webhook/lookup, V1.18 và nguồn regression; chỉ biên dịch, chưa chạy test/migration/provider theo yêu cầu người dùng. Xem [báo cáo](../../docs/payment/verification-report.md).
+- [ ] Chạy regression và fresh/upgrade V1.18 trong DB test riêng khi người dùng cho phép; chưa coi nguồn test đã viết là test PASS.
+
 ## Vận hành còn chờ — không đánh dấu đã làm
 
 - [ ] Xác thực merchant/ngân hàng và điều kiện dùng cho EduFit.

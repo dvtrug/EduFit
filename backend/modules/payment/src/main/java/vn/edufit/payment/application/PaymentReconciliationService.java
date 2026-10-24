@@ -57,7 +57,10 @@ public class PaymentReconciliationService {
     if (!transactions.isArray() || transactions.size() != 1)
       throw new InvalidOperationException("Cần đối soát các khoản chuyển nhiều lần");
     var receipt = transactions.get(0);
-    if (!settings.bankAccount.equals(receipt.path("accountNumber").asText())
+    String expectedAccount = t.get("provider_account_number") instanceof String account
+        ? account : settings.bankAccount;
+    if (!PayosGateway.matchesReceivingAccount(expectedAccount,
+            receipt.path("accountNumber").asText(), receipt.path("virtualAccountNumber").asText())
         || !receipt.path("amount").isIntegralNumber()
         || receipt.path("amount").longValue() != amount
         || receipt.path("reference").asText().isBlank()
@@ -73,6 +76,11 @@ public class PaymentReconciliationService {
           var current = store.topup(id);
           if (current.get("provider_id") != null && !link.equals(current.get("provider_id")))
             throw new InvalidOperationException("Mã thanh toán đã đổi");
+          String currentAccount = current.get("provider_account_number") instanceof String account
+              ? account : settings.bankAccount;
+          if (!PayosGateway.matchesReceivingAccount(currentAccount,
+              receipt.path("accountNumber").asText(), receipt.path("virtualAccountNumber").asText()))
+            throw new InvalidOperationException("Tài khoản nhận của yêu cầu nạp đã đổi");
           if (current.get("provider_id") == null) store.checkout(id, null, link);
           store.creditTopup(id, receipt.path("reference").asText(), null);
           return null;

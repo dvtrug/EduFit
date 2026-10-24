@@ -1,6 +1,6 @@
 # Payment verification
 
-Đây là lịch sử bằng chứng theo từng đợt, không phải một lần chạy tất cả test. Bản code tham chiếu mới nhất khi chuẩn hóa docs 24/10/2026 là `3966d54`: V1.17, có reconcile nạp và payout sau Admin duyệt; 74 case BE khác nhau qua các gate, gate FE cuối 25 tests/8 files. Chưa kiểm chứng giao dịch payOS/merchant thật. Các mô tả payout thủ công và số lượng test ít hơn bên dưới thuộc bản đầu, trước P07–P11.
+Đây là lịch sử bằng chứng theo từng đợt, không phải một lần chạy tất cả test. Bản code tham chiếu khi chuẩn hóa docs 24/10/2026 là `3966d54`: V1.17, có reconcile nạp và payout sau Admin duyệt; 74 case BE khác nhau qua các gate, gate FE cuối 25 tests/8 files. Bản sửa tài khoản ảo V1.18 sau đó chỉ được biên dịch, chưa chạy test/migration/provider theo yêu cầu người dùng; xem mục cuối. Chưa kiểm chứng giao dịch payOS/merchant thật. Các mô tả payout thủ công và số lượng test ít hơn bên dưới thuộc bản đầu, trước P07–P11.
 
 Tài liệu đọc kèm: [giải trình kiến trúc](payment_implementation_plan.md), [task từng phase](../../tasks/payment/plan.md), [API](api-contract.md), [setup](payos-setup.md), [runbook](runbook.md).
 
@@ -78,3 +78,15 @@ P10 mobile fix `a3dfd37` và FE provider `31ccac8` đã push. P11: hướng dẫ
 - Render cả 7 ảnh PASS với kiểm khung chữ/box không chồng; đã xem toàn bộ qua contact sheet và xem riêng ảnh tranh chấp/rút tiền ở kích thước chi tiết. Nội dung tiền/thời gian/nhánh xử lý đã đối chiếu code hiện tại.
 - Kiểm tra tài liệu: link nội bộ và image reference, thứ tự đủ PAY-01..PAY-30, PNG đọc được/không trống, SVG XML hợp lệ, AST Python và git diff --check PASS. Các file/link cũ vẫn tồn tại.
 - Không thay code FE/BE, schema, env hoặc chạy giao dịch live. Không chạy lại các gate test nghiệp vụ chỉ vì bổ sung tài liệu/ảnh; các số test trước đây giữ nguyên phạm vi lịch sử.
+
+## Sửa kiểm tra tài khoản ảo khi tạo checkout — 24/10/2026
+
+- Bằng chứng người dùng: POST `/api/v1/payment/topups` trả 400 `INVALID_OPERATION`, message `Dữ liệu checkout/tài khoản nhận không hợp lệ`. Message cũ gộp lỗi URL/link/tài khoản; chưa có response provider thật nên không khẳng định đã quan sát được field nào sai trong giao dịch đó.
+- Đối chiếu code thấy `PayosGateway.create` buộc accountNumber từ response trùng tài khoản gốc trong cấu hình. [FAQ payOS mục 6](https://payos.vn/docs/cau-hoi-thuong-gap/) xác nhận VietQR Pro cấp tài khoản ảo riêng cho đơn, có thể khác tài khoản gốc; [API chính thức](https://payos.vn/docs/api/) mô tả response có chữ ký và accountNumber/virtualAccountNumber trên receipt. Điều kiện cũ từ chối trường hợp hợp lệ này.
+- Sửa create: giữ xác minh chữ ký transport, kiểm URL bằng URI/HTTPS/host, kiểm link ID, order/amount/VND và tài khoản hợp lệ; trả message riêng theo nguyên nhân. Lưu tài khoản từ response có chữ ký theo từng topup. Không đổi env hoặc so tài khoản ảo với ngân hàng gốc.
+- Sửa webhook và signed lookup cùng đối chiếu snapshot qua accountNumber hoặc virtualAccountNumber, giữ kiểm amount/link/reference/idempotency và transaction. Store không cho thay snapshot/link đã gắn. Không dùng webhook làm nguồn tạo snapshot.
+- V1.18 chỉ thêm cột nullable `provider_account_number` và constraint định dạng; DBML đã đồng bộ. Giữ nguyên migration cũ và số dư. NULL giữ dữ liệu legacy/manual, fallback tài khoản gốc; đơn cũ dùng tài khoản ảo thiếu snapshot cần hỗ trợ đối soát nếu đã chuyển, không tự học tài khoản từ receipt.
+- Viết nguồn regression: create với virtual account; sai order/amount/VND/URL/account bị từ chối; verify giữ virtualAccountNumber; webhook không bypass bằng tài khoản gốc khi snapshot khác; reconcile đúng/sai snapshot; PostgreSQL duplicate webhook một credit; upgrade V1.17 giữ dữ liệu và để snapshot NULL. Cập nhật các assertion số migration lên 18. **Các test này chưa chạy.**
+- Đã chạy duy nhất Maven offline `test-compile -DskipTests` với Java 21, reactor 18 module: **BUILD SUCCESS**. Lệnh chỉ biên dịch main/test source, không thực thi test, không start backend, không migrate DB, không gọi payOS. Có warning deprecated/unchecked từ code hiện có; không lỗi biên dịch.
+- Kiểm tĩnh tài liệu: 10 Markdown, 97 liên kết local không hỏng; 18 file migration gồm V1.18 mới, không sửa migration cũ; `git diff --check` không lỗi whitespace. `.env` vẫn ignored và không được theo dõi bởi Git.
+- Tài liệu setup/API/runbook/luồng/plan/checklist được đồng bộ. Người dùng cần khởi động lại backend để Flyway áp dụng V1.18. Chỉ tạo yêu cầu mới khi chưa chuyển tiền cho yêu cầu lỗi; nếu đã chuyển, giữ order/reference để đối soát, không chuyển thêm.

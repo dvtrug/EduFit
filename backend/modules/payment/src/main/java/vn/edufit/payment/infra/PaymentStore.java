@@ -237,10 +237,22 @@ public class PaymentStore {
   }
 
   public void checkout(UUID id, String url, String providerId) {
+    checkout(id, url, providerId, null);
+  }
+
+  public void checkout(UUID id, String url, String providerId, String accountNumber) {
+    var current = topup(id);
+    if (current.get("provider_id") != null && !Objects.equals(current.get("provider_id"), providerId))
+      throw new InvalidOperationException("Không được thay mã link của yêu cầu nạp");
+    if (accountNumber != null && current.get("provider_account_number") != null
+        && !accountNumber.equals(current.get("provider_account_number")))
+      throw new InvalidOperationException("Không được thay tài khoản nhận của yêu cầu nạp");
     db.update(
-        "update payment_topup set checkout_url=?,provider_id=? where id=? and status='PENDING'",
+        "update payment_topup set checkout_url=?,provider_id=?,"
+            + "provider_account_number=coalesce(provider_account_number,?) where id=? and status='PENDING'",
         url,
         providerId,
+        accountNumber,
         id);
   }
 

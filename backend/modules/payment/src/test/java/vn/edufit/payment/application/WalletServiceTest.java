@@ -30,4 +30,17 @@ class WalletServiceTest {
  @Test void payosCannotBeEnabledWithoutExpectedReceivingAccount() {
   settings.clientId="client";settings.apiKey="api";settings.checksumKey="key";assertFalse(settings.payos());settings.bankAccount="12345678";assertTrue(settings.payos());
  }
+ @Test void webhookMatchesTheStoredVirtualAccountRatherThanOnlyTheConfiguredBankAccount() {
+  var service=service();
+  var topup=new HashMap<>(topup());topup.put("provider_account_number","VQR123456789");
+  when(store.findTopupByOrder(42)).thenReturn(Optional.of(topup));
+  when(gateway.verify("virtual")).thenReturn(new PayosGateway.Receipt(42,100000,"BANK123","12345678","link42","VND","VQR123456789"));
+  service.webhook("virtual");verify(store).creditTopup((UUID)topup.get("id"),"BANK123",null);
+ }
+ @Test void matchingMainAccountDoesNotBypassAMismatchedStoredVirtualAccount() {
+  var service=service();var topup=new HashMap<>(topup());topup.put("provider_account_number","VQR123456789");
+  when(store.findTopupByOrder(42)).thenReturn(Optional.of(topup));
+  when(gateway.verify("wrong-virtual")).thenReturn(new PayosGateway.Receipt(42,100000,"BANK123","12345678","link42","VND","VQR999999999"));
+  assertThrows(RuntimeException.class,()->service.webhook("wrong-virtual"));verify(store,never()).creditTopup(any(),anyString(),any());
+ }
 }

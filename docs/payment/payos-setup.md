@@ -18,6 +18,8 @@ PAYMENT_FRONTEND_URL=http://localhost:3000
 
 `PAYMENT_BANK_ACCOUNT` là số tài khoản nhận liên kết với kênh thu, không phải tài khoản người nạp/gia sư. `PAYMENT_FRONTEND_URL` là origin frontend đang dùng, không kèm Markdown, không phải URL webhook. Production thay bằng origin HTTPS của frontend.
 
+payOS VietQR Pro có thể cấp **tài khoản ảo riêng cho từng đơn**, khác số tài khoản ngân hàng gốc. Giữ `PAYMENT_BANK_ACCOUNT` là tài khoản gốc đã liên kết; không thay biến này bằng tài khoản ảo của một QR. Từ V1.18, backend lưu `provider_account_number` từ response tạo checkout đã xác minh chữ ký và khớp order/amount/VND; webhook/lookup phải khớp tài khoản đã lưu qua `accountNumber` hoặc `virtualAccountNumber`.
+
 ## 2. Cho backend nhận webhook
 
 Webhook URL cấu hình trên kênh thu payOS:
@@ -42,12 +44,14 @@ Không cần một biến `WEBHOOK_URL` trong code hiện tại: URL này đư�
 ## 4. Kiểm tra nạp tiền sau cấu hình
 
 1. Đăng nhập Student/Parent, tạo yêu cầu nạp trong trang ví. Nút mở thanh toán phải trỏ tới checkout HTTPS của payOS.
-2. Kiểm tra đúng ngân hàng, tài khoản, số tiền và mã yêu cầu trên checkout trước khi chuyển.
+2. Kiểm tra đúng ngân hàng, tài khoản, số tiền và mã yêu cầu trên checkout trước khi chuyển. Tài khoản ảo do payOS cấp có thể khác tài khoản gốc; dùng QR/checkout của đúng yêu cầu nạp, không tự sửa thông tin QR.
 3. Với giao dịch kiểm chứng đã được chủ tài khoản cho phép, backend chỉ cộng ví sau webhook hợp lệ hoặc truy vấn đối soát payOS có chữ ký. Không tin ảnh chuyển khoản, return URL hay nút trên frontend.
 4. Nếu webhook đến chậm, bấm **Kiểm tra tiền đã chuyển**; job cũng đối soát mỗi 30 giây theo batch. Mỗi yêu cầu được giới hạn tần suất đối soát. Giao dịch nhiều lần hoặc sai tổng tiền/tài khoản cần hỗ trợ đối soát, không tự cộng sai số dư.
 5. Kiểm tra sổ ví, thông báo nạp thành công và ví tài khoản khác không bị cộng. Refresh/webhook lặp lại không được cộng lần hai.
 
 Thiếu khóa: hệ thống vẫn chạy, kênh payOS bị tắt. Không có số dư giả khi tạo QR.
+
+Nếu bản cũ báo `Dữ liệu checkout/tài khoản nhận không hợp lệ`, khởi động lại backend với bản sửa V1.18; Flyway bổ sung cột, không đổi migration cũ. Khi chưa chuyển tiền có thể tạo yêu cầu nạp mới. Nếu đã chuyển cho yêu cầu cũ thiếu snapshot tài khoản, giữ order/reference để đối soát; không chuyển thêm. Dữ liệu cũ có snapshot NULL dùng tài khoản gốc làm fallback và không tự nhận tài khoản lạ từ webhook.
 
 ## 5. Bật rút tiền qua API chi hộ (tùy chọn riêng)
 
@@ -88,6 +92,9 @@ PAYMENT_BANK_HOLDER=
 
 Kiểm thử tự động dùng PostgreSQL riêng và HTTP/provider mock, chưa thực hiện chuyển tiền thật hoặc kiểm chứng khóa merchant thật. Migration V1.17 đã được kiểm thử fresh và upgrade từ V1.16; không sửa checksum migration cũ. Thông báo được lưu qua Shared NotificationSink trong cùng transaction với sổ ví; UI poll/focus để cập nhật.
 
+Bản sửa V1.18 ngày 24/10 chỉ được biên dịch code và nguồn test; chưa chạy test, migration hoặc gọi payOS theo yêu cầu người dùng. Không dùng kết quả V1.17 ở trên làm bằng chứng đã kiểm thử V1.18.
+
 - API chính thức: https://payos.vn/docs/api/
+- Tài khoản ảo VietQR Pro (mục 6): https://payos.vn/docs/cau-hoi-thuong-gap/
 - SDK Java và quy tắc ký request/response: https://github.com/payOSHQ/payos-lib-java
 - Danh mục ngân hàng trên UI là snapshot 23/10/2026 của https://api.vietqr.io/v2/banks (ngân hàng có `transferSupported=1`); code gửi BIN, không gửi tên ngân hàng tự do làm mã chi.

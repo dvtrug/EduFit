@@ -63,8 +63,8 @@ Kênh thu phải có khóa hợp lệ và tài khoản ngân hàng liên kết �
 | Kiểm actor và amount | Student/Parent, VND nguyên 10.000..100.000.000 | Không cho mọi role tự nạp hoặc gửi tiền thập phân |
 | Tạo topup | ID, order riêng, owner, amount, provider, PENDING, expires_at | Có yêu cầu nội bộ trước khi nhận kết quả ngoài |
 | Tạo checkout | Gọi payOS ngoài transaction/lock DB | Mạng chậm không giữ khóa tiền |
-| Xác minh response tạo checkout | Chữ ký, URL payOS, link ID, tài khoản nhận | Không trả checkout không khớp ngân hàng đã cấu hình |
-| Lưu checkout | Gắn URL và link ID vào topup | Ghép receipt về đúng yêu cầu |
+| Xác minh response tạo checkout | Chữ ký, URL HTTPS đúng host payOS, link ID, order/amount/VND, tài khoản nhận hợp lệ | Chấp nhận tài khoản ảo do payOS cấp cho đúng đơn |
+| Lưu checkout | Gắn URL, link ID và tài khoản nhận vào topup | Ghép receipt về đúng yêu cầu và đúng tài khoản riêng của đơn |
 | Nhận bằng chứng thanh toán | Webhook hoặc lookup response có chữ ký | Không tin trạng thái do trình duyệt báo |
 | Credit | PAID + available + entry + audit + notification | Ghi cùng transaction và chỉ một lần |
 
@@ -74,6 +74,7 @@ Nếu tạo checkout bị lỗi sau khi đã lưu PENDING, không có credit. Kh
 
 - **Webhook:** chữ ký hợp lệ; tìm được order; provider PAYOS; đúng amount, VND, tài khoản nhận, payment link ID và reference.
 - **Lookup phục hồi:** response đã ký; đúng order/amount; status PAID; amountPaid khớp; đúng một transaction với account/amount/reference/link phù hợp. Đường này hiện không có bước currency riêng như webhook.
+- **Tài khoản nhận:** từ V1.18 dùng snapshot checkout đã ký, so với `accountNumber` hoặc `virtualAccountNumber` của receipt. Không yêu cầu tài khoản ảo trùng ngân hàng gốc; không lấy tài khoản webhook tự khai làm giá trị chuẩn. Hàng cũ NULL dùng tài khoản gốc làm fallback; đơn cũ dùng tài khoản ảo thiếu snapshot có thể cần đối soát hỗ trợ. `PAYMENT_BANK_ACCOUNT` vẫn giữ tài khoản gốc đã liên kết. Xem [FAQ payOS về tài khoản ảo](https://payos.vn/docs/cau-hoi-thuong-gap/) và [API](https://payos.vn/docs/api/).
 - Giao dịch mẫu đăng ký webhook có chữ ký nhưng không khớp order: ACK, không credit cho tài khoản nào.
 - QR hết hạn hiển thị không đủ để kết luận tiền chưa đến hoặc đã hoàn ngân hàng. Code chưa đồng bộ mọi trạng thái hủy/hết hạn provider về topup CANCELLED.
 

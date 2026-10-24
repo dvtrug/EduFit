@@ -65,7 +65,7 @@ public class WalletService {
       var checkout = gateway.create(order, amount, path, expires);
       store.locked(
           () -> {
-            store.checkout(id, checkout.url(), checkout.id());
+            store.checkout(id, checkout.url(), checkout.id(), checkout.accountNumber());
             return null;
           });
       return Map.of("id", id, "checkoutUrl", checkout.url(), "provider", provider);
@@ -122,7 +122,9 @@ public class WalletService {
               || !"VND".equals(receipt.currency())
               || !receipt.paymentLinkId().equals(t.get("provider_id")))
             throw new InvalidOperationException("Webhook không khớp khoản nạp");
-          if (!settings.bankAccount.equals(receipt.account()))
+          String expectedAccount = t.get("provider_account_number") instanceof String account
+              ? account : settings.bankAccount;
+          if (!receipt.matchesAccount(expectedAccount))
             throw new InvalidOperationException("Sai tài khoản nhận tiền");
           store.creditTopup((UUID) t.get("id"), receipt.reference(), null);
           return null;
