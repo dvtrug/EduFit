@@ -573,3 +573,13 @@ Table payment_audit {
 Table payment_mutex {
   id boolean [pk, note: 'Single true row, database transaction coordination']
 }
+
+Table payment_payout_account {
+  user_id uuid [pk, ref: > account.user_id]
+  id uuid [not null, unique, note: 'V1.20: changes on replacement; stale withdrawal forms are rejected']
+  bank_name varchar(100) [not null]
+  bank_bin varchar(6) [not null]
+  bank_account varchar(34) [not null]
+  bank_holder varchar(150) [not null]
+  updated_at timestamptz [not null]
+}

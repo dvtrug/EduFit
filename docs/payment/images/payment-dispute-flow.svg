@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1450" viewBox="0 0 1680 1450">
 <rect width="100%" height="100%" fill="white"/>
 <text x="64" y="28" font-family="Segoe UI, sans-serif" font-size="20" font-weight="700" fill="#2563EB" dominant-baseline="text-before-edge">EDUFIT / PAYMENT / 04</text>
-<text x="64" y="66" font-family="Segoe UI, sans-serif" font-size="38" font-weight="700" fill="#0F172A" dominant-baseline="text-before-edge">Tranh chấp 24 giờ và quyết định Admin</text>
-<text x="64" y="120" font-family="Segoe UI, sans-serif" font-size="23" font-weight="400" fill="#475569" dominant-baseline="text-before-edge">24h tính từ lúc mở tranh chấp; đây là hạn báo cáo của hai phía, không phải hạn xử lý của Admin.</text>
+<text x="64" y="66" font-family="Segoe UI, sans-serif" font-size="38" font-weight="700" fill="#0F172A" dominant-baseline="text-before-edge">Tranh chấp 48 giờ và quyết định Admin</text>
+<text x="64" y="120" font-family="Segoe UI, sans-serif" font-size="23" font-weight="400" fill="#475569" dominant-baseline="text-before-edge">48h tính từ lúc mở tranh chấp; đây là hạn báo cáo của hai phía, không phải hạn xử lý của Admin.</text>
 <path d="M64 164H1616" stroke="#E2E8F0" stroke-width="2"/>
 <rect x="490" y="200" width="700" height="150" rx="18" fill="#FEF2F2" stroke="#B91C1C" stroke-width="2"/>
 <text x="514" y="220" font-family="Segoe UI, sans-serif" font-size="27" font-weight="700" fill="#B91C1C" dominant-baseline="text-before-edge">1. Một phía mở tranh chấp</text>
-<text x="514" y="268" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">Sau endAt, charge còn chờ xác nhận → DISPUTED; tiếp tục</text>
+<text x="514" y="268" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">Trong 24h sau endAt, trước tất toán → DISPUTED; tiếp tục</text>
 <text x="514" y="303" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">giữ toàn bộ A.</text>
 <polyline points="650,353 650,380 404,380 404,416" fill="none" stroke="#64748B" stroke-width="4" stroke-linejoin="round"/>
 <polygon points="404.0,416.0 396.3,402.0 411.7,402.0" fill="#64748B"/>
@@ -19,7 +19,7 @@
 <rect x="936" y="420" width="680" height="155" rx="18" fill="#F5F3FF" stroke="#7C3AED" stroke-width="2"/>
 <text x="960" y="440" font-family="Segoe UI, sans-serif" font-size="27" font-weight="700" fill="#7C3AED" dominant-baseline="text-before-edge">2b. Báo cáo phía tutor</text>
 <text x="960" y="488" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">Gửi riêng nội dung và mức tiền đề nghị S, trước</text>
-<text x="960" y="523" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">openedAt + 24h.</text>
+<text x="960" y="523" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">openedAt + 48h.</text>
 <polyline points="404,578 404,610 840,610 840,646" fill="none" stroke="#64748B" stroke-width="4" stroke-linejoin="round"/>
 <polygon points="840.0,646.0 832.3,632.0 847.7,632.0" fill="#64748B"/>
 <polyline points="1276,578 1276,610 840,610 840,646" fill="none" stroke="#64748B" stroke-width="4" stroke-linejoin="round"/>
@@ -33,7 +33,7 @@
 <text x="90" y="785" font-family="Segoe UI, sans-serif" font-size="21" font-weight="700" fill="#047857" dominant-baseline="text-before-edge">CÓ, TRONG HẠN</text>
 <polyline points="1190,725 1276,725 1276,856" fill="none" stroke="#B45309" stroke-width="4" stroke-linejoin="round"/>
 <polygon points="1276.0,856.0 1268.3,842.0 1283.7,842.0" fill="#B45309"/>
-<text x="1300" y="785" font-family="Segoe UI, sans-serif" font-size="21" font-weight="700" fill="#B45309" dominant-baseline="text-before-edge">ĐỦ 24H CHƯA KHỚP</text>
+<text x="1300" y="785" font-family="Segoe UI, sans-serif" font-size="21" font-weight="700" fill="#B45309" dominant-baseline="text-before-edge">ĐỦ 48H CHƯA KHỚP</text>
 <rect x="64" y="860" width="680" height="160" rx="18" fill="#ECFDF5" stroke="#047857" stroke-width="2"/>
 <text x="88" y="880" font-family="Segoe UI, sans-serif" font-size="27" font-weight="700" fill="#047857" dominant-baseline="text-before-edge">4a. AWAITING_ADMIN</text>
 <text x="88" y="928" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">Giữ A chờ Admin; không hết hạn chỉ vì Admin xử lý lâu.</text>

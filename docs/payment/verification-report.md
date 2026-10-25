@@ -90,3 +90,15 @@ P10 mobile fix `a3dfd37` và FE provider `31ccac8` đã push. P11: hướng dẫ
 - Đã chạy duy nhất Maven offline `test-compile -DskipTests` với Java 21, reactor 18 module: **BUILD SUCCESS**. Lệnh chỉ biên dịch main/test source, không thực thi test, không start backend, không migrate DB, không gọi payOS. Có warning deprecated/unchecked từ code hiện có; không lỗi biên dịch.
 - Kiểm tĩnh tài liệu: 10 Markdown, 97 liên kết local không hỏng; 18 file migration gồm V1.18 mới, không sửa migration cũ; `git diff --check` không lỗi whitespace. `.env` vẫn ignored và không được theo dõi bởi Git.
 - Tài liệu setup/API/runbook/luồng/plan/checklist được đồng bộ. Người dùng cần khởi động lại backend để Flyway áp dụng V1.18. Chỉ tạo yêu cầu mới khi chưa chuyển tiền cho yêu cầu lỗi; nếu đã chuyển, giữ order/reference để đối soát, không chuyển thêm.
+
+## Saved recipient, 24h settlement / 48h dispute — 25/10/2026
+
+- Rule và phạm vi hiện hành: [payment-policy-update](payment-policy-update.md). Commit phần thời gian `715da01` đã push trước khi làm tài khoản nhận tiền.
+- V1.19 chỉ bỏ inferred consent 1h trên charge đang chờ; V1.20 lưu một tài khoản nhận tiền theo Tutor. Không sửa migration đã áp dụng, env merchant hoặc dữ liệu vận hành.
+- Gate cuối: 31 Payment unit + 21 PaymentFlowIT + 5 FlywayMigrationIT + 2 convention = 59 PASS, không skip. Fresh 20 migrations; upgrade có dữ liệu, validate/rerun no-op. PostgreSQL 17 Testcontainers riêng, mock provider, không dùng DB live.
+- Bao phủ: đúng biên 24h/48h, không tất toán khi chưa COMPLETED/có khiếu nại, không bị source ABSENT phá freeze, hai báo cáo chờ Admin, partial fee/refund, duplicate và owner/role/stale recipient ID, người nhận snapshot không đổi theo tài khoản mặc định.
+- FE Payment 20 tests/4 files PASS; type-check và lint Payment PASS. Browser component fixture tại localhost riêng: xem tài khoản che số, Rút toàn bộ → xác nhận, đổi tài khoản, hai action buổi học; không lỗi console. Fixture execute không gọi API. Không tuyên bố E2E ứng dụng đăng nhập + DB live đã được kiểm chứng.
+- Preview Vite ban đầu lỗi resolve React/esbuild thiếu tài nguyên; sửa cấu hình fixture/giới hạn thread rồi quan sát được UI thật. Không phải lỗi production bundle. Chưa chạy lại production Next build trong đợt này.
+- API/schema/runbook/plan/luồng/diagram được đồng bộ. Kênh chi vẫn cần kích hoạt/cấu hình riêng; giữ Admin duyệt. Chưa có OTP/reauth riêng khi thay người nhận hoặc xác minh tên chủ ngân hàng tự động; không hiển thị nhãn verified.
+
+- Phần tài khoản nhận tiền và freeze bổ sung đã push ở `208c592`; phần thời hạn ở `715da01`. Static docs: 11 Markdown, 106 liên kết local không hỏng; render/kiểm khung chữ và xem ảnh luồng mới PASS. `.env` và preview/test logs vẫn ignored.

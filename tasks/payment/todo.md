@@ -87,7 +87,7 @@ Giữ ID task đã triển khai. P04a/P04b/P04c là ba task trong Phase 4; commi
 ## Vận hành còn chờ — không đánh dấu đã làm
 
 - [x] Cập nhật 25/10: xác nhận/khiếu nại 24h, giải quyết 48h, bỏ autoaccept 1h; xem [quy tắc mới](../../docs/payment/payment-policy-update.md).
-- [ ] Tài khoản nhận tiền mặc định và rút theo tài khoản đã lưu; không nhập lại mỗi lần.
+- [x] Tài khoản nhận tiền mặc định và rút theo tài khoản đã lưu; không nhập lại mỗi lần. Commit `208c592`; mốc thời gian `715da01`.
 
 - [ ] Xác thực merchant/ngân hàng và điều kiện dùng cho EduFit.
 - [ ] Điền khóa kênh thu, tài khoản nhận, frontend URL và restart backend.

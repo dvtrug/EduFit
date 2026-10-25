@@ -1,5 +1,7 @@
 # Cấu hình payOS cho EduFit
 
+> Cập nhật 25/10/2026: [quy tắc 24h xác nhận / 48h giải quyết và tài khoản nhận tiền đã lưu](payment-policy-update.md) là nguồn hiện hành. Nội dung 1h/24h tranh chấp ở bằng chứng/phase cũ là lịch sử.
+
 Code tích hợp trên `feat/payment`; xem [chỉ mục](README.md), [giải trình kiến trúc](payment_implementation_plan.md) và [task theo phase](../../tasks/payment/plan.md). Mẫu cấu hình để trống khóa; người vận hành tự điền `.env` local/deploy, không điền `...` làm giá trị thật. Giữ nguyên cấu hình DB/Gemini đang có và chỉ bổ sung khối Payment. Không đưa khóa vào frontend hoặc commit Git. Code đã kiểm thử bằng mock, chưa có bằng chứng giao dịch merchant live.
 
 ## 1. Kích hoạt nạp tiền tự động

@@ -6,7 +6,7 @@
 <path d="M64 164H1616" stroke="#E2E8F0" stroke-width="2"/>
 <rect x="64" y="200" width="1000" height="140" rx="18" fill="#EFF6FF" stroke="#2563EB" stroke-width="2"/>
 <text x="88" y="220" font-family="Segoe UI, sans-serif" font-size="27" font-weight="700" fill="#2563EB" dominant-baseline="text-before-edge">1. Tutor yêu cầu rút W</text>
-<text x="88" y="268" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">PENDING; available -W, held +W. Một yêu cầu đang xử lý trên mỗi tutor.</text>
+<text x="88" y="268" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">Chọn số tiền và tài khoản đã lưu; xác nhận → PENDING, available -W, held +W.</text>
 <polyline points="564,343 564,376" fill="none" stroke="#64748B" stroke-width="4" stroke-linejoin="round"/>
 <polygon points="564.0,376.0 556.3,362.0 571.7,362.0" fill="#64748B"/>
 <rect x="64" y="380" width="1000" height="140" rx="18" fill="#EFF6FF" stroke="#2563EB" stroke-width="2"/>

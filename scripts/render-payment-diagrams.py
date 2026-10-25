@@ -166,31 +166,31 @@ def session():
     nodes=[
         (200,'1. Cấp tiền cho buổi học','Payer đủ tiền: available -A, held +A. Giá phải khớp hồ sơ hiện hành.','blue'),
         (400,'2. Kiểm tra buổi đã hoàn thành','Nguồn Scheduling phải COMPLETED và thời gian server đã tới endAt.','blue'),
-        (600,'3. Thu đủ xác nhận hai phía','Tutor xác nhận riêng. Learner đồng ý hoặc được autoaccept khi đủ điều kiện 1h.','purple'),
+        (600,'3. Thu đủ xác nhận hai phía','Hai bên xác nhận sớm hoặc hết 24h không khiếu nại khi nguồn COMPLETED.','purple'),
         (800,'4. Tất toán trong một transaction','Giải phóng held; trả phần dư payer; cộng tutor và ghi hoa hồng.','green')]
     for i,(y,title,body,tone) in enumerate(nodes):
         d.box(64,y,1000,150,title,body,tone)
         if i<3:d.arrow([(564,y+153),(564,y+196)])
     d.box(1120,200,496,240,'Ai được cấp tiền?','Student của buổi hoặc Parent có confirmed link. Available phải đủ, không tự trả cho mình.','slate')
-    d.box(1120,500,496,250,'Mốc 1 giờ','Chỉ auto learner nếu COMPLETED và không tranh chấp. Không auto tutor.','amber')
-    d.box(1120,810,496,250,'Nếu mở tranh chấp','Chặn tất toán thường; giữ tiền và chuyển luồng báo cáo 24h ở sơ đồ 04.','red')
+    d.box(1120,500,496,250,'Mốc 24 giờ','Không khiếu nại: tự tất toán khi COMPLETED, kể cả chưa bên nào xác nhận.','amber')
+    d.box(1120,810,496,250,'Nếu mở tranh chấp','Chặn tất toán thường; giữ tiền và chuyển luồng báo cáo 48h ở sơ đồ 04.','red')
     d.box(64,1000,1000,130,'Ví dụ A = S = 200.000đ','Tutor +180.000đ; hoa hồng +20.000đ; payer held -200.000đ.','green')
     d.footer('Chưa có gate buộc nạp/cấp tiền trước khi bắt đầu học. Hủy/vắng mặt: deadline job hoàn khoản còn giữ, không tự phạt.')
     d.save()
 
 
 def dispute():
-    d=Diagram('payment-dispute-flow',4,'Tranh chấp 24 giờ và quyết định Admin','24h tính từ lúc mở tranh chấp; đây là hạn báo cáo của hai phía, không phải hạn xử lý của Admin.',1450)
-    d.box(490,200,700,150,'1. Một phía mở tranh chấp','Sau endAt, charge còn chờ xác nhận → DISPUTED; tiếp tục giữ toàn bộ A.','red')
+    d=Diagram('payment-dispute-flow',4,'Tranh chấp 48 giờ và quyết định Admin','48h tính từ lúc mở tranh chấp; đây là hạn báo cáo của hai phía, không phải hạn xử lý của Admin.',1450)
+    d.box(490,200,700,150,'1. Một phía mở tranh chấp','Trong 24h sau endAt, trước tất toán → DISPUTED; tiếp tục giữ toàn bộ A.','red')
     d.arrow([(650,353),(650,380),(404,380),(404,416)])
     d.arrow([(1030,353),(1030,380),(1276,380),(1276,416)])
     d.box(64,420,680,155,'2a. Báo cáo phía learner','Gửi riêng nội dung và mức tiền đề nghị S, trong khoảng 0..A.','blue')
-    d.box(936,420,680,155,'2b. Báo cáo phía tutor','Gửi riêng nội dung và mức tiền đề nghị S, trước openedAt + 24h.','purple')
+    d.box(936,420,680,155,'2b. Báo cáo phía tutor','Gửi riêng nội dung và mức tiền đề nghị S, trước openedAt + 48h.','purple')
     d.arrow([(404,578),(404,610),(840,610),(840,646)])
     d.arrow([(1276,578),(1276,610),(840,610),(840,646)])
     d.box(490,650,700,150,'3. Đã có hai báo cáo cùng số tiền?','Nội dung không cần giống nhau. Report chỉ nhận khi now < deadline.','slate')
     d.arrow([(490,725),(404,725),(404,856)],label='CÓ, TRONG HẠN',label_xy=(90,785),color='#047857')
-    d.arrow([(1190,725),(1276,725),(1276,856)],label='ĐỦ 24H CHƯA KHỚP',label_xy=(1300,785),color='#B45309')
+    d.arrow([(1190,725),(1276,725),(1276,856)],label='ĐỦ 48H CHƯA KHỚP',label_xy=(1300,785),color='#B45309')
     d.box(64,860,680,160,'4a. AWAITING_ADMIN','Giữ A chờ Admin; không hết hạn chỉ vì Admin xử lý lâu.','green')
     d.box(936,860,680,160,'4b. EXPIRED','Hệ thống kết thúc tranh chấp, hoàn toàn bộ A về available của payer.','amber')
     d.arrow([(404,1023),(404,1076)])
@@ -204,7 +204,7 @@ def dispute():
 def payout():
     d=Diagram('payment-payout-flow',6,'Rút tiền: giữ trước, xác minh rồi ghi kết quả','Lệnh chi cần Admin duyệt. Timeout không có nghĩa ngân hàng chưa chuyển tiền.',1410)
     steps=[
-        ('1. Tutor yêu cầu rút W','PENDING; available -W, held +W. Một yêu cầu đang xử lý trên mỗi tutor.'),
+        ('1. Tutor yêu cầu rút W','Chọn số tiền và tài khoản đã lưu; xác nhận → PENDING, available -W, held +W.'),
         ('2. Admin duyệt chi payOS','Cần kênh chi bật, khóa riêng và thông tin ngân hàng có BIN.'),
         ('3. Lưu PROCESSING trước HTTP','Withdrawal UUID là referenceId và idempotency key cố định; tạo lệnh một lần.'),
         ('4. Xác minh kết quả hoặc query lại','Chữ ký, ID/reference, amount, BIN, tài khoản và đúng một transaction phải khớp.')]

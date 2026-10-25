@@ -1,5 +1,7 @@
 # Kế hoạch triển khai & giải trình kiến trúc chi tiết: Payment — EduFit
 
+> Cập nhật 25/10/2026: [quy tắc 24h xác nhận / 48h giải quyết và tài khoản nhận tiền đã lưu](payment-policy-update.md) là nguồn hiện hành. Nội dung 24h/48h tranh chấp ở bằng chứng/phase cũ là lịch sử.
+
 - **Nhánh:** `feat/payment`; base triển khai ban đầu: `develop@b1ea5cd`.
 - **Ngày đối chiếu:** 24/10/2026; code tham chiếu ban đầu: `3966d54`, cập nhật bản sửa tài khoản ảo V1.18 tại [báo cáo](verification-report.md).
 - **Trạng thái:** đã triển khai FE/BE; bằng chứng kiểm thử bản V1.17 và biên dịch bản sửa V1.18 tại [báo cáo](verification-report.md). V1.18 chưa chạy test/migration; chưa kiểm chứng giao dịch payOS bằng merchant thật.
@@ -19,7 +21,7 @@ Tài liệu này giải thích **làm gì, tại sao và hoạt động thế n�
 | Finance stub/KPI chưa nối nghiệp vụ | Ví, sổ giao dịch, học phí từng buổi, hàng đợi Admin | Hiển thị dữ liệu backend |
 | Chưa có nguồn xác nhận tiền nạp | Webhook có chữ ký, truy vấn đối soát hoặc Admin xác minh sao kê | QR/return URL không chứng minh đã nhận tiền |
 | Chưa giữ riêng tiền buổi học | `available` và `held`, một charge mỗi buổi | Tránh chi cùng số dư cho nhiều nghĩa vụ |
-| Chưa xử lý xác nhận/tranh chấp | State machine, autoaccept 1h, báo cáo 24h, Admin review | Không tất toán khi còn tranh chấp |
+| Chưa xử lý xác nhận/tranh chấp | State machine, tất toán 24h, báo cáo 48h, Admin review | Không tất toán khi còn tranh chấp |
 | Bản đầu chỉ rút thủ công | Manual hoặc Admin duyệt chi payOS, kênh chi riêng | Theo dõi chuyển ngân hàng và giữ tiền khi kết quả chưa rõ |
 | Plan ngắn, cập nhật bằng phụ lục | Giải trình thống nhất theo mẫu Discovery | Loại mô tả payout ngoài phạm vi đã lỗi thời |
 
@@ -50,7 +52,7 @@ Payment quản lý ba vòng đời:
 
 Thu nhập vào ví tutor là bút toán nội bộ. Chuyển ra ngân hàng là yêu cầu rút riêng, không tự chuyển ngân hàng sau mỗi buổi.
 
-Quy tắc đã chốt: Student/Parent nạp ví cá nhân; payer cấp tiền từng buổi; hoa hồng **10% mỗi khoản thực tất toán**; hai phía xác nhận; auto learner sau kết thúc +1h khi COMPLETED; tranh chấp dừng tất toán; hai báo cáo trong 24h cùng mức tiền thì chờ Admin, chưa khớp khi hết hạn thì hoàn payer. Không có API tự cộng ví/số dư demo runtime.
+Quy tắc đã chốt: Student/Parent nạp ví cá nhân; payer cấp tiền từng buổi; hoa hồng **10% mỗi khoản thực tất toán**; hai phía xác nhận; tự tất toán sau kết thúc +24h khi COMPLETED và không khiếu nại; tranh chấp dừng tất toán; hai báo cáo trong 48h cùng mức tiền thì chờ Admin, chưa khớp khi hết hạn thì hoàn payer. Không có API tự cộng ví/số dư demo runtime.
 
 ## 2. Giải thích cơ chế & quyết định kiến trúc
 
@@ -73,24 +75,24 @@ Quy tắc đã chốt: Student/Parent nạp ví cá nhân; payer cấp tiền t�
 
 Giá lấy từ `ProfileFacade.findTutorById(...).pricePerSession()`. FE hiển thị; payer gửi lại `amount` để backend kiểm đúng giá hiện hành. Giá đổi thì từ chối và yêu cầu tải lại. Khi cấp tiền, lưu amount, payer, tutor user ID và `commission_bps`; thay giá hồ sơ sau đó không đổi khoản đã giữ.
 
-Điều kiện hiện tại: Student của buổi hoặc Parent có confirmed link; nguồn buổi `SCHEDULED`/`COMPLETED`; server **trước** `endAt+1h`; đủ available; payer không phải tutor nhận tiền. `session_id` là PK nên một buổi chỉ có một charge; khoản terminal không được cấp lại bằng charge thứ hai.
+Điều kiện hiện tại: Student của buổi hoặc Parent có confirmed link; nguồn buổi `SCHEDULED`/`COMPLETED`; server **trước** `endAt+24h`; đủ available; payer không phải tutor nhận tiền. `session_id` là PK nên một buổi chỉ có một charge; khoản terminal không được cấp lại bằng charge thứ hai.
 
 Cấp tiền là thao tác riêng. Chưa có gate Scheduling bắt buộc cấp tiền trước lúc bắt đầu học, chưa có bảng hợp đồng giá theo lớp, không suy diễn giá lịch sử. Tỷ lệ hiện tại được code gán `1000` basis points và snapshot vào charge; chưa có UI/config runtime đổi hoa hồng.
 
 ### 2.3. State machine xác nhận/tranh chấp
 
-![Hai báo cáo trong 24 giờ, Admin duyệt hoặc hết hạn hoàn ví](images/payment-dispute-flow.png)
+![Hai báo cáo trong 48 giờ, Admin duyệt hoặc hết hạn hoàn ví](images/payment-dispute-flow.png)
 
 ```mermaid
 stateDiagram-v2
     [*] --> UNFUNDED
     UNFUNDED --> FUNDED: Payer cấp tiền
     FUNDED --> AWAITING_CONFIRMATION: COMPLETED và qua endAt
-    AWAITING_CONFIRMATION --> SETTLED: Đủ hai xác nhận
+    AWAITING_CONFIRMATION --> SETTLED: Hai xác nhận hoặc hết 24h không khiếu nại khi COMPLETED
     FUNDED --> DISPUTED: Mở tranh chấp sau endAt
     AWAITING_CONFIRMATION --> DISPUTED: Tranh chấp trước tất toán
-    DISPUTED --> AWAITING_ADMIN: Hai báo cáo cùng tiền trong 24h
-    DISPUTED --> EXPIRED: Đủ 24h chưa khớp, hoàn ví
+    DISPUTED --> AWAITING_ADMIN: Hai báo cáo cùng tiền trong 48h
+    DISPUTED --> EXPIRED: Đủ 48h chưa khớp, hoàn ví
     AWAITING_ADMIN --> SETTLED: Admin duyệt mức lớn hơn 0
     AWAITING_ADMIN --> REFUNDED: Từ chối hoặc mức 0
     FUNDED --> REFUNDED: Nguồn bị hủy hoặc vắng mặt
@@ -102,18 +104,18 @@ stateDiagram-v2
 | Quy tắc | Điều kiện áp dụng |
 |---|---|
 | Xác nhận chủ động | `COMPLETED`, `now >= endAt`; đủ learner và tutor mới tất toán |
-| Autoaccept 1h | `now >= endAt+3600s`, COMPLETED, không tranh chấp; không thay tutor |
-| Mở tranh chấp | Charge còn chờ xác nhận, `now >= endAt`, text 1–2000 ký tự |
-| Báo cáo | DISPUTED, `now < openedAt+86400s`, mức 0..amount, text 1–4000 ký tự |
+| Tự tất toán 24h | `now >= endAt+86400s`, COMPLETED, không khiếu nại; không cần hai xác nhận |
+| Mở tranh chấp | Charge còn chờ xác nhận, `endAt <= now < endAt+24h`, text 1–2000 ký tự |
+| Báo cáo | DISPUTED, `now < openedAt+172800s`, mức 0..amount, text 1–4000 ký tự |
 | Đồng thuận | Hai báo cáo riêng cùng số tiền; nội dung chữ không cần giống nhau |
-| Đúng biên 24h | Không nhận báo cáo mới; chưa khớp thì hết hạn và hoàn ví |
+| Đúng biên 48h | Không nhận báo cáo mới; chưa khớp thì hết hạn và hoàn ví |
 | AWAITING_ADMIN | Giữ tiền chờ Admin, không tự hết hạn thêm |
 | Admin duyệt | Đúng mức đã thống nhất; mức >0 cần nguồn COMPLETED và qua endAt |
 | Admin từ chối | Lý do bắt buộc; hoàn toàn bộ held của charge |
 
 Application tick thời hạn trước một số thao tác. Khi đã đủ điều kiện tất toán lúc xử lý request, không còn mở tranh chấp cho khoản terminal. Chưa có appeal sau tất toán.
 
-Job fixed delay mặc định 30s, xử lý theo batch; 1h/24h là điều kiện server, không bảo đảm DB/UI đổi trạng thái đúng từng mili giây. Dời lịch dùng `endAt` hiện hành khi kiểm tra; giá và báo cáo đã lưu vẫn giữ lịch sử.
+Job fixed delay mặc định 30s, xử lý theo batch; 24h/48h là điều kiện server, không bảo đảm DB/UI đổi trạng thái đúng từng mili giây. Dời lịch dùng `endAt` hiện hành khi kiểm tra; giá và báo cáo đã lưu vẫn giữ lịch sử.
 
 ### 2.4. Công thức tiền và hoa hồng
 
@@ -274,11 +276,11 @@ sequenceDiagram
         S->>DB: DISPUTED và openedAt
         L->>S: report(amount, text)
         T->>S: report(amount, text)
-        alt Cùng số tiền trong 24h
+        alt Cùng số tiền trong 48h
             S->>DB: AWAITING_ADMIN
             A->>S: review(approve, note)
             S->>DB: Tất toán mức thống nhất hoặc hoàn ví
-        else Hết 24h chưa khớp
+        else Hết 48h chưa khớp
             S->>DB: EXPIRED, hoàn payer
         end
     end
@@ -390,8 +392,8 @@ Các component/data ở trên thuộc `frontend/src/features/payment/`. UI có l
 1. Làm tại EduFit trên feat/payment, chia nhỏ commit/push; không merge main/develop trong công việc này.
 2. Ví nạp trước, giữ tiền từng buổi, thu phí sau xác nhận; ngân hàng rút theo workflow riêng.
 3. Hoa hồng 10% phần thực tất toán.
-4. Auto learner 1h, không auto tutor.
-5. Tranh chấp 24h, hai báo cáo khớp chờ Admin; chưa khớp hết hạn hoàn held.
+4. Hai xác nhận chủ động tất toán sớm; hết 24h không khiếu nại tự tất toán khi COMPLETED.
+5. Tranh chấp 48h, hai báo cáo khớp chờ Admin; chưa khớp hết hạn hoàn held.
 6. Hoàn thiện tích hợp payOS, để người dùng tự điền khóa/tài khoản nhận/frontend URL.
 
 Không yêu cầu duyệt lại các quyết định trên để viết tài liệu này.
@@ -419,7 +421,7 @@ Các phần code sau **đã triển khai**; bảng là giải trình/bàn giao, 
 | Phase | Task lịch sử | Phạm vi | Checkpoint |
 |---|---|---|---|
 | 0 — Baseline | P00 | Audit, yêu cầu, plan | Fee/actor/time/branch rõ |
-| 1 — Domain | P01 | State/time | Test 1h/24h, report, terminal |
+| 1 — Domain | P01 | State/time | Test 24h/48h, report, terminal |
 | 2 — Ledger/session | P02 | Migration, reserve/settle, quyền/jobs | Transaction, payer refund, race |
 | 3 — Nạp/rút BE | P03 | QR/webhook/manual/Admin | Receipt đúng mới credit |
 | 4 — Learner/Tutor FE | P04a–P04c | SDK, card, workspace/lịch | API thật/quyền/trạng thái |
@@ -439,7 +441,7 @@ P04a/P04b/P04c là ba task FE trong cùng phase 4, giữ ID để đối chiếu
 
 | Nhóm | Trường hợp |
 |---|---|
-| Domain | Biên 1h/24h; chưa COMPLETED; report lệch/khớp; partial/zero; terminal |
+| Domain | Biên 24h/48h; chưa COMPLETED; report lệch/khớp; partial/zero; terminal |
 | Quyền | Owner; parent payer/khác payer/revoked; tutor sai buổi; Admin |
 | PostgreSQL | Thiếu số dư rollback; confirm đồng thời; unique reference; một withdrawal |
 | Thu | Chữ ký/amount/account/link sai; order lạ; webhook lặp; lookup timeout |
@@ -486,9 +488,9 @@ Chạy thêm navigation/dashboard tests khi đổi tích hợp. Điều kiện m
 
 **2. Vì sao có held?** Khoản dành cho buổi/rút không được chi lại. Tranh chấp giữ nguyên nghĩa vụ; hoàn là chuyển held về available.
 
-**3. Đủ 1h tutor chắc chắn nhận tiền chưa?** Chưa; chỉ auto learner, còn cần tutor, COMPLETED và không tranh chấp.
+**3. Đủ 24h tutor nhận tiền khi nào?** Khi nguồn COMPLETED, đã giữ học phí và không khiếu nại; job tất toán kể cả chưa ai bấm xác nhận.
 
-**4. Hết 24h có mất tiền learner?** Chưa có hai báo cáo cùng mức thì hoàn toàn bộ. Đã AWAITING_ADMIN thì giữ chờ duyệt.
+**4. Hết 48h giải quyết khiếu nại có mất tiền learner?** Chưa có hai báo cáo cùng mức thì hoàn toàn bộ. Đã AWAITING_ADMIN thì giữ chờ duyệt.
 
 **5. Tại sao Admin không gõ số tiền khác?** Chỉ duyệt đúng mức hai phía đã báo cáo, giữ bằng chứng đồng thuận.
 

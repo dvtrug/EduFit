@@ -193,3 +193,10 @@ Cập nhật 24/10/2026, nhánh `feat/payment`, đối chiếu code `3966d54`. N
 - AC: không bỏ kiểm chữ ký; không dùng tài khoản tự khai từ webhook làm chuẩn; không thay snapshot/link đã gắn; receipt sai không credit; duplicate chỉ một credit; giữ dữ liệu cũ NULL/fallback tài khoản gốc; không đổi env hoặc migration cũ.
 - Nguồn regression: PayosGatewayTest, WalletServiceTest, PaymentReconciliationTest, PaymentFlowIT; cập nhật migration count lên 18. Chưa chạy theo yêu cầu người dùng. Maven offline test-compile BUILD SUCCESS; không start backend, migrate DB hay gọi provider.
 - Bàn giao: cập nhật DBML/API/setup/runbook/luồng/report; commit/push riêng hotfix trên feat/payment. Fresh/upgrade V1.18 và regression vẫn còn chờ thực thi; kết quả ghi tại [verification-report](../../docs/payment/verification-report.md).
+
+## 8. Cập nhật 25/10 — 24h/48h và tài khoản nhận tiền
+
+- Rule thay thế: [payment-policy-update](../../docs/payment/payment-policy-update.md).
+- Slice 1: bỏ autoaccept 1h, hai nút xác nhận/khiếu nại, tự tất toán sau 24h không khiếu nại khi COMPLETED, giải quyết 48h; V1.19 bảo vệ dữ liệu cũ. Commit `715da01`.
+- Slice 2: một tài khoản nhận tiền theo owner, version ID, rút theo recipient đã lưu, snapshot withdrawal, UI xem lại trước gửi; V1.20, CSRF/role, stale/foreign ID và duplicate. Giữ Admin duyệt, không bật chi live. Commit `208c592`.
+- Slice 3: đồng bộ API/schema/luồng/diagram/bằng chứng. Gate cuối 59 BE + 20 FE PASS, types/lint và browser fixture. Không test merchant/tiền thật hoặc production Next build trong đợt này.

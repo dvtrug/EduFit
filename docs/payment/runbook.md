@@ -1,10 +1,12 @@
 # Vận hành và đối soát Payment
 
+> Cập nhật 25/10/2026: [quy tắc 24h xác nhận / 48h giải quyết và tài khoản nhận tiền đã lưu](payment-policy-update.md) là nguồn hiện hành. Nội dung 1h/24h tranh chấp ở bằng chứng/phase cũ là lịch sử.
+
 Cập nhật 24/10/2026 theo code `3966d54`. Đọc [cơ chế](payment_implementation_plan.md), [API](api-contract.md) và [cấu hình payOS](payos-setup.md) trước khi vận hành. Không chỉnh balance bằng SQL hoặc tạo receipt giả để xử lý sự cố.
 
 ## 1. Kiểm tra trước khi bật kênh thanh toán
 
-1. Đúng repository/branch và môi trường DB; migration V1.16/V1.17/V1.18 áp dụng bằng Flyway. V1.18 chưa được thực thi trong đợt sửa tài khoản ảo, cần kiểm tra lúc nâng cấp.
+1. Đúng repository/branch và môi trường DB; migration V1.16 đến V1.20 áp dụng bằng Flyway. V1.18 chưa được thực thi trong đợt sửa tài khoản ảo, cần kiểm tra lúc nâng cấp.
 2. Env thu/chi được truyền vào process/container; restart sau thay đổi env theo setup.
 3. Admin mở /admin/payments, kiểm readiness; đây không phải phép thử khóa/ngân hàng live.
 4. Kênh thu có ngân hàng nhận đúng, webhook HTTPS public đúng path.
@@ -37,7 +39,7 @@ Chỉ bấm xác nhận khi đã nhận được tiền; tạo QR không credit.
 - Student/confirmed Parent kiểm giá rồi cấp tiền; available sang held của payer. Chưa có gate chặn bắt đầu học nếu chưa cấp tiền.
 - Tutor cập nhật buổi COMPLETED qua Scheduling, sau đó xác nhận thanh toán.
 - Student hoặc Parent payer còn link xác nhận learner; parent khác payer không được thay xác nhận.
-- Đủ hai phía thì tự tất toán trong ví. Sau endAt+1h job chỉ auto learner nếu COMPLETED, không auto tutor.
+- Đủ hai phía thì tự tất toán trong ví. Sau endAt+24h không khiếu nại thì tự tất toán khi COMPLETED, kể cả thiếu xác nhận.
 - Hủy/vắng mặt: deadline job giải phóng khoản giữ, không tự phạt.
 - Dời lịch: dùng endAt hiện hành cho kiểm hạn, không đổi giá snapshot.
 - Job mặc định fixed delay 30s; batch có thể gây trễ thực thi. Không coi quá mốc vài giây là đã mất dữ liệu.
@@ -45,11 +47,11 @@ Chỉ bấm xác nhận khi đã nhận được tiền; tạo QR không credit.
 ## 5. Tranh chấp
 
 1. Một phía mở dispute khi khoản còn chờ xác nhận, sau endAt.
-2. Hệ thống lưu thời điểm mở/deadline 24h; tiền vẫn held.
+2. Hệ thống lưu thời điểm mở/deadline 48h; tiền vẫn held.
 3. Learner và tutor gửi riêng báo cáo và mức tiền thống nhất trước deadline.
 4. Hai mức khớp → AWAITING_ADMIN, tiếp tục giữ tiền; không tự hết hạn lúc chờ Admin.
 5. Admin tại /admin/disputes xem cả hai báo cáo, duyệt đúng mức hoặc từ chối với lý do.
-6. Chưa khớp khi đủ 24h → EXPIRED/hoàn toàn bộ held về payer, không thu phí.
+6. Chưa khớp khi đủ 48h → EXPIRED/hoàn toàn bộ held về payer, không thu phí.
 
 Mức thực tất toán S: commission=floor(S*10%), tutor nhận S-commission, phần chưa tính phí hoàn payer. Hoàn là về ví nội bộ, không trả ngân hàng. Khoản đã terminal chưa có appeal/reopen trong bản hiện tại.
 

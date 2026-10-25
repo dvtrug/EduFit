@@ -1,5 +1,7 @@
 # Payment API contract
 
+> Cập nhật 25/10/2026: [quy tắc 24h xác nhận / 48h giải quyết và tài khoản nhận tiền đã lưu](payment-policy-update.md) là nguồn hiện hành. Nội dung 1h/24h tranh chấp ở bằng chứng/phase cũ là lịch sử.
+
 Cập nhật 24/10/2026, gồm bản sửa tài khoản ảo V1.18 sau code `3966d54`. Nghiệp vụ tại [implementation plan](payment_implementation_plan.md), vận hành tại [runbook](runbook.md).
 
 ## 1. Quy ước
@@ -41,17 +43,17 @@ Thiếu khóa payOS nhưng đủ manual config thì dùng manual QR. Thiếu c�
 | POST /sessions/{id}/fund | `{amount}` | Student/confirmed Parent; 1..100.000.000, khớp giá hiện hành; đủ available |
 | POST /sessions/{id}/confirm | Không body | Learner có quyền hoặc tutor; COMPLETED và qua endAt |
 | POST /sessions/{id}/dispute | `{text}` | Participant; text 1..2000; chưa terminal, sau endAt |
-| POST /sessions/{id}/report | `{amount,text}` | Participant; amount 0..charge.amount; text 1..4000; trước deadline 24h |
+| POST /sessions/{id}/report | `{amount,text}` | Participant; amount 0..charge.amount; text 1..4000; trước deadline 48h |
 
 Session response gồm sessionId/classId/studentId/tutorName/sessionStatus/startAt/endAt, amount/commissionBps/payerId/status, hai accepted flags/autoAccepted, disputeDeadline/reason, hai amount/report, settledAmount và canFund/canActAsLearner/canActAsTutor.
 
 Status view: UNFUNDED/FUNDED/AWAITING_CONFIRMATION/DISPUTED/AWAITING_ADMIN/SETTLED/REFUNDED/EXPIRED. UNFUNDED không có charge trong DB.
 
-- Fund chỉ khi nguồn SCHEDULED/COMPLETED và trước endAt+1h; snapshot giá và commission 1000 bps.
+- Fund chỉ khi nguồn SCHEDULED/COMPLETED và trước endAt+24h; snapshot giá và commission 1000 bps.
 - Student được confirm/report khi Parent trả; Parent cần là payer và còn confirmed link. Parent khác payer chỉ đọc nếu còn link.
-- Autoaccept chỉ learner, chỉ khi COMPLETED và now>=endAt+1h; tutor vẫn xác nhận riêng.
-- Hai báo cáo cùng mức trong 24h → AWAITING_ADMIN; không tự hết hạn lúc chờ Admin.
-- DISPUTED hết 24h chưa khớp → EXPIRED và hoàn held về payer.
+- Không có khiếu nại và COMPLETED: tự tất toán sau endAt+24h dù thiếu xác nhận; hai phía xác nhận chủ động thì tất toán sớm.
+- Hai báo cáo cùng mức trong 48h → AWAITING_ADMIN; không tự hết hạn lúc chờ Admin.
+- DISPUTED hết 48h chưa khớp → EXPIRED và hoàn held về payer.
 - Các state cuối không mở lại charge/cấp tiền lần hai.
 - Hoàn held là tăng available nội bộ, không phải chuyển khoản hoàn ngân hàng.
 
@@ -91,3 +93,11 @@ Lưu ý contract hiện có: topup confirm dùng reference, không có nhánh t�
 [V1.18](../../backend/app/src/main/resources/db/migration/payment/V1.18__store_payos_checkout_receiving_account.sql) bổ sung `payment_topup.provider_account_number`: tài khoản nhận từ checkout có chữ ký, có thể là tài khoản ảo riêng cho đơn. Response tạo checkout phải khớp order/amount/VND và URL HTTPS đúng host payOS; lỗi validation trả message riêng theo nguyên nhân. Webhook/lookup khớp snapshot qua `accountNumber` hoặc `virtualAccountNumber`, cùng các điều kiện receipt cũ. Snapshot là metadata nội bộ, không thêm field vào wallet/history projection; chữ ký vẫn bắt buộc. Hàng cũ NULL fallback `PAYMENT_BANK_ACCOUNT`, không học tài khoản mới từ webhook.
 
 Xem [setup](payos-setup.md) cho cấu hình thu/chi riêng; [verification](verification-report.md) cho test thực chạy. Chưa kiểm chứng tiền thật.
+
+## Tài khoản nhận tiền mặc định (V1.20)
+
+- `GET /api/v1/payment/wallet`: Tutor có thêm `payoutAccount` (null nếu chưa lưu): id, bank_name, bank_bin, bank_account, bank_holder, updated_at. Chỉ trả tài khoản của actor. Các role khác không có field này.
+- `PUT /api/v1/payment/payout-account`: Tutor, cookie + CSRF; body `{bank,bankBin,account,holder,expectedAccountId}`. BIN 6 số, account 5..34 số; lần đầu expectedAccountId=null, thay đổi phải gửi đúng ID hiện tại. Mỗi lần lưu sinh ID mới để chặn form cũ ghi đè/rút nhầm. Không tra cứu hoặc tự nhận đã xác minh chủ tài khoản ngân hàng.
+- `POST /api/v1/payment/withdrawals/saved-account`: Tutor, cookie + CSRF; body `{amount,payoutAccountId}`. Backend xác minh owner/ID dưới lock rồi snapshot thông tin ngân hàng vào withdrawal; không tin bank/owner từ client. Stale/foreign ID bị từ chối trước khi giữ tiền.
+- Endpoint withdrawals nhận thông tin ngân hàng trực tiếp vẫn giữ để tương thích client cũ. UI mới dùng tài khoản đã lưu; mỗi Tutor chỉ một yêu cầu PENDING/PROCESSING.
+- V1.19 bỏ inferred consent 1h cho charge đang chờ; V1.20 tạo payment_payout_account, không tự suy ra tài khoản mặc định từ withdrawal cũ. Confirmation 24h; dispute 48h tính từ lúc mở; hai xác nhận chủ động vẫn tất toán sớm. API confirm/dispute/report giữ path cũ.
