@@ -53,6 +53,18 @@ const execute = async (work: () => Promise<unknown>) => {
 };
 beforeEach(() => vi.clearAllMocks());
 describe("Session payment decisions", () => {
+  it("offers both decisions for a tutor and closes complaints after 24 hours", () => {
+    const { rerender } = render(<SessionPaymentCard session={session({
+      tutorAccepted: false, canActAsLearner: false, canActAsTutor: true,
+    })} disabled={false} execute={execute} />);
+    expect(screen.getByRole("button", { name: "Xác nhận buổi học" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Khiếu nại" })).toBeInTheDocument();
+    expect(screen.getByText(/24 giờ/)).toBeInTheDocument();
+    rerender(<SessionPaymentCard session={session({ endAt: new Date(Date.now() - 86401000).toISOString() })}
+      disabled={false} execute={execute} />);
+    expect(screen.queryByRole("button", { name: "Khiếu nại" })).not.toBeInTheDocument();
+    expect(screen.getByText(/Đang chờ hệ thống tất toán/)).toBeInTheDocument();
+  });
   it("requires explicit confirmation before sending payment acceptance", async () => {
     render(
       <SessionPaymentCard
@@ -62,7 +74,7 @@ describe("Session payment decisions", () => {
       />,
     );
     fireEvent.click(
-      screen.getByRole("button", { name: "Xác nhận thanh toán" }),
+      screen.getByRole("button", { name: "Xác nhận buổi học" }),
     );
     expect(paymentApi.confirm).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Gửi xác nhận" }));
@@ -79,7 +91,7 @@ describe("Session payment decisions", () => {
       />,
     );
     expect(
-      screen.queryByRole("button", { name: "Xác nhận thanh toán" }),
+      screen.queryByRole("button", { name: "Xác nhận buổi học" }),
     ).not.toBeInTheDocument();
   });
   it("opens a dispute with the supplied reason", async () => {
@@ -90,7 +102,7 @@ describe("Session payment decisions", () => {
         execute={execute}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Báo tranh chấp" }));
+    fireEvent.click(screen.getByRole("button", { name: "Khiếu nại" }));
     fireEvent.change(screen.getByRole("textbox"), {
       target: { value: "Buổi học thiếu thời lượng" },
     });
@@ -115,7 +127,7 @@ describe("Session payment decisions", () => {
       />,
     );
     expect(
-      screen.queryByRole("button", { name: "Xác nhận thanh toán" }),
+      screen.queryByRole("button", { name: "Xác nhận buổi học" }),
     ).not.toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", { name: "Gửi báo cáo giải quyết" }),
@@ -151,7 +163,7 @@ describe("Session payment decisions", () => {
       screen.queryByRole("button", { name: "Gửi báo cáo giải quyết" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Xác nhận thanh toán" }),
+      screen.queryByRole("button", { name: "Xác nhận buổi học" }),
     ).not.toBeInTheDocument();
   });
   it("funding asks payer to accept the displayed price", async () => {

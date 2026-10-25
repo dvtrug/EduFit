@@ -13,14 +13,16 @@ class SessionChargeTest {
   }
 
   @Test
-  void learnerIsAutoAcceptedOnlyAtOneHourAndTutorMustAccept() {
+  void noAutomaticAcceptanceAtOneHourAndSettlementAtExactly24HoursWithoutEitherConfirmation() {
     var c = charge();
     c.tick(end.plusSeconds(3599), true);
     assertFalse(c.learnerAccepted);
     c.tick(end.plusSeconds(3600), true);
-    assertTrue(c.learnerAccepted);
+    assertFalse(c.learnerAccepted);
     assertFalse(c.terminal());
-    c.confirm(true, end.plusSeconds(3601), true);
+    c.tick(end.plusSeconds(86399), true);
+    assertFalse(c.terminal());
+    c.tick(end.plusSeconds(86400), true);
     assertEquals("SETTLED", c.status);
     assertEquals(300_000, c.settledAmount);
   }
@@ -29,7 +31,7 @@ class SessionChargeTest {
   void noChargeBeforeEndOrForUncompletedSession() {
     var c = charge();
     assertThrows(RuntimeException.class, () -> c.confirm(true, end.minusSeconds(1), true));
-    c.tick(end.plusSeconds(7200), false);
+    c.tick(end.plusSeconds(90000), false);
     assertFalse(c.learnerAccepted);
     assertFalse(c.terminal());
   }
@@ -45,17 +47,21 @@ class SessionChargeTest {
   }
 
   @Test
-  void disputeStopsAutoSettlementAndExpiresAtExactly24Hours() {
+  void disputeStopsAutoSettlementAndExpiresAtExactly48HoursAfterOpening() {
     var c = charge();
     c.confirm(true, end, true);
     c.dispute("Thiếu thời lượng", end);
     c.tick(end.plusSeconds(3600), true);
     assertFalse(c.learnerAccepted);
     c.tick(end.plusSeconds(86400), true);
+    assertEquals("DISPUTED", c.status);
+    c.tick(end.plusSeconds(172799), true);
+    assertEquals("DISPUTED", c.status);
+    c.tick(end.plusSeconds(172800), true);
     assertEquals("EXPIRED", c.status);
     assertEquals(0, c.settledAmount);
     assertThrows(
-        RuntimeException.class, () -> c.report(false, 100_000, "Đồng ý", end.plusSeconds(86400)));
+        RuntimeException.class, () -> c.report(false, 100_000, "Đồng ý", end.plusSeconds(172800)));
   }
 
   @Test
@@ -65,7 +71,7 @@ class SessionChargeTest {
     c.report(false, 100_000, "Đề nghị", end);
     c.report(true, 200_000, "Phản hồi", end);
     assertEquals("DISPUTED", c.status);
-    c.report(true, 100_000, "Đã thống nhất", end.plusSeconds(86399));
+    c.report(true, 100_000, "Đã thống nhất", end.plusSeconds(172799));
     assertEquals("AWAITING_ADMIN", c.status);
     c.tick(end.plusSeconds(200000), true);
     assertFalse(c.terminal());
@@ -90,5 +96,18 @@ class SessionChargeTest {
     c.approve();
     assertEquals("REFUNDED", c.status);
     assertEquals(0, c.settledAmount);
+  }
+
+  @Test
+  void complaintAtTheLastSecondFreezesMoneyFor48HoursAndLateComplaintsAreRejected() {
+    var c = charge();
+    c.dispute("Cần kiểm tra", end.plusSeconds(86399));
+    c.tick(end.plusSeconds(86400), true);
+    assertEquals("DISPUTED", c.status);
+    c.tick(end.plusSeconds(86399 + 172799), true);
+    assertEquals("DISPUTED", c.status);
+    c.tick(end.plusSeconds(86399 + 172800), true);
+    assertEquals("EXPIRED", c.status);
+    assertThrows(RuntimeException.class, () -> charge().dispute("Quá hạn", end.plusSeconds(86400)));
   }
 }

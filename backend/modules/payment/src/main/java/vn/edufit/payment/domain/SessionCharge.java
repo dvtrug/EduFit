@@ -4,6 +4,8 @@ import java.time.Instant;
 
 /** Financial state only. Repository transactions serialize all state and wallet movements. */
 public final class SessionCharge {
+  public static final long CONFIRMATION_SECONDS = 86400;
+  public static final long DISPUTE_SECONDS = 172800;
   public final long amount;
   public Instant endAt;
   public String status = "FUNDED";
@@ -38,24 +40,25 @@ public final class SessionCharge {
   }
 
   public void tick(Instant now, boolean completed) {
-    if (status.equals("DISPUTED") && !now.isBefore(disputeOpenedAt.plusSeconds(86400))) {
+    if (status.equals("DISPUTED") && !now.isBefore(disputeOpenedAt.plusSeconds(DISPUTE_SECONDS))) {
       status = "EXPIRED";
       settledAmount = 0;
       return;
     }
     if (awaitingConfirmation() && completed && !now.isBefore(endAt)) {
       status = "AWAITING_CONFIRMATION";
-      if (!learnerAccepted && !now.isBefore(endAt.plusSeconds(3600))) {
-        learnerAccepted = true;
+      if (!now.isBefore(endAt.plusSeconds(CONFIRMATION_SECONDS))) {
         autoAccepted = true;
+        finish(amount);
       }
-      if (learnerAccepted && tutorAccepted) finish(amount);
     }
   }
 
   public void dispute(String reason, Instant now) {
     require(
-        awaitingConfirmation() && !now.isBefore(endAt), "Không thể mở tranh chấp cho khoản này");
+        awaitingConfirmation() && !now.isBefore(endAt)
+            && now.isBefore(endAt.plusSeconds(CONFIRMATION_SECONDS)),
+        "Chỉ có thể khiếu nại trong 24 giờ sau buổi học, trước khi tất toán");
     require(
         reason != null && !reason.isBlank() && reason.length() <= 2000,
         "Cần mô tả tranh chấp tối đa 2000 ký tự");
@@ -66,7 +69,7 @@ public final class SessionCharge {
 
   public void report(boolean tutor, long proposal, String text, Instant now) {
     require(
-        status.equals("DISPUTED") && now.isBefore(disputeOpenedAt.plusSeconds(86400)),
+        status.equals("DISPUTED") && now.isBefore(disputeOpenedAt.plusSeconds(DISPUTE_SECONDS)),
         "Đã hết hạn gửi báo cáo hoặc đang chờ Admin");
     require(proposal >= 0 && proposal <= amount, "Số tiền đề nghị phải nằm trong học phí đã giữ");
     require(

@@ -59,7 +59,7 @@ class PaymentFlowIT {
             .schemas(schema)
             .locations("classpath:db/migration")
             .load();
-    assertEquals(18, flyway.migrate().migrationsExecuted);
+    assertEquals(19, flyway.migrate().migrationsExecuted);
     flyway.validate();
     assertEquals(0, flyway.migrate().migrationsExecuted);
   }
@@ -244,7 +244,7 @@ class PaymentFlowIT {
     fund();
     confirmTutor();
     dispute();
-    now.set(end.plusSeconds(86400));
+    now.set(end.plusSeconds(172800));
     service.processDeadlines();
     service.processDeadlines();
     assertEquals("EXPIRED", store.find(sessionId).orElseThrow().state().status);
@@ -276,7 +276,7 @@ class PaymentFlowIT {
   }
 
   @Test
-  void autoAcceptAtOneHourDoesNotOverrideDispute() {
+  void autoSettlementAt24HoursDoesNotOverrideDispute() {
     fund();
     confirmTutor();
     dispute();
@@ -287,10 +287,13 @@ class PaymentFlowIT {
   }
 
   @Test
-  void autoAcceptAtOneHourSettlesWhenTutorConfirmed() {
+  void autoSettlementAt24HoursDoesNotNeedEitherConfirmation() {
     fund();
-    confirmTutor();
-    now.set(end.plusSeconds(3600));
+    now.set(end.plusSeconds(86399));
+    service.processDeadlines();
+    assertEquals(0, store.wallet(tutorUser).available());
+    now.set(end.plusSeconds(86400));
+    service.processDeadlines();
     service.processDeadlines();
     assertEquals(270000, store.wallet(tutorUser).available());
     assertTrue(store.find(sessionId).orElseThrow().state().autoAccepted);
@@ -610,7 +613,7 @@ class PaymentFlowIT {
             .schemas(schema)
             .locations("classpath:db/migration")
             .load();
-    assertEquals(2, upgraded.migrate().migrationsExecuted);
+    assertEquals(3, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted);
     assertEquals(
@@ -675,7 +678,7 @@ class PaymentFlowIT {
         + " values (?,?,100000,'PAYOS','PENDING',now())", id, owner);
     Flyway upgraded = Flyway.configure().dataSource(ds).schemas(schema)
         .locations("classpath:db/migration").load();
-    assertEquals(1, upgraded.migrate().migrationsExecuted);
+    assertEquals(2, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted);
     var saved = jdbc.queryForMap("select amount,status,provider_account_number from payment_topup where id=?", id);

@@ -155,7 +155,7 @@ export function PaymentWorkspace({
               </label>
             </div>
             <p className="text-sm text-neutral-500">
-              Tranh chấp chặn thanh toán. Hai bên có 24 giờ để gửi báo cáo cùng
+              Khiếu nại chặn thanh toán. Hai bên có 48 giờ từ lúc mở khiếu nại để gửi báo cáo cùng
               số tiền; Admin duyệt kết quả. Chưa thống nhất đúng hạn thì tiền
               trở về ví đã cấp.
             </p>

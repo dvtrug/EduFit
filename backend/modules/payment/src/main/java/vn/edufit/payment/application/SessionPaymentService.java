@@ -55,7 +55,7 @@ public class SessionPaymentService {
             return view(existing.get(), source, actor);
           }
           if (!Set.of("SCHEDULED", "COMPLETED").contains(source.status())
-              || !clock.instant().isBefore(source.endAt().plusSeconds(3600)))
+              || !clock.instant().isBefore(source.endAt().plusSeconds(SessionCharge.CONFIRMATION_SECONDS)))
             throw new InvalidOperationException("Buổi học không còn được cấp tiền");
           var tutor =
               profiles
@@ -216,7 +216,7 @@ public class SessionPaymentService {
                   (access.student(actor, cls.studentId())
                           || access.linkedParent(actor, cls.studentId()))
                       && Set.of("SCHEDULED", "COMPLETED").contains(source.status())
-                      && clock.instant().isBefore(source.endAt().plusSeconds(3600)),
+                      && clock.instant().isBefore(source.endAt().plusSeconds(SessionCharge.CONFIRMATION_SECONDS)),
                   false,
                   false));
       }
@@ -240,7 +240,7 @@ public class SessionPaymentService {
     boolean canFund =
         (access.student(actor, src.studentId()) || access.linkedParent(actor, src.studentId()))
             && Set.of("SCHEDULED", "COMPLETED").contains(src.status())
-            && clock.instant().isBefore(src.endAt().plusSeconds(3600));
+            && clock.instant().isBefore(src.endAt().plusSeconds(SessionCharge.CONFIRMATION_SECONDS));
     return new Session(
         id,
         src.classId(),
@@ -357,7 +357,7 @@ public class SessionPaymentService {
         s.learnerAccepted,
         s.tutorAccepted,
         s.autoAccepted,
-        s.disputeOpenedAt == null ? null : s.disputeOpenedAt.plusSeconds(86400),
+        s.disputeOpenedAt == null ? null : s.disputeOpenedAt.plusSeconds(SessionCharge.DISPUTE_SECONDS),
         s.disputeReason,
         s.learnerAmount,
         s.tutorAmount,

@@ -24,6 +24,8 @@ export function SessionPaymentCard({ session: s, disabled, execute }: Props) {
   }, []);
   const participant = s.canActAsLearner || s.canActAsTutor;
   const afterEnd = now >= new Date(s.endAt).getTime();
+  const confirmationDeadline = new Date(s.endAt).getTime() + 86400000;
+  const withinConfirmationWindow = now < confirmationDeadline;
   const pending = s.status === "FUNDED" || s.status === "AWAITING_CONFIRMATION";
   const ownAccepted = s.canActAsTutor ? s.tutorAccepted : s.learnerAccepted;
   const canConfirm =
@@ -31,8 +33,9 @@ export function SessionPaymentCard({ session: s, disabled, execute }: Props) {
     pending &&
     s.sessionStatus === "COMPLETED" &&
     afterEnd &&
+    withinConfirmationWindow &&
     !ownAccepted;
-  const canDispute = participant && pending && afterEnd;
+  const canDispute = participant && pending && afterEnd && withinConfirmationWindow;
   const canReport =
     participant &&
     s.status === "DISPUTED" &&
@@ -82,7 +85,7 @@ export function SessionPaymentCard({ session: s, disabled, execute }: Props) {
           Ví cấp tiền: {s.payerId.slice(0, 8)} · Xác nhận người học:{" "}
           {s.learnerAccepted
             ? s.autoAccepted
-              ? "Tự động sau 1 giờ"
+              ? "Đã xác nhận (lịch sử)"
               : "Đã đồng ý"
             : "Chưa xác nhận"}{" "}
           · Gia sư: {s.tutorAccepted ? "Đã đồng ý" : "Chưa xác nhận"}
@@ -90,11 +93,9 @@ export function SessionPaymentCard({ session: s, disabled, execute }: Props) {
       )}
       {pending && (
         <p className="text-xs text-neutral-500">
-          Khi buổi học hoàn thành, phía người học tự được xác nhận sau{" "}
-          {new Date(new Date(s.endAt).getTime() + 3600000).toLocaleString(
-            "vi-VN",
-          )}{" "}
-          nếu không có tranh chấp. Gia sư vẫn phải xác nhận.
+          {withinConfirmationWindow
+            ? `Hai bên có 24 giờ sau buổi học để xác nhận hoặc khiếu nại. Không có khiếu nại, học phí tự tất toán sau ${new Date(confirmationDeadline).toLocaleString("vi-VN")} khi buổi học đã hoàn thành. Hai bên xác nhận sớm thì tất toán ngay.`
+            : "Đã hết hạn khiếu nại. Đang chờ hệ thống tất toán khi buổi học đã hoàn thành."}
         </p>
       )}
       {s.disputeReason && (
@@ -103,7 +104,7 @@ export function SessionPaymentCard({ session: s, disabled, execute }: Props) {
             <strong>Vấn đề:</strong> {s.disputeReason}
           </p>
           <p>
-            Hạn hai bên gửi báo cáo thống nhất:{" "}
+            Hạn giải quyết khiếu nại (48 giờ từ lúc mở):{" "}
             {s.disputeDeadline &&
               new Date(s.disputeDeadline).toLocaleString("vi-VN")}
           </p>
@@ -150,7 +151,7 @@ export function SessionPaymentCard({ session: s, disabled, execute }: Props) {
             disabled={disabled}
             onClick={() => setMode("confirm")}
           >
-            Xác nhận thanh toán
+            Xác nhận buổi học
           </button>
         )}
         {canDispute && (
@@ -159,7 +160,7 @@ export function SessionPaymentCard({ session: s, disabled, execute }: Props) {
             disabled={disabled}
             onClick={() => setMode("dispute")}
           >
-            Báo tranh chấp
+            Khiếu nại
           </button>
         )}
         {canReport && (
