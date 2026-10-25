@@ -337,6 +337,26 @@ public class PaymentStore {
     return withdrawal(id);
   }
 
+  public Optional<Map<String, Object>> payoutAccount(UUID user) {
+    return db.queryForList("select id,bank_name,bank_bin,bank_account,bank_holder,updated_at::text"
+        + " as updated_at from payment_payout_account where user_id=?", user).stream().findFirst();
+  }
+
+  // Called under the same money mutex as withdrawal creation. The new ID invalidates stale forms.
+  public Map<String, Object> savePayoutAccount(UUID user, UUID expectedId, String bank,
+      String account, String holder, String bin) {
+    var current = payoutAccount(user);
+    if (!Objects.equals(current.map(row -> (UUID) row.get("id")).orElse(null), expectedId))
+      throw new InvalidOperationException("Tài khoản nhận tiền đã thay đổi; hãy tải lại trước khi lưu");
+    UUID id = UUID.randomUUID();
+    db.update("insert into payment_payout_account(user_id,id,bank_name,bank_bin,bank_account,bank_holder)"
+        + " values (?,?,?,?,?,?) on conflict(user_id) do update set id=excluded.id,"
+        + "bank_name=excluded.bank_name,bank_bin=excluded.bank_bin,bank_account=excluded.bank_account,"
+        + "bank_holder=excluded.bank_holder,updated_at=now()", user, id, bank, bin, account, holder);
+    audit(user, id, "PAYOUT_ACCOUNT_SAVED", "Recipient updated");
+    return payoutAccount(user).orElseThrow();
+  }
+
   public Map<String, Object> withdrawal(UUID id) {
     return one("select * from payment_withdrawal where id=?", id);
   }

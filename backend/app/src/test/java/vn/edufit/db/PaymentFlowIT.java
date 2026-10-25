@@ -59,7 +59,7 @@ class PaymentFlowIT {
             .schemas(schema)
             .locations("classpath:db/migration")
             .load();
-    assertEquals(19, flyway.migrate().migrationsExecuted);
+    assertEquals(20, flyway.migrate().migrationsExecuted);
     flyway.validate();
     assertEquals(0, flyway.migrate().migrationsExecuted);
   }
@@ -75,7 +75,7 @@ class PaymentFlowIT {
     store = new PaymentStore(db, new DataSourceTransactionManager(datasource));
     db.execute(
         "truncate"
-            + " payment_entry,payment_audit,payment_charge,payment_topup,payment_withdrawal,payment_wallet");
+            + " payment_entry,payment_audit,payment_charge,payment_topup,payment_withdrawal,payment_wallet,payment_payout_account");
     if (db.queryForObject("select count(*) from class", Long.class) == 0) {
       UUID student = db.queryForObject("select student_id from learning_goal limit 1", UUID.class);
       UUID tutor = db.queryForObject("select tutor_id from tutor_profile limit 1", UUID.class);
@@ -613,7 +613,7 @@ class PaymentFlowIT {
             .schemas(schema)
             .locations("classpath:db/migration")
             .load();
-    assertEquals(3, upgraded.migrate().migrationsExecuted);
+    assertEquals(4, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted);
     assertEquals(
@@ -678,12 +678,72 @@ class PaymentFlowIT {
         + " values (?,?,100000,'PAYOS','PENDING',now())", id, owner);
     Flyway upgraded = Flyway.configure().dataSource(ds).schemas(schema)
         .locations("classpath:db/migration").load();
-    assertEquals(2, upgraded.migrate().migrationsExecuted);
+    assertEquals(3, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted);
     var saved = jdbc.queryForMap("select amount,status,provider_account_number from payment_topup where id=?", id);
     assertEquals(100000L, saved.get("amount"));
     assertEquals("PENDING", saved.get("status"));
     assertNull(saved.get("provider_account_number"));
+  }
+
+  @Test
+  void savedRecipientIsOwnerScopedAndPendingWithdrawalKeepsItsBankSnapshot() {
+    var settings = new vn.edufit.payment.infra.PaymentSettings();
+    var wallet = new WalletService(store, new PaymentAccess(profiles, connections), settings,
+        mock(vn.edufit.payment.infra.PayosGateway.class), new PaymentTime(Clock.fixed(end, ZoneOffset.UTC)));
+    var tutor = actor(tutorUser, "TUTOR");
+    var recipient = wallet.savePayoutAccount(tutor, "MBBank", "12345678", "Tutor", "970422", null);
+    UUID savedId = (UUID) recipient.get("id");
+    assertThrows(RuntimeException.class, () -> wallet.savePayoutAccount(
+        actor(studentUser, "STUDENT"), "Bank", "12345678", "Student", "970422", null));
+    assertThrows(RuntimeException.class, () -> wallet.withdrawSaved(actor(UUID.randomUUID(), "TUTOR"), 100000, savedId));
+    store.locked(() -> { store.move(tutorUser, 270000, 0, "recipient-seed:" + sessionId, "TEST", sessionId); return null; });
+    var withdrawal = wallet.withdrawSaved(tutor, 100000, savedId);
+    var repeated = wallet.withdrawSaved(tutor, 100000, savedId);
+    assertEquals(withdrawal.get("id"), repeated.get("id"));
+    assertEquals(100000, store.wallet(tutorUser).held());
+    var changed = wallet.savePayoutAccount(tutor, "ACB", "87654321", "Tutor", "970416", savedId);
+    assertNotEquals(savedId, changed.get("id"));
+    assertThrows(RuntimeException.class, () -> wallet.withdrawSaved(tutor, 100000, savedId));
+    assertThrows(RuntimeException.class, () -> wallet.savePayoutAccount(tutor, "Bank", "12345678", "Tutor", "970422", savedId));
+    assertEquals("12345678", store.withdrawal((UUID) withdrawal.get("id")).get("bank_account"));
+    assertEquals("970422", store.withdrawal((UUID) withdrawal.get("id")).get("bank_bin"));
+    assertEquals(170000, store.wallet(tutorUser).available());
+    assertEquals(1, store.withdrawals(tutorUser, 0).size());
+    assertFalse(wallet.overview(tutor, 0).get("payoutAccount").toString().isBlank());
+    assertFalse(wallet.overview(actor(studentUser, "STUDENT"), 0).containsKey("payoutAccount"));
+  }
+
+  @Test
+  void policyMigrationRemovesOnlyPendingInferredConsent() {
+    fund();
+    db.update("update payment_charge set learner_accepted=true,tutor_accepted=true,auto_accepted=true where session_id=?", sessionId);
+    new org.springframework.jdbc.datasource.init.ResourceDatabasePopulator(
+        new org.springframework.core.io.ClassPathResource("db/migration/payment/V1.19__replace_pending_one_hour_auto_acceptance.sql"))
+        .execute(datasource);
+    var state = store.find(sessionId).orElseThrow().state();
+    assertFalse(state.learnerAccepted);
+    assertFalse(state.autoAccepted);
+    assertTrue(state.tutorAccepted);
+    assertEquals(300000, store.wallet(parentUser).held());
+  }
+
+  @Test
+  void disputedMoneyStaysFrozenEvenIfSchedulingLaterRecordsAbsence() {
+    fund();
+    dispute();
+    var original = sessions.findSessionById(sessionId).orElseThrow();
+    when(sessions.findSessionById(sessionId)).thenReturn(Optional.of(new SessionSummaryView(
+        original.sessionId(), original.classId(), original.tutorId(), original.studentId(),
+        original.startAt(), original.endAt(), "ONLINE", "ABSENT", false, original.startAt())));
+    now.set(end.plusSeconds(86400));
+    service.processDeadlines();
+    assertEquals("DISPUTED", store.find(sessionId).orElseThrow().state().status);
+    assertEquals(300000, store.wallet(parentUser).held());
+    now.set(end.plusSeconds(172800));
+    service.processDeadlines();
+    assertEquals(0, store.wallet(parentUser).held());
+    assertEquals(1000000, store.wallet(parentUser).available());
   }
 }

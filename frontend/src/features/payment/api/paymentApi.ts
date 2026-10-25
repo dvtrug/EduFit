@@ -35,12 +35,27 @@ export interface Withdrawal {
   created_at: string;
 }
 export interface Overview {
+  payoutAccount?: PayoutAccount | null;
   wallet: Wallet;
   entries: Entry[];
   topups: Topup[];
   withdrawals: Withdrawal[];
   topupEnabled: boolean;
   topupProvider: string;
+}
+export interface PayoutAccount {
+  id: string;
+  bank_name: string;
+  bank_bin: string;
+  bank_account: string;
+  bank_holder: string;
+}
+export interface PayoutAccountInput {
+  bank: string;
+  bankBin: string;
+  account: string;
+  holder: string;
+  expectedAccountId: string | null;
 }
 export interface PaymentSession {
   sessionId: string;
@@ -106,6 +121,16 @@ const post = <T>(path: string, body?: unknown) =>
   });
 const base = "/api/v1/payment";
 export const paymentApi = {
+  savePayoutAccount: (input: PayoutAccountInput) =>
+    fetchApi<PayoutAccount>(`${base}/payout-account`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }),
+  withdrawSaved: (amount: number, payoutAccountId: string) =>
+    post<Withdrawal>(`${base}/withdrawals/saved-account`, {
+      amount,
+      payoutAccountId,
+    }),
   wallet: (offset = 0) => fetchApi<Overview>(`${base}/wallet?offset=${offset}`),
   sessions: (from: string, to: string) =>
     fetchApi<PaymentSession[]>(

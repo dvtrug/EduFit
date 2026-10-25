@@ -53,16 +53,58 @@ const execute = async (work: () => Promise<unknown>) => {
 };
 beforeEach(() => vi.clearAllMocks());
 describe("Session payment decisions", () => {
+  it("explains automatic settlement without fabricating either participant's consent", () => {
+    render(
+      <SessionPaymentCard
+        session={session({
+          status: "SETTLED",
+          autoAccepted: true,
+          learnerAccepted: false,
+          tutorAccepted: false,
+          settledAmount: 300000,
+        })}
+        disabled={false}
+        execute={execute}
+      />,
+    );
+    expect(
+      screen.getByText(/Tự tất toán sau 24 giờ không có khiếu nại/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Khiếu nại" }),
+    ).not.toBeInTheDocument();
+  });
   it("offers both decisions for a tutor and closes complaints after 24 hours", () => {
-    const { rerender } = render(<SessionPaymentCard session={session({
-      tutorAccepted: false, canActAsLearner: false, canActAsTutor: true,
-    })} disabled={false} execute={execute} />);
-    expect(screen.getByRole("button", { name: "Xác nhận buổi học" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Khiếu nại" })).toBeInTheDocument();
+    const { rerender } = render(
+      <SessionPaymentCard
+        session={session({
+          tutorAccepted: false,
+          canActAsLearner: false,
+          canActAsTutor: true,
+        })}
+        disabled={false}
+        execute={execute}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Xác nhận buổi học" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Khiếu nại" }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/24 giờ/)).toBeInTheDocument();
-    rerender(<SessionPaymentCard session={session({ endAt: new Date(Date.now() - 86401000).toISOString() })}
-      disabled={false} execute={execute} />);
-    expect(screen.queryByRole("button", { name: "Khiếu nại" })).not.toBeInTheDocument();
+    rerender(
+      <SessionPaymentCard
+        session={session({
+          endAt: new Date(Date.now() - 86401000).toISOString(),
+        })}
+        disabled={false}
+        execute={execute}
+      />,
+    );
+    expect(
+      screen.queryByRole("button", { name: "Khiếu nại" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText(/Đang chờ hệ thống tất toán/)).toBeInTheDocument();
   });
   it("requires explicit confirmation before sending payment acceptance", async () => {
@@ -73,9 +115,7 @@ describe("Session payment decisions", () => {
         execute={execute}
       />,
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Xác nhận buổi học" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận buổi học" }));
     expect(paymentApi.confirm).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Gửi xác nhận" }));
     await waitFor(() =>

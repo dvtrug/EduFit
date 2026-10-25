@@ -33,7 +33,7 @@ public class WalletService {
   public Map<String, Object> overview(CurrentUser a, int offset) {
     access.authenticated(a);
     UUID user = a.getUserId();
-    return Map.of(
+    var result = new HashMap<String, Object>(Map.of(
         "wallet",
         store.wallet(user),
         "entries",
@@ -45,7 +45,9 @@ public class WalletService {
         "topupEnabled",
         settings.payos() || settings.manual(),
         "topupProvider",
-        settings.payos() ? "PAYOS" : "MANUAL");
+        settings.payos() ? "PAYOS" : "MANUAL"));
+    if (a.hasRole("TUTOR")) result.put("payoutAccount", store.payoutAccount(user).orElse(null));
+    return result;
   }
 
   public Map<String, Object> topup(CurrentUser a, long amount) {
@@ -172,6 +174,34 @@ public class WalletService {
           store.audit(a.getUserId(), (UUID) w.get("id"), "WITHDRAW_REQUESTED", "VND=" + amount);
           return w;
         });
+  }
+
+  public Map<String, Object> savePayoutAccount(CurrentUser actor, String bank, String account,
+      String holder, String bin, UUID expectedId) {
+    access.tutorRole(actor);
+    if (bank == null || bank.isBlank() || bank.length() > 100
+        || account == null || !account.matches("[0-9]{5,34}")
+        || holder == null || holder.isBlank() || holder.length() > 150
+        || bin == null || !bin.matches("[0-9]{6}"))
+      throw new InvalidOperationException("Thông tin tài khoản nhận tiền không hợp lệ");
+    return store.locked(() -> store.savePayoutAccount(actor.getUserId(), expectedId,
+        bank.trim(), account, holder.trim(), bin));
+  }
+
+  public Map<String, Object> withdrawSaved(CurrentUser actor, long amount, UUID accountId) {
+    access.tutorRole(actor);
+    money(amount);
+    return store.locked(() -> {
+      var recipient = store.payoutAccount(actor.getUserId())
+          .filter(row -> Objects.equals(accountId, row.get("id")))
+          .orElseThrow(() -> new InvalidOperationException(
+              "Tài khoản nhận tiền đã thay đổi hoặc chưa được lưu; hãy tải lại"));
+      var withdrawal = store.createWithdrawal(actor.getUserId(), amount,
+          (String) recipient.get("bank_name"), (String) recipient.get("bank_account"),
+          (String) recipient.get("bank_holder"), (String) recipient.get("bank_bin"));
+      store.audit(actor.getUserId(), (UUID) withdrawal.get("id"), "WITHDRAW_REQUESTED", "VND=" + amount);
+      return withdrawal;
+    });
   }
 
   public void reviewWithdrawal(

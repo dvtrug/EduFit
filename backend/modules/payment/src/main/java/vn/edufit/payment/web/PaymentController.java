@@ -60,6 +60,30 @@ public class PaymentController {
     return ApiResponse.success(wallets.overview(actors.getObject(), offset));
   }
 
+  public record PayoutAccount(
+      @NotBlank @Size(max = 100) String bank,
+      @NotNull @Pattern(regexp = "[0-9]{5,34}") String account,
+      @NotBlank @Size(max = 150) String holder,
+      @NotNull @Pattern(regexp = "[0-9]{6}") String bankBin,
+      UUID expectedAccountId) {}
+
+  public record SavedWithdrawal(
+      @NotNull @DecimalMin("10000") @DecimalMax("100000000") @Digits(integer = 9, fraction = 0)
+          BigDecimal amount,
+      @NotNull UUID payoutAccountId) {}
+
+  @PutMapping("/payout-account")
+  public ApiResponse<?> savePayoutAccount(@Valid @RequestBody PayoutAccount input) {
+    return ApiResponse.success(wallets.savePayoutAccount(actors.getObject(), input.bank(),
+        input.account(), input.holder(), input.bankBin(), input.expectedAccountId()));
+  }
+
+  @PostMapping("/withdrawals/saved-account")
+  public ApiResponse<?> withdrawSaved(@Valid @RequestBody SavedWithdrawal input) {
+    return ApiResponse.success(wallets.withdrawSaved(actors.getObject(),
+        input.amount().longValueExact(), input.payoutAccountId()));
+  }
+
   @PostMapping("/topups")
   public ApiResponse<?> topup(@Valid @RequestBody Money input) {
     return ApiResponse.success(wallets.topup(actors.getObject(), input.amount().longValueExact()));

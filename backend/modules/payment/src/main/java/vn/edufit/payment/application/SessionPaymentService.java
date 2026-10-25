@@ -285,7 +285,9 @@ public class SessionPaymentService {
               if (s.terminal()) return null;
               var src = source(c.sessionId());
               s.endAt = src.endAt();
-              if (Set.of("CANCELLED", "ABSENT", "REJECTED", "WITHDRAWN", "EXPIRED")
+              if (Set.of("DISPUTED", "AWAITING_ADMIN").contains(s.status))
+                s.tick(clock.instant(), "COMPLETED".equals(src.status()));
+              else if (Set.of("CANCELLED", "ABSENT", "REJECTED", "WITHDRAWN", "EXPIRED")
                   .contains(src.status())) s.refund();
               else s.tick(clock.instant(), "COMPLETED".equals(src.status()));
               finish(c, false);

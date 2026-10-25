@@ -35,7 +35,8 @@ export function SessionPaymentCard({ session: s, disabled, execute }: Props) {
     afterEnd &&
     withinConfirmationWindow &&
     !ownAccepted;
-  const canDispute = participant && pending && afterEnd && withinConfirmationWindow;
+  const canDispute =
+    participant && pending && afterEnd && withinConfirmationWindow;
   const canReport =
     participant &&
     s.status === "DISPUTED" &&
@@ -94,7 +95,11 @@ export function SessionPaymentCard({ session: s, disabled, execute }: Props) {
       {pending && (
         <p className="text-xs text-neutral-500">
           {withinConfirmationWindow
-            ? `Hai bên có 24 giờ sau buổi học để xác nhận hoặc khiếu nại. Không có khiếu nại, học phí tự tất toán sau ${new Date(confirmationDeadline).toLocaleString("vi-VN")} khi buổi học đã hoàn thành. Hai bên xác nhận sớm thì tất toán ngay.`
+            ? `Hai bên có 24 giờ sau buổi học để xác nhận hoặc khiếu nại. Không có khiếu nại, học phí tự tất toán sau ${new Date(
+                confirmationDeadline,
+              ).toLocaleString(
+                "vi-VN",
+              )} khi buổi học đã hoàn thành. Hai bên xác nhận sớm thì tất toán ngay.`
             : "Đã hết hạn khiếu nại. Đang chờ hệ thống tất toán khi buổi học đã hoàn thành."}
         </p>
       )}
@@ -132,7 +137,7 @@ export function SessionPaymentCard({ session: s, disabled, execute }: Props) {
             s.settledAmount -
               Math.floor((s.settledAmount * s.commissionBps) / 10000),
           )}
-          .
+          .{s.autoAccepted && (!s.learnerAccepted || !s.tutorAccepted) && " Tự tất toán sau 24 giờ không có khiếu nại."}
         </p>
       )}
       <div className="flex flex-wrap gap-2">

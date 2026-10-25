@@ -1,13 +1,21 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { WalletPanel } from "@/features/payment/components/WalletPanel";
 import { paymentApi, type Overview } from "@/features/payment/api/paymentApi";
 vi.mock("@/features/payment/api/paymentApi", async () => {
   const actual = await vi.importActual<
     typeof import("@/features/payment/api/paymentApi")
   >("@/features/payment/api/paymentApi");
-  return { ...actual, paymentApi: { topup: vi.fn(), withdraw: vi.fn() } };
+  return {
+    ...actual,
+    paymentApi: {
+      topup: vi.fn(),
+      withdraw: vi.fn(),
+      withdrawSaved: vi.fn(),
+      savePayoutAccount: vi.fn(),
+    },
+  };
 });
 const execute = async (work: () => Promise<unknown>) => {
   await work();
@@ -70,11 +78,43 @@ describe("Wallet funding", () => {
   });
 });
 
-it("submits beneficiary BIN with a withdrawal and requires all bank details", async () => {
+const recipient = {
+  id: "saved-1",
+  bank_name: "MBBank",
+  bank_bin: "970422",
+  bank_account: "12345678",
+  bank_holder: "Tutor",
+};
+
+it("reuses the saved recipient, fills the available amount and asks before withdrawing", async () => {
+  render(
+    <WalletPanel
+      data={{
+        ...overview,
+        wallet: { available: 90000, held: 0 },
+        payoutAccount: recipient,
+      }}
+      tutor={true}
+      busy={false}
+      execute={execute}
+    />,
+  );
+  expect(screen.queryByLabelText("Số tài khoản")).not.toBeInTheDocument();
+  expect(screen.getByLabelText("Số tiền rút")).toHaveValue(null);
+  fireEvent.click(screen.getByRole("button", { name: "Rút toàn bộ" }));
+  expect(screen.getByLabelText("Số tiền rút")).toHaveValue(90000);
+  fireEvent.click(screen.getByRole("button", { name: "Tiếp tục rút tiền" }));
+  expect(paymentApi.withdrawSaved).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Xác nhận rút tiền" }));
+  await waitFor(() =>
+    expect(paymentApi.withdrawSaved).toHaveBeenCalledWith(90000, "saved-1"),
+  );
+});
+
+it("saves a recipient separately without creating a withdrawal", async () => {
   render(
     <WalletPanel data={overview} tutor={true} busy={false} execute={execute} />,
   );
-  expect(screen.getByRole("combobox", { name: "Ngân hàng" })).toBeRequired();
   fireEvent.change(screen.getByRole("combobox", { name: "Ngân hàng" }), {
     target: { value: "970422" },
   });
@@ -84,12 +124,89 @@ it("submits beneficiary BIN with a withdrawal and requires all bank details", as
   fireEvent.change(screen.getByLabelText("Chủ tài khoản"), {
     target: { value: "Tutor" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Gửi yêu cầu rút tiền" }));
-  expect(paymentApi.withdraw).toHaveBeenCalledWith(
-    100000,
-    "MBBank",
-    "12345678",
-    "Tutor",
-    "970422",
+  fireEvent.click(screen.getByRole("checkbox", { name: /Tôi đã kiểm tra/ }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Lưu tài khoản nhận tiền" }),
   );
+  await waitFor(() =>
+    expect(paymentApi.savePayoutAccount).toHaveBeenCalledWith({
+      bank: "MBBank",
+      bankBin: "970422",
+      account: "12345678",
+      holder: "Tutor",
+      expectedAccountId: null,
+    }),
+  );
+  expect(paymentApi.withdrawSaved).not.toHaveBeenCalled();
+});
+
+it("explains why withdrawal is disabled and does not allow overspending", () => {
+  render(
+    <WalletPanel
+      data={{
+        ...overview,
+        wallet: { available: 9000, held: 0 },
+        payoutAccount: recipient,
+      }}
+      tutor={true}
+      busy={false}
+      execute={execute}
+    />,
+  );
+  expect(
+    screen.getByRole("button", { name: "Tiếp tục rút tiền" }),
+  ).toBeDisabled();
+  expect(screen.getByText(/Số dư khả dụng tối thiểu/)).toBeInTheDocument();
+});
+
+it("blocks new withdrawals while an earlier request is pending", () => {
+  render(
+    <WalletPanel
+      data={{
+        ...overview,
+        payoutAccount: recipient,
+        withdrawals: [
+          {
+            id: "pending",
+            user_id: "tutor",
+            amount: 10000,
+            status: "PENDING",
+            bank_name: "MBBank",
+            bank_account: "12345678",
+            bank_holder: "Tutor",
+            created_at: "2026-10-25",
+          },
+        ],
+      }}
+      tutor
+      busy={false}
+      execute={execute}
+    />,
+  );
+  expect(screen.getByRole("button", { name: "Rút toàn bộ" })).toBeDisabled();
+  expect(screen.getByText(/Bạn có yêu cầu rút đang chờ/)).toBeInTheDocument();
+});
+it("invalidates a confirmation if the saved recipient changes", () => {
+  const { rerender } = render(
+    <WalletPanel
+      data={{ ...overview, payoutAccount: recipient }}
+      tutor
+      busy={false}
+      execute={execute}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Rút toàn bộ" }));
+  fireEvent.click(screen.getByRole("button", { name: "Tiếp tục rút tiền" }));
+  rerender(
+    <WalletPanel
+      data={{ ...overview, payoutAccount: { ...recipient, id: "changed" } }}
+      tutor
+      busy={false}
+      execute={execute}
+    />,
+  );
+  expect(
+    screen.getByRole("button", { name: "Xác nhận rút tiền" }),
+  ).toBeDisabled();
+  expect(screen.getByRole("alert")).toHaveTextContent(/Tài khoản nhận đã đổi/);
 });
