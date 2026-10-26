@@ -87,6 +87,8 @@ it("opens an embedded checkout in a dialog and disposes it when closed", async (
   fireEvent.click(screen.getByRole("button", { name: "Đóng popup" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(exit).toHaveBeenCalledTimes(1);
+  sdk.mock.calls[0][0].onSuccess();
+  expect(paymentApi.refreshTopup).not.toHaveBeenCalled();
 });
 it("never claims credit from the SDK callback until the backend verifies PAID", async () => {
   const { rerender } = show();

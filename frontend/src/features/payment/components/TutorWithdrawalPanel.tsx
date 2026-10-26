@@ -1,5 +1,5 @@
 "use client";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowUpRight, Building2, Clock3, Wallet } from "lucide-react";
 import { PaymentDialog } from "./PaymentDialog";
 import banks from "../data/banks.json";
@@ -178,6 +178,10 @@ export function TutorWithdrawalPanel({
     amount: number;
     recipient: PayoutAccount;
   } | null>(null);
+  const reviewRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (confirmation) reviewRef.current?.focus();
+  }, [confirmation]);
   const pending = data.withdrawals.find(
     (item) => item.status === "PENDING" || item.status === "PROCESSING",
   );
@@ -412,6 +416,8 @@ export function TutorWithdrawalPanel({
             <div
               role="region"
               aria-label="Xác nhận yêu cầu rút"
+              ref={reviewRef}
+              tabIndex={-1}
               className="space-y-4"
             >
               <div className="text-center">

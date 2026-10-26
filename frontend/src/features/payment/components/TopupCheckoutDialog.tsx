@@ -1,5 +1,12 @@
 "use client";
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   Check,
   CheckCircle2,
@@ -67,7 +74,10 @@ function PayosFrame({ url, verify }: { url: string; verify: () => void }) {
         });
         exit = checkout.exit;
         checkout.open();
-        document.getElementById(elementId)?.querySelector("iframe")?.setAttribute("title", "QR thanh toán payOS");
+        document
+          .getElementById(elementId)
+          ?.querySelector("iframe")
+          ?.setAttribute("title", "QR thanh toán payOS");
         setReady(true);
       } catch (e) {
         if (alive) setError(paymentError(e));
@@ -94,7 +104,9 @@ function PayosFrame({ url, verify }: { url: string; verify: () => void }) {
         id={elementId}
         aria-label="QR thanh toán payOS"
         className={
-          error ? "hidden" : "h-[32rem] max-h-[60dvh] w-full overflow-hidden rounded-xl"
+          error
+            ? "hidden"
+            : "h-[32rem] max-h-[60dvh] w-full overflow-hidden rounded-xl"
         }
       />
       {error && (
@@ -153,7 +165,11 @@ export function TopupCheckoutDialog({
     setChecking(false);
   }, [execute, checkout.id, paid]);
   return (
-    <PaymentDialog title="Nạp tiền vào ví" onClose={onClose}>
+    <PaymentDialog
+      title="Nạp tiền vào ví"
+      onClose={onClose}
+      wide={checkout.provider === "PAYOS" && !paid}
+    >
       {paid ? (
         <div role="status" className="space-y-4 py-6 text-center">
           <CheckCircle2 className="mx-auto size-14 text-emerald-600" />
@@ -169,8 +185,14 @@ export function TopupCheckoutDialog({
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
-          <div className="text-center">
+        <div
+          className={
+            checkout.provider === "PAYOS"
+              ? "grid gap-5 md:grid-cols-2"
+              : "space-y-4"
+          }
+        >
+          <div className="text-center md:col-start-1">
             <p className="text-sm text-neutral-500">Số tiền cần chuyển</p>
             <p className="mt-1 text-3xl font-bold tracking-tight">
               {checkout.amount ? money(checkout.amount) : "Theo mã QR bên dưới"}
@@ -180,10 +202,12 @@ export function TopupCheckoutDialog({
             </p>
           </div>
           {checkout.provider === "PAYOS" ? (
-            <PayosFrame
-              url={checkout.checkoutUrl ?? ""}
-              verify={() => void verify()}
-            />
+            <div className="md:col-start-2 md:row-start-1 md:row-span-6">
+              <PayosFrame
+                url={checkout.checkoutUrl ?? ""}
+                verify={() => void verify()}
+              />
+            </div>
           ) : (
             <div className="space-y-4">
               {validManualQr(checkout.qrUrl) ? (
@@ -244,7 +268,7 @@ export function TopupCheckoutDialog({
           {error && (
             <p
               role="alert"
-              className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
+              className="rounded-lg bg-red-50 p-3 text-sm text-red-700 md:col-start-1"
             >
               {error}
             </p>
@@ -253,7 +277,7 @@ export function TopupCheckoutDialog({
             <button
               disabled={checking}
               onClick={() => void verify()}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-300 px-4 py-3 text-sm font-semibold disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-300 md:col-start-1 px-4 py-3 text-sm font-semibold disabled:opacity-50"
             >
               <RefreshCw
                 className={`size-4 ${checking ? "animate-spin" : ""}`}
@@ -262,12 +286,15 @@ export function TopupCheckoutDialog({
             </button>
           )}
           {verified === "PENDING" && (
-            <p role="status" className="text-center text-sm text-amber-800">
+            <p
+              role="status"
+              className="text-center text-sm text-amber-800 md:col-start-1"
+            >
               Chưa nhận được xác nhận thanh toán. Ví sẽ tự cập nhật khi giao
               dịch được xác minh.
             </p>
           )}
-          <p className="flex items-start gap-2 border-t border-stone-100 pt-4 text-xs leading-relaxed text-neutral-500">
+          <p className="flex items-start gap-2 border-t border-stone-100 pt-4 text-xs leading-relaxed text-neutral-500 md:col-start-1">
             <ShieldCheck className="mt-0.5 size-4 shrink-0" />
             Đóng popup không hủy yêu cầu nạp. Nếu đã chuyển tiền, hãy chờ xác
             minh trước khi tạo yêu cầu khác.

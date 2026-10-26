@@ -211,3 +211,32 @@ it("invalidates a confirmation if the saved recipient changes", () => {
   ).toBeDisabled();
   expect(screen.getByRole("alert")).toHaveTextContent(/Tài khoản nhận đã đổi/);
 });
+
+it("keeps a failed withdrawal visible inside the popup without claiming success", async () => {
+  vi.mocked(paymentApi.withdrawSaved).mockRejectedValueOnce(
+    new Error("Số dư đã thay đổi"),
+  );
+  render(
+    <WalletPanel
+      data={{ ...overview, payoutAccount: recipient }}
+      tutor
+      busy={false}
+      execute={execute}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Rút tiền" }));
+  fireEvent.change(screen.getByLabelText("Số tiền rút"), {
+    target: { value: "50000" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Tiếp tục rút tiền" }));
+  fireEvent.click(screen.getByRole("button", { name: "Xác nhận rút tiền" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Số dư đã thay đổi",
+  );
+  expect(
+    screen.getByRole("dialog", { name: "Rút tiền về ngân hàng" }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Xác nhận rút tiền" }),
+  ).toBeEnabled();
+});
