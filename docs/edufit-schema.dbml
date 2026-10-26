@@ -506,7 +506,7 @@ Table payment_charge {
   amount bigint [not null, note: 'Accepted per-session price snapshot, VND']
   commission_bps integer [not null, note: '1000 = 10%, snapshot']
   end_at timestamptz [not null]
-  status varchar(30) [not null, note: 'FUNDED, AWAITING_CONFIRMATION, DISPUTED, AWAITING_ADMIN, SETTLED, REFUNDED, EXPIRED']
+  status varchar(30) [not null, note: 'FUNDED, AWAITING_CONFIRMATION, DISPUTED, AWAITING_ADMIN, ADMIN_REVIEW, SETTLED, REFUNDED, EXPIRED']
   learner_accepted boolean [not null, default: false]
   tutor_accepted boolean [not null, default: false]
   auto_accepted boolean [not null, default: false]
@@ -517,7 +517,22 @@ Table payment_charge {
   learner_amount bigint
   tutor_amount bigint
   settled_amount bigint [not null, default: 0]
+  review_started_at timestamptz [note: 'V1.21: full notified 24h window; NULL for legacy pending until opened']
+  dispute_category varchar(30) [not null, default: 'OTHER', note: 'DURATION, NO_SHOW, TECHNICAL, QUALITY, OTHER']
+  dispute_evidence varchar(4000)
+  dispute_reporter_id uuid [ref: > account.user_id]
+  resolution_note varchar(2000)
+  resolved_at timestamptz
   updated_at timestamptz [not null]
+}
+Table payment_case_message {
+  id uuid [pk, note: 'Idempotent client message ID']
+  session_id uuid [not null, ref: > payment_charge.session_id]
+  author_id uuid [not null, ref: > account.user_id]
+  side varchar(10) [not null, note: 'STUDENT, PAYER, TUTOR']
+  message varchar(4000) [not null]
+  created_at timestamptz [not null]
+  indexes { (session_id, created_at) }
 }
 Table payment_topup {
   id uuid [pk]

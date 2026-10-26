@@ -34,14 +34,14 @@
 <polygon points="460.0,600.0 446.0,607.7 446.0,592.3" fill="#64748B"/>
 <rect x="464" y="510" width="352" height="180" rx="18" fill="#F1F5F9" stroke="#475569" stroke-width="2"/>
 <text x="488" y="530" font-family="Segoe UI, sans-serif" font-size="27" font-weight="700" fill="#475569" dominant-baseline="text-before-edge">Buổi học kết thúc</text>
-<text x="488" y="578" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">COMPLETED; chờ hai xác</text>
-<text x="488" y="613" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">nhận.</text>
+<text x="488" y="578" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">COMPLETED; mở đủ 24h</text>
+<text x="488" y="613" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">phản hồi.</text>
 <polyline points="819,600 860,600" fill="none" stroke="#64748B" stroke-width="4" stroke-linejoin="round"/>
 <polygon points="860.0,600.0 846.0,607.7 846.0,592.3" fill="#64748B"/>
 <rect x="864" y="510" width="352" height="180" rx="18" fill="#F5F3FF" stroke="#7C3AED" stroke-width="2"/>
 <text x="888" y="530" font-family="Segoe UI, sans-serif" font-size="27" font-weight="700" fill="#7C3AED" dominant-baseline="text-before-edge">Xử lý học phí</text>
-<text x="888" y="578" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">Đồng ý hoặc giải quyết</text>
-<text x="888" y="613" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">tranh chấp.</text>
+<text x="888" y="578" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">Đủ hạn hoặc Admin phân</text>
+<text x="888" y="613" font-family="Segoe UI, sans-serif" font-size="25" font-weight="400" fill="#334155" dominant-baseline="text-before-edge">xử.</text>
 <polyline points="1219,600 1260,600" fill="none" stroke="#64748B" stroke-width="4" stroke-linejoin="round"/>
 <polygon points="1260.0,600.0 1246.0,607.7 1246.0,592.3" fill="#64748B"/>
 <rect x="1264" y="510" width="352" height="180" rx="18" fill="#ECFDF5" stroke="#047857" stroke-width="2"/>

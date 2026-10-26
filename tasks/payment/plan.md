@@ -1,5 +1,8 @@
 # Payment: kế hoạch chi tiết theo phase và task
 
+> Quy tắc hiện hành: [quy tắc 26/10](../../docs/payment/payment-usability.md). Các phase/checkpoint cũ bên dưới giữ lịch sử; xác nhận không thu sớm, 48h chưa khớp giữ tiền chờ Admin.
+
+
 Cập nhật 24/10/2026, nhánh `feat/payment`, đối chiếu code `3966d54`. Nguồn nghiệp vụ/kiến trúc: [Payment implementation plan](../../docs/payment/payment_implementation_plan.md). Theo cách tổ chức [Discovery](../plan.md): mỗi task có phạm vi, kiểm chứng và checkpoint; giữ ID/commit lịch sử Payment để không tạo số task giả.
 
 ## 1. Nguyên tắc thực hiện
@@ -200,3 +203,11 @@ Cập nhật 24/10/2026, nhánh `feat/payment`, đối chiếu code `3966d54`. N
 - Slice 1: bỏ autoaccept 1h, hai nút xác nhận/khiếu nại, tự tất toán sau 24h không khiếu nại khi COMPLETED, giải quyết 48h; V1.19 bảo vệ dữ liệu cũ. Commit `715da01`.
 - Slice 2: một tài khoản nhận tiền theo owner, version ID, rút theo recipient đã lưu, snapshot withdrawal, UI xem lại trước gửi; V1.20, CSRF/role, stale/foreign ID và duplicate. Giữ Admin duyệt, không bật chi live. Commit `208c592`.
 - Slice 3: đồng bộ API/schema/luồng/diagram/bằng chứng. Gate cuối 59 BE + 20 FE PASS, types/lint và browser fixture. Không test merchant/tiền thật hoặc production Next build trong đợt này.
+
+## 9. Usability và phân xử — 26/10/2026
+
+Theo [task đợt này](usability-plan.md) và [quy tắc hiện hành](../../docs/payment/payment-usability.md).
+
+- U01/U02 — Backend/domain/migration/quyền/event: `2c3270b`, đã push. AC: không thu sớm; full notified 24h; 48h chưa khớp giữ tiền chờ Admin; Student không payer không quyết định số tiền; resolve có reason/range; atomic notify và idempotency. Gate 111 BE tests PASS.
+- U03 — FE detail/summary/ba số dư/hồ sơ Admin và deep link: 24 FE tests, type/lint/production build và browser fixture PASS; commit `20ad2f6` đã push.
+- U04 — Docs/schema/API/runbook/diagrams và kiểm liên kết; không đổi merchant/live data. Chưa có Meet/Zoom webhook hoặc giao dịch live.

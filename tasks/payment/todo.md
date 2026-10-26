@@ -1,5 +1,8 @@
 # Payment: commit checklist
 
+> Quy tắc hiện hành: [quy tắc 26/10](../../docs/payment/payment-usability.md). Các phase/checkpoint cũ bên dưới giữ lịch sử; xác nhận không thu sớm, 48h chưa khớp giữ tiền chờ Admin.
+
+
 Nguồn chi tiết: [plan theo phase](plan.md) và [giải trình kiến trúc](../../docs/payment/payment_implementation_plan.md). Cập nhật 24/10/2026 trên `feat/payment`.
 
 Giữ ID task đã triển khai. P04a/P04b/P04c là ba task trong Phase 4; commit hotfix không làm tăng số phase. Mỗi increment: kiểm chứng, review diff, commit rồi push đúng nhánh.
@@ -82,7 +85,7 @@ Giữ ID task đã triển khai. P04a/P04b/P04c là ba task trong Phase 4; commi
 ## Hotfix tài khoản ảo — 24/10/2026
 
 - [x] Bản sửa checkout tài khoản ảo: snapshot từ response đã ký, đối chiếu webhook/lookup, V1.18 và nguồn regression; chỉ biên dịch, chưa chạy test/migration/provider theo yêu cầu người dùng. Xem [báo cáo](../../docs/payment/verification-report.md).
-- [ ] Chạy regression và fresh/upgrade V1.18 trong DB test riêng khi người dùng cho phép; chưa coi nguồn test đã viết là test PASS.
+- [x] Regression/fresh/upgrade V1.18 đã bao phủ trong gate DB test riêng ngày 25–26/10; không đồng nghĩa live merchant PASS.
 
 ## Vận hành còn chờ — không đánh dấu đã làm
 
@@ -96,3 +99,11 @@ Giữ ID task đã triển khai. P04a/P04b/P04c là ba task trong Phase 4; commi
 - [ ] Kiểm chứng giao dịch live được chủ tài khoản cho phép, đối soát ngân hàng/ví/ledger/notification.
 
 Các kết quả test đã ghi ở [verification-report](../../docs/payment/verification-report.md); lần sửa Markdown này không phải lần chạy lại các gate code.
+
+## Usability 26/10 — thay quy tắc xác nhận sớm / tự hoàn khi hết tranh chấp
+
+- [x] U01/U02: cửa sổ 24h được lưu/thông báo; xác nhận không thu sớm; 48h chuyển ADMIN_REVIEW vẫn held; payer/student; case/evidence/comments/resolve. Commit `2c3270b` đã push.
+- [x] U03 (`20ad2f6`, đã push): danh sách gọn + chi tiết riêng; ba số dư Tutor; Admin xem lại tiền; notification đúng hồ sơ; polling 15s/focus. 24 FE tests, type/lint/build và browser fixture PASS.
+- [x] U04: rules/API/schema/runbook/diagrams và báo cáo kiểm thử; xem [quy tắc hiện hành](../../docs/payment/payment-usability.md).
+- [ ] Restart backend để Flyway áp dụng V1.21 trong môi trường người dùng; không sửa/repair migration cũ.
+- [ ] Kiểm chứng live provider, webhook công khai và vận hành Admin theo dõi hồ sơ; chưa nằm trong bằng chứng mock/Testcontainers.

@@ -123,8 +123,8 @@ def overview():
             ('Ví của người nạp','Tăng available đúng một lần.','green')]),
         (510,'2. THANH TOÁN BUỔI HỌC',[
             ('Payer cấp tiền','Available giảm; held tăng.','blue'),
-            ('Buổi học kết thúc','COMPLETED; chờ hai xác nhận.','slate'),
-            ('Xử lý học phí','Đồng ý hoặc giải quyết tranh chấp.','purple'),
+            ('Buổi học kết thúc','COMPLETED; mở đủ 24h phản hồi.','slate'),
+            ('Xử lý học phí','Đủ hạn hoặc Admin phân xử.','purple'),
             ('Chia trong ledger','Tutor nhận thu nhập; fee 10% phần trả.','green')]),
         (800,'3. RÚT THU NHẬP',[
             ('Ví gia sư','Yêu cầu rút; giữ riêng tiền W.','blue'),
@@ -162,29 +162,29 @@ def topup():
 
 
 def session():
-    d=Diagram('payment-session-flow',3,'Giữ học phí → xác nhận → tất toán','Một buổi có một charge và một payer. Giá và commission được snapshot khi cấp tiền.',1260)
+    d=Diagram('payment-session-flow',3,'Giữ học phí → phản hồi 24h → tất toán','Một buổi có một charge và một payer. Giá và commission được snapshot khi cấp tiền.',1260)
     nodes=[
         (200,'1. Cấp tiền cho buổi học','Payer đủ tiền: available -A, held +A. Giá phải khớp hồ sơ hiện hành.','blue'),
         (400,'2. Kiểm tra buổi đã hoàn thành','Nguồn Scheduling phải COMPLETED và thời gian server đã tới endAt.','blue'),
-        (600,'3. Thu đủ xác nhận hai phía','Hai bên xác nhận sớm hoặc hết 24h không khiếu nại khi nguồn COMPLETED.','purple'),
+        (600,'3. Giữ đủ cửa sổ phản hồi 24h','Xác nhận chỉ ghi việc học. Đủ reviewStartedAt + 24h, COMPLETED và không có vấn đề mới tự thu.','purple'),
         (800,'4. Tất toán trong một transaction','Giải phóng held; trả phần dư payer; cộng tutor và ghi hoa hồng.','green')]
     for i,(y,title,body,tone) in enumerate(nodes):
         d.box(64,y,1000,150,title,body,tone)
         if i<3:d.arrow([(564,y+153),(564,y+196)])
     d.box(1120,200,496,240,'Ai được cấp tiền?','Student của buổi hoặc Parent có confirmed link. Available phải đủ, không tự trả cho mình.','slate')
-    d.box(1120,500,496,250,'Mốc 24 giờ','Không khiếu nại: tự tất toán khi COMPLETED, kể cả chưa bên nào xác nhận.','amber')
+    d.box(1120,500,496,250,'Mốc 24 giờ','Mở/lưu/thông báo cùng transaction. Ghi nhận hoàn thành muộn vẫn đủ 24h; không backdate.','amber')
     d.box(1120,810,496,250,'Nếu mở tranh chấp','Chặn tất toán thường; giữ tiền và chuyển luồng báo cáo 48h ở sơ đồ 04.','red')
     d.box(64,1000,1000,130,'Ví dụ A = S = 200.000đ','Tutor +180.000đ; hoa hồng +20.000đ; payer held -200.000đ.','green')
-    d.footer('Chưa có gate buộc nạp/cấp tiền trước khi bắt đầu học. Hủy/vắng mặt: deadline job hoàn khoản còn giữ, không tự phạt.')
+    d.footer('Chưa có gate buộc nạp/cấp tiền trước khi bắt đầu học. Hủy/vắng mặt chưa có case: hoàn khoản giữ; đã có case chờ Admin.')
     d.save()
 
 
 def dispute():
     d=Diagram('payment-dispute-flow',4,'Tranh chấp 48 giờ và quyết định Admin','48h tính từ lúc mở tranh chấp; đây là hạn báo cáo của hai phía, không phải hạn xử lý của Admin.',1450)
-    d.box(490,200,700,150,'1. Một phía mở tranh chấp','Trong 24h sau endAt, trước tất toán → DISPUTED; tiếp tục giữ toàn bộ A.','red')
+    d.box(490,200,700,150,'1. Một phía mở tranh chấp','Sau endAt, trước reviewDeadline nếu đã mở → DISPUTED; giữ toàn bộ A.','red')
     d.arrow([(650,353),(650,380),(404,380),(404,416)])
     d.arrow([(1030,353),(1030,380),(1276,380),(1276,416)])
-    d.box(64,420,680,155,'2a. Báo cáo phía learner','Gửi riêng nội dung và mức tiền đề nghị S, trong khoảng 0..A.','blue')
+    d.box(64,420,680,155,'2a. Báo cáo của payer','Gửi riêng nội dung và mức tiền đề nghị S, trong khoảng 0..A.','blue')
     d.box(936,420,680,155,'2b. Báo cáo phía tutor','Gửi riêng nội dung và mức tiền đề nghị S, trước openedAt + 48h.','purple')
     d.arrow([(404,578),(404,610),(840,610),(840,646)])
     d.arrow([(1276,578),(1276,610),(840,610),(840,646)])
@@ -192,12 +192,12 @@ def dispute():
     d.arrow([(490,725),(404,725),(404,856)],label='CÓ, TRONG HẠN',label_xy=(90,785),color='#047857')
     d.arrow([(1190,725),(1276,725),(1276,856)],label='ĐỦ 48H CHƯA KHỚP',label_xy=(1300,785),color='#B45309')
     d.box(64,860,680,160,'4a. AWAITING_ADMIN','Giữ A chờ Admin; không hết hạn chỉ vì Admin xử lý lâu.','green')
-    d.box(936,860,680,160,'4b. EXPIRED','Hệ thống kết thúc tranh chấp, hoàn toàn bộ A về available của payer.','amber')
+    d.box(936,860,680,160,'4b. ADMIN_REVIEW','Chuyển Admin phân xử; tiếp tục giữ toàn bộ A, không tự hoàn hoặc chuyển tiền.','amber')
     d.arrow([(404,1023),(404,1076)])
     d.arrow([(1276,1023),(1276,1076)])
-    d.box(64,1080,680,230,'5a. Admin xem cả hai báo cáo','Duyệt: trả đúng S, fee 10% S, hoàn A-S.\nTừ chối hoặc S=0: hoàn toàn bộ A.','green')
-    d.box(936,1080,680,230,'5b. Không thu phí','Tutor không nhận tiền từ charge cũ.\nKhông mở lại charge đã terminal.','slate')
-    d.footer('Khoản >0 chỉ được Admin duyệt khi nguồn COMPLETED và qua endAt. Hoàn held là hoàn ví nội bộ, không hoàn ngân hàng.')
+    d.box(64,1080,680,230,'5a. Admin duyệt mức thống nhất','Duyệt: trả đúng S, fee 10% S, hoàn A-S.\nTừ chối hoặc S=0: hoàn toàn bộ A.','green')
+    d.box(936,1080,680,230,'5b. Admin phân xử có lý do','Đủ/một phần: tutor nhận S - phí 10% S; hoàn A-S.\nS=0: hoàn toàn bộ, không phí.','slate')
+    d.footer('Admin phân xử sau endAt dựa bằng chứng; auto-settlement vẫn cần COMPLETED. Hoàn là hoàn ví nội bộ.')
     d.save()
 
 

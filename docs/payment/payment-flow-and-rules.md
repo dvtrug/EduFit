@@ -1,8 +1,8 @@
 # Payment: giải thích luồng, quy tắc và cơ chế xử lý tiền
 
-> Cập nhật 25/10/2026: [quy tắc 24h xác nhận / 48h giải quyết và tài khoản nhận tiền đã lưu](payment-policy-update.md) là nguồn hiện hành. Nội dung 1h/24h tranh chấp ở bằng chứng/phase cũ là lịch sử.
+> Cập nhật 26/10/2026: [quy tắc hiện hành và trải nghiệm Payment](payment-usability.md). Xác nhận không tất toán sớm; đủ 24h phản hồi mới tự thu; hết 48h tranh chấp chuyển Admin và tiếp tục giữ tiền.
 
-**Cập nhật:** 24/10/2026, nhánh `feat/payment`. Đối chiếu code có trong `cd8c018` (code nghiệp vụ từ `3966d54`). Tài liệu mô tả chức năng hiện có; các giới hạn được ghi riêng, không coi cấu hình merchant và giao dịch thật là đã kiểm chứng.
+**Cập nhật:** 26/10/2026, nhánh `feat/payment`. Đối chiếu code có trong `cd8c018` (code nghiệp vụ từ `3966d54`). Tài liệu mô tả chức năng hiện có; các giới hạn được ghi riêng, không coi cấu hình merchant và giao dịch thật là đã kiểm chứng.
 
 Đọc tài liệu này để hiểu tiền đi đâu, ai được thao tác, khi nào hệ thống thu phí và vì sao một giao dịch được giữ lại. [Tài liệu kiến trúc](payment_implementation_plan.md) giải thích từng file/schema; [API](api-contract.md), [setup payOS](payos-setup.md) và [runbook](runbook.md) phục vụ tích hợp/vận hành.
 
@@ -16,7 +16,7 @@
 |---|---|---|---|
 | Nạp ví | Người nạp chuyển vào tài khoản nhận liên kết EduFit | Tăng available của đúng người nạp | Receipt/query payOS hợp lệ hoặc Admin xác minh manual |
 | Cấp tiền buổi học | Không phát sinh chuyển ngân hàng mới | Chuyển available sang held của payer | Đúng quyền, giá và đủ số dư |
-| Tất toán buổi học | Không tự chuyển ngân hàng cho tutor | Giảm held, cộng tutor, ghi commission và trả phần dư payer | Đủ xác nhận hoặc quyết định Admin hợp lệ |
+| Tất toán buổi học | Không tự chuyển ngân hàng cho tutor | Giảm held, cộng tutor, ghi commission và trả phần dư payer | Đủ 24h phản hồi không có vấn đề hoặc quyết định Admin hợp lệ |
 | Rút thu nhập | Chuyển từ nguồn tiền chi tới ngân hàng tutor | Giữ tiền lúc yêu cầu, kết thúc held khi xác minh kết quả | Admin manual review hoặc duyệt chi payOS |
 
 **Ví dụ:** học sinh nạp 1.000.000đ, học một buổi 200.000đ. Khi cấp tiền, 200.000đ được giữ trong ví học sinh. Khi tất toán đủ, ví tutor tăng 180.000đ và ledger EduFit ghi 20.000đ hoa hồng. Ngân hàng tutor chỉ nhận tiền sau một yêu cầu rút riêng.
@@ -28,7 +28,7 @@ Ví nội bộ là dữ liệu số dư trong DB; ngân hàng giữ tiền thậ
 | Khái niệm | Giải thích |
 |---|---|
 | Payer | Tài khoản Student/Parent đã cấp tiền cho buổi; là chủ khoản tiền cần hoàn |
-| Learner side | Student của buổi hoặc Parent payer còn confirmed link; một phía xác nhận tài chính |
+| Learner side | Student của buổi hoặc Parent payer còn confirmed link; một phía xác nhận việc học, không mặc định quyền đề xuất tiền |
 | Tutor side | Gia sư của buổi; phía xác nhận còn lại |
 | Available | Số dư chưa dành cho nghĩa vụ nào, được dùng tiếp theo quyền nghiệp vụ |
 | Held | Tiền dành cho học phí/yêu cầu rút; vẫn được theo dõi trong ví nhưng không dùng lại |
@@ -94,80 +94,36 @@ Khi thiếu payOS nhưng đủ BIN/tài khoản/tên người nhận, hệ thố
 
 Khoản PAYOS không được manual-confirm để bỏ qua đối soát. Sai amount, tài khoản, nhiều lần chuyển hoặc kết quả chưa rõ phải xử lý đối soát, không cộng tay bằng SQL.
 
-## 4. Luồng giữ tiền và thanh toán một buổi học
+## 4. Giữ tiền và phản hồi việc học
 
-![Giữ tiền, kiểm COMPLETED, xác nhận hai phía và tất toán học phí](images/payment-session-flow.png)
+![Giữ tiền và phản hồi đủ 24h](images/payment-session-flow.png)
 
-*Hình 03. Hai xác nhận sớm hoặc hết 24h không khiếu nại mới tất toán. [Bản SVG](images/payment-session-flow.svg).*
+Cấp tiền giữ A từ available sang held của đúng payer; snapshot giá và phí 10%. Cấp tiền khi SCHEDULED/COMPLETED, trước max(endAt,outcomeRecordedAt)+24h. Một charge/một payer; chưa có gate bắt cấp tiền trước khi học.
 
-### 4.1. Cấp tiền trước cho charge
+Khi Scheduling ghi COMPLETED, backend mở/lưu/thông báo cửa sổ phản hồi trong cùng transaction. reviewStartedAt = max(endAt, lúc ghi nhận/mở cửa sổ); reviewDeadline = reviewStartedAt+24h. Ghi nhận muộn vẫn có đủ 24 giờ. Job fallback mở cửa sổ từ lúc quan sát, không thu ngay vì endAt đã cũ; event lặp không reset hạn.
 
-Payer chọn buổi, xem giá và xác nhận cấp tiền. Backend đọc giá hiện hành từ Profile, kiểm amount mà FE gửi có còn khớp không. Giá đổi thì yêu cầu tải lại, không âm thầm thu giá khác.
+Xác nhận đã học/Ghi nhận đã dạy chỉ ghi việc học; cả hai xác nhận cũng chưa tất toán. Đến reviewDeadline, không khiếu nại, nguồn COMPLETED: job tất toán kể cả chưa ai xác nhận. Khi pending, sau endAt vẫn được báo vấn đề nếu tutor chưa ghi hoàn thành. Backend khóa và kiểm giờ server; đúng deadline từ chối mở mới.
 
-Điều kiện: Student của buổi/Parent confirmed; nguồn SCHEDULED hoặc COMPLETED; trước endAt+24h; đủ available; không tự trả cho chính tutor là mình. Snapshot amount và commission 1000 bps vào charge. Một session chỉ có một charge, không thêm payer thứ hai.
+Hủy/vắng mặt khi chưa có case hoàn held theo chính sách hiện có. Khi đã có case, mọi state DISPUTED/AWAITING_ADMIN/ADMIN_REVIEW giữ tiền dù nguồn đổi trạng thái. Dời lịch không reset reviewStartedAt đã mở; auto-settlement vẫn kiểm endAt hiện hành.
 
-Giữ A: available -A, held +A. Không lấy tiền của một Parent khác, không đổi chủ sở hữu ví sang Student. Chưa có gate Scheduling bắt buộc buổi phải được cấp tiền trước lúc học bắt đầu; đây vẫn là thao tác riêng.
+## 5. Hồ sơ vấn đề và quyết định Admin
 
-### 4.2. Xác nhận và tự tất toán sau 24 giờ
+![Một hồ sơ, 48h rồi chuyển Admin giữ tiền](images/payment-dispute-flow.png)
 
-Hai phía có nút **Xác nhận buổi học** và **Khiếu nại**. Khi Scheduling đã COMPLETED và tới endAt, hai xác nhận chủ động đủ để tất toán ngay. Nếu chưa đủ xác nhận và không khiếu nại, hệ thống tự tất toán tại endAt+24h; không cần tự đánh dấu từng người đã đồng ý. Cờ autoAccepted ghi nguồn tất toán tự động.
+Chọn loại vấn đề, mô tả 1..2000 ký tự, bằng chứng văn bản/đường dẫn tối đa 4000. Mỗi buổi chỉ một case; mở trùng nhận case hiện tại. Khoản giữ không bị trừ thêm. Hạn hai bên giải quyết = openedAt+48h.
 
-| Tình huống | Kết quả |
+Student của buổi có thể xác nhận, báo vấn đề và bổ sung thông tin; **chỉ payer và tutor đề xuất mức tiền** 0..A và lý do tối đa 4000 ký tự trước 48h. Mỗi participant được thêm 20 phản hồi, mỗi phản hồi tối đa 4000 ký tự; messageId chặn retry trùng. Parent payer vẫn phải còn confirmed link.
+
+| Điều kiện | Kết quả |
 |---|---|
-| Cả hai xác nhận trước 24h, buổi COMPLETED | Tất toán ngay |
-| Sau 1h còn thiếu xác nhận | Tiếp tục giữ tiền |
-| Đủ 24h, không khiếu nại, buổi COMPLETED | Tự tất toán kể cả chưa ai xác nhận |
-| Đủ 24h nhưng nguồn vẫn SCHEDULED | Chờ ghi kết quả, chưa tất toán |
-| Có khiếu nại trước hạn | Giữ held, chuyển cửa sổ giải quyết 48h |
-| Đã terminal | Không thu lần hai hoặc mở lại |
+| Hai mức khớp trước 48h | AWAITING_ADMIN, tiếp tục held |
+| Đủ 48h chưa khớp | ADMIN_REVIEW, tiếp tục held; không tự hoàn |
+| Admin quyết định S>0 | SETTLED: tutor +S-fee, payer hoàn A-S, fee=floor(10%S) |
+| Admin quyết định S=0 | REFUNDED: hoàn toàn bộ A, không phí |
 
-### 4.3. Deadline và tranh chấp đồng thời
+Admin xem đầy đủ hồ sơ và nhập lý do; UI xem lại số hoàn/tutor/fee rồi xác nhận. Resolve mới cho phép phân xử mức 0..A sau endAt dựa bằng chứng, kể cả nguồn chưa COMPLETED; auto-settlement không có quyền này. Review cũ chỉ duyệt đúng mức thống nhất, vẫn cần COMPLETED nếu >0. Chưa có appeal/reopen terminal.
 
-Backend kiểm thời gian server và khóa tiền khi xử lý. Khiếu nại chỉ được mở trước endAt+24h và trước tất toán. Job mặc định 30s nên thực thi có thể trễ sau deadline; FE đóng nút quá hạn và hiển thị chờ hệ thống. Thu đủ hai xác nhận sớm thì khoản đã kết thúc, không còn mở khiếu nại trên charge đó.
-
-### 4.4. Hủy, vắng mặt và đổi lịch
-
-Khoản chưa khiếu nại được hoàn nếu nguồn hủy/vắng mặt. Khoản DISPUTED vẫn giữ tiền đến hạn giải quyết 48h; AWAITING_ADMIN giữ tiền đến quyết định Admin, kể cả nguồn đổi trạng thái. Admin chỉ duyệt mức >0 khi nguồn COMPLETED và qua endAt. Đổi lịch dùng endAt hiện hành, không thay giá snapshot.
-
-## 5. Tranh chấp: held trong 48 giờ và Admin duyệt
-
-![Hai báo cáo giải quyết tranh chấp, đồng thuận chờ Admin hoặc hết hạn hoàn ví](images/payment-dispute-flow.png)
-
-*Hình 04. Mốc giải quyết 48h bắt đầu tại openedAt. [Bản SVG](images/payment-dispute-flow.svg).*
-
-### 5.1. Mở và gửi báo cáo
-
-Một participant có thể mở tranh chấp khi charge còn chờ xác nhận và endAt<=now<endAt+24h; domain không bắt buộc COMPLETED để mở. Lý do tối đa 2000 ký tự. Hệ thống lưu DISPUTED, disputeOpenedAt và giữ nguyên tiền.
-
-Deadline = disputeOpenedAt + 48h. Tutor và learner gửi riêng:
-
-- Nội dung giải quyết, tối đa 4000 ký tự.
-- Số tiền đề nghị thực tất toán S, từ 0 đến A đã giữ.
-
-Trong DISPUTED, báo cáo một phía có thể được cập nhật trước hạn. Khi hai mức tiền bằng nhau, chuyển AWAITING_ADMIN; không tiếp tục sửa báo cáo qua endpoint report khi đã ở state này. Nội dung chữ không cần trùng nhau; hệ thống so mức tiền của hai báo cáo riêng.
-
-### 5.2. Ba kết quả
-
-| Điều kiện | Kết quả tiền |
-|---|---|
-| Hai mức khớp trong hạn | Giữ A chờ Admin, không tự chốt vì đồng thuận |
-| Đủ 48h chưa có hai mức khớp | EXPIRED, hoàn toàn bộ A về available payer, không commission |
-| Admin duyệt mức S>0 hợp lệ | SETTLED: tutor nhận S trừ commission, commission 10% S làm tròn xuống, payer nhận lại A-S |
-| Admin từ chối hoặc mức thống nhất 0 | REFUNDED: hoàn toàn bộ A về payer |
-
-Admin phải đọc hai báo cáo và nhập lý do review. Admin không gõ một S khác thay cho mức hai bên đồng thuận. Duyệt khoản >0 vẫn cần buổi nguồn COMPLETED và qua endAt. Mức 0 có thể kết thúc bằng hoàn ví.
-
-Đúng tại deadline, report mới không được nhận vì điều kiện là now<deadline. Đã AWAITING_ADMIN thì không tự expire vì Admin xử lý lâu; job vẫn có thể xử lý hủy/vắng mặt của nguồn cho khoản chưa terminal.
-
-### 5.3. Ví dụ thời gian
-
-Buổi kết thúc 19:00; learner mở dispute 19:30 ngày D → deadline 19:30 ngày D+1. Trong khoảng đó:
-
-- Learner đề nghị 150.000đ, tutor đề nghị 200.000đ: chưa đồng thuận, tiền vẫn held.
-- Tutor sửa 150.000đ lúc 18:00 ngày D+1: chuyển AWAITING_ADMIN; Admin duyệt sau deadline vẫn được nếu nguồn/điều kiện hợp lệ.
-- Nếu tới deadline vẫn lệch: job expire và hoàn 200.000đ đã giữ, không tiếp tục tất toán charge cũ khi tutor gửi muộn.
-
-Chưa có workflow appeal/reopen sau terminal. Muốn bổ sung phải có yêu cầu nghiệp vụ mới, không tự dùng Admin để sửa ledger cũ.
+Ví dụ mở case 19:30 ngày 26/10 → hạn phản hồi 19:30 ngày 28/10. Đến hạn còn lệch chuyển Admin và giữ tiền. Admin quyết định sau hạn vẫn được; không bên nào được hưởng tiền chỉ vì bên kia im lặng. [Quy tắc đầy đủ và các giới hạn](payment-usability.md).
 
 ## 6. Tính phí, hoàn phần dư và ví dụ ledger
 
@@ -192,7 +148,7 @@ Ví dụ ban đầu payer available 1.000.000đ, tutor 0đ; charge A=200.000đ:
 | Sau cấp tiền | 800.000 | 200.000 | 0 | 0 | 0 |
 | Tất toán đủ S=200.000 | 800.000 | 0 | 180.000 | 20.000 | 0 |
 | Tất toán một phần S=150.000 | 850.000 | 0 | 135.000 | 15.000 | 50.000 |
-| Hết hạn/từ chối/S=0 | 1.000.000 | 0 | 0 | 0 | 200.000 |
+| Admin hoàn toàn bộ/S=0 | 1.000.000 | 0 | 0 | 0 | 200.000 |
 
 Ba dòng kết quả là ba kịch bản thay thế, không phải ba giao dịch nối tiếp. Phí đi vào entry commission với user_id=null, chưa có wallet Admin hoặc chức năng rút commission riêng. Chưa có trang cấu hình đổi tỷ lệ runtime; code hiện gán 1000 bps khi fund.
 
@@ -290,18 +246,18 @@ Các mã PAY dưới đây là nhãn tra cứu **của tài liệu này**, khôn
 | PAY-08 | Fund kiểm role/link/giá/số dư/thời điểm | SessionPaymentService |
 | PAY-09 | Snapshot giá và commission 1000 bps | SessionPaymentService, payment_charge |
 | PAY-10 | Không thu thường trước COMPLETED/endAt | SessionCharge, SessionPaymentService |
-| PAY-11 | Hai phía đủ xác nhận mới thu thường | SessionCharge |
-| PAY-12 | Mốc 24h tự tất toán nếu COMPLETED và không khiếu nại | SessionCharge.tick |
+| PAY-11 | Xác nhận việc học không tất toán sớm | SessionCharge |
+| PAY-12 | reviewDeadline = reviewStartedAt+24h; COMPLETED, không khiếu nại mới tự tất toán | SessionCharge.tick |
 | PAY-13 | Mở dispute sau endAt, charge còn chờ | SessionCharge.dispute |
 | PAY-14 | Dispute dừng luồng auto/tất toán thường | SessionCharge |
-| PAY-15 | Report riêng, mức 0..A, trước openedAt+48h | SessionCharge.report |
+| PAY-15 | Chỉ payer/tutor report riêng, mức 0..A, trước openedAt+48h | SessionCharge.report |
 | PAY-16 | Hai mức khớp mới AWAITING_ADMIN | SessionCharge.report |
-| PAY-17 | Hết 48h chưa khớp hoàn toàn bộ payer | SessionCharge.tick, SessionPaymentService |
-| PAY-18 | Admin chỉ duyệt đúng mức đồng thuận | SessionPaymentService.review |
+| PAY-17 | Hết 48h chưa khớp ADMIN_REVIEW, tiền tiếp tục held | SessionCharge.tick, SessionPaymentService |
+| PAY-18 | Admin phân xử mức 0..A kèm lý do | SessionPaymentService.resolve |
 | PAY-19 | Không timeout chỉ vì Admin duyệt lâu | SessionCharge.tick |
 | PAY-20 | Fee floor(10% S), phần dư hoàn payer | SessionPaymentService.finish |
 | PAY-21 | Parent revoked mất quyền buổi, giữ lịch sử ví mình | PaymentAccess, SessionPaymentService |
-| PAY-22 | Hủy/vắng mặt hoàn khoản chưa khiếu nại; DISPUTED/AWAITING_ADMIN tiếp tục giữ tiền | SessionPaymentService.processDeadlines |
+| PAY-22 | Hủy/vắng mặt hoàn khoản chưa khiếu nại; DISPUTED/AWAITING_ADMIN/ADMIN_REVIEW tiếp tục giữ tiền | SessionPaymentService.processDeadlines |
 | PAY-23 | Chỉ tutor rút, một pending/processing | PaymentAccess, PaymentStore, V1.17 |
 | PAY-24 | Withdrawal giữ tiền ngay khi tạo | PaymentStore.createWithdrawal |
 | PAY-25 | Admin manual paid chỉ sau chuyển thật | WalletService.reviewWithdrawal, quy trình vận hành |
@@ -320,7 +276,7 @@ Nguồn chi tiết: [SessionCharge](../../backend/modules/payment/src/main/java/
 | Có tiền trong ví nhưng không cấp tiền buổi? | Chưa có charge/reserve; không tự lấy tiền cho buổi chưa fund |
 | Cả Student và Parent đều bấm confirm? | Cùng phía learner, không thay xác nhận tutor |
 | Parent khác payer muốn confirm? | Có thể đọc nếu link hợp lệ, không thao tác tài chính learner thay payer |
-| Parent payer mất link khi tiền còn giữ? | Mất quyền buổi; deadline refund vẫn trả đúng payer cũ |
+| Parent payer mất link khi tiền còn giữ? | Mất quyền buổi; khi hoàn tiền vẫn trả đúng payer cũ |
 | Tutor có số dư nhưng rút ngân hàng tự động chưa bật? | Có thể gửi yêu cầu; Admin xử lý manual, không tự gửi API chi |
 | Nạp thành công nhưng người dùng đóng tab payOS? | Backend vẫn nhận receipt/query; không cần quay lại trang để credit |
 | PAYOS_PAYOUT_ENABLED=false? | Tắt dispatch provider, không tắt ledger thu nhập nội bộ |

@@ -1,5 +1,8 @@
 # Payment implementation plan
 
+> Quy tắc hiện hành: [payment-usability.md](payment-usability.md). Các phase/checkpoint cũ bên dưới giữ lịch sử; xác nhận không thu sớm, 48h chưa khớp giữ tiền chờ Admin.
+
+
 Bản chi tiết theo cấu trúc Discovery: [payment_implementation_plan.md](payment_implementation_plan.md).
 
 - [Giải thích luồng, rule và cơ chế — có ảnh diagram](payment-flow-and-rules.md)

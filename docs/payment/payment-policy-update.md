@@ -1,5 +1,8 @@
 # Payment: cập nhật xác nhận và tài khoản nhận tiền — 25/10/2026
 
+> Tài liệu lịch sử 25/10. Từ 26/10, phần xác nhận sớm và hết 48h tự hoàn được thay bởi [payment-usability.md](payment-usability.md). Tài khoản nhận tiền mặc định tiếp tục dùng.
+
+
 Quy tắc trong tài liệu này thay thế autoaccept 1h và hạn tranh chấp 24h trong tài liệu lịch sử. Nhánh triển khai: `feat/payment`. Không phát sinh giao dịch ngân hàng thật khi phát triển/kiểm thử.
 
 ## Xác nhận và khiếu nại

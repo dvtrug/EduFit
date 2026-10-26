@@ -1,10 +1,10 @@
 # Kế hoạch triển khai & giải trình kiến trúc chi tiết: Payment — EduFit
 
-> Cập nhật 25/10/2026: [quy tắc 24h xác nhận / 48h giải quyết và tài khoản nhận tiền đã lưu](payment-policy-update.md) là nguồn hiện hành. Nội dung 24h/48h tranh chấp ở bằng chứng/phase cũ là lịch sử.
+> Cập nhật 26/10/2026: [quy tắc hiện hành và trải nghiệm Payment](payment-usability.md). Xác nhận không tất toán sớm; đủ 24h phản hồi mới tự thu; hết 48h tranh chấp chuyển Admin và tiếp tục giữ tiền.
 
 - **Nhánh:** `feat/payment`; base triển khai ban đầu: `develop@b1ea5cd`.
 - **Ngày đối chiếu:** 24/10/2026; code tham chiếu ban đầu: `3966d54`, cập nhật bản sửa tài khoản ảo V1.18 tại [báo cáo](verification-report.md).
-- **Trạng thái:** đã triển khai FE/BE; bằng chứng kiểm thử bản V1.17 và biên dịch bản sửa V1.18 tại [báo cáo](verification-report.md). V1.18 chưa chạy test/migration; chưa kiểm chứng giao dịch payOS bằng merchant thật.
+- **Trạng thái:** đã triển khai FE/BE; bằng chứng kiểm thử bản V1.17 và biên dịch bản sửa V1.18 tại [báo cáo](verification-report.md). V1.18–V1.21 được kiểm chứng migration/regression trong DB test riêng; chưa kiểm chứng giao dịch payOS bằng merchant thật. Quy tắc hiện hành ngày 26/10 tại payment-usability.md.
 - **Mẫu trình bày:** bản Discovery gốc `D:/backend_discovery_implementation_plan.md`, [plan Discovery](../../tasks/plan.md) và [checklist Discovery](../../tasks/todo.md). Dùng cấu trúc giải thích, sơ đồ, file mapping, phase và bằng chứng; ví dụ mã trong mẫu không phải yêu cầu đổi kiến trúc Payment.
 - **Căn cứ:** [SADS](../software-architecture-design-specification.md), [module guide](../backend-module-structure-guide.md), [schema DBML](../edufit-schema.dbml), code và yêu cầu người dùng đã chốt. Quy tắc ví mới thay thế giới hạn nghiên cứu cũ trong `docs/tuition`.
 
@@ -52,7 +52,7 @@ Payment quản lý ba vòng đời:
 
 Thu nhập vào ví tutor là bút toán nội bộ. Chuyển ra ngân hàng là yêu cầu rút riêng, không tự chuyển ngân hàng sau mỗi buổi.
 
-Quy tắc đã chốt: Student/Parent nạp ví cá nhân; payer cấp tiền từng buổi; hoa hồng **10% mỗi khoản thực tất toán**; hai phía xác nhận; tự tất toán sau kết thúc +24h khi COMPLETED và không khiếu nại; tranh chấp dừng tất toán; hai báo cáo trong 48h cùng mức tiền thì chờ Admin, chưa khớp khi hết hạn thì hoàn payer. Không có API tự cộng ví/số dư demo runtime.
+Quy tắc đã chốt: Student/Parent nạp ví cá nhân; payer cấp tiền từng buổi; hoa hồng **10% mỗi khoản thực tất toán**; hai phía xác nhận; tự tất toán sau reviewStartedAt+24h khi COMPLETED và không khiếu nại, không tất toán sớm khi cả hai xác nhận; tranh chấp dừng tất toán; hai báo cáo trong 48h cùng mức tiền thì chờ Admin, chưa khớp khi hết hạn chuyển ADMIN_REVIEW, giữ tiền chờ phân xử. Không có API tự cộng ví/số dư demo runtime.
 
 ## 2. Giải thích cơ chế & quyết định kiến trúc
 
@@ -75,47 +75,49 @@ Quy tắc đã chốt: Student/Parent nạp ví cá nhân; payer cấp tiền t�
 
 Giá lấy từ `ProfileFacade.findTutorById(...).pricePerSession()`. FE hiển thị; payer gửi lại `amount` để backend kiểm đúng giá hiện hành. Giá đổi thì từ chối và yêu cầu tải lại. Khi cấp tiền, lưu amount, payer, tutor user ID và `commission_bps`; thay giá hồ sơ sau đó không đổi khoản đã giữ.
 
-Điều kiện hiện tại: Student của buổi hoặc Parent có confirmed link; nguồn buổi `SCHEDULED`/`COMPLETED`; server **trước** `endAt+24h`; đủ available; payer không phải tutor nhận tiền. `session_id` là PK nên một buổi chỉ có một charge; khoản terminal không được cấp lại bằng charge thứ hai.
+Điều kiện hiện tại: Student của buổi hoặc Parent có confirmed link; nguồn buổi `SCHEDULED`/`COMPLETED`; server **trước** `max(endAt,outcomeRecordedAt)+24h`; đủ available; payer không phải tutor nhận tiền. `session_id` là PK nên một buổi chỉ có một charge; khoản terminal không được cấp lại bằng charge thứ hai.
 
 Cấp tiền là thao tác riêng. Chưa có gate Scheduling bắt buộc cấp tiền trước lúc bắt đầu học, chưa có bảng hợp đồng giá theo lớp, không suy diễn giá lịch sử. Tỷ lệ hiện tại được code gán `1000` basis points và snapshot vào charge; chưa có UI/config runtime đổi hoa hồng.
 
 ### 2.3. State machine xác nhận/tranh chấp
 
-![Hai báo cáo trong 48 giờ, Admin duyệt hoặc hết hạn hoàn ví](images/payment-dispute-flow.png)
+![Hai báo cáo trong 48 giờ, hết hạn chuyển Admin giữ tiền](images/payment-dispute-flow.png)
 
 ```mermaid
 stateDiagram-v2
     [*] --> UNFUNDED
     UNFUNDED --> FUNDED: Payer cấp tiền
     FUNDED --> AWAITING_CONFIRMATION: COMPLETED và qua endAt
-    AWAITING_CONFIRMATION --> SETTLED: Hai xác nhận hoặc hết 24h không khiếu nại khi COMPLETED
+    AWAITING_CONFIRMATION --> SETTLED: Hết reviewDeadline không khiếu nại khi COMPLETED
     FUNDED --> DISPUTED: Mở tranh chấp sau endAt
     AWAITING_CONFIRMATION --> DISPUTED: Tranh chấp trước tất toán
     DISPUTED --> AWAITING_ADMIN: Hai báo cáo cùng tiền trong 48h
-    DISPUTED --> EXPIRED: Đủ 48h chưa khớp, hoàn ví
+    DISPUTED --> ADMIN_REVIEW: Đủ 48h chưa khớp, giữ tiền
+    ADMIN_REVIEW --> SETTLED: Admin phân xử S lớn hơn 0
+    ADMIN_REVIEW --> REFUNDED: Admin phân xử S bằng 0
     AWAITING_ADMIN --> SETTLED: Admin duyệt mức lớn hơn 0
     AWAITING_ADMIN --> REFUNDED: Từ chối hoặc mức 0
     FUNDED --> REFUNDED: Nguồn bị hủy hoặc vắng mặt
     AWAITING_CONFIRMATION --> REFUNDED: Nguồn bị hủy hoặc vắng mặt
 ```
 
-`UNFUNDED` là view khi chưa có charge, không lưu trong bảng. Sơ đồ thể hiện luồng chính; deadline job có thể hoàn khoản chưa terminal nếu trạng thái nguồn thuộc nhóm hủy/vắng mặt.
+`UNFUNDED` là view khi chưa có charge, không lưu trong bảng. Sơ đồ thể hiện luồng chính; deadline job chỉ hoàn do hủy/vắng mặt với khoản chưa có case; đã có case giữ tiền đến Admin.
 
 | Quy tắc | Điều kiện áp dụng |
 |---|---|
-| Xác nhận chủ động | `COMPLETED`, `now >= endAt`; đủ learner và tutor mới tất toán |
-| Tự tất toán 24h | `now >= endAt+86400s`, COMPLETED, không khiếu nại; không cần hai xác nhận |
-| Mở tranh chấp | Charge còn chờ xác nhận, `endAt <= now < endAt+24h`, text 1–2000 ký tự |
-| Báo cáo | DISPUTED, `now < openedAt+172800s`, mức 0..amount, text 1–4000 ký tự |
+| Xác nhận chủ động | `COMPLETED`, `now >= endAt`; chỉ ghi việc học, vẫn giữ đủ cửa sổ phản hồi |
+| Tự tất toán 24h | `now >= reviewStartedAt+86400s`, COMPLETED, không khiếu nại; không cần hai xác nhận |
+| Mở tranh chấp | Charge còn chờ xác nhận, `now >= endAt` và trước reviewDeadline nếu cửa sổ đã mở, text 1–2000 ký tự |
+| Báo cáo | Chỉ payer/tutor, DISPUTED, `now < openedAt+172800s`, mức 0..amount, text 1–4000 ký tự |
 | Đồng thuận | Hai báo cáo riêng cùng số tiền; nội dung chữ không cần giống nhau |
-| Đúng biên 48h | Không nhận báo cáo mới; chưa khớp thì hết hạn và hoàn ví |
+| Đúng biên 48h | Không nhận báo cáo mới; chưa khớp chuyển ADMIN_REVIEW, vẫn held |
 | AWAITING_ADMIN | Giữ tiền chờ Admin, không tự hết hạn thêm |
-| Admin duyệt | Đúng mức đã thống nhất; mức >0 cần nguồn COMPLETED và qua endAt |
+| Admin duyệt | Resolve mới: mức 0..A kèm lý do; mức >0 sau endAt, Admin đối chiếu bằng chứng ngay cả khi nguồn chưa COMPLETED |
 | Admin từ chối | Lý do bắt buộc; hoàn toàn bộ held của charge |
 
 Application tick thời hạn trước một số thao tác. Khi đã đủ điều kiện tất toán lúc xử lý request, không còn mở tranh chấp cho khoản terminal. Chưa có appeal sau tất toán.
 
-Job fixed delay mặc định 30s, xử lý theo batch; 24h/48h là điều kiện server, không bảo đảm DB/UI đổi trạng thái đúng từng mili giây. Dời lịch dùng `endAt` hiện hành khi kiểm tra; giá và báo cáo đã lưu vẫn giữ lịch sử.
+Job fixed delay mặc định 30s, xử lý theo batch; 24h/48h là điều kiện server, không bảo đảm DB/UI đổi trạng thái đúng từng mili giây. Dời lịch dùng `endAt` hiện hành khi kiểm tra nhưng không reset cửa sổ đã lưu. reviewStartedAt=max(endAt, lúc backend ghi nhận/mở cửa sổ); thông báo và cửa sổ cùng transaction, fallback không backdate. Giá và báo cáo đã lưu vẫn giữ lịch sử.
 
 ### 2.4. Công thức tiền và hoa hồng
 
@@ -201,13 +203,13 @@ API/job dùng lease 60s. Job chỉ query theo provider ID/reference, không retr
 
 | Actor | Quyền |
 |---|---|
-| Student | Ví mình; cấp tiền buổi mình; xác nhận/report learner |
+| Student | Ví mình; cấp tiền buổi mình; xác nhận/báo vấn đề; chỉ report số tiền khi là payer |
 | Parent | Ví mình; cấp tiền khi confirmed link; xác nhận/report khi là payer và còn link |
 | Parent khác payer | Xem buổi nếu còn link; không thay payer xác nhận/report |
 | Tutor | Xác nhận/report buổi mình; thu nhập/yêu cầu rút |
 | Admin | Đối soát nạp/rút, duyệt chi/báo cáo; readiness không secret |
 
-Student vẫn xác nhận/report khi Parent trả. Parent revoked mất quyền truy cập buổi nhưng vẫn xem sổ ví mình; hoàn tiền về payer đã lưu, không chuyển sở hữu sang người khác.
+Student vẫn xác nhận/báo vấn đề/bổ sung thông tin khi Parent trả, không thay Parent đề xuất mức tiền. Parent revoked mất quyền truy cập buổi nhưng vẫn xem sổ ví mình; hoàn tiền về payer đã lưu, không chuyển sở hữu sang người khác.
 
 Actor từ `CurrentUser`, cookie session/CSRF theo hệ thống, không JWT riêng. Chỉ webhook public miễn CSRF, phải xác minh chữ ký. Shared `NotificationSink` được gọi trong transaction ghi tiền; sink lỗi rollback tiền. Không import repository/entity Notification. FE poll/focus, route notification về ví đúng role; không có websocket riêng Payment.
 
@@ -267,22 +269,23 @@ sequenceDiagram
     L->>S: fund(sessionId, amount)
     S->>DB: Giữ tiền và snapshot
     Note over L,T: Buổi kết thúc, Scheduling ghi COMPLETED
-    T->>S: confirm
-    alt Learner đồng ý hoặc autoaccept đủ điều kiện
-        L->>S: confirm hoặc deadline job tick
+    S->>DB: Mở reviewStartedAt và thông báo cùng transaction
+    L->>S: confirm việc học
+    T->>S: confirm việc dạy (không tất toán sớm)
+    alt Đủ 24h, không có vấn đề, nguồn COMPLETED
         S->>DB: Tất toán, fee 10%, tutor nhận thu nhập
-    else Mở tranh chấp trước tất toán
-        L->>S: dispute(text)
+    else Mở tranh chấp trước reviewDeadline
+        L->>S: dispute(text, category, evidence)
         S->>DB: DISPUTED và openedAt
-        L->>S: report(amount, text)
+        L->>S: payer report(amount, text)
         T->>S: report(amount, text)
         alt Cùng số tiền trong 48h
-            S->>DB: AWAITING_ADMIN
-            A->>S: review(approve, note)
-            S->>DB: Tất toán mức thống nhất hoặc hoàn ví
+            S->>DB: AWAITING_ADMIN, giữ tiền
         else Hết 48h chưa khớp
-            S->>DB: EXPIRED, hoàn payer
+            S->>DB: ADMIN_REVIEW, giữ tiền
         end
+        A->>S: resolve(amount, reason)
+        S->>DB: Tất toán mức Admin quyết định hoặc hoàn ví
     end
 ```
 
@@ -392,8 +395,8 @@ Các component/data ở trên thuộc `frontend/src/features/payment/`. UI có l
 1. Làm tại EduFit trên feat/payment, chia nhỏ commit/push; không merge main/develop trong công việc này.
 2. Ví nạp trước, giữ tiền từng buổi, thu phí sau xác nhận; ngân hàng rút theo workflow riêng.
 3. Hoa hồng 10% phần thực tất toán.
-4. Hai xác nhận chủ động tất toán sớm; hết 24h không khiếu nại tự tất toán khi COMPLETED.
-5. Tranh chấp 48h, hai báo cáo khớp chờ Admin; chưa khớp hết hạn hoàn held.
+4. Xác nhận chỉ ghi việc học; đủ reviewStartedAt+24h không khiếu nại tự tất toán khi COMPLETED.
+5. Tranh chấp 48h, hai báo cáo khớp chờ Admin; chưa khớp hết hạn chuyển ADMIN_REVIEW và giữ held.
 6. Hoàn thiện tích hợp payOS, để người dùng tự điền khóa/tài khoản nhận/frontend URL.
 
 Không yêu cầu duyệt lại các quyết định trên để viết tài liệu này.
@@ -488,9 +491,9 @@ Chạy thêm navigation/dashboard tests khi đổi tích hợp. Điều kiện m
 
 **2. Vì sao có held?** Khoản dành cho buổi/rút không được chi lại. Tranh chấp giữ nguyên nghĩa vụ; hoàn là chuyển held về available.
 
-**3. Đủ 24h tutor nhận tiền khi nào?** Khi nguồn COMPLETED, đã giữ học phí và không khiếu nại; job tất toán kể cả chưa ai bấm xác nhận.
+**3. Đủ 24h tutor nhận tiền khi nào?** Khi đủ reviewDeadline (không mặc định endAt+24h), nguồn COMPLETED, đã giữ học phí và không khiếu nại; job tất toán kể cả chưa ai bấm xác nhận.
 
-**4. Hết 48h giải quyết khiếu nại có mất tiền learner?** Chưa có hai báo cáo cùng mức thì hoàn toàn bộ. Đã AWAITING_ADMIN thì giữ chờ duyệt.
+**4. Hết 48h giải quyết khiếu nại có mất tiền learner?** Chưa có hai báo cáo cùng mức thì ADMIN_REVIEW, tiếp tục giữ tiền. Admin quyết định hoàn/thu một phần/thu đủ kèm lý do; im lặng không tự quyết định tiền.
 
 **5. Tại sao Admin không gõ số tiền khác?** Chỉ duyệt đúng mức hai phía đã báo cáo, giữ bằng chứng đồng thuận.
 
@@ -503,3 +506,7 @@ Chạy thêm navigation/dashboard tests khi đổi tích hợp. Điều kiện m
 **9. Tại sao không thêm JPA entity như Discovery?** JDBC thể hiện SQL/lock tập trung; domain vẫn thuần Java và module khác qua facade. Chọn theo nghiệp vụ, không theo số lượng file.
 
 **10. Đã chứng minh được gì?** Tests kiểm state/quyền/transaction/receipt trong test; chưa chứng minh merchant được cấp quyền, khóa thật đúng hay dòng tiền ngân hàng live hoạt động.
+
+## 10. Cập nhật trải nghiệm 26/10 — V1.21
+
+[Quy tắc và thiết kế hiện hành](payment-usability.md), [task triển khai](../../tasks/payment/usability-plan.md). V1.21 thêm review_started_at, metadata hồ sơ/kết quả và bảng payment_case_message. Chi tiết learner/tutor/Admin có route riêng, polling 15s/focus, thông báo PAYMENT_SESSION. Scheduling cung cấp outcomeRecordedAt qua API; PaymentOutcomeListener nhận sự kiện hoàn thành; PaymentSessionChangedEvent được Notification bắt đồng bộ trong transaction. Admin active được tìm qua IamFacade; không đọc bảng module khác. AdminPaymentCase xem bằng chứng và bản xem lại phân bổ tiền; pendingIncome là dự kiến, không rút được. Các mục phase/checkpoint và test cũ vẫn là lịch sử; xem gate 26/10 tại báo cáo.

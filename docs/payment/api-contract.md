@@ -1,6 +1,6 @@
 # Payment API contract
 
-> Cập nhật 25/10/2026: [quy tắc 24h xác nhận / 48h giải quyết và tài khoản nhận tiền đã lưu](payment-policy-update.md) là nguồn hiện hành. Nội dung 1h/24h tranh chấp ở bằng chứng/phase cũ là lịch sử.
+> Cập nhật 26/10/2026: [quy tắc hiện hành và trải nghiệm Payment](payment-usability.md). Xác nhận không tất toán sớm; đủ 24h phản hồi mới tự thu; hết 48h tranh chấp chuyển Admin và tiếp tục giữ tiền.
 
 Cập nhật 24/10/2026, gồm bản sửa tài khoản ảo V1.18 sau code `3966d54`. Nghiệp vụ tại [implementation plan](payment_implementation_plan.md), vận hành tại [runbook](runbook.md).
 
@@ -42,18 +42,20 @@ Thiếu khóa payOS nhưng đủ manual config thì dùng manual QR. Thiếu c�
 | GET /sessions/{id} | UUID session | Student/linked Parent/tutor buổi đó |
 | POST /sessions/{id}/fund | `{amount}` | Student/confirmed Parent; 1..100.000.000, khớp giá hiện hành; đủ available |
 | POST /sessions/{id}/confirm | Không body | Learner có quyền hoặc tutor; COMPLETED và qua endAt |
-| POST /sessions/{id}/dispute | `{text}` | Participant; text 1..2000; chưa terminal, sau endAt |
-| POST /sessions/{id}/report | `{amount,text}` | Participant; amount 0..charge.amount; text 1..4000; trước deadline 48h |
+| POST /sessions/{id}/dispute | `{text,category?,evidence?}` | Participant; text 1..2000, evidence tối đa 4000, category DURATION/NO_SHOW/TECHNICAL/QUALITY/OTHER (mặc định OTHER); trong cửa sổ phản hồi |
+| POST /sessions/{id}/report | `{amount,text}` | Payer hoặc Tutor; amount 0..charge.amount; text 1..4000; trước deadline 48h |
 
-Session response gồm sessionId/classId/studentId/tutorName/sessionStatus/startAt/endAt, amount/commissionBps/payerId/status, hai accepted flags/autoAccepted, disputeDeadline/reason, hai amount/report, settledAmount và canFund/canActAsLearner/canActAsTutor.
+| POST /sessions/{id}/comments | `{messageId,text}` | Participant; UUID idempotency, text 1..4000; 20 phản hồi/người/hồ sơ, chỉ khi DISPUTED/AWAITING_ADMIN/ADMIN_REVIEW |
 
-Status view: UNFUNDED/FUNDED/AWAITING_CONFIRMATION/DISPUTED/AWAITING_ADMIN/SETTLED/REFUNDED/EXPIRED. UNFUNDED không có charge trong DB.
+Session response gồm sessionId/classId/studentId/tutorName/sessionStatus/startAt/endAt, amount/commissionBps/payerId/status, hai accepted flags/autoAccepted, disputeDeadline/reason, hai amount/report, settledAmount và canFund/canActAsLearner/canActAsTutor. Thêm reviewDeadline, canSubmitProposal, isPayer, disputeCategory, disputeEvidence, disputeReporterId, resolutionNote, resolvedAt, comments (id/side/message/created_at).
 
-- Fund chỉ khi nguồn SCHEDULED/COMPLETED và trước endAt+24h; snapshot giá và commission 1000 bps.
-- Student được confirm/report khi Parent trả; Parent cần là payer và còn confirmed link. Parent khác payer chỉ đọc nếu còn link.
-- Không có khiếu nại và COMPLETED: tự tất toán sau endAt+24h dù thiếu xác nhận; hai phía xác nhận chủ động thì tất toán sớm.
+Status view: UNFUNDED/FUNDED/AWAITING_CONFIRMATION/DISPUTED/AWAITING_ADMIN/ADMIN_REVIEW/SETTLED/REFUNDED/EXPIRED. UNFUNDED không có charge trong DB.
+
+- Fund chỉ khi nguồn SCHEDULED/COMPLETED và trước max(endAt,outcomeRecordedAt)+24h; snapshot giá và commission 1000 bps.
+- Student được confirm/báo vấn đề/bổ sung thông tin khi Parent trả, không đề xuất số tiền; Parent cần là payer và còn confirmed link. Parent khác payer chỉ đọc nếu còn link.
+- Không có khiếu nại và COMPLETED: tự tất toán sau reviewDeadline (reviewStartedAt+24h) dù thiếu xác nhận; hai phía xác nhận không tất toán sớm. reviewStartedAt lưu/thông báo một lần khi mở cửa sổ, không lùi về quá khứ khi ghi hoàn thành muộn.
 - Hai báo cáo cùng mức trong 48h → AWAITING_ADMIN; không tự hết hạn lúc chờ Admin.
-- DISPUTED hết 48h chưa khớp → EXPIRED và hoàn held về payer.
+- DISPUTED hết 48h chưa khớp → ADMIN_REVIEW, tiếp tục giữ held chờ phân xử.
 - Các state cuối không mở lại charge/cấp tiền lần hai.
 - Hoàn held là tăng available nội bộ, không phải chuyển khoản hoàn ngân hàng.
 
@@ -65,14 +67,16 @@ Role ADMIN được kiểm ở HTTP security và application.
 |---|---|---|
 | GET ?offset=0 | Offset | Topups/withdrawals và configuration |
 | GET /configuration | Không | topupReady/manualReady/payoutReady/payoutEnabled/frontendUrl/webhookPath; không secret |
-| GET /disputes?offset=0 | Offset | Các charge AWAITING_ADMIN có hai báo cáo khớp |
+| GET /disputes?offset=0 | Offset | Các charge AWAITING_ADMIN và ADMIN_REVIEW |
 | POST /topups/{id}/confirm | `{approve:true,note,reference}` | Chỉ manual; Admin đã đối chiếu receipt, reference thực 6..200 ký tự |
 | POST /withdrawals/{id}/review | `{approve,note,reference?}` | Chỉ PENDING; true=đã chuyển thủ công thật, false=từ chối/hoàn held |
 | POST /withdrawals/{id}/payout | `{approve:true,note}` | Dispatch chi qua provider; yêu cầu kênh chi sẵn sàng và BIN |
 | POST /withdrawals/{id}/refresh | Không | Lookup payout, lease 60s; không tạo lại lệnh |
+| GET /disputes/{id} | Không | Chi tiết hồ sơ, chỉ Admin |
+| POST /disputes/{id}/resolve | `{amount,note}` | Admin; amount nguyên 0..charge.amount, note 1..2000; phân xử AWAITING_ADMIN/ADMIN_REVIEW |
 | POST /disputes/{id}/review | `{approve,note}` | Duyệt đúng mức thống nhất hoặc từ chối/hoàn toàn bộ |
 
-DTO Review dùng chung: approve boolean; note bắt buộc 1..2000 ký tự; reference nếu có tối đa 200. Khi manual paid, reference thực bắt buộc và trim. Dispute review không nhận số tiền mới.
+DTO Review dùng chung: approve boolean; note bắt buộc 1..2000 ký tự; reference nếu có tối đa 200. Khi manual paid, reference thực bắt buộc và trim. Dispute review cũ không nhận số tiền mới. Resolve mới cho phép Admin quyết định số tiền, chỉ tính phí >0 sau endAt; có thể phân xử nguồn chưa COMPLETED dựa bằng chứng, khác với auto-settlement bắt buộc COMPLETED.
 
 Lưu ý contract hiện có: topup confirm dùng reference, không có nhánh từ chối topup; approve/note vẫn qua DTO validation nhưng không điều khiển credit. Endpoint payout tự mang nghĩa duyệt chi và dùng note, không đọc approve; muốn từ chối PENDING dùng endpoint review với approve=false. Không gửi approve=false tới confirm/payout với ý định hủy.
 
@@ -83,7 +87,7 @@ Lưu ý contract hiện có: topup confirm dùng reference, không có nhánh t�
 - Chữ ký và provider ID/reference, số tiền, BIN/tài khoản phải khớp đúng một transaction.
 - SUCCEEDED đã xác minh → PAID/trừ held một lần. FAILED/CANCELLED/REVERSED đã xác minh → FAILED/hoàn held một lần.
 - Không rõ/timeout/mismatch → giữ tiền. API/job chỉ lookup; không retry create. Job mặc định 30s, lease từng payout 60s.
-- Notification dùng shared sink cùng transaction ghi tiền; type PAYMENT_*, target PAYMENT_WALLET. FE tự route về ví role.
+- Notification nạp/rút dùng shared sink cùng transaction ghi tiền, target PAYMENT_WALLET. PaymentSessionChangedEvent phát đồng bộ trong transaction cho cửa sổ phản hồi/case/settlement, target PAYMENT_SESSION + sessionId; FE route đúng detail theo role, Admin nhận khi đồng thuận/escalation.
 - Readiness chỉ chứng minh đủ cấu hình, không xác nhận merchant/key/bank thực sự hợp lệ.
 
 ## 6. Schema và tài liệu liên quan
@@ -100,4 +104,8 @@ Xem [setup](payos-setup.md) cho cấu hình thu/chi riêng; [verification](verif
 - `PUT /api/v1/payment/payout-account`: Tutor, cookie + CSRF; body `{bank,bankBin,account,holder,expectedAccountId}`. BIN 6 số, account 5..34 số; lần đầu expectedAccountId=null, thay đổi phải gửi đúng ID hiện tại. Mỗi lần lưu sinh ID mới để chặn form cũ ghi đè/rút nhầm. Không tra cứu hoặc tự nhận đã xác minh chủ tài khoản ngân hàng.
 - `POST /api/v1/payment/withdrawals/saved-account`: Tutor, cookie + CSRF; body `{amount,payoutAccountId}`. Backend xác minh owner/ID dưới lock rồi snapshot thông tin ngân hàng vào withdrawal; không tin bank/owner từ client. Stale/foreign ID bị từ chối trước khi giữ tiền.
 - Endpoint withdrawals nhận thông tin ngân hàng trực tiếp vẫn giữ để tương thích client cũ. UI mới dùng tài khoản đã lưu; mỗi Tutor chỉ một yêu cầu PENDING/PROCESSING.
-- V1.19 bỏ inferred consent 1h cho charge đang chờ; V1.20 tạo payment_payout_account, không tự suy ra tài khoản mặc định từ withdrawal cũ. Confirmation 24h; dispute 48h tính từ lúc mở; hai xác nhận chủ động vẫn tất toán sớm. API confirm/dispute/report giữ path cũ.
+- V1.19 bỏ inferred consent 1h cho charge đang chờ; V1.20 tạo payment_payout_account, không tự suy ra tài khoản mặc định từ withdrawal cũ. Confirmation 24h; dispute 48h tính từ lúc mở; từ V1.21 hai xác nhận không tất toán sớm; hết 48h chuyển ADMIN_REVIEW, tiếp tục held. API confirm/dispute/report giữ path cũ.
+
+## V1.21 và trải nghiệm 26/10
+
+Tutor wallet có thêm `pendingIncome`: tổng dự kiến sau phí của charge chưa terminal. Trang chi tiết dùng reviewDeadline backend, không suy diễn endAt+24h. API Scheduling `POST /api/v1/scheduling/sessions/{id}/outcome` với `{outcome:"COMPLETED"}` dùng quyền tutor hiện có; public summary/timeline có thêm outcomeRecordedAt. Xem [cơ chế và migration](payment-usability.md).
