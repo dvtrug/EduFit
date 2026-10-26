@@ -47,6 +47,7 @@ public class WalletService {
         "topupProvider",
         settings.payos() ? "PAYOS" : "MANUAL"));
     if (a.hasRole("TUTOR")) result.put("payoutAccount", store.payoutAccount(user).orElse(null));
+    if (a.hasRole("TUTOR")) result.put("pendingIncome", store.pendingIncome(user));
     return result;
   }
 

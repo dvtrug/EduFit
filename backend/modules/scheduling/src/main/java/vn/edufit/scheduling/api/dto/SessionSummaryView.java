@@ -33,5 +33,11 @@ public record SessionSummaryView(
     String mode,
     String status,
     boolean isLateCancel,
-    Instant createdAt
-) {}
+    Instant createdAt,
+    Instant outcomeRecordedAt
+) {
+  public SessionSummaryView(UUID sessionId, UUID classId, UUID tutorId, UUID studentId,
+      Instant startAt, Instant endAt, String mode, String status, boolean isLateCancel, Instant createdAt) {
+    this(sessionId, classId, tutorId, studentId, startAt, endAt, mode, status, isLateCancel, createdAt, null);
+  }
+}

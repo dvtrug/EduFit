@@ -59,6 +59,10 @@ public class PaymentAccess {
     return a.hasRole("TUTOR") && a.getUserId().equals(c.tutorUserId());
   }
 
+  public boolean payer(CurrentUser actor, PaymentViews.Charge charge) {
+    return actor.getUserId().equals(charge.payerId()) && learner(actor, charge);
+  }
+
   public void participant(CurrentUser a, PaymentViews.Charge c) {
     authenticated(a);
     if (!learner(a, c) && !tutor(a, c))

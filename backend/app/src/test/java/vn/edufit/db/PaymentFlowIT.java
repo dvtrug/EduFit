@@ -59,7 +59,7 @@ class PaymentFlowIT {
             .schemas(schema)
             .locations("classpath:db/migration")
             .load();
-    assertEquals(20, flyway.migrate().migrationsExecuted);
+    assertEquals(21, flyway.migrate().migrationsExecuted);
     flyway.validate();
     assertEquals(0, flyway.migrate().migrationsExecuted);
   }
@@ -75,7 +75,7 @@ class PaymentFlowIT {
     store = new PaymentStore(db, new DataSourceTransactionManager(datasource));
     db.execute(
         "truncate"
-            + " payment_entry,payment_audit,payment_charge,payment_topup,payment_withdrawal,payment_wallet,payment_payout_account");
+            + " payment_entry,payment_audit,payment_charge,payment_topup,payment_withdrawal,payment_wallet,payment_payout_account,payment_case_message");
     if (db.queryForObject("select count(*) from class", Long.class) == 0) {
       UUID student = db.queryForObject("select student_id from learning_goal limit 1", UUID.class);
       UUID tutor = db.queryForObject("select tutor_id from tutor_profile limit 1", UUID.class);
@@ -230,6 +230,11 @@ class PaymentFlowIT {
                     service.act(actor(studentUser, "STUDENT"), sessionId, "confirm", null, null)));
       for (var f : jobs) f.get(15, TimeUnit.SECONDS);
     }
+    assertEquals(300000, store.wallet(parentUser).held());
+    assertEquals(0, store.wallet(tutorUser).available());
+    now.set(end.plusSeconds(86400));
+    service.processDeadlines();
+    service.processDeadlines();
     assertEquals(700000, store.wallet(parentUser).available());
     assertEquals(0, store.wallet(parentUser).held());
     assertEquals(270000, store.wallet(tutorUser).available());
@@ -240,14 +245,16 @@ class PaymentFlowIT {
   }
 
   @Test
-  void expiredDisputeReturnsExactlyToParentAndNeverPaysTutor() {
+  void overdueDisputeWaitsForAdminAndOnlyAnExplicitRefundReleasesMoney() {
     fund();
     confirmTutor();
     dispute();
     now.set(end.plusSeconds(172800));
     service.processDeadlines();
     service.processDeadlines();
-    assertEquals("EXPIRED", store.find(sessionId).orElseThrow().state().status);
+    assertEquals("ADMIN_REVIEW", store.find(sessionId).orElseThrow().state().status);
+    assertEquals(300000, store.wallet(parentUser).held());
+    service.resolve(actor(adminUser, "ADMIN"), sessionId, 0, "Đã xem xét hồ sơ, hoàn đủ");
     assertEquals(1000000, store.wallet(parentUser).available());
     assertEquals(0, store.wallet(parentUser).held());
     assertEquals(0, store.wallet(studentUser).available());
@@ -258,7 +265,7 @@ class PaymentFlowIT {
   void matchingReportsWaitForAdminAndPartialSettlementIsAtomic() {
     fund();
     dispute();
-    service.act(actor(studentUser, "STUDENT"), sessionId, "report", "Đồng ý 100k", 100000L);
+    service.act(actor(parentUser, "PARENT"), sessionId, "report", "Đồng ý 100k", 100000L);
     service.act(actor(tutorUser, "TUTOR"), sessionId, "report", "Đã thống nhất", 100000L);
     assertEquals(sessionId, store.adminCharges(0).getFirst().sessionId());
     assertTrue(store.adminCharges(50).isEmpty());
@@ -346,7 +353,7 @@ class PaymentFlowIT {
   void adminCannotChargeACancelledSessionEvenWithMatchingReports() {
     fund();
     dispute();
-    service.act(actor(studentUser, "STUDENT"), sessionId, "report", "Đồng ý", 100000L);
+    service.act(actor(parentUser, "PARENT"), sessionId, "report", "Đồng ý", 100000L);
     service.act(actor(tutorUser, "TUTOR"), sessionId, "report", "Đồng ý", 100000L);
     when(sessions.findSessionById(sessionId))
         .thenReturn(
@@ -613,7 +620,7 @@ class PaymentFlowIT {
             .schemas(schema)
             .locations("classpath:db/migration")
             .load();
-    assertEquals(4, upgraded.migrate().migrationsExecuted);
+    assertEquals(5, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted);
     assertEquals(
@@ -678,7 +685,7 @@ class PaymentFlowIT {
         + " values (?,?,100000,'PAYOS','PENDING',now())", id, owner);
     Flyway upgraded = Flyway.configure().dataSource(ds).schemas(schema)
         .locations("classpath:db/migration").load();
-    assertEquals(3, upgraded.migrate().migrationsExecuted);
+    assertEquals(4, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted);
     var saved = jdbc.queryForMap("select amount,status,provider_account_number from payment_topup where id=?", id);
@@ -743,7 +750,57 @@ class PaymentFlowIT {
     assertEquals(300000, store.wallet(parentUser).held());
     now.set(end.plusSeconds(172800));
     service.processDeadlines();
+    assertEquals("ADMIN_REVIEW", store.find(sessionId).orElseThrow().state().status);
+    assertEquals(300000, store.wallet(parentUser).held());
+    service.resolve(actor(adminUser, "ADMIN"), sessionId, 0, "Vắng mặt, hoàn tiền sau đối soát");
     assertEquals(0, store.wallet(parentUser).held());
     assertEquals(1000000, store.wallet(parentUser).available());
+  }
+  @Test
+  void studentCanReportIssuesAndEvidenceButOnlyPayerCanProposeFinancialResolution() {
+    fund(); dispute();
+    assertThrows(RuntimeException.class, () -> service.act(actor(studentUser, "STUDENT"), sessionId, "report", "Đề nghị", 100000L));
+    UUID message = UUID.randomUUID();
+    service.comment(actor(studentUser, "STUDENT"), sessionId, message, "Thời gian học thực tế 20 phút");
+    service.comment(actor(studentUser, "STUDENT"), sessionId, message, "Thời gian học thực tế 20 phút");
+    assertEquals(1, store.caseMessages(sessionId).size());
+    assertThrows(RuntimeException.class, () -> service.comment(actor(UUID.randomUUID(), "STUDENT"), sessionId, UUID.randomUUID(), "Sai quyền"));
+    now.set(end.plusSeconds(172800)); service.processDeadlines();
+    assertEquals(300000, store.wallet(parentUser).held());
+    service.resolve(actor(adminUser, "ADMIN"), sessionId, 150000, "Đã xem bằng chứng, tính nửa buổi");
+    assertEquals(850000, store.wallet(parentUser).available());
+    assertEquals(135000, store.wallet(tutorUser).available());
+    assertThrows(RuntimeException.class, () -> service.resolve(actor(adminUser, "ADMIN"), sessionId, 150000, "Lặp"));
+  }
+
+  @Test
+  void completionRecordedLateCreatesAFullPersisted24HourWindow() {
+    var original = sessions.findSessionById(sessionId).orElseThrow();
+    when(sessions.findSessionById(sessionId)).thenReturn(Optional.of(new SessionSummaryView(
+        original.sessionId(), original.classId(), original.tutorId(), original.studentId(),
+        original.startAt(), original.endAt(), "ONLINE", "SCHEDULED", false, original.startAt())));
+    service.fund(actor(parentUser, "PARENT"), sessionId, 300000);
+    now.set(end.plusSeconds(90000));
+    when(sessions.findSessionById(sessionId)).thenReturn(Optional.of(new SessionSummaryView(
+        original.sessionId(), original.classId(), original.tutorId(), original.studentId(),
+        original.startAt(), original.endAt(), "ONLINE", "COMPLETED", false, original.startAt(), now.get())));
+    service.outcomeRecorded(sessionId, now.get());
+    service.outcomeRecorded(sessionId, now.get().plusSeconds(10));
+    assertEquals(now.get().plusSeconds(86400), store.find(sessionId).orElseThrow().state().reviewDeadline());
+    service.processDeadlines();
+    assertEquals(300000, store.wallet(parentUser).held());
+    now.set(now.get().plusSeconds(86400)); service.processDeadlines();
+    assertEquals(270000, store.wallet(tutorUser).available());
+  }
+  @Test
+  void aNotificationFailureRollsBackOpeningTheReviewWindow() {
+    fund();
+    db.update("update payment_charge set status='FUNDED',review_started_at=null where session_id=?", sessionId);
+    var guarded = new PaymentStore(db, new DataSourceTransactionManager(datasource),
+        (user, student, type, title, text, target, id) -> {}, event -> { throw new IllegalStateException("Notification persistence failed"); });
+    var app = new SessionPaymentService(guarded, new PaymentAccess(profiles, connections), sessions, profiles, connections, new PaymentTime(Clock.fixed(end, ZoneOffset.UTC)));
+    assertThrows(RuntimeException.class, () -> app.outcomeRecorded(sessionId, end));
+    assertNull(store.find(sessionId).orElseThrow().state().reviewStartedAt);
+    assertEquals(300000,store.wallet(parentUser).held());
   }
 }

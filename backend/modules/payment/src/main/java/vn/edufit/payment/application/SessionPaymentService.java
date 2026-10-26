@@ -55,7 +55,7 @@ public class SessionPaymentService {
             return view(existing.get(), source, actor);
           }
           if (!Set.of("SCHEDULED", "COMPLETED").contains(source.status())
-              || !clock.instant().isBefore(source.endAt().plusSeconds(SessionCharge.CONFIRMATION_SECONDS)))
+              || !clock.instant().isBefore(fundingCutoff(source)))
             throw new InvalidOperationException("Buổi học không còn được cấp tiền");
           var tutor =
               profiles
@@ -76,6 +76,7 @@ public class SessionPaymentService {
                   tutor.userId(),
                   1000,
                   state);
+          syncReview(c, source, clock.instant());
           store.insert(c);
           store.move(
               c.payerId(),
@@ -89,11 +90,17 @@ public class SessionPaymentService {
               sessionId,
               "SESSION_FUNDED",
               "VND=" + expectedAmount + "; commissionBps=1000");
+          store.save(c);
           return view(c, source, actor);
         });
   }
 
   public Session act(CurrentUser actor, UUID id, String action, String text, Long amount) {
+    return act(actor, id, action, text, amount, "OTHER", null);
+  }
+
+  public Session act(CurrentUser actor, UUID id, String action, String text, Long amount,
+      String category, String evidence) {
     access.authenticated(actor);
     return store.locked(
         () -> {
@@ -104,13 +111,28 @@ public class SessionPaymentService {
           boolean before = s.terminal();
           boolean tutor = access.tutor(actor, c);
           s.endAt = source.endAt();
+          syncReview(c, source, clock.instant());
           try {
             s.tick(clock.instant(), "COMPLETED".equals(source.status()));
             switch (action) {
               case "confirm" ->
                   s.confirm(tutor, clock.instant(), "COMPLETED".equals(source.status()));
-              case "dispute" -> s.dispute(text, clock.instant());
+              case "dispute" -> {
+                if (Set.of("DISPUTED", "AWAITING_ADMIN", "ADMIN_REVIEW").contains(s.status)) {
+                  finish(c, before);
+                  return view(c, source, actor);
+                }
+                if (!Set.of("DURATION", "NO_SHOW", "TECHNICAL", "QUALITY", "OTHER").contains(category)
+                    || evidence != null && evidence.length() > 4000)
+                  throw new InvalidOperationException("Loại vấn đề hoặc bằng chứng không hợp lệ");
+                s.dispute(text, clock.instant());
+                s.disputeCategory = category;
+                s.disputeEvidence = evidence;
+                s.disputeReporterId = actor.getUserId();
+              }
               case "report" -> {
+                if (!tutor && !access.payer(actor, c))
+                  throw new ForbiddenOperationException("Chỉ người trả tiền hoặc gia sư được đề xuất mức giải quyết");
                 if (amount == null) throw new InvalidOperationException("Cần số tiền thống nhất");
                 s.report(tutor, amount, text, clock.instant());
               }
@@ -137,8 +159,10 @@ public class SessionPaymentService {
         () -> {
           var c = charge(id);
           var s = c.state();
-          if (!s.status.equals("AWAITING_ADMIN"))
+          if (!Set.of("AWAITING_ADMIN", "ADMIN_REVIEW").contains(s.status))
             throw new InvalidOperationException("Khoản này chưa có hai báo cáo thống nhất");
+          if (approve && s.status.equals("ADMIN_REVIEW"))
+            throw new InvalidOperationException("Cần nhập số tiền và lý do qua chức năng phân xử");
           var source = source(id);
           if (approve
               && s.learnerAmount != null
@@ -149,6 +173,8 @@ public class SessionPaymentService {
                     + " bị hủy/vắng mặt");
           if (approve) s.approve();
           else s.refund();
+          s.resolutionNote = note.trim();
+          s.resolvedAt = clock.instant();
           finish(c, false);
           store.audit(actor.getUserId(), id, approve ? "ADMIN_SETTLED" : "ADMIN_REFUNDED", note);
           return view(c, source(id), actor);
@@ -187,7 +213,7 @@ public class SessionPaymentService {
                 "",
                 timeline.status(),
                 false,
-                timeline.startAt());
+                timeline.startAt(), timeline.outcomeRecordedAt());
         if (saved.isPresent()) result.add(view(saved.get(), source, actor));
         else
           result.add(
@@ -216,9 +242,9 @@ public class SessionPaymentService {
                   (access.student(actor, cls.studentId())
                           || access.linkedParent(actor, cls.studentId()))
                       && Set.of("SCHEDULED", "COMPLETED").contains(source.status())
-                      && clock.instant().isBefore(source.endAt().plusSeconds(SessionCharge.CONFIRMATION_SECONDS)),
+                      && clock.instant().isBefore(fundingCutoff(source)),
                   false,
-                  false));
+                  actor.hasRole("TUTOR") && actor.getUserId().equals(tutor.userId())));
       }
     }
     return result.stream().sorted(Comparator.comparing(Session::startAt).reversed()).toList();
@@ -240,7 +266,7 @@ public class SessionPaymentService {
     boolean canFund =
         (access.student(actor, src.studentId()) || access.linkedParent(actor, src.studentId()))
             && Set.of("SCHEDULED", "COMPLETED").contains(src.status())
-            && clock.instant().isBefore(src.endAt().plusSeconds(SessionCharge.CONFIRMATION_SECONDS));
+            && clock.instant().isBefore(fundingCutoff(src));
     return new Session(
         id,
         src.classId(),
@@ -265,7 +291,7 @@ public class SessionPaymentService {
         0,
         canFund,
         false,
-        false);
+        actor.hasRole("TUTOR") && actor.getUserId().equals(tutor.userId()));
   }
 
   public List<Session> adminList(CurrentUser actor, int offset) {
@@ -285,7 +311,8 @@ public class SessionPaymentService {
               if (s.terminal()) return null;
               var src = source(c.sessionId());
               s.endAt = src.endAt();
-              if (Set.of("DISPUTED", "AWAITING_ADMIN").contains(s.status))
+              syncReview(c, src, clock.instant());
+              if (Set.of("DISPUTED", "AWAITING_ADMIN", "ADMIN_REVIEW").contains(s.status))
                 s.tick(clock.instant(), "COMPLETED".equals(src.status()));
               else if (Set.of("CANCELLED", "ABSENT", "REJECTED", "WITHDRAWN", "EXPIRED")
                   .contains(src.status())) s.refund();
@@ -302,6 +329,7 @@ public class SessionPaymentService {
   private void finish(Charge c, boolean wasTerminal) {
     var s = c.state();
     if (!wasTerminal && s.terminal()) {
+      if (s.resolvedAt == null) s.resolvedAt = clock.instant();
       long fee = Math.multiplyExact(s.settledAmount, c.commissionBps()) / 10000;
       store.move(
           c.payerId(),
@@ -327,6 +355,68 @@ public class SessionPaymentService {
           s.status + "; amount=" + s.settledAmount + "; fee=" + fee);
     }
     store.save(c);
+  }
+
+  private Instant fundingCutoff(SessionSummaryView source) {
+    Instant base = source.outcomeRecordedAt() != null && source.outcomeRecordedAt().isAfter(source.endAt())
+        ? source.outcomeRecordedAt() : source.endAt();
+    return base.plusSeconds(SessionCharge.CONFIRMATION_SECONDS);
+  }
+
+  private void syncReview(Charge charge, SessionSummaryView source, Instant observedAt) {
+    if ("COMPLETED".equals(source.status())) charge.state().beginReview(observedAt);
+  }
+
+  public void outcomeRecorded(UUID sessionId, Instant recordedAt) {
+    store.locked(() -> {
+      var found = store.find(sessionId);
+      if (found.isPresent()) {
+        var c = found.get();
+        var src = source(sessionId);
+        syncReview(c, src, recordedAt);
+        store.save(c);
+      }
+      return null;
+    });
+  }
+
+  public Session adminGet(CurrentUser actor, UUID id) {
+    access.admin(actor);
+    return view(charge(id), source(id), actor);
+  }
+
+  public Session comment(CurrentUser actor, UUID sessionId, UUID messageId, String text) {
+    access.authenticated(actor);
+    if (messageId == null || text == null || text.isBlank() || text.length() > 4000)
+      throw new InvalidOperationException("Cần phản hồi tối đa 4000 ký tự");
+    return store.locked(() -> {
+      var c = charge(sessionId);
+      access.participant(actor, c);
+      if (!Set.of("DISPUTED", "AWAITING_ADMIN", "ADMIN_REVIEW").contains(c.state().status))
+        throw new InvalidOperationException("Chỉ bổ sung thông tin cho hồ sơ vấn đề đang xử lý");
+      String side = access.tutor(actor, c) ? "TUTOR" : access.payer(actor, c) ? "PAYER" : "STUDENT";
+      store.addCaseMessage(c, actor.getUserId(), messageId, side, text.trim());
+      return view(c, source(sessionId), actor);
+    });
+  }
+
+  public Session resolve(CurrentUser actor, UUID id, long amount, String note) {
+    access.admin(actor);
+    if (note == null || note.isBlank() || note.length() > 2000)
+      throw new InvalidOperationException("Cần ghi rõ lý do phân xử");
+    return store.locked(() -> {
+      var c = charge(id);
+      var src = source(id);
+      if (amount > 0 && clock.instant().isBefore(src.endAt()))
+        throw new InvalidOperationException("Chỉ phân xử học phí sau giờ kết thúc buổi học");
+      try { c.state().resolve(amount); }
+      catch (IllegalStateException e) { throw new InvalidOperationException(e.getMessage()); }
+      c.state().resolutionNote = note.trim();
+      c.state().resolvedAt = clock.instant();
+      finish(c, false);
+      store.audit(actor.getUserId(), id, "ADMIN_RESOLVED", "VND=" + amount + "; " + note);
+      return view(c, src, actor);
+    });
   }
 
   private SessionSummaryView source(UUID id) {
@@ -368,6 +458,9 @@ public class SessionPaymentService {
         s.settledAmount,
         false,
         access.learner(actor, c),
-        access.tutor(actor, c));
+        access.tutor(actor, c), s.reviewDeadline(),
+        access.tutor(actor, c) || access.payer(actor, c), access.payer(actor, c),
+        s.disputeCategory, s.disputeEvidence, s.disputeReporterId, s.resolutionNote, s.resolvedAt,
+        s.disputeReason == null ? List.of() : store.caseMessages(c.sessionId()));
   }
 }

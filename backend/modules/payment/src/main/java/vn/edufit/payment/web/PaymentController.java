@@ -41,6 +41,9 @@ public class PaymentController {
           BigDecimal amount) {}
 
   public record Text(@NotBlank @Size(max = 2000) String text) {}
+  public record Issue(@NotBlank @Size(max = 2000) String text,
+      @Pattern(regexp = "DURATION|NO_SHOW|TECHNICAL|QUALITY|OTHER") String category,
+      @Size(max = 4000) String evidence) {}
 
   public record Report(
       @NotNull @DecimalMin("0") @DecimalMax("100000000") @Digits(integer = 9, fraction = 0)
@@ -128,8 +131,9 @@ public class PaymentController {
   }
 
   @PostMapping("/sessions/{id}/dispute")
-  public ApiResponse<?> dispute(@PathVariable UUID id, @Valid @RequestBody Text input) {
-    return ApiResponse.success(sessions.act(actors.getObject(), id, "dispute", input.text(), null));
+  public ApiResponse<?> dispute(@PathVariable UUID id, @Valid @RequestBody Issue input) {
+    return ApiResponse.success(sessions.act(actors.getObject(), id, "dispute", input.text(), null,
+        input.category() == null ? "OTHER" : input.category(), input.evidence()));
   }
 
   @PostMapping("/sessions/{id}/report")
@@ -137,5 +141,12 @@ public class PaymentController {
     return ApiResponse.success(
         sessions.act(
             actors.getObject(), id, "report", input.text(), input.amount().longValueExact()));
+  }
+
+  public record CaseComment(@NotNull UUID messageId, @NotBlank @Size(max = 4000) String text) {}
+
+  @PostMapping("/sessions/{id}/comments")
+  public ApiResponse<?> comment(@PathVariable UUID id, @Valid @RequestBody CaseComment input) {
+    return ApiResponse.success(sessions.comment(actors.getObject(), id, input.messageId(), input.text()));
   }
 }

@@ -79,4 +79,18 @@ public class PaymentAdminController {
     return ApiResponse.success(
         sessions.review(actors.getObject(), id, input.approve(), input.note()));
   }
+
+  public record Resolution(@NotNull @DecimalMin("0") @DecimalMax("100000000")
+      @Digits(integer = 9, fraction = 0) java.math.BigDecimal amount,
+      @NotBlank @Size(max = 2000) String note) {}
+
+  @GetMapping("/disputes/{id}")
+  public ApiResponse<?> disputeDetail(@PathVariable UUID id) {
+    return ApiResponse.success(sessions.adminGet(actors.getObject(), id));
+  }
+
+  @PostMapping("/disputes/{id}/resolve")
+  public ApiResponse<?> resolve(@PathVariable UUID id, @Valid @RequestBody Resolution input) {
+    return ApiResponse.success(sessions.resolve(actors.getObject(), id, input.amount().longValueExact(), input.note()));
+  }
 }

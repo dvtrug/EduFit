@@ -49,4 +49,8 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
   long countByStatus(AccountStatus status);
 
   long countByRoleAndStatus(AccountRole role, AccountStatus status);
+
+  @Query("select a.id from Account a where a.role = vn.edufit.iam.api.AccountRole.ADMIN"
+      + " and a.status = vn.edufit.iam.api.AccountStatus.ACTIVE")
+  java.util.List<UUID> findActiveAdminIds();
 }

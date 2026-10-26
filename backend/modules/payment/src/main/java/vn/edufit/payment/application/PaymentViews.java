@@ -42,5 +42,35 @@ public final class PaymentViews {
       long settledAmount,
       boolean canFund,
       boolean canActAsLearner,
-      boolean canActAsTutor) {}
+      boolean canActAsTutor,
+      Instant reviewDeadline, boolean canSubmitProposal, boolean isPayer,
+      String disputeCategory, String disputeEvidence, UUID disputeReporterId,
+      String resolutionNote, Instant resolvedAt, java.util.List<java.util.Map<String, Object>> comments) {
+    public Session(UUID sessionId,
+      UUID classId,
+      UUID studentId,
+      String tutorName,
+      String sessionStatus,
+      Instant startAt,
+      Instant endAt,
+      long amount,
+      int commissionBps,
+      UUID payerId,
+      String status,
+      boolean learnerAccepted,
+      boolean tutorAccepted,
+      boolean autoAccepted,
+      Instant disputeDeadline,
+      String disputeReason,
+      Long learnerAmount,
+      Long tutorAmount,
+      String learnerReport,
+      String tutorReport,
+      long settledAmount,
+      boolean canFund,
+      boolean canActAsLearner,
+      boolean canActAsTutor) {
+      this(sessionId, classId, studentId, tutorName, sessionStatus, startAt, endAt, amount, commissionBps, payerId, status, learnerAccepted, tutorAccepted, autoAccepted, disputeDeadline, disputeReason, learnerAmount, tutorAmount, learnerReport, tutorReport, settledAmount, canFund, canActAsLearner, canActAsTutor, null, false, false, null, null, null, null, null, java.util.List.of());
+    }
+  }
 }

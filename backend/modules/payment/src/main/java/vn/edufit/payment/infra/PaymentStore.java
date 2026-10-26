@@ -18,20 +18,28 @@ public class PaymentStore {
   private final JdbcTemplate db;
   private final TransactionTemplate tx;
   private final vn.edufit.shared.notification.NotificationSink notifications;
+  private final org.springframework.context.ApplicationEventPublisher events;
 
   public PaymentStore(
       JdbcTemplate db, org.springframework.transaction.PlatformTransactionManager manager) {
     this(db, manager, (user, student, type, title, text, target, id) -> {});
   }
 
-  @org.springframework.beans.factory.annotation.Autowired
   public PaymentStore(
       JdbcTemplate db,
       org.springframework.transaction.PlatformTransactionManager manager,
       vn.edufit.shared.notification.NotificationSink notifications) {
+    this(db, manager, notifications, event -> {});
+  }
+
+  @org.springframework.beans.factory.annotation.Autowired
+  public PaymentStore(JdbcTemplate db, org.springframework.transaction.PlatformTransactionManager manager,
+      vn.edufit.shared.notification.NotificationSink notifications,
+      org.springframework.context.ApplicationEventPublisher events) {
     this.db = db;
     this.tx = new TransactionTemplate(manager);
     this.notifications = notifications;
+    this.events = events;
   }
 
   public void notice(UUID user, UUID ref, String type, String title, String text) {
@@ -56,6 +64,13 @@ public class PaymentStore {
         .stream()
         .findFirst()
         .orElse(new Wallet(0, 0));
+  }
+
+  public long pendingIncome(UUID tutor) {
+    Long value = db.queryForObject("select coalesce(sum(amount-(amount*commission_bps/10000)),0)"
+        + " from payment_charge where tutor_user_id=? and status in"
+        + " ('FUNDED','AWAITING_CONFIRMATION','DISPUTED','AWAITING_ADMIN','ADMIN_REVIEW')", Long.class, tutor);
+    return value == null ? 0 : value;
   }
 
   public void move(UUID user, long available, long held, String key, String kind, UUID ref) {
@@ -88,8 +103,6 @@ public class PaymentStore {
             case "WITHDRAW_RESERVED" -> "Đã tiếp nhận yêu cầu rút tiền";
             case "WITHDRAW_PAID" -> "Rút tiền thành công";
             case "WITHDRAW_REJECTED", "WITHDRAW_FAILED" -> "Khoản rút đã được hoàn về ví";
-            case "TUITION_INCOME" -> "Đã nhận thu nhập buổi học";
-            case "SESSION_SETTLED" -> "Đã xử lý học phí buổi học";
             default -> null;
           };
       if (title != null)
@@ -137,10 +150,32 @@ public class PaymentStore {
 
   public List<Charge> adminCharges(int offset) {
     return db.query(
-        "select * from payment_charge where status='AWAITING_ADMIN' order by updated_at limit 50"
+        "select * from payment_charge where status in ('AWAITING_ADMIN','ADMIN_REVIEW') order by updated_at limit 50"
             + " offset ?",
         this::mapCharge,
         offset);
+  }
+
+  public List<Map<String, Object>> caseMessages(UUID id) {
+    return db.queryForList("select id,side,message,created_at::text as created_at from payment_case_message"
+        + " where session_id=? order by created_at,id limit 100", id);
+  }
+
+  public void addCaseMessage(Charge c, UUID author, UUID id, String side, String text) {
+    var previous = db.queryForList("select session_id,author_id,message from payment_case_message where id=?", id);
+    if (!previous.isEmpty()) {
+      var row = previous.getFirst();
+      if (!c.sessionId().equals(row.get("session_id")) || !author.equals(row.get("author_id"))
+          || !text.equals(row.get("message"))) throw new InvalidOperationException("Mã phản hồi đã được sử dụng");
+      return;
+    }
+    if (db.queryForObject("select count(*) from payment_case_message where session_id=? and author_id=?",
+        Long.class, c.sessionId(), author) >= 20)
+      throw new InvalidOperationException("Đã đủ 20 phản hồi cho hồ sơ này; vui lòng liên hệ hỗ trợ");
+    db.update("insert into payment_case_message(id,session_id,author_id,side,message) values (?,?,?,?,?)",
+        id, c.sessionId(), author, side, text);
+    events.publishEvent(new vn.edufit.payment.api.event.PaymentSessionChangedEvent(UUID.randomUUID(),
+        Instant.now(), c.sessionId(), c.payerId(), c.tutorUserId(), c.studentId(), "CASE_MESSAGE", c.state().reviewDeadline()));
   }
 
   public void insert(Charge c) {
@@ -161,30 +196,10 @@ public class PaymentStore {
 
   public void save(Charge c) {
     var s = c.state();
-    String oldStatus =
-        db.queryForObject(
-            "select status from payment_charge where session_id=?", String.class, c.sessionId());
-    if (!s.status.equals(oldStatus) && Set.of("DISPUTED", "AWAITING_ADMIN").contains(s.status)) {
-      String title =
-          s.status.equals("DISPUTED")
-              ? "Học phí đang được tạm giữ do tranh chấp"
-              : "Hai báo cáo đã thống nhất, chờ Admin tất toán";
-      notice(
-          c.payerId(),
-          c.sessionId(),
-          s.status,
-          title,
-          "Mở học phí để xem thời hạn và báo cáo hai phía.");
-      notice(
-          c.tutorUserId(),
-          c.sessionId(),
-          s.status,
-          title,
-          "Mở học phí để xem thời hạn và báo cáo hai phía.");
-    }
+    var old = db.queryForMap("select status,review_started_at from payment_charge where session_id=?", c.sessionId());
     db.update(
         "update payment_charge set"
-            + " end_at=?,status=?,learner_accepted=?,tutor_accepted=?,auto_accepted=?,dispute_reason=?,dispute_opened_at=?,learner_report=?,tutor_report=?,learner_amount=?,tutor_amount=?,settled_amount=?,updated_at=now()"
+            + " end_at=?,status=?,learner_accepted=?,tutor_accepted=?,auto_accepted=?,dispute_reason=?,dispute_opened_at=?,learner_report=?,tutor_report=?,learner_amount=?,tutor_amount=?,settled_amount=?,review_started_at=?,dispute_category=?,dispute_evidence=?,dispute_reporter_id=?,resolution_note=?,resolved_at=?,updated_at=now()"
             + " where session_id=?",
         ts(s.endAt),
         s.status,
@@ -198,12 +213,26 @@ public class PaymentStore {
         s.learnerAmount,
         s.tutorAmount,
         s.settledAmount,
-        c.sessionId());
+        ts(s.reviewStartedAt), s.disputeCategory, s.disputeEvidence, s.disputeReporterId,
+        s.resolutionNote, ts(s.resolvedAt), c.sessionId());
+    boolean opened = old.get("review_started_at") == null && s.reviewStartedAt != null;
+    if (opened || !s.status.equals(old.get("status")))
+      events.publishEvent(new vn.edufit.payment.api.event.PaymentSessionChangedEvent(
+          UUID.randomUUID(), Instant.now(), c.sessionId(), c.payerId(), c.tutorUserId(), c.studentId(),
+          s.status, s.reviewDeadline()));
   }
 
   private Charge mapCharge(ResultSet r, int n) throws SQLException {
     var s = new SessionCharge(r.getLong("amount"), r.getTimestamp("end_at").toInstant());
     s.status = r.getString("status");
+    var review = r.getTimestamp("review_started_at");
+    s.reviewStartedAt = review == null ? null : review.toInstant();
+    s.disputeCategory = r.getString("dispute_category");
+    s.disputeEvidence = r.getString("dispute_evidence");
+    s.disputeReporterId = r.getObject("dispute_reporter_id", UUID.class);
+    s.resolutionNote = r.getString("resolution_note");
+    var resolved = r.getTimestamp("resolved_at");
+    s.resolvedAt = resolved == null ? null : resolved.toInstant();
     s.learnerAccepted = r.getBoolean("learner_accepted");
     s.tutorAccepted = r.getBoolean("tutor_accepted");
     s.autoAccepted = r.getBoolean("auto_accepted");

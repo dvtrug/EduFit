@@ -8,6 +8,10 @@ public final class SessionCharge {
   public static final long DISPUTE_SECONDS = 172800;
   public final long amount;
   public Instant endAt;
+  public Instant reviewStartedAt;
+  public String disputeCategory = "OTHER", disputeEvidence, resolutionNote;
+  public java.util.UUID disputeReporterId;
+  public Instant resolvedAt;
   public String status = "FUNDED";
   public boolean learnerAccepted, tutorAccepted, autoAccepted;
   public String disputeReason, learnerReport, tutorReport;
@@ -36,18 +40,27 @@ public final class SessionCharge {
     status = "AWAITING_CONFIRMATION";
     if (tutor) tutorAccepted = true;
     else learnerAccepted = true;
-    if (tutorAccepted && learnerAccepted) finish(amount);
+  }
+
+  public void beginReview(Instant now) {
+    if (awaitingConfirmation() && reviewStartedAt == null) {
+      reviewStartedAt = now.isAfter(endAt) ? now : endAt;
+      status = "AWAITING_CONFIRMATION";
+    }
+  }
+
+  public Instant reviewDeadline() {
+    return reviewStartedAt == null ? null : reviewStartedAt.plusSeconds(CONFIRMATION_SECONDS);
   }
 
   public void tick(Instant now, boolean completed) {
     if (status.equals("DISPUTED") && !now.isBefore(disputeOpenedAt.plusSeconds(DISPUTE_SECONDS))) {
-      status = "EXPIRED";
-      settledAmount = 0;
+      status = "ADMIN_REVIEW";
       return;
     }
     if (awaitingConfirmation() && completed && !now.isBefore(endAt)) {
       status = "AWAITING_CONFIRMATION";
-      if (!now.isBefore(endAt.plusSeconds(CONFIRMATION_SECONDS))) {
+      if (reviewDeadline() != null && !now.isBefore(reviewDeadline())) {
         autoAccepted = true;
         finish(amount);
       }
@@ -57,7 +70,7 @@ public final class SessionCharge {
   public void dispute(String reason, Instant now) {
     require(
         awaitingConfirmation() && !now.isBefore(endAt)
-            && now.isBefore(endAt.plusSeconds(CONFIRMATION_SECONDS)),
+            && (reviewDeadline() == null || now.isBefore(reviewDeadline())),
         "Chỉ có thể khiếu nại trong 24 giờ sau buổi học, trước khi tất toán");
     require(
         reason != null && !reason.isBlank() && reason.length() <= 2000,
@@ -92,6 +105,12 @@ public final class SessionCharge {
             && learnerAmount.equals(tutorAmount),
         "Cần báo cáo thống nhất của hai bên");
     finish(learnerAmount);
+  }
+
+  public void resolve(long value) {
+    require(status.equals("AWAITING_ADMIN") || status.equals("ADMIN_REVIEW"), "Hồ sơ chưa chuyển Admin");
+    require(value >= 0 && value <= amount, "Số tiền phân xử phải nằm trong khoản học phí đang giữ");
+    finish(value);
   }
 
   public void refund() {

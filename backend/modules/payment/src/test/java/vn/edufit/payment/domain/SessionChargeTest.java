@@ -9,7 +9,9 @@ class SessionChargeTest {
   final Instant end = Instant.parse("2026-10-21T12:00:00Z");
 
   SessionCharge charge() {
-    return new SessionCharge(300_000, end);
+    var charge = new SessionCharge(300_000, end);
+    charge.beginReview(end);
+    return charge;
   }
 
   @Test
@@ -37,13 +39,13 @@ class SessionChargeTest {
   }
 
   @Test
-  void bothAcceptSettleOnce() {
+  void bothAttendanceConfirmationsKeepTheFullReviewWindow() {
     var c = charge();
     c.confirm(true, end, true);
     c.confirm(false, end, true);
-    assertTrue(c.terminal());
-    c.confirm(false, end.plusSeconds(1), true);
-    assertEquals(300_000, c.settledAmount);
+    assertFalse(c.terminal());
+    c.dispute("Vẫn có quyền báo vấn đề", end.plusSeconds(1));
+    assertEquals("DISPUTED", c.status);
   }
 
   @Test
@@ -58,7 +60,7 @@ class SessionChargeTest {
     c.tick(end.plusSeconds(172799), true);
     assertEquals("DISPUTED", c.status);
     c.tick(end.plusSeconds(172800), true);
-    assertEquals("EXPIRED", c.status);
+    assertEquals("ADMIN_REVIEW", c.status);
     assertEquals(0, c.settledAmount);
     assertThrows(
         RuntimeException.class, () -> c.report(false, 100_000, "Đồng ý", end.plusSeconds(172800)));
@@ -107,7 +109,23 @@ class SessionChargeTest {
     c.tick(end.plusSeconds(86399 + 172799), true);
     assertEquals("DISPUTED", c.status);
     c.tick(end.plusSeconds(86399 + 172800), true);
-    assertEquals("EXPIRED", c.status);
+    assertEquals("ADMIN_REVIEW", c.status);
     assertThrows(RuntimeException.class, () -> charge().dispute("Quá hạn", end.plusSeconds(86400)));
+  }
+  @Test
+  void lateCompletionStartsAFullWindowOnceAndAdminCanResolveAnUnmatchedDispute() {
+    var c = new SessionCharge(300000, end);
+    c.beginReview(end.plusSeconds(90000));
+    c.beginReview(end.plusSeconds(100000));
+    c.tick(end.plusSeconds(90000 + 86399), true);
+    assertFalse(c.terminal());
+    c.dispute("Vấn đề", end.plusSeconds(90001));
+    c.report(false, 100000, "Đề nghị", end.plusSeconds(90002));
+    c.tick(end.plusSeconds(90001 + 172800), true);
+    assertEquals("ADMIN_REVIEW", c.status);
+    assertFalse(c.terminal());
+    assertThrows(RuntimeException.class, () -> c.resolve(300001));
+    c.resolve(150000);
+    assertEquals(150000, c.settledAmount);
   }
 }

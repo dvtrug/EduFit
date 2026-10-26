@@ -17,5 +17,10 @@ public record SessionTimelineView(
     UUID classId,
     Instant startAt,
     Instant endAt,
-    String status
-) {}
+    String status,
+    Instant outcomeRecordedAt
+) {
+  public SessionTimelineView(UUID sessionId, UUID classId, Instant startAt, Instant endAt, String status) {
+    this(sessionId, classId, startAt, endAt, status, null);
+  }
+}
