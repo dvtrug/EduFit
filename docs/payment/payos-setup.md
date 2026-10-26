@@ -45,7 +45,7 @@ Không cần một biến `WEBHOOK_URL` trong code hiện tại: URL này đư�
 
 ## 4. Kiểm tra nạp tiền sau cấu hình
 
-1. Đăng nhập Student/Parent, tạo yêu cầu nạp trong trang ví. Nút mở thanh toán phải trỏ tới checkout HTTPS của payOS.
+1. Đăng nhập Student/Parent, tạo yêu cầu nạp trong trang ví. Nút Tạo mã QR mở popup với checkout HTTPS payOS nhúng qua SDK chính thức; không mở tab mới. Không thêm khóa merchant vào frontend.
 2. Kiểm tra đúng ngân hàng, tài khoản, số tiền và mã yêu cầu trên checkout trước khi chuyển. Tài khoản ảo do payOS cấp có thể khác tài khoản gốc; dùng QR/checkout của đúng yêu cầu nạp, không tự sửa thông tin QR.
 3. Với giao dịch kiểm chứng đã được chủ tài khoản cho phép, backend chỉ cộng ví sau webhook hợp lệ hoặc truy vấn đối soát payOS có chữ ký. Không tin ảnh chuyển khoản, return URL hay nút trên frontend.
 4. Nếu webhook đến chậm, bấm **Kiểm tra tiền đã chuyển**; job cũng đối soát mỗi 30 giây theo batch. Mỗi yêu cầu được giới hạn tần suất đối soát. Giao dịch nhiều lần hoặc sai tổng tiền/tài khoản cần hỗ trợ đối soát, không tự cộng sai số dư.
@@ -100,3 +100,7 @@ Bản sửa V1.18 ngày 24/10 chỉ được biên dịch code và nguồn test;
 - Tài khoản ảo VietQR Pro (mục 6): https://payos.vn/docs/cau-hoi-thuong-gap/
 - SDK Java và quy tắc ký request/response: https://github.com/payOSHQ/payos-lib-java
 - Danh mục ngân hàng trên UI là snapshot 23/10/2026 của https://api.vietqr.io/v2/banks (ngân hàng có `transferSupported=1`); code gửi BIN, không gửi tên ngân hàng tự do làm mã chi.
+
+## Popup checkout trên frontend
+
+Xem [giao diện ví mới](wallet-ui.md). SDK tải trực tiếp CDN chính thức; cần cho phép script/iframe theo CSP provider nếu có. Không cần biến merchant mới. Callback FE chỉ yêu cầu backend đối soát; PAID từ backend mới báo thành công. Đóng popup không hủy yêu cầu. Nếu đã chuyển, kiểm tra/chờ xác minh trước khi tạo yêu cầu khác.

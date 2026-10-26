@@ -142,11 +142,11 @@ def overview():
 
 
 def topup():
-    d=Diagram('payment-topup-flow',2,'Nhập số tiền → QR → tăng ví','Luồng hiện tại mở trang QR payOS ở tab mới; QR chưa được nhúng trực tiếp trong popup EduFit.',1370)
+    d=Diagram('payment-topup-flow',2,'Nhập số tiền → QR → tăng ví','QR mở ngay trong popup EduFit; callback trình duyệt không phải bằng chứng tiền đã vào ví.',1370)
     steps=[
         ('1. Người dùng nhập 100.000đ','Student/Parent bấm nạp trong ví. Backend kiểm quyền và giới hạn tiền.'),
         ('2. Lưu yêu cầu nạp PENDING','Backend gắn order riêng, gọi payOS tạo checkout ngoài transaction DB.'),
-        ('3. Mở trang QR thanh toán payOS','Người dùng bấm liên kết; checkout mang đúng số tiền và mã yêu cầu.'),
+        ('3. Hiển thị QR trong popup','SDK payOS nhúng checkout; đúng số tiền và mã yêu cầu, không rời trang.'),
         ('4. Người dùng quét QR bằng app ngân hàng','Tiền thật chuyển tới tài khoản nhận liên kết kênh thu EduFit.'),
         ('5. Backend xác minh giao dịch','Webhook đã ký hoặc signed lookup phải khớp yêu cầu đã lưu.'),
         ('6. Ghi ví, ledger, audit và thông báo','Available tăng 100.000đ một lần; UI tải lại để hiện số dư mới.')]

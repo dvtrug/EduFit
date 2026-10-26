@@ -107,3 +107,7 @@ Các kết quả test đã ghi ở [verification-report](../../docs/payment/veri
 - [x] U04: rules/API/schema/runbook/diagrams và báo cáo kiểm thử; xem [quy tắc hiện hành](../../docs/payment/payment-usability.md).
 - [ ] Restart backend để Flyway áp dụng V1.21 trong môi trường người dùng; không sửa/repair migration cũ.
 - [ ] Kiểm chứng live provider, webhook công khai và vận hành Admin theo dõi hồ sơ; chưa nằm trong bằng chứng mock/Testcontainers.
+
+## Giao diện ví gọn và QR popup — 26/10
+
+- [x] Hoàn thành [4 phần UI](wallet-ui-plan.md): popup QR, Student/Parent/Tutor, Admin, kiểm chứng/bàn giao. 36 FE tests, type/lint/build PASS; browser fixture đủ 4 role và 4 breakpoint, chưa giao dịch live.

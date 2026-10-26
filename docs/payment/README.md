@@ -6,6 +6,7 @@ Cập nhật 24/10/2026 trên `feat/payment`, gồm bản sửa tài khoản ả
 
 | Tài liệu | Dùng khi nào? |
 |---|---|
+| [Giao diện ví gọn và popup QR](wallet-ui.md) | Student/Parent/Tutor/Admin, nạp QR tại chỗ, lịch sử theo yêu cầu |
 | [Quy tắc và trải nghiệm 26/10](payment-usability.md) | Đọc trước: đủ 24h, giữ tiền chờ Admin, quyền payer/student và chi tiết hồ sơ |
 | [Luồng, rule và cơ chế Payment — có ảnh diagram](payment-flow-and-rules.md) | Đọc từ góc nhìn người dùng: 7 ảnh, từng bước xử lý, 30 rule và ví dụ tiền trước/sau |
 | [Giải trình kiến trúc và cơ chế](payment_implementation_plan.md) | Nghiệp vụ, tiền, module, file, schema và Q&A |

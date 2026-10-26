@@ -116,3 +116,13 @@ P10 mobile fix `a3dfd37` và FE provider `31ccac8` đã push. P11: hướng dẫ
 - Không gọi merchant/payOS/Meet/Zoom thật; không thay env hoặc bật kênh chi. V1.21 cần restart backend; không repair/clean/reset DB. Admin cần theo dõi hàng đợi giữ tiền; chưa có SLA/nhắc trước hạn, upload bằng chứng, appeal, reauthentication riêng đổi ngân hàng hoặc webhook đo giờ học.
 
 - Kiểm tĩnh cuối: 13 Markdown / 125 liên kết local hợp lệ; 7 cặp PNG/SVG đọc/parse được; generator kiểm khung chữ và overlap PASS; git diff --check PASS. Preview/logs và .env không được Git theo dõi. Backend và FE đã push riêng `2c3270b`, `20ad2f6`; commit tài liệu kết thúc đợt này.
+
+## Thiết kế lại giao diện ví và QR popup — 26/10/2026
+
+- Các commit đã push: `bd5520f` popup QR + SDK chính thức, `557cebd` ví learner/tutor và lịch sử theo yêu cầu, `6bb05f0` hàng đợi Admin/dialog, `06a331e` responsive/focus và regression lỗi rút. Tài liệu tại [wallet-ui](wallet-ui.md).
+- RED trước code: 5 QR tests và 4 workspace tests fail theo UI cũ; test Admin mới fail vì chưa tách hàng đợi/dialog. GREEN gate cuối **36 tests / 7 files PASS**, type-check/lint Payment PASS. Sau CSS/focus/error polish chạy lại 15 QR/withdraw tests PASS. Production `next build --webpack` PASS (giai đoạn sinh trang 52/52 và các route dynamic chi tiết).
+- Google Fonts ban đầu gặp CA và ECONNRESET/timeout. Giữ xác minh TLS, dùng CA Windows tin cậy, kiểm truy cập CSS/font CDN rồi build lại thành công; có warning package-lock ngoài repo như trước. Không thay font, dependency hoặc Next config.
+- Browser component thật trên fixture riêng: 4 role, popup QR không đổi trang, lịch sử theo yêu cầu, Escape/focus-return, focus phần xem lại rút, Admin verify chưa submit; 320/768/1024/1440 không tràn ngang. HMR fixture từng báo createRoot trùng, tải mới không có error/warn; iframe và API đều mock, QR có nhãn DEMO. Đã reset viewport, đóng tab/server tự tạo. Không tuyên bố live payOS hoặc E2E DB vận hành đã qua.
+- Không đổi BE/nghiệp vụ tiền/SQL/env. Không chạy lại Maven cho thay đổi FE này; không tạo/chuyển tiền ngân hàng. Callback SDK không cộng ví; retry SDK không tạo order khác, tiếp tục order pending không gọi create, ID tài khoản cũ vẫn bị chặn khi rút.
+
+- Kiểm docs cuối: 15 Markdown, 135 local links hợp lệ, 7 cặp PNG/SVG đọc được; render diagram nạp popup và xem ảnh PASS, git diff --check PASS. .env/logs/preview vẫn ignored.

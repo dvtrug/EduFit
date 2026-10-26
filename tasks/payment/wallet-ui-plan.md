@@ -8,3 +8,12 @@ Nhánh `feat/payment`, tiếp tục từ `e47828e`. Người dùng yêu cầu gi
 4. **Kiểm chứng/bàn giao:** test FE, type/lint/production build, browser fixture desktop/mobile/bàn phím, cập nhật docs; commit/push riêng từng phần. Preview không gọi payOS hoặc database thật.
 
 Nguồn tích hợp: https://payos.vn/docs/sdks/front-end/script-js/ — script tải trực tiếp CDN, embedded, cleanup exit; callback FE chỉ yêu cầu backend xác minh, không ghi tiền.
+
+## Hoàn thành
+
+- [x] Phần 1: `bd5520f`, popup QR chính thức/manual và kiểm verified status; đã push.
+- [x] Phần 2: `557cebd`, trang ví/thu nhập gọn và lịch sử theo yêu cầu; đã push.
+- [x] Phần 3: `6bb05f0`, 3 hàng đợi Admin + dialog xác minh; đã push.
+- [x] Phần 4: `06a331e` chỉnh responsive/focus; 36 FE tests và type/lint/build PASS, browser fixture desktop/mobile. Docs/schema nghiệp vụ hiện có giữ rule tiền; cập nhật hướng dẫn UI và sơ đồ nạp. Không có migration/backend/env thay đổi.
+
+Đây là bốn phần công việc, không coi số commit là số task mới. Phần tài liệu được commit riêng khi bàn giao; kiểm thử live merchant tiếp tục để người dùng thực hiện có kiểm soát.

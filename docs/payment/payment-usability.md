@@ -4,7 +4,7 @@ Cập nhật **26/10/2026**, nhánh `feat/payment`. Đây là quy tắc hiện h
 
 ## 1. Người dùng thao tác ở đâu?
 
-Ví hiển thị số dư, nạp/rút và lịch sử. Danh sách buổi học hiển thị trạng thái, hạn phản hồi và bước tiếp theo; bấm **Xem chi tiết buổi học** mới mở các thao tác. Thông báo dẫn tới đúng buổi, không chỉ dẫn chung về ví.
+Ví mới ưu tiên số dư/nạp/rút, bốn hoạt động gần đây và danh sách buổi gọn; lịch sử đầy đủ mở theo yêu cầu. Xem [thiết kế giao diện và popup QR](wallet-ui.md). Danh sách buổi học hiển thị trạng thái, hạn phản hồi và bước tiếp theo; bấm **Xem chi tiết buổi học** mới mở các thao tác. Thông báo dẫn tới đúng buổi, không chỉ dẫn chung về ví.
 
 | Vai trò | Chi tiết buổi học |
 |---|---|

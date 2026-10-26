@@ -52,7 +52,7 @@ Available và held đều không âm. Held không chỉ dành cho tranh chấp: 
 
 1. Student/Parent vào trang ví, nhập số tiền, ví dụ 100.000đ.
 2. Bấm nạp. Backend tạo topup riêng và yêu cầu payOS tạo checkout.
-3. EduFit hiển thị **Mở trang QR thanh toán payOS**. Bấm liên kết để mở tab mới; hiện chưa có QR payOS nhúng trong popup EduFit.
+3. EduFit mở **popup QR** ngay trên trang, dùng SDK embedded chính thức của payOS. Không chuyển sang tab mới; xem [giao diện và cơ chế popup](wallet-ui.md).
 4. Kiểm tra số tiền/tài khoản trên checkout và dùng app ngân hàng quét QR.
 5. Sau xác minh, ví tăng đúng số tiền và có lịch sử/thông báo.
 
