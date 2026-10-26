@@ -17,6 +17,8 @@ vi.mock("@/features/payment/api/paymentApi", async () => {
       confirm: vi.fn(),
       dispute: vi.fn(),
       report: vi.fn(),
+      comment: vi.fn(),
+      completeSession: vi.fn(),
     },
   };
 });
@@ -33,8 +35,12 @@ const session = (patch: Partial<PaymentSession> = {}): PaymentSession => ({
   payerId: "parent-1",
   status: "AWAITING_CONFIRMATION",
   learnerAccepted: false,
-  tutorAccepted: true,
+  tutorAccepted: false,
   autoAccepted: false,
+  reviewDeadline: new Date(Date.now() + 84600000).toISOString(),
+  canSubmitProposal: true,
+  isPayer: true,
+  comments: [],
   disputeDeadline: null,
   disputeReason: null,
   learnerAmount: null,
@@ -52,177 +58,139 @@ const execute = async (work: () => Promise<unknown>) => {
   return true;
 };
 beforeEach(() => vi.clearAllMocks());
-describe("Session payment decisions", () => {
-  it("explains automatic settlement without fabricating either participant's consent", () => {
-    render(
-      <SessionPaymentCard
-        session={session({
-          status: "SETTLED",
-          autoAccepted: true,
-          learnerAccepted: false,
-          tutorAccepted: false,
-          settledAmount: 300000,
-        })}
-        disabled={false}
-        execute={execute}
-      />,
-    );
+function show(patch: Partial<PaymentSession> = {}) {
+  return render(
+    <SessionPaymentCard
+      session={session(patch)}
+      disabled={false}
+      execute={execute}
+    />,
+  );
+}
+describe("Review window and shared payment case", () => {
+  it("records attendance without asking to release money early", async () => {
+    show();
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận đã học" }));
     expect(
-      screen.getByText(/Tự tất toán sau 24 giờ không có khiếu nại/),
+      screen.getByText(/Chỉ xác nhận việc học đã diễn ra/),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Khiếu nại" }),
-    ).not.toBeInTheDocument();
-  });
-  it("offers both decisions for a tutor and closes complaints after 24 hours", () => {
-    const { rerender } = render(
-      <SessionPaymentCard
-        session={session({
-          tutorAccepted: false,
-          canActAsLearner: false,
-          canActAsTutor: true,
-        })}
-        disabled={false}
-        execute={execute}
-      />,
-    );
-    expect(
-      screen.getByRole("button", { name: "Xác nhận buổi học" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Khiếu nại" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/24 giờ/)).toBeInTheDocument();
-    rerender(
-      <SessionPaymentCard
-        session={session({
-          endAt: new Date(Date.now() - 86401000).toISOString(),
-        })}
-        disabled={false}
-        execute={execute}
-      />,
-    );
-    expect(
-      screen.queryByRole("button", { name: "Khiếu nại" }),
-    ).not.toBeInTheDocument();
-    expect(screen.getByText(/Đang chờ hệ thống tất toán/)).toBeInTheDocument();
-  });
-  it("requires explicit confirmation before sending payment acceptance", async () => {
-    render(
-      <SessionPaymentCard
-        session={session()}
-        disabled={false}
-        execute={execute}
-      />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Xác nhận buổi học" }));
     expect(paymentApi.confirm).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Gửi xác nhận" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ghi nhận xác nhận" }));
     await waitFor(() =>
       expect(paymentApi.confirm).toHaveBeenCalledWith("session-1"),
     );
   });
-  it("does not offer payment confirmation before scheduling outcome is recorded", () => {
-    render(
+  it("allows a problem after both attendance confirmations until the persisted deadline", () => {
+    const view = show({ learnerAccepted: true, tutorAccepted: true });
+    expect(
+      screen.getByRole("button", { name: "Báo vấn đề" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Xác nhận đã học" }),
+    ).not.toBeInTheDocument();
+    view.rerender(
       <SessionPaymentCard
-        session={session({ sessionStatus: "SCHEDULED" })}
+        session={session({
+          reviewDeadline: new Date(Date.now() - 1000).toISOString(),
+        })}
         disabled={false}
         execute={execute}
       />,
     );
     expect(
-      screen.queryByRole("button", { name: "Xác nhận buổi học" }),
+      screen.queryByRole("button", { name: "Báo vấn đề" }),
     ).not.toBeInTheDocument();
+    expect(screen.getByText(/Đang chờ hệ thống tất toán/)).toBeInTheDocument();
   });
-  it("opens a dispute with the supplied reason", async () => {
-    render(
-      <SessionPaymentCard
-        session={session()}
-        disabled={false}
-        execute={execute}
-      />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Khiếu nại" }));
-    fireEvent.change(screen.getByRole("textbox"), {
-      target: { value: "Buổi học thiếu thời lượng" },
+  it("uses the stored deadline for a late completion instead of scheduled end plus 24h", () => {
+    show({ endAt: new Date(Date.now() - 172800000).toISOString() });
+    expect(
+      screen.getByRole("button", { name: "Báo vấn đề" }),
+    ).toBeInTheDocument();
+  });
+  it("opens one case with category and evidence", async () => {
+    show();
+    fireEvent.click(screen.getByRole("button", { name: "Báo vấn đề" }));
+    fireEvent.change(screen.getByLabelText("Bạn gặp vấn đề gì?"), {
+      target: { value: "DURATION" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Gửi xác nhận" }));
+    fireEvent.change(screen.getByLabelText("Nội dung vấn đề"), {
+      target: { value: "Chỉ học 20 phút" },
+    });
+    fireEvent.change(
+      screen.getByLabelText("Bằng chứng (mô tả hoặc đường dẫn)"),
+      { target: { value: "Lịch sử phòng học" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Gửi vấn đề" }));
     await waitFor(() =>
       expect(paymentApi.dispute).toHaveBeenCalledWith(
         "session-1",
-        "Buổi học thiếu thời lượng",
+        "Chỉ học 20 phút",
+        "DURATION",
+        "Lịch sử phòng học",
       ),
     );
   });
-  it("dispute removes confirm and allows a partial settlement report", async () => {
-    render(
-      <SessionPaymentCard
-        session={session({
-          status: "DISPUTED",
-          disputeDeadline: new Date(Date.now() + 86400000).toISOString(),
-          disputeReason: "Thiếu giờ",
-        })}
-        disabled={false}
-        execute={execute}
-      />,
-    );
+  it("lets a nonpayer student add evidence without proposing money", async () => {
+    show({
+      status: "DISPUTED",
+      disputeReason: "Thiếu giờ",
+      isPayer: false,
+      canSubmitProposal: false,
+      disputeDeadline: new Date(Date.now() + 172800000).toISOString(),
+    });
     expect(
-      screen.queryByRole("button", { name: "Xác nhận buổi học" }),
+      screen.queryByRole("button", { name: "Đề xuất cách giải quyết" }),
     ).not.toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Gửi báo cáo giải quyết" }),
-    );
-    fireEvent.change(screen.getByLabelText("Học phí thống nhất"), {
-      target: { value: "150000" },
+    fireEvent.click(screen.getByRole("button", { name: "Bổ sung thông tin" }));
+    fireEvent.change(screen.getByLabelText("Thông tin bổ sung"), {
+      target: { value: "Tôi có mặt lúc 19h" },
     });
-    fireEvent.change(screen.getByRole("textbox"), {
-      target: { value: "Hai bên thống nhất tính nửa buổi" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Gửi xác nhận" }));
+    fireEvent.click(screen.getByRole("button", { name: "Gửi phản hồi" }));
     await waitFor(() =>
-      expect(paymentApi.report).toHaveBeenCalledWith(
+      expect(paymentApi.comment).toHaveBeenCalledWith(
         "session-1",
-        150000,
-        "Hai bên thống nhất tính nửa buổi",
+        expect.any(String),
+        "Tôi có mặt lúc 19h",
       ),
     );
   });
-  it("cannot submit expired reports or act for another learner", () => {
-    render(
-      <SessionPaymentCard
-        session={session({
-          status: "DISPUTED",
-          disputeDeadline: new Date(Date.now() - 1000).toISOString(),
-          canActAsLearner: false,
-        })}
-        disabled={false}
-        execute={execute}
-      />,
-    );
+  it("keeps an overdue case frozen for Admin instead of promising an automatic refund", () => {
+    show({ status: "ADMIN_REVIEW", disputeReason: "Chưa thống nhất" });
+    expect(screen.getByText("Chờ Admin phân xử")).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Gửi báo cáo giải quyết" }),
-    ).not.toBeInTheDocument();
+      screen.getByText(/Tiền được giữ đến khi có quyết định/),
+    ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Xác nhận buổi học" }),
+      screen.queryByRole("button", { name: "Đề xuất cách giải quyết" }),
     ).not.toBeInTheDocument();
   });
-  it("funding asks payer to accept the displayed price", async () => {
-    render(
-      <SessionPaymentCard
-        session={session({
-          status: "UNFUNDED",
-          canFund: true,
-          canActAsLearner: false,
-        })}
-        disabled={false}
-        execute={execute}
-      />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Cấp tiền từ ví" }));
+  it("asks before reserving the displayed tuition", async () => {
+    show({ status: "UNFUNDED", canFund: true, canActAsLearner: false });
+    fireEvent.click(screen.getByRole("button", { name: "Giữ học phí từ ví" }));
     expect(paymentApi.fund).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Gửi xác nhận" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận giữ tiền" }));
     await waitFor(() =>
       expect(paymentApi.fund).toHaveBeenCalledWith("session-1", 300000),
+    );
+  });
+  it("offers tutors the existing scheduling completion action before opening a review window", async () => {
+    show({
+      status: "FUNDED",
+      sessionStatus: "SCHEDULED",
+      canActAsTutor: true,
+      canActAsLearner: false,
+      reviewDeadline: null,
+    });
+    expect(
+      screen.queryByRole("button", { name: "Ghi nhận đã dạy" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ghi nhận buổi học hoàn thành" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận kết thúc" }));
+    await waitFor(() =>
+      expect(paymentApi.completeSession).toHaveBeenCalledWith("session-1"),
     );
   });
 });

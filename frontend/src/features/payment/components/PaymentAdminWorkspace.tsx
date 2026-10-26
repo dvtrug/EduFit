@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
   paymentApi,
@@ -94,7 +95,7 @@ export function PaymentAdminWorkspace() {
           Đối soát & Tranh chấp học phí
         </h1>
         <p className="mt-1 text-sm text-neutral-500">
-          Xác minh giao dịch ngân hàng và duyệt kết quả hai bên đã thống nhất.
+          Xác minh giao dịch ngân hàng và phân xử hồ sơ vấn đề.
         </p>
       </div>
       {data?.configuration && (
@@ -191,10 +192,10 @@ export function PaymentAdminWorkspace() {
         </form>
       )}
       <section className="space-y-3">
-        <h2 className="text-lg font-bold">Báo cáo tranh chấp chờ tất toán</h2>
+        <h2 className="text-lg font-bold">Hồ sơ vấn đề cần Admin xem xét</h2>
         {disputes.length === 0 && (
           <p className="rounded-xl border border-dashed p-5 text-sm text-neutral-500">
-            Chưa có tranh chấp được cả hai bên thống nhất chờ duyệt.
+            Chưa có hồ sơ chờ Admin duyệt hoặc phân xử.
           </p>
         )}
         {disputes.map((s) => (
@@ -209,8 +210,10 @@ export function PaymentAdminWorkspace() {
               Buổi {s.sessionId} · Ví cấp tiền {s.payerId}
             </p>
             <p className="text-sm">
-              Đang giữ {money(s.amount)} · Số tiền hai bên thống nhất{" "}
-              {money(s.learnerAmount ?? 0)}
+              Đang giữ {money(s.amount)} ·{" "}
+              {s.status === "ADMIN_REVIEW"
+                ? "Quá hạn chưa thống nhất, cần phân xử"
+                : "Hai bên đã thống nhất"}
             </p>
             <p className="text-sm">Lý do: {s.disputeReason}</p>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -225,37 +228,12 @@ export function PaymentAdminWorkspace() {
                 <p>{money(s.tutorAmount ?? 0)}</p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                disabled={busy}
-                className={button}
-                onClick={() =>
-                  select({
-                    kind: "disputes",
-                    id: s.sessionId,
-                    approve: true,
-                    label: `Duyệt tất toán ${money(s.learnerAmount ?? 0)}`,
-                  })
-                }
-              >
-                Duyệt tất toán
-              </button>
-              <button
-                disabled={busy}
-                className={button}
-                onClick={() =>
-                  select({
-                    kind: "disputes",
-                    id: s.sessionId,
-                    approve: false,
-                    label:
-                      "Từ chối kết quả và hoàn toàn bộ khoản giữ về ví người trả",
-                  })
-                }
-              >
-                Từ chối & hoàn ví
-              </button>
-            </div>
+            <Link
+              className="inline-block rounded-lg border px-3 py-2 text-sm font-semibold text-sky-700"
+              href={`/admin/disputes/${encodeURIComponent(s.sessionId)}`}
+            >
+              Mở hồ sơ và xử lý
+            </Link>
           </article>
         ))}
       </section>

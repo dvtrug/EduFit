@@ -10,7 +10,12 @@ import {
   type PaymentSession,
 } from "../api/paymentApi";
 import { WalletPanel } from "./WalletPanel";
-import { SessionPaymentCard } from "./SessionPaymentCard";
+import Link from "next/link";
+import {
+  paymentStatus,
+  paymentNextAction,
+  sessionPaymentHref,
+} from "../paymentPresentation";
 export function PaymentWorkspace({
   role,
 }: {
@@ -155,9 +160,8 @@ export function PaymentWorkspace({
               </label>
             </div>
             <p className="text-sm text-neutral-500">
-              Khiếu nại chặn thanh toán. Hai bên có 48 giờ từ lúc mở khiếu nại để gửi báo cáo cùng
-              số tiền; Admin duyệt kết quả. Chưa thống nhất đúng hạn thì tiền
-              trở về ví đã cấp.
+              Mở chi tiết từng buổi để xem tiền đang ở đâu, hạn phản hồi và hồ
+              sơ vấn đề.
             </p>
             {sessions.length === 0 ? (
               <div className="rounded-xl border border-dashed p-6 text-sm text-neutral-500">
@@ -165,12 +169,36 @@ export function PaymentWorkspace({
               </div>
             ) : (
               sessions.map((s) => (
-                <SessionPaymentCard
+                <article
                   key={s.sessionId}
-                  session={s}
-                  disabled={busy}
-                  execute={execute}
-                />
+                  className="space-y-2 rounded-xl border bg-white p-4"
+                >
+                  <div className="flex flex-wrap justify-between gap-2">
+                    <h3 className="font-semibold">
+                      {s.tutorName} ·{" "}
+                      {new Date(s.startAt).toLocaleString("vi-VN")}
+                    </h3>
+                    <strong>{money(s.amount)}</strong>
+                  </div>
+                  <p className="text-sm font-medium text-amber-800">
+                    {paymentStatus(s)}
+                  </p>
+                  <p className="text-sm text-neutral-600">
+                    {paymentNextAction(s)}
+                  </p>
+                  {s.reviewDeadline && (
+                    <p className="text-xs text-neutral-500">
+                      Hạn phản hồi:{" "}
+                      {new Date(s.reviewDeadline).toLocaleString("vi-VN")}
+                    </p>
+                  )}
+                  <Link
+                    className="inline-block text-sm font-semibold text-sky-700 underline"
+                    href={sessionPaymentHref(role, s.sessionId)}
+                  >
+                    Xem chi tiết buổi học
+                  </Link>
+                </article>
               ))
             )}
           </section>

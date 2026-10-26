@@ -52,13 +52,15 @@ export function TopHeader({
   React.useEffect(() => {
     let active = true;
     const refreshCount = () => {
+      if (document.hidden) return;
       void notificationApi.getUnreadCount().then((res) => {
         if (active && res.success && res.data) setUnreadNotifications(res.data.unreadCount);
       }).catch(() => {});
     };
     refreshCount();
-    const interval = window.setInterval(refreshCount, 60_000);
-    return () => { active = false; window.clearInterval(interval); };
+    const interval = window.setInterval(refreshCount, 15_000);
+    window.addEventListener("focus", refreshCount);
+    return () => { active = false; window.clearInterval(interval); window.removeEventListener("focus", refreshCount); };
   }, [user.email]);
 
   const roleLabel = ROLE_LABEL_MAP[role] || "Thành viên";

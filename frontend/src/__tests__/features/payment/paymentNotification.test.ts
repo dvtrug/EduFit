@@ -16,3 +16,20 @@ describe("Payment notification routing", () => {
     expect(getNotificationRoute(notice, "ADMIN")).toBe("/admin/payments");
   });
 });
+
+it("routes session notifications to the shared case instead of a generic wallet", () => {
+  const item = {
+    notificationId: "notice",
+    type: "PAYMENT_ADMIN_REVIEW",
+    title: "Review",
+    shortText: "Case",
+    targetType: "PAYMENT_SESSION",
+    targetId: "session-1",
+    isRead: false,
+    createdAt: "2026-10-26",
+  };
+  expect(getNotificationRoute(item, "PARENT")).toBe(
+    "/parent/billing/sessions/session-1",
+  );
+  expect(getNotificationRoute(item, "ADMIN")).toBe("/admin/disputes/session-1");
+});

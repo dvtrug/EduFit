@@ -35,10 +35,15 @@ export function SessionBillingPanel({
       }
     };
     void run();
-    const timer = setInterval(() => void run(), 15000);
+    const timer = setInterval(() => {
+      if (!document.hidden) void run();
+    }, 15000);
+    const focus = () => void run();
+    window.addEventListener("focus", focus);
     return () => {
       alive = false;
       clearInterval(timer);
+      window.removeEventListener("focus", focus);
     };
   }, [sessionId]);
   async function execute(work: () => Promise<unknown>) {

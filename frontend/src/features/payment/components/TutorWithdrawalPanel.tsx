@@ -184,7 +184,16 @@ export function TutorWithdrawalPanel({
   return (
     <section className="space-y-5 rounded-2xl border border-stone-200 bg-white p-5 sm:p-6">
       <h2 className="font-bold">Ví thu nhập gia sư</h2>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div>
+          <p className="text-sm text-neutral-500">Thu nhập chờ tất toán</p>
+          <p className="mt-1 text-2xl font-extrabold text-stone-600 sm:text-3xl">
+            {data.pendingIncome === undefined ? "—" : money(data.pendingIncome)}
+          </p>
+          <p className="text-xs text-neutral-500">
+            Dự kiến sau phí; có thể đổi theo kết quả hồ sơ.
+          </p>
+        </div>
         <div>
           <p className="text-sm text-neutral-500">Có thể yêu cầu rút</p>
           <p className="mt-1 text-2xl font-extrabold sm:text-3xl">

@@ -35,6 +35,7 @@ export interface Withdrawal {
   created_at: string;
 }
 export interface Overview {
+  pendingIncome?: number;
   payoutAccount?: PayoutAccount | null;
   wallet: Wallet;
   entries: Entry[];
@@ -58,6 +59,20 @@ export interface PayoutAccountInput {
   expectedAccountId: string | null;
 }
 export interface PaymentSession {
+  reviewDeadline?: string | null;
+  canSubmitProposal?: boolean;
+  isPayer?: boolean;
+  disputeCategory?: string;
+  disputeEvidence?: string | null;
+  disputeReporterId?: string | null;
+  resolutionNote?: string | null;
+  resolvedAt?: string | null;
+  comments?: {
+    id: string;
+    side: "STUDENT" | "PAYER" | "TUTOR";
+    message: string;
+    created_at: string;
+  }[];
   sessionId: string;
   classId: string;
   studentId: string;
@@ -74,6 +89,7 @@ export interface PaymentSession {
     | "AWAITING_CONFIRMATION"
     | "DISPUTED"
     | "AWAITING_ADMIN"
+    | "ADMIN_REVIEW"
     | "SETTLED"
     | "REFUNDED"
     | "EXPIRED";
@@ -121,6 +137,24 @@ const post = <T>(path: string, body?: unknown) =>
   });
 const base = "/api/v1/payment";
 export const paymentApi = {
+  completeSession: (id: string) =>
+    post(`/api/v1/scheduling/sessions/${encodeURIComponent(id)}/outcome`, {
+      outcome: "COMPLETED",
+    }),
+  adminCase: (id: string) =>
+    fetchApi<PaymentSession>(
+      `/api/v1/admin/payment/disputes/${encodeURIComponent(id)}`,
+    ),
+  resolveCase: (id: string, amount: number, note: string) =>
+    post<PaymentSession>(
+      `/api/v1/admin/payment/disputes/${encodeURIComponent(id)}/resolve`,
+      { amount, note },
+    ),
+  comment: (id: string, messageId: string, text: string) =>
+    post<PaymentSession>(
+      `${base}/sessions/${encodeURIComponent(id)}/comments`,
+      { messageId, text },
+    ),
   savePayoutAccount: (input: PayoutAccountInput) =>
     fetchApi<PayoutAccount>(`${base}/payout-account`, {
       method: "PUT",
@@ -156,9 +190,11 @@ export const paymentApi = {
     }),
   confirm: (id: string) =>
     post<PaymentSession>(`${base}/sessions/${encodeURIComponent(id)}/confirm`),
-  dispute: (id: string, text: string) =>
+  dispute: (id: string, text: string, category = "OTHER", evidence?: string) =>
     post<PaymentSession>(`${base}/sessions/${encodeURIComponent(id)}/dispute`, {
       text,
+      category,
+      evidence,
     }),
   report: (id: string, amount: number, text: string) =>
     post<PaymentSession>(`${base}/sessions/${encodeURIComponent(id)}/report`, {
@@ -205,6 +241,7 @@ export const paymentError = (error: unknown) =>
     ? error.message
     : "Không xử lý được yêu cầu. Vui lòng thử lại.";
 export const chargeLabels: Record<PaymentSession["status"], string> = {
+  ADMIN_REVIEW: "Chờ Admin phân xử",
   UNFUNDED: "Chưa cấp tiền",
   FUNDED: "Đã giữ học phí",
   AWAITING_CONFIRMATION: "Chờ xác nhận",

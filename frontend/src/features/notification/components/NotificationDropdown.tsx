@@ -21,15 +21,29 @@ interface NotificationDropdownProps {
   onUnreadCountChange?: (count: number) => void;
 }
 
-export function getNotificationRoute(item: NotificationItem, role: UserRole = "STUDENT"): string {
+export function getNotificationRoute(
+  item: NotificationItem,
+  role: UserRole = "STUDENT",
+): string {
   const type = item.type?.toUpperCase() || "";
   const targetType = item.targetType?.toUpperCase() || "";
   const normalizedRole = role.toUpperCase();
 
-  if(type.startsWith("PAYMENT_")||targetType==="PAYMENT_WALLET") {
-    if(normalizedRole==="TUTOR")return "/tutor/earnings";
-    if(normalizedRole==="PARENT")return "/parent/billing";
-    if(normalizedRole==="ADMIN")return "/admin/payments";
+  if (targetType === "PAYMENT_SESSION" && item.targetId) {
+    const id = encodeURIComponent(item.targetId);
+    if (normalizedRole === "ADMIN") return `/admin/disputes/${id}`;
+    const base =
+      normalizedRole === "TUTOR"
+        ? "/tutor/earnings"
+        : normalizedRole === "PARENT"
+          ? "/parent/billing"
+          : "/student/payments";
+    return `${base}/sessions/${id}`;
+  }
+  if (type.startsWith("PAYMENT_") || targetType === "PAYMENT_WALLET") {
+    if (normalizedRole === "TUTOR") return "/tutor/earnings";
+    if (normalizedRole === "PARENT") return "/parent/billing";
+    if (normalizedRole === "ADMIN") return "/admin/payments";
     return "/student/payments";
   }
 
@@ -56,10 +70,7 @@ export function getNotificationRoute(item: NotificationItem, role: UserRole = "S
   }
 
   // 3. Yêu cầu kết nối / Mời học (Connection Requests)
-  if (
-    type.startsWith("CONNECTION_") ||
-    targetType === "CONNECTION_REQUEST"
-  ) {
+  if (type.startsWith("CONNECTION_") || targetType === "CONNECTION_REQUEST") {
     if (type === "CONNECTION_ACCEPTED") {
       if (normalizedRole === "TUTOR") return "/tutor/classes";
       if (normalizedRole === "PARENT") return "/parent/children";
@@ -80,7 +91,9 @@ export function getNotificationRoute(item: NotificationItem, role: UserRole = "S
   // 5. Đánh giá (Reviews)
   if (type.startsWith("REVIEW_") || targetType === "REVIEW") {
     if (normalizedRole === "TUTOR") return "/tutor/reviews";
-    return normalizedRole === "PARENT" ? "/parent/dashboard" : "/student/classes";
+    return normalizedRole === "PARENT"
+      ? "/parent/dashboard"
+      : "/student/classes";
   }
 
   // 6. Cột mốc & Tiến độ học tập (Milestones & Progress)
@@ -96,7 +109,11 @@ export function getNotificationRoute(item: NotificationItem, role: UserRole = "S
   }
 
   // 7. Xác thực hồ sơ KYC (Verification)
-  if (type.startsWith("KYC_") || targetType === "VERIFICATION" || targetType === "KYC") {
+  if (
+    type.startsWith("KYC_") ||
+    targetType === "VERIFICATION" ||
+    targetType === "KYC"
+  ) {
     if (normalizedRole === "ADMIN") return "/admin/kyc";
     return "/tutor/verification";
   }
@@ -127,33 +144,55 @@ export function NotificationDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Load notifications
-  const loadNotifications = async (unreadOnly = filterUnread) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const res = await notificationApi.getNotifications(unreadOnly, 0, 20);
-      if (res.success && res.data) {
-        setNotifications(res.data.items || []);
-        setUnreadCount(res.data.unreadCount || 0);
-        onUnreadCountChange?.(res.data.unreadCount || 0);
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Không thể tải thông báo";
-      setError(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  const unreadCallback = useRef(onUnreadCountChange);
   useEffect(() => {
-    loadNotifications(filterUnread);
+    unreadCallback.current = onUnreadCountChange;
+  }, [onUnreadCountChange]);
+  useEffect(() => {
+    let alive = true;
+    let running = false;
+    const load = async (background = false) => {
+      if (running) return;
+      running = true;
+      try {
+        if (!background) setIsLoading(true);
+        const res = await notificationApi.getNotifications(filterUnread, 0, 20);
+        if (alive && res.success && res.data) {
+          setNotifications(res.data.items || []);
+          setUnreadCount(res.data.unreadCount || 0);
+          unreadCallback.current?.(res.data.unreadCount || 0);
+          setError(null);
+        }
+      } catch (err: unknown) {
+        if (alive)
+          setError(
+            err instanceof Error ? err.message : "Không thể tải thông báo",
+          );
+      } finally {
+        running = false;
+        if (alive) setIsLoading(false);
+      }
+    };
+    void load();
+    const refresh = () => {
+      if (!document.hidden) void load(true);
+    };
+    const timer = setInterval(refresh, 15000);
+    window.addEventListener("focus", refresh);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+    };
   }, [filterUnread]);
 
   // Click outside listener
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         onClose?.();
       }
     };
@@ -167,7 +206,7 @@ export function NotificationDropdown({
     try {
       await notificationApi.markAsRead(id);
       setNotifications((prev) =>
-        prev.map((n) => (n.notificationId === id ? { ...n, isRead: true } : n))
+        prev.map((n) => (n.notificationId === id ? { ...n, isRead: true } : n)),
       );
       setUnreadCount((prev) => {
         const next = Math.max(0, prev - 1);
@@ -314,7 +353,9 @@ export function NotificationDropdown({
           <div className="py-12 px-4 text-center flex flex-col items-center justify-center gap-2 text-neutral-400 dark:text-stone-500">
             <Inbox className="size-8 stroke-1" />
             <span className="text-xs">
-              {filterUnread ? "Không có thông báo chưa đọc" : "Chưa có thông báo nào"}
+              {filterUnread
+                ? "Không có thông báo chưa đọc"
+                : "Chưa có thông báo nào"}
             </span>
           </div>
         ) : (
