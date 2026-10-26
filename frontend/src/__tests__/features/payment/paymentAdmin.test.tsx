@@ -1,3 +1,4 @@
+import "./dialogSetup";
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
@@ -167,4 +168,17 @@ describe("Provider payout approval", () => {
       screen.queryByRole("button", { name: "Từ chối" }),
     ).not.toBeInTheDocument();
   });
+});
+
+it("separates the admin queues and opens verification in a dialog", async () => {
+  render(<PaymentAdminWorkspace />);
+  const queue = await screen.findByRole("button", { name: /Nạp tiền/ });
+  fireEvent.click(queue);
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Xác minh giao dịch" }),
+  );
+  expect(
+    screen.getByRole("dialog", { name: /Xác minh đã nhận/ }),
+  ).toBeInTheDocument();
+  expect(paymentApi.review).not.toHaveBeenCalled();
 });

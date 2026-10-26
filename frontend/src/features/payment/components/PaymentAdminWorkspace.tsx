@@ -1,6 +1,15 @@
 "use client";
 import Link from "next/link";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Settings2,
+  ShieldAlert,
+} from "lucide-react";
 import {
   paymentApi,
   paymentError,
@@ -8,22 +17,20 @@ import {
   type AdminOverview,
   type PaymentSession,
 } from "../api/paymentApi";
-interface ReviewTarget {
-  kind: "topups" | "withdrawals" | "disputes";
-  id: string;
-  approve: boolean;
-  label: string;
-  payout?: boolean;
-}
-export function PaymentAdminWorkspace() {
+import {
+  AdminPaymentReviewDialog,
+  type AdminReviewTarget,
+} from "./AdminPaymentReviewDialog";
+type Queue = "topups" | "withdrawals" | "cases";
+export function PaymentAdminWorkspace({ initialTab }: { initialTab?: Queue }) {
   const [data, setData] = useState<AdminOverview | null>(null);
   const [disputes, setDisputes] = useState<PaymentSession[]>([]);
   const [offset, setOffset] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [target, setTarget] = useState<ReviewTarget | null>(null);
-  const [note, setNote] = useState("");
-  const [reference, setReference] = useState("");
+  const [target, setTarget] = useState<AdminReviewTarget | null>(null);
+  const [chosen, setChosen] = useState<Queue | null>(initialTab ?? null);
+  const [resolved, setResolved] = useState(false);
   const load = useCallback(async () => {
     const [wallets, cases] = await Promise.all([
       paymentApi.admin(offset),
@@ -34,7 +41,7 @@ export function PaymentAdminWorkspace() {
   }, [offset]);
   useEffect(() => {
     let alive = true;
-    const run = async () => {
+    async function run() {
       try {
         const [wallets, cases] = await Promise.all([
           paymentApi.admin(offset),
@@ -48,24 +55,38 @@ export function PaymentAdminWorkspace() {
       } catch (e) {
         if (alive) setError(paymentError(e));
       }
-    };
+    }
     void run();
-    const timer = setInterval(() => {
+    const refresh = () => {
       if (!document.hidden) void run();
-    }, 15000);
+    };
+    const timer = setInterval(refresh, 15000);
+    window.addEventListener("focus", refresh);
     return () => {
       alive = false;
       clearInterval(timer);
+      window.removeEventListener("focus", refresh);
     };
   }, [offset]);
-  function select(value: ReviewTarget) {
+  const pendingTopups =
+    data?.topups.filter((t) => t.status === "PENDING") ?? [];
+  const pendingWithdrawals =
+    data?.withdrawals.filter((w) =>
+      ["PENDING", "PROCESSING"].includes(w.status),
+    ) ?? [];
+  const active =
+    chosen ??
+    (pendingWithdrawals.length
+      ? "withdrawals"
+      : pendingTopups.length
+        ? "topups"
+        : "cases");
+  function select(value: AdminReviewTarget) {
+    setError(null);
     setTarget(value);
-    setNote("");
-    setReference("");
   }
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    if (!target) return;
+  async function submit(note: string, reference: string) {
+    if (!target || busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -86,325 +107,422 @@ export function PaymentAdminWorkspace() {
       setBusy(false);
     }
   }
+  async function refresh(kind: "topup" | "payout", id: string) {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      if (kind === "topup") await paymentApi.refreshTopup(id);
+      else await paymentApi.refreshPayout(id);
+      await load();
+    } catch (e) {
+      setError(paymentError(e));
+    } finally {
+      setBusy(false);
+    }
+  }
   const button =
-    "rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold hover:bg-stone-50 disabled:opacity-50";
+    "rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-stone-50 disabled:opacity-40";
+  const withdrawals = resolved ? data?.withdrawals ?? [] : pendingWithdrawals;
+  const topups = resolved ? data?.topups ?? [] : pendingTopups;
   return (
     <div className="mx-auto max-w-6xl space-y-6 pb-8">
-      <div>
-        <h1 className="text-2xl font-extrabold">
-          Đối soát & Tranh chấp học phí
-        </h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          Xác minh giao dịch ngân hàng và phân xử hồ sơ vấn đề.
+      <header>
+        <p className="text-xs font-semibold uppercase tracking-widest text-amber-700">
+          EduFit / Quản trị
         </p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+          {initialTab === "cases" ? "Hồ sơ học phí" : "Quản lý thanh toán"}
+        </h1>
+        <p className="mt-2 text-sm text-neutral-500">
+          Ưu tiên yêu cầu cần xử lý, đối chiếu trước khi xác nhận tiền.
+        </p>
+      </header>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {(
+          [
+            {
+              key: "withdrawals",
+              label: "Chi trả gia sư",
+              count: pendingWithdrawals.length,
+              Icon: ArrowUpRight,
+            },
+            {
+              key: "topups",
+              label: "Nạp tiền",
+              count: pendingTopups.length,
+              Icon: ArrowDownLeft,
+            },
+            {
+              key: "cases",
+              label: "Hồ sơ vấn đề",
+              count: disputes.length,
+              Icon: ShieldAlert,
+            },
+          ] as const
+        ).map(({ key, label, count, Icon }) => (
+          <button
+            key={key}
+            aria-pressed={active === key}
+            onClick={() => {
+              setChosen(key);
+              setOffset(0);
+              setResolved(false);
+            }}
+            className={`flex items-center gap-4 rounded-2xl border p-5 text-left ${
+              active === key
+                ? "border-stone-900 bg-stone-900 text-white"
+                : "border-stone-200 bg-white text-neutral-700 hover:border-amber-400"
+            }`}
+          >
+            <span
+              className={`rounded-xl p-3 ${
+                active === key ? "bg-white/10" : "bg-stone-100"
+              }`}
+            >
+              <Icon className="size-5" />
+            </span>
+            <span className="flex-1 text-sm font-semibold">{label}</span>
+            <strong className="text-2xl">{count}</strong>
+          </button>
+        ))}
       </div>
-      {data?.configuration && (
-        <section
-          className="rounded-2xl border bg-white p-5 space-y-2"
-          aria-label="Trạng thái kênh thanh toán"
-        >
-          <h2 className="font-bold">Kết nối thanh toán</h2>
-          <p>
-            Nạp tự động payOS:{" "}
-            {data.configuration.topupReady
-              ? "Đã có cấu hình"
-              : "Chưa đủ cấu hình"}
-          </p>
-          <p>
-            QR đối soát thủ công:{" "}
-            {data.configuration.manualReady
-              ? "Đã có cấu hình"
-              : "Chưa cấu hình"}
-          </p>
-          <p>
-            Chi hộ payOS:{" "}
-            {data.configuration.payoutReady
-              ? "Đã bật và có cấu hình"
-              : data.configuration.payoutEnabled
-                ? "Đã bật nhưng thiếu khóa"
-                : "Chưa bật"}
-          </p>
-          <p className="text-xs text-neutral-500">
-            Trạng thái trên phản ánh cấu hình backend. Cần kiểm tra kênh trên
-            payOS và webhook thực tế trước khi nhận tiền.
-          </p>
-        </section>
-      )}
-      {error && (
+      {error && !target && (
         <p
           role="alert"
-          className="rounded-xl bg-red-50 p-4 text-sm text-red-800"
+          className="rounded-xl bg-red-50 p-4 text-sm text-red-700"
         >
           {error}
         </p>
       )}
-      {!data && <p role="status">Đang tải dữ liệu đối soát…</p>}
-      {target && (
-        <form
-          onSubmit={submit}
-          className="space-y-3 rounded-2xl border border-amber-300 bg-amber-50 p-5"
+      {!data ? (
+        <p
+          role="status"
+          className="rounded-2xl border border-stone-200 bg-white p-8 text-center text-sm text-neutral-500"
         >
-          <h2 className="font-bold">{target.label}</h2>
-          <p className="text-sm">Mã {target.id}</p>
-          <label className="block text-sm">
-            Ghi chú / lý do
-            <textarea
-              required
-              maxLength={2000}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="mt-1 w-full rounded-lg border bg-white p-2"
-            />
-          </label>
-          {target.kind !== "disputes" && target.approve && !target.payout && (
-            <label className="block text-sm">
-              Mã giao dịch ngân hàng đã xác minh
-              <input
-                required
-                minLength={6}
-                maxLength={200}
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                className="mt-1 w-full rounded-lg border bg-white p-2"
-              />
-              <span className="text-xs">
-                Chỉ xác nhận sau khi đã đối chiếu giao dịch thật. Không nhập mã
-                giả.
-              </span>
-            </label>
-          )}
-          <div className="flex gap-2">
-            <button
-              disabled={busy}
-              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold disabled:opacity-50"
-            >
-              Xác nhận xử lý
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => setTarget(null)}
-              className={button}
-            >
-              Hủy
-            </button>
-          </div>
-        </form>
-      )}
-      <section className="space-y-3">
-        <h2 className="text-lg font-bold">Hồ sơ vấn đề cần Admin xem xét</h2>
-        {disputes.length === 0 && (
-          <p className="rounded-xl border border-dashed p-5 text-sm text-neutral-500">
-            Chưa có hồ sơ chờ Admin duyệt hoặc phân xử.
-          </p>
-        )}
-        {disputes.map((s) => (
-          <article
-            key={s.sessionId}
-            className="space-y-3 rounded-2xl border bg-white p-5"
-          >
-            <h3 className="font-bold">
-              {s.tutorName} · {new Date(s.startAt).toLocaleString("vi-VN")}
-            </h3>
-            <p className="text-sm">
-              Buổi {s.sessionId} · Ví cấp tiền {s.payerId}
-            </p>
-            <p className="text-sm">
-              Đang giữ {money(s.amount)} ·{" "}
-              {s.status === "ADMIN_REVIEW"
-                ? "Quá hạn chưa thống nhất, cần phân xử"
-                : "Hai bên đã thống nhất"}
-            </p>
-            <p className="text-sm">Lý do: {s.disputeReason}</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-lg bg-stone-50 p-3 text-sm">
-                <strong>Báo cáo người học</strong>
-                <p>{s.learnerReport}</p>
-                <p>{money(s.learnerAmount ?? 0)}</p>
-              </div>
-              <div className="rounded-lg bg-stone-50 p-3 text-sm">
-                <strong>Báo cáo gia sư</strong>
-                <p>{s.tutorReport}</p>
-                <p>{money(s.tutorAmount ?? 0)}</p>
-              </div>
-            </div>
-            <Link
-              className="inline-block rounded-lg border px-3 py-2 text-sm font-semibold text-sky-700"
-              href={`/admin/disputes/${encodeURIComponent(s.sessionId)}`}
-            >
-              Mở hồ sơ và xử lý
-            </Link>
-          </article>
-        ))}
-      </section>
-      <section className="space-y-3">
-        <h2 className="text-lg font-bold">Yêu cầu nạp tiền</h2>
-        {data?.topups.length === 0 && (
-          <p className="text-sm text-neutral-500">Chưa có yêu cầu.</p>
-        )}
-        {data?.topups.map((t) => (
-          <article
-            key={t.id}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white p-4 text-sm"
-          >
-            <div>
-              <p className="font-semibold">
-                {money(t.amount)} · {t.provider} · {t.status}
-              </p>
-              <p>
-                Ví {t.user_id} · Mã EF{t.order_code.toString(36).toUpperCase()}
-              </p>
-            </div>
-            {t.provider === "MANUAL" && t.status === "PENDING" && (
-              <button
-                disabled={busy}
-                className={button}
-                onClick={() =>
-                  select({
-                    kind: "topups",
-                    id: t.id,
-                    approve: true,
-                    label: `Xác minh đã nhận ${money(t.amount)} qua ngân hàng`,
-                  })
-                }
-              >
-                Xác minh giao dịch
-              </button>
+          {error
+            ? "Chưa tải được danh sách. Hãy tải lại trang."
+            : "Đang tải yêu cầu…"}
+        </p>
+      ) : (
+        <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-100 p-5">
+            <h2 className="font-bold">
+              {active === "cases"
+                ? "Hồ sơ cần Admin xem xét"
+                : active === "withdrawals"
+                  ? "Yêu cầu chi trả"
+                  : "Yêu cầu nạp tiền"}
+            </h2>
+            {active !== "cases" && (
+              <label className="flex items-center gap-2 text-xs text-neutral-500">
+                <input
+                  type="checkbox"
+                  checked={resolved}
+                  onChange={(e) => setResolved(e.target.checked)}
+                />
+                Gồm yêu cầu đã xử lý
+              </label>
             )}
-          </article>
-        ))}
-      </section>
-      <section className="space-y-3">
-        <h2 className="text-lg font-bold">Yêu cầu chi trả gia sư</h2>
-        {data?.withdrawals.length === 0 && (
-          <p className="text-sm text-neutral-500">Chưa có yêu cầu.</p>
-        )}
-        {data?.withdrawals.map((w) => (
-          <article
-            key={w.id}
-            className="space-y-2 rounded-xl border bg-white p-4 text-sm"
-          >
-            <p className="font-semibold">
-              {money(w.amount)} · {w.status}
-            </p>
-            <p>
-              {w.bank_name} · {w.bank_account} · {w.bank_holder}
-            </p>
-            <p>
-              Ví gia sư {w.user_id} · BIN {w.bank_bin ?? "Chưa có"}
-            </p>
-            {w.provider_state && <p>Trạng thái chi hộ: {w.provider_state}</p>}
-            {w.provider_message && (
-              <p role="status" className="text-amber-800">
-                {w.provider_message}
-              </p>
-            )}
-            {w.status === "PROCESSING" && (
-              <div className="space-y-2">
-                <p>
-                  Đang giữ tiền để xác minh kết quả ngân hàng. Không chuyển lại
-                  thủ công.
+          </header>
+          <div className="divide-y divide-stone-100">
+            {active === "cases" &&
+              disputes.map((s) => (
+                <article
+                  key={s.sessionId}
+                  className="flex flex-wrap items-center justify-between gap-4 p-5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold">
+                      {s.tutorName} · {money(s.amount)}
+                    </p>
+                    <p className="mt-1 text-xs text-amber-800">
+                      {s.status === "ADMIN_REVIEW"
+                        ? "Chưa thống nhất sau 48 giờ"
+                        : "Hai bên đã thống nhất"}{" "}
+                      · Tiền đang giữ
+                    </p>
+                    <p className="mt-2 line-clamp-2 text-sm text-neutral-500">
+                      {s.disputeReason}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/admin/disputes/${encodeURIComponent(s.sessionId)}`}
+                    className={button}
+                  >
+                    Mở hồ sơ và xử lý
+                  </Link>
+                </article>
+              ))}
+            {active === "topups" &&
+              topups.map((t) => (
+                <article
+                  key={t.id}
+                  className="flex flex-wrap items-center justify-between gap-4 p-5"
+                >
+                  <div>
+                    <p className="text-sm font-bold">
+                      {money(t.amount)}{" "}
+                      <span className="ml-2 text-xs font-normal text-neutral-500">
+                        {t.status === "PAID"
+                          ? "Đã cộng ví"
+                          : t.status === "CANCELLED"
+                            ? "Đã hủy"
+                            : "Chờ xác minh"}
+                      </span>
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-500">
+                      EF{t.order_code.toString(36).toUpperCase()} ·{" "}
+                      {t.provider === "PAYOS"
+                        ? "QR payOS"
+                        : "Chuyển khoản thủ công"}
+                    </p>
+                    <details className="mt-2 text-xs text-neutral-500">
+                      <summary className="cursor-pointer">
+                        Thông tin đối soát
+                      </summary>
+                      <p className="mt-2 break-all">Ví: {t.user_id}</p>
+                    </details>
+                  </div>
+                  {t.status === "PENDING" &&
+                    (t.provider === "MANUAL" ? (
+                      <button
+                        disabled={busy}
+                        className={button}
+                        onClick={() =>
+                          select({
+                            kind: "topups",
+                            id: t.id,
+                            approve: true,
+                            label: `Xác minh đã nhận ${money(
+                              t.amount,
+                            )} qua ngân hàng`,
+                            summary: `Yêu cầu EF${t.order_code
+                              .toString(36)
+                              .toUpperCase()} · Ví ${
+                              t.user_id
+                            }. Đối chiếu giao dịch ngân hàng trước khi cộng tiền.`,
+                          })
+                        }
+                      >
+                        Xác minh giao dịch
+                      </button>
+                    ) : (
+                      <button
+                        disabled={busy}
+                        className={button}
+                        onClick={() => void refresh("topup", t.id)}
+                      >
+                        Kiểm tra giao dịch
+                      </button>
+                    ))}
+                </article>
+              ))}
+            {active === "withdrawals" &&
+              withdrawals.map((w) => (
+                <article key={w.id} className="space-y-3 p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm font-bold">{money(w.amount)}</p>
+                    <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium">
+                      {w.status === "PENDING"
+                        ? "Chờ duyệt"
+                        : w.status === "PROCESSING"
+                          ? "Đang chuyển"
+                          : w.status === "PAID"
+                            ? "Đã chuyển"
+                            : "Đã hoàn ví"}
+                    </span>
+                  </div>
+                  <p className="text-sm text-neutral-600">
+                    {w.bank_name} · {w.bank_account} · {w.bank_holder}
+                  </p>
+                  <details className="text-xs text-neutral-500">
+                    <summary className="cursor-pointer">
+                      Thông tin đối soát
+                    </summary>
+                    <p className="mt-2 break-all">
+                      Ví: {w.user_id} · BIN {w.bank_bin ?? "Chưa có"} · Mã:{" "}
+                      {w.id}
+                    </p>
+                  </details>
+                  {w.provider_message && (
+                    <p role="status" className="text-xs text-amber-800">
+                      {w.provider_message}
+                    </p>
+                  )}
+                  {w.status === "PROCESSING" && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 p-3">
+                      <p className="text-xs text-amber-900">
+                        Chờ xác minh kết quả ngân hàng. Không chuyển lại thủ
+                        công.
+                      </p>
+                      <button
+                        disabled={busy}
+                        className={button}
+                        onClick={() => void refresh("payout", w.id)}
+                      >
+                        Đối soát kết quả chi
+                      </button>
+                    </div>
+                  )}
+                  {w.status === "PENDING" && (
+                    <div className="flex flex-wrap gap-2">
+                      {data.configuration?.payoutReady && w.bank_bin ? (
+                        <button
+                          disabled={busy}
+                          className={button}
+                          onClick={() =>
+                            select({
+                              kind: "withdrawals",
+                              id: w.id,
+                              approve: true,
+                              payout: true,
+                              label: `Duyệt chi hộ ${money(w.amount)} đến ${
+                                w.bank_account
+                              }`,
+                              summary: `${w.bank_name} · ${w.bank_account} · ${w.bank_holder}. Xác nhận sẽ gửi lệnh chi qua payOS.`,
+                            })
+                          }
+                        >
+                          Duyệt và chuyển qua payOS
+                        </button>
+                      ) : (
+                        <button
+                          disabled={busy}
+                          className={button}
+                          onClick={() =>
+                            select({
+                              kind: "withdrawals",
+                              id: w.id,
+                              approve: true,
+                              label: `Xác nhận đã chuyển ngân hàng ${money(
+                                w.amount,
+                              )}`,
+                              summary: `${w.bank_name} · ${w.bank_account} · ${w.bank_holder}. Chỉ xác nhận khi giao dịch chuyển tiền thật đã thành công.`,
+                            })
+                          }
+                        >
+                          Đã chuyển ngân hàng
+                        </button>
+                      )}
+                      <button
+                        disabled={busy}
+                        className={button}
+                        onClick={() =>
+                          select({
+                            kind: "withdrawals",
+                            id: w.id,
+                            approve: false,
+                            label:
+                              "Từ chối chi trả và trả tiền về số dư gia sư",
+                            summary: `Hoàn ${money(
+                              w.amount,
+                            )} về ví gia sư. Chỉ dùng khi chưa chuyển tiền; ghi rõ lý do.`,
+                          })
+                        }
+                      >
+                        Từ chối
+                      </button>
+                    </div>
+                  )}
+                </article>
+              ))}
+            {((active === "cases" && !disputes.length) ||
+              (active === "topups" && !topups.length) ||
+              (active === "withdrawals" && !withdrawals.length)) && (
+              <div className="py-12 text-center">
+                <CheckCircle2 className="mx-auto size-9 text-emerald-600" />
+                <p className="mt-3 text-sm font-semibold">
+                  Không có yêu cầu trong danh sách này
                 </p>
-                <button
-                  disabled={busy}
-                  className={button}
-                  onClick={async () => {
-                    setBusy(true);
-                    try {
-                      await paymentApi.refreshPayout(w.id);
-                      await load();
-                    } catch (e) {
-                      setError(paymentError(e));
-                    } finally {
-                      setBusy(false);
-                    }
-                  }}
-                >
-                  Đối soát kết quả chi
-                </button>
+                <p className="mt-1 text-xs text-neutral-500">
+                  Chọn hàng đợi khác hoặc xem yêu cầu đã xử lý.
+                </p>
               </div>
             )}
-            {w.status === "PENDING" && (
-              <div className="flex gap-2">
-                {data.configuration?.payoutReady && w.bank_bin ? (
-                  <button
-                    disabled={busy}
-                    className={button}
-                    onClick={() =>
-                      select({
-                        kind: "withdrawals",
-                        id: w.id,
-                        approve: true,
-                        payout: true,
-                        label: `Duyệt chi hộ ${money(w.amount)} đến ${
-                          w.bank_account
-                        }`,
-                      })
-                    }
-                  >
-                    Duyệt và chuyển qua payOS
-                  </button>
-                ) : (
-                  <button
-                    disabled={busy}
-                    className={button}
-                    onClick={() =>
-                      select({
-                        kind: "withdrawals",
-                        id: w.id,
-                        approve: true,
-                        label: `Xác nhận đã chuyển ngân hàng ${money(
-                          w.amount,
-                        )}`,
-                      })
-                    }
-                  >
-                    Đã chuyển ngân hàng
-                  </button>
-                )}
-                <button
-                  disabled={busy}
-                  className={button}
-                  onClick={() =>
-                    select({
-                      kind: "withdrawals",
-                      id: w.id,
-                      approve: false,
-                      label: "Từ chối chi trả và trả tiền về số dư gia sư",
-                    })
-                  }
-                >
-                  Từ chối
-                </button>
-              </div>
-            )}
-          </article>
-        ))}
-      </section>
-      <div className="flex justify-between">
-        <button
-          disabled={offset === 0 || busy}
-          className={button}
-          onClick={() => setOffset(Math.max(0, offset - 50))}
-        >
-          Trang trước
-        </button>
-        <span className="text-sm">Trang {offset / 50 + 1}</span>
-        <button
-          disabled={
-            busy ||
-            Math.max(
-              data?.topups.length ?? 0,
-              data?.withdrawals.length ?? 0,
-              disputes.length,
-            ) < 50
-          }
-          className={button}
-          onClick={() => setOffset(offset + 50)}
-        >
-          Trang sau
-        </button>
-      </div>
+          </div>
+          <footer className="flex items-center justify-between gap-3 border-t border-stone-100 p-4">
+            <button
+              disabled={offset === 0 || busy}
+              className={button}
+              onClick={() => setOffset((n) => Math.max(0, n - 50))}
+            >
+              <ChevronLeft className="inline size-4" />
+              Trước
+            </button>
+            <span className="text-xs text-neutral-500">
+              Trang {offset / 50 + 1} · Số liệu trong trang hiện tại
+            </span>
+            <button
+              disabled={
+                busy ||
+                Math.max(
+                  data.topups.length,
+                  data.withdrawals.length,
+                  disputes.length,
+                ) < 50
+              }
+              className={button}
+              onClick={() => setOffset((n) => n + 50)}
+            >
+              Sau
+              <ChevronRight className="inline size-4" />
+            </button>
+          </footer>
+        </section>
+      )}
+      {data?.configuration && (
+        <details className="rounded-2xl border border-stone-200 bg-white px-5 py-4">
+          <summary className="cursor-pointer text-sm font-semibold">
+            <Settings2 className="mr-2 inline size-4 text-neutral-500" />
+            Kết nối thanh toán
+          </summary>
+          <div className="mt-4 grid gap-4 border-t border-stone-100 pt-4 text-sm sm:grid-cols-3">
+            <p>
+              Nạp payOS:{" "}
+              <strong>
+                {data.configuration.topupReady
+                  ? "Có cấu hình"
+                  : "Chưa cấu hình"}
+              </strong>
+            </p>
+            <p>
+              QR thủ công:{" "}
+              <strong>
+                {data.configuration.manualReady
+                  ? "Có cấu hình"
+                  : "Chưa cấu hình"}
+              </strong>
+            </p>
+            <p>
+              Chi payOS:{" "}
+              <strong>
+                {data.configuration.payoutReady
+                  ? "Đã bật"
+                  : data.configuration.payoutEnabled
+                    ? "Thiếu cấu hình"
+                    : "Chưa bật"}
+              </strong>
+            </p>
+          </div>
+          <p className="mt-3 text-xs text-neutral-500">
+            Cấu hình đầy đủ chưa xác nhận kênh và webhook đã hoạt động thực tế.
+          </p>
+        </details>
+      )}
+      {target && (
+        <AdminPaymentReviewDialog
+          key={target.id + target.approve + target.payout}
+          target={target}
+          busy={busy}
+          error={error}
+          onClose={() => {
+            setTarget(null);
+            setError(null);
+          }}
+          onConfirm={submit}
+        />
+      )}
     </div>
   );
 }
