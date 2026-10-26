@@ -214,13 +214,13 @@ export function TutorWithdrawalPanel({
       className="overflow-hidden rounded-2xl border border-stone-200 bg-white"
     >
       <div className="grid lg:grid-cols-2">
-        <div className="space-y-5 bg-stone-900 p-6 text-white sm:p-8">
-          <div className="flex items-center gap-2 text-sm font-medium text-stone-300">
+        <div className="space-y-5 bg-amber-50 p-6 text-amber-950 dark:bg-amber-950/40 dark:text-amber-100 sm:p-8">
+          <div className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-200">
             <Wallet className="size-4" />
             Ví thu nhập gia sư
           </div>
           <div>
-            <p className="text-sm text-stone-300">Có thể yêu cầu rút</p>
+            <p className="text-sm text-amber-800 dark:text-amber-200">Có thể yêu cầu rút</p>
             <p className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">
               {money(data.wallet.available)}
             </p>
@@ -238,7 +238,7 @@ export function TutorWithdrawalPanel({
             Rút tiền
             <ArrowUpRight className="size-4" />
           </button>
-          <p className="text-xs leading-relaxed text-stone-300">
+          <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-200">
             Thu nhập đã trừ phí nền tảng. Không thu thêm phí EduFit khi rút.
           </p>
         </div>
