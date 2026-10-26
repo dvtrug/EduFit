@@ -4,18 +4,13 @@ import { RefreshCw } from "lucide-react";
 import {
   paymentApi,
   paymentError,
-  money,
-  entryLabels,
   type Overview,
   type PaymentSession,
 } from "../api/paymentApi";
 import { WalletPanel } from "./WalletPanel";
-import Link from "next/link";
-import {
-  paymentStatus,
-  paymentNextAction,
-  sessionPaymentHref,
-} from "../paymentPresentation";
+import { PaymentActivity } from "./PaymentActivity";
+import { PaymentHistoryDialog } from "./PaymentHistoryDialog";
+import { PaymentSessionsPanel } from "./PaymentSessionsPanel";
 export function PaymentWorkspace({
   role,
 }: {
@@ -25,7 +20,7 @@ export function PaymentWorkspace({
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
-  const [offset, setOffset] = useState(0);
+  const [history, setHistory] = useState(false);
   const [data, setData] = useState<Overview | null>(null);
   const [sessions, setSessions] = useState<PaymentSession[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +35,7 @@ export function PaymentWorkspace({
       const [year, m] = month.split("-").map(Number);
       if (!year || !m) return;
       const [wallet, list] = await Promise.all([
-        paymentApi.wallet(offset),
+        paymentApi.wallet(0),
         paymentApi.sessions(
           new Date(year, m - 1, 1).toISOString(),
           new Date(year, m, 1).toISOString(),
@@ -51,9 +46,7 @@ export function PaymentWorkspace({
           ? `${wallet.data.wallet.available}:${wallet.data.wallet.held}`
           : null;
         if (balance.current !== null && currentBalance !== balance.current)
-          setNotice(
-            "Số dư ví vừa được cập nhật. Xem sổ giao dịch để biết chi tiết.",
-          );
+          setNotice("Số dư ví đã được cập nhật.");
         balance.current = currentBalance;
         setData(wallet.data ?? null);
         setSessions(list.data ?? []);
@@ -63,7 +56,7 @@ export function PaymentWorkspace({
       if (alive.current && current === generation.current)
         setError(paymentError(e));
     }
-  }, [month, offset]);
+  }, [month]);
   useEffect(() => {
     alive.current = true;
     async function initial() {
@@ -99,24 +92,33 @@ export function PaymentWorkspace({
   }
   return (
     <div className="mx-auto max-w-6xl space-y-6 pb-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold">
-            {role === "TUTOR" ? "Thu nhập & Thanh toán" : "Ví & Học phí"}
+          <p className="text-xs font-semibold uppercase tracking-widest text-amber-700">
+            EduFit / Thanh toán
+          </p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+            {role === "TUTOR"
+              ? "Thu nhập của bạn"
+              : role === "PARENT"
+                ? "Ví học phí gia đình"
+                : "Ví học phí"}
           </h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            Nạp trước · Xác nhận sau buổi học · Phí nền tảng 10%
+          <p className="mt-2 text-sm text-neutral-500">
+            {role === "TUTOR"
+              ? "Theo dõi buổi dạy, quản lý thu nhập và rút về ngân hàng."
+              : "Quản lý tiền học và phản hồi từng buổi tại một nơi."}
           </p>
         </div>
         <button
           disabled={busy}
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm"
+          className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-stone-50"
         >
-          <RefreshCw className="size-4" />
+          <RefreshCw className={`size-4 ${busy ? "animate-spin" : ""}`} />
           Làm mới
         </button>
-      </div>
+      </header>
       {error && (
         <p
           role="alert"
@@ -134,9 +136,17 @@ export function PaymentWorkspace({
         </p>
       )}
       {!data ? (
-        <p role="status">
-          {error ? "Chưa tải được dữ liệu ví." : "Đang tải ví và học phí…"}
-        </p>
+        <div
+          role="status"
+          className="animate-pulse space-y-4 rounded-2xl border border-stone-200 bg-white p-8"
+        >
+          <p className="text-sm text-neutral-500">
+            {error
+              ? "Chưa tải được dữ liệu ví. Bấm làm mới để thử lại."
+              : "Đang tải ví và học phí…"}
+          </p>
+          <div className="h-12 w-48 rounded-lg bg-stone-100" />
+        </div>
       ) : (
         <>
           <WalletPanel
@@ -145,178 +155,26 @@ export function PaymentWorkspace({
             busy={busy}
             execute={execute}
           />
-          <section className="space-y-3">
-            <div className="flex flex-wrap justify-between gap-3">
-              <h2 className="text-lg font-bold">Học phí theo buổi</h2>
-              <label className="text-sm">
-                Tháng{" "}
-                <input
-                  aria-label="Tháng học phí"
-                  type="month"
-                  value={month}
-                  onChange={(e) => setMonth(e.target.value)}
-                  className="ml-2 rounded-lg border bg-white p-2"
-                />
-              </label>
-            </div>
-            <p className="text-sm text-neutral-500">
-              Mở chi tiết từng buổi để xem tiền đang ở đâu, hạn phản hồi và hồ
-              sơ vấn đề.
-            </p>
-            {sessions.length === 0 ? (
-              <div className="rounded-xl border border-dashed p-6 text-sm text-neutral-500">
-                Chưa có buổi học trong tháng đã chọn.
-              </div>
-            ) : (
-              sessions.map((s) => (
-                <article
-                  key={s.sessionId}
-                  className="space-y-2 rounded-xl border bg-white p-4"
-                >
-                  <div className="flex flex-wrap justify-between gap-2">
-                    <h3 className="font-semibold">
-                      {s.tutorName} ·{" "}
-                      {new Date(s.startAt).toLocaleString("vi-VN")}
-                    </h3>
-                    <strong>{money(s.amount)}</strong>
-                  </div>
-                  <p className="text-sm font-medium text-amber-800">
-                    {paymentStatus(s)}
-                  </p>
-                  <p className="text-sm text-neutral-600">
-                    {paymentNextAction(s)}
-                  </p>
-                  {s.reviewDeadline && (
-                    <p className="text-xs text-neutral-500">
-                      Hạn phản hồi:{" "}
-                      {new Date(s.reviewDeadline).toLocaleString("vi-VN")}
-                    </p>
-                  )}
-                  <Link
-                    className="inline-block text-sm font-semibold text-sky-700 underline"
-                    href={sessionPaymentHref(role, s.sessionId)}
-                  >
-                    Xem chi tiết buổi học
-                  </Link>
-                </article>
-              ))
-            )}
-          </section>
-          <section className="rounded-2xl border bg-white p-5 space-y-3">
-            <h2 className="font-bold">Lịch sử nạp / rút</h2>
-            {data.topups.length === 0 && data.withdrawals.length === 0 && (
-              <p className="text-sm text-neutral-500">
-                Chưa có yêu cầu nạp hoặc rút tiền.
-              </p>
-            )}
-            {data.topups.map((t) => (
-              <div
-                key={t.id}
-                className="flex flex-wrap justify-between gap-2 border-t py-2 text-sm"
-              >
-                <span>
-                  Nạp {money(t.amount)} · Mã EF
-                  {t.order_code.toString(36).toUpperCase()}
-                </span>
-                <span>
-                  {t.status === "PAID"
-                    ? "Đã cộng ví"
-                    : t.status === "CANCELLED"
-                      ? "Đã hủy"
-                      : "Chờ xác minh"}{" "}
-                  {t.provider === "PAYOS" && t.status === "PENDING" && (
-                    <button
-                      disabled={busy}
-                      className="ml-2 text-sky-700 underline"
-                      onClick={() =>
-                        void execute(() => paymentApi.refreshTopup(t.id))
-                      }
-                    >
-                      Kiểm tra tiền đã chuyển
-                    </button>
-                  )}
-                  {t.checkout_url && t.status === "PENDING" && (
-                    <a
-                      className="ml-2 text-sky-700 underline"
-                      href={t.checkout_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Mở thanh toán
-                    </a>
-                  )}
-                </span>
-              </div>
-            ))}
-            {data.withdrawals.map((w) => (
-              <p key={w.id} className="border-t py-2 text-sm">
-                Rút {money(w.amount)} · {w.bank_name} / {w.bank_account} ·{" "}
-                {w.status === "PAID"
-                  ? "Đã chuyển ngân hàng"
-                  : w.status === "REJECTED" || w.status === "FAILED"
-                    ? "Đã từ chối, hoàn ví"
-                    : w.status === "PROCESSING"
-                      ? "Đang chuyển ngân hàng · đang giữ tiền"
-                      : "Chờ Admin chi trả"}
-              </p>
-            ))}
-          </section>
-          <section className="rounded-2xl border bg-white p-5 space-y-3">
-            <h2 className="font-bold">Sổ giao dịch ví</h2>
-            {data.entries.length === 0 ? (
-              <p className="text-sm text-neutral-500">Chưa có giao dịch.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px] text-left text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="py-2">Thời gian</th>
-                      <th>Nội dung</th>
-                      <th>Thay đổi khả dụng</th>
-                      <th>Thay đổi đang giữ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.entries.map((e) => (
-                      <tr key={e.id} className="border-b border-stone-100">
-                        <td className="py-3">
-                          {new Date(e.created_at).toLocaleString("vi-VN")}
-                        </td>
-                        <td>{entryLabels[e.kind] ?? e.kind}</td>
-                        <td>{money(e.available_delta)}</td>
-                        <td>{money(e.held_delta)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <button
-                disabled={offset === 0 || busy}
-                onClick={() => setOffset(Math.max(0, offset - 50))}
-                className="text-sm disabled:opacity-40"
-              >
-                Trang trước
-              </button>
-              <span className="text-sm">Trang {offset / 50 + 1}</span>
-              <button
-                disabled={
-                  busy ||
-                  Math.max(
-                    data.entries.length,
-                    data.topups.length,
-                    data.withdrawals.length,
-                  ) < 50
-                }
-                onClick={() => setOffset(offset + 50)}
-                className="text-sm disabled:opacity-40"
-              >
-                Trang sau
-              </button>
-            </div>
-          </section>
+          <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+            <PaymentSessionsPanel
+              key={month}
+              sessions={sessions}
+              role={role}
+              month={month}
+              onMonth={setMonth}
+            />
+            <PaymentActivity
+              entries={data.entries}
+              onHistory={() => setHistory(true)}
+            />
+          </div>
         </>
+      )}
+      {history && (
+        <PaymentHistoryDialog
+          onClose={() => setHistory(false)}
+          execute={execute}
+        />
       )}
     </div>
   );

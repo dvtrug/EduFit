@@ -97,6 +97,8 @@ it("reuses the saved recipient, fills the available amount and asks before withd
     />,
   );
   expect(screen.queryByLabelText("Số tài khoản")).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Số tiền rút")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Rút tiền" }));
   expect(screen.getByLabelText("Số tiền rút")).toHaveValue(null);
   fireEvent.click(screen.getByRole("button", { name: "Rút toàn bộ" }));
   expect(screen.getByLabelText("Số tiền rút")).toHaveValue(90000);
@@ -111,6 +113,9 @@ it("reuses the saved recipient, fills the available amount and asks before withd
 it("saves a recipient separately without creating a withdrawal", async () => {
   render(
     <WalletPanel data={overview} tutor={true} busy={false} execute={execute} />,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Thêm tài khoản nhận tiền" }),
   );
   fireEvent.change(screen.getByRole("combobox", { name: "Ngân hàng" }), {
     target: { value: "970422" },
@@ -150,9 +155,7 @@ it("explains why withdrawal is disabled and does not allow overspending", () => 
       execute={execute}
     />,
   );
-  expect(
-    screen.getByRole("button", { name: "Tiếp tục rút tiền" }),
-  ).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Rút tiền" })).toBeDisabled();
   expect(screen.getByText(/Số dư khả dụng tối thiểu/)).toBeInTheDocument();
 });
 
@@ -180,7 +183,7 @@ it("blocks new withdrawals while an earlier request is pending", () => {
       execute={execute}
     />,
   );
-  expect(screen.getByRole("button", { name: "Rút toàn bộ" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Rút tiền" })).toBeDisabled();
   expect(screen.getByText(/Bạn có yêu cầu rút đang chờ/)).toBeInTheDocument();
 });
 it("invalidates a confirmation if the saved recipient changes", () => {
@@ -192,6 +195,7 @@ it("invalidates a confirmation if the saved recipient changes", () => {
       execute={execute}
     />,
   );
+  fireEvent.click(screen.getByRole("button", { name: "Rút tiền" }));
   fireEvent.click(screen.getByRole("button", { name: "Rút toàn bộ" }));
   fireEvent.click(screen.getByRole("button", { name: "Tiếp tục rút tiền" }));
   rerender(

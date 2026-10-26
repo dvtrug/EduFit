@@ -1,9 +1,12 @@
 "use client";
 import { useState, type FormEvent } from "react";
+import { ArrowUpRight, Building2, Clock3, Wallet } from "lucide-react";
+import { PaymentDialog } from "./PaymentDialog";
 import banks from "../data/banks.json";
 import {
   money,
   paymentApi,
+  paymentError,
   type Overview,
   type PayoutAccount,
 } from "../api/paymentApi";
@@ -151,6 +154,25 @@ export function TutorWithdrawalPanel({
 }) {
   const recipient = data.payoutAccount ?? null;
   const [editing, setEditing] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  async function perform(work: () => Promise<unknown>) {
+    setLocalError(null);
+    try {
+      return await execute(async () => {
+        try {
+          return await work();
+        } catch (e) {
+          setLocalError(paymentError(e));
+          throw e;
+        }
+      });
+    } catch (e) {
+      setLocalError(paymentError(e));
+      return false;
+    }
+  }
+
+  const [withdrawing, setWithdrawing] = useState(false);
   const [amount, setAmount] = useState("");
   const [confirmation, setConfirmation] = useState<{
     amount: number;
@@ -173,187 +195,276 @@ export function TutorWithdrawalPanel({
       confirmation.amount > data.wallet.available
     )
       return;
-    const ok = await execute(() =>
+    const ok = await perform(() =>
       paymentApi.withdrawSaved(confirmation.amount, confirmation.recipient.id),
     );
     if (ok) {
       setConfirmation(null);
       setAmount("");
+      setWithdrawing(false);
     }
   }
   return (
-    <section className="space-y-5 rounded-2xl border border-stone-200 bg-white p-5 sm:p-6">
-      <h2 className="font-bold">Ví thu nhập gia sư</h2>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div>
-          <p className="text-sm text-neutral-500">Thu nhập chờ tất toán</p>
-          <p className="mt-1 text-2xl font-extrabold text-stone-600 sm:text-3xl">
-            {data.pendingIncome === undefined ? "—" : money(data.pendingIncome)}
-          </p>
-          <p className="text-xs text-neutral-500">
-            Dự kiến sau phí; có thể đổi theo kết quả hồ sơ.
+    <section
+      aria-label="Ví thu nhập gia sư"
+      className="overflow-hidden rounded-2xl border border-stone-200 bg-white"
+    >
+      <div className="grid lg:grid-cols-2">
+        <div className="space-y-5 bg-stone-900 p-6 text-white sm:p-8">
+          <div className="flex items-center gap-2 text-sm font-medium text-stone-300">
+            <Wallet className="size-4" />
+            Ví thu nhập gia sư
+          </div>
+          <div>
+            <p className="text-sm text-stone-300">Có thể yêu cầu rút</p>
+            <p className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">
+              {money(data.wallet.available)}
+            </p>
+          </div>
+          <button
+            disabled={busy || !!pending || !recipient || maximum < 10000}
+            onClick={() => {
+              setLocalError(null);
+              setWithdrawing(true);
+              setConfirmation(null);
+              setAmount("");
+            }}
+            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-bold text-stone-950 hover:bg-amber-400 disabled:opacity-50"
+          >
+            Rút tiền
+            <ArrowUpRight className="size-4" />
+          </button>
+          <p className="text-xs leading-relaxed text-stone-300">
+            Thu nhập đã trừ phí nền tảng. Không thu thêm phí EduFit khi rút.
           </p>
         </div>
-        <div>
-          <p className="text-sm text-neutral-500">Có thể yêu cầu rút</p>
-          <p className="mt-1 text-2xl font-extrabold sm:text-3xl">
-            {money(data.wallet.available)}
-          </p>
-        </div>
-        <div>
-          <p className="text-sm text-neutral-500">Đang chờ chi trả</p>
-          <p className="mt-1 text-2xl font-extrabold text-amber-700 sm:text-3xl">
-            {money(data.wallet.held)}
-          </p>
+        <div className="grid grid-cols-2 gap-5 p-6 sm:p-8">
+          <div>
+            <Clock3 className="mb-4 size-5 text-amber-600" />
+            <p className="text-sm text-neutral-500">Thu nhập chờ tất toán</p>
+            <p className="mt-2 break-words text-2xl font-bold">
+              {data.pendingIncome === undefined
+                ? "—"
+                : money(data.pendingIncome)}
+            </p>
+            <p className="mt-2 text-xs leading-relaxed text-neutral-500">
+              Dự kiến sau phí, chưa thể rút; có thể đổi theo kết quả hồ sơ.
+            </p>
+          </div>
+          <div>
+            <ArrowUpRight className="mb-4 size-5 text-neutral-500" />
+            <p className="text-sm text-neutral-500">Đang chờ chi trả</p>
+            <p className="mt-2 break-words text-2xl font-bold">
+              {money(data.wallet.held)}
+            </p>
+            <p className="mt-2 text-xs leading-relaxed text-neutral-500">
+              Tiền trong yêu cầu rút đang được xử lý.
+            </p>
+          </div>
         </div>
       </div>
-      {recipient && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-stone-50 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-stone-100 px-6 py-5">
+        <div className="flex items-center gap-3">
+          <span className="rounded-xl bg-stone-100 p-3">
+            <Building2 className="size-5 text-neutral-500" />
+          </span>
           <div>
             <p className="text-xs text-neutral-500">
               Tài khoản nhận tiền mặc định
             </p>
-            <p className="font-semibold">
-              {recipient.bank_name} · {mask(recipient.bank_account)}
+            <p className="mt-1 text-sm font-semibold">
+              {recipient
+                ? `${recipient.bank_name} · ${mask(recipient.bank_account)}`
+                : "Chưa thêm tài khoản ngân hàng"}
             </p>
-            <p className="text-sm">{recipient.bank_holder}</p>
+            {recipient && (
+              <p className="mt-1 text-xs text-neutral-500">
+                {recipient.bank_holder}
+              </p>
+            )}
           </div>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              setEditing(true);
-              setConfirmation(null);
-            }}
-            className="rounded-lg border bg-white px-3 py-2 text-sm"
-          >
-            Đổi tài khoản
-          </button>
         </div>
+        <button
+          disabled={busy}
+          onClick={() => {
+            setLocalError(null);
+            setEditing(true);
+            setConfirmation(null);
+          }}
+          className="rounded-lg border border-stone-200 px-3 py-2 text-sm font-semibold"
+        >
+          {recipient ? "Đổi tài khoản" : "Thêm tài khoản nhận tiền"}
+        </button>
+      </div>
+      {pending && (
+        <p
+          role="status"
+          className="border-t border-amber-100 bg-amber-50 px-6 py-3 text-sm text-amber-900"
+        >
+          Bạn có yêu cầu rút đang chờ duyệt hoặc chuyển tiền:{" "}
+          {money(pending.amount)} đến {pending.bank_name} ·{" "}
+          {mask(pending.bank_account)}.
+        </p>
       )}
-      {!recipient || editing ? (
-        <RecipientEditor
-          key={recipient?.id ?? "new"}
-          recipient={recipient}
+      {!pending && data.wallet.available < 10000 && (
+        <p
+          role="status"
+          className="border-t border-stone-100 px-6 py-3 text-xs text-neutral-500"
+        >
+          Số dư khả dụng tối thiểu để rút là 10.000đ. Chờ học phí được tất toán
+          để tiếp tục.
+        </p>
+      )}
+      {editing && (
+        <PaymentDialog
+          title="Tài khoản nhận tiền"
+          onClose={() => setEditing(false)}
           busy={busy}
-          execute={execute}
-          close={() => setEditing(false)}
-        />
-      ) : (
-        <>
-          {pending && (
-            <p role="status" className="rounded-lg bg-amber-50 p-3 text-sm">
-              Bạn có yêu cầu rút đang chờ duyệt hoặc chuyển tiền. Yêu cầu hiện
-              tại vẫn nhận vào {pending.bank_name} ·{" "}
-              {mask(pending.bank_account)}. Hãy chờ kết quả trước khi rút tiếp.
+        >
+          {localError && (
+            <p
+              role="alert"
+              className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700"
+            >
+              {localError}
             </p>
           )}
-          {data.wallet.available < 10000 && (
-            <p role="status" className="text-sm text-amber-800">
-              Số dư khả dụng tối thiểu để rút là 10.000đ. Thu nhập phải được tất
-              toán vào ví trước.
+          <RecipientEditor
+            key={recipient?.id ?? "new"}
+            recipient={recipient}
+            busy={busy}
+            execute={perform}
+            close={() => setEditing(false)}
+          />
+        </PaymentDialog>
+      )}
+      {withdrawing && recipient && (
+        <PaymentDialog
+          title="Rút tiền về ngân hàng"
+          onClose={() => setWithdrawing(false)}
+          busy={busy}
+        >
+          {localError && (
+            <p
+              role="alert"
+              className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700"
+            >
+              {localError}
             </p>
           )}
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (valid && recipient && !pending && !busy)
-                setConfirmation({ amount: value, recipient });
-            }}
-            className="space-y-3 border-t pt-4"
-          >
-            <label className="block text-sm">
-              Số tiền rút
-              <input
-                type="number"
-                required
-                min={10000}
-                max={maximum}
-                step={1}
-                value={amount}
-                onChange={(event) => {
-                  setAmount(event.target.value);
-                  setConfirmation(null);
-                }}
-                placeholder="Nhập số tiền cần rút"
-                className="mt-1 w-full rounded-lg border p-2"
-              />
-            </label>
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                disabled={busy || maximum < 10000 || !!pending}
-                onClick={() => {
-                  setAmount(String(maximum));
-                  setConfirmation(null);
-                }}
-                className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
-              >
-                Rút toàn bộ
-              </button>
+          <div className="mb-5 flex items-center justify-between rounded-xl bg-stone-50 p-4 text-sm">
+            <div>
+              <p className="text-xs text-neutral-500">Nhận vào</p>
+              <p className="mt-1 font-semibold">
+                {recipient.bank_name} · {mask(recipient.bank_account)}
+              </p>
+              <p className="mt-1 text-xs text-neutral-500">
+                {recipient.bank_holder}
+              </p>
+            </div>
+            <Building2 className="size-5 text-neutral-400" />
+          </div>
+          {!confirmation ? (
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (valid && recipient && !pending && !busy)
+                  setConfirmation({ amount: value, recipient });
+              }}
+              className="space-y-4"
+            >
+              <label className="block text-sm font-medium">
+                Số tiền rút
+                <input
+                  type="number"
+                  required
+                  min={10000}
+                  max={maximum}
+                  step={1}
+                  value={amount}
+                  onChange={(event) => setAmount(event.target.value)}
+                  placeholder="Nhập số tiền cần rút"
+                  className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 text-xl font-semibold"
+                />
+              </label>
+              <div className="flex items-center justify-between gap-3 text-xs text-neutral-500">
+                <p>Khả dụng: {money(data.wallet.available)}</p>
+                <button
+                  type="button"
+                  disabled={busy || maximum < 10000 || !!pending}
+                  onClick={() => setAmount(String(maximum))}
+                  className="font-semibold text-amber-800 underline"
+                >
+                  Rút toàn bộ
+                </button>
+              </div>
+              <p className="text-xs text-neutral-500">
+                Tối thiểu 10.000đ, tối đa 100.000.000đ mỗi yêu cầu.
+              </p>
               <button
                 disabled={busy || !valid || !!pending}
-                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold disabled:opacity-50"
+                className="w-full rounded-xl bg-amber-500 py-3 text-sm font-bold disabled:opacity-50"
               >
                 Tiếp tục rút tiền
               </button>
-            </div>
-            <p className="text-xs text-neutral-500">
-              Mỗi yêu cầu từ 10.000đ đến 100.000.000đ, tối đa bằng số dư khả
-              dụng. Hoa hồng 10% đã tính lúc tất toán buổi học; không trừ lại
-              khi rút.
-            </p>
-          </form>
-          {confirmation && (
+            </form>
+          ) : (
             <div
               role="region"
               aria-label="Xác nhận yêu cầu rút"
-              className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4"
+              className="space-y-4"
             >
-              <p className="font-semibold">
-                Bạn muốn rút {money(confirmation.amount)}?
-              </p>
-              <p className="text-sm">
+              <div className="text-center">
+                <p className="text-sm text-neutral-500">Số tiền yêu cầu nhận</p>
+                <p className="mt-2 text-3xl font-bold">
+                  {money(confirmation.amount)}
+                </p>
+              </div>
+              <p className="text-sm text-neutral-600">
                 Nhận vào {confirmation.recipient.bank_name} ·{" "}
                 {mask(confirmation.recipient.bank_account)} ·{" "}
                 {confirmation.recipient.bank_holder}
               </p>
-              <p className="text-sm">
-                Phí rút EduFit: 0đ. Số tiền yêu cầu nhận:{" "}
-                {money(confirmation.amount)}. Admin duyệt trước khi chuyển;
-                trạng thái sẽ cập nhật trong lịch sử.
+              <div className="flex justify-between border-y border-stone-100 py-3 text-sm">
+                <span>Phí rút EduFit</span>
+                <strong>0đ</strong>
+              </div>
+              <p className="text-xs text-neutral-500">
+                Admin duyệt trước khi chuyển. Bạn có thể theo dõi trạng thái
+                trong giao dịch.
               </p>
               {recipient.id !== confirmation.recipient.id && (
-                <p role="alert" className="text-sm text-red-700">
+                <p
+                  role="alert"
+                  className="rounded-xl bg-red-50 p-3 text-sm text-red-700"
+                >
                   Tài khoản nhận đã đổi. Hãy kiểm tra lại và tạo xác nhận mới.
                 </p>
               )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  disabled={
-                    busy ||
-                    !!pending ||
-                    recipient.id !== confirmation.recipient.id ||
-                    confirmation.amount > data.wallet.available
-                  }
-                  onClick={() => void confirm()}
-                  className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold disabled:opacity-50"
-                >
-                  Xác nhận rút tiền
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setConfirmation(null)}
-                  className="rounded-lg border bg-white px-3 py-2 text-sm"
-                >
-                  Quay lại
-                </button>
-              </div>
+              <button
+                type="button"
+                disabled={
+                  busy ||
+                  !!pending ||
+                  recipient.id !== confirmation.recipient.id ||
+                  confirmation.amount > data.wallet.available
+                }
+                onClick={() => void confirm()}
+                className="w-full rounded-xl bg-amber-500 py-3 text-sm font-bold disabled:opacity-50"
+              >
+                Xác nhận rút tiền
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setConfirmation(null)}
+                className="w-full rounded-xl border border-stone-200 py-3 text-sm font-semibold"
+              >
+                Quay lại
+              </button>
             </div>
           )}
-        </>
+        </PaymentDialog>
       )}
     </section>
   );
