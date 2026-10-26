@@ -12,6 +12,7 @@ export interface Entry {
   reference_id: string;
 }
 export interface Topup {
+  expires_at?: string;
   id: string;
   user_id: string;
   order_code: number;

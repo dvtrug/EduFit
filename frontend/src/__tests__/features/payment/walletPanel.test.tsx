@@ -1,3 +1,4 @@
+import "./dialogSetup";
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
@@ -40,9 +41,7 @@ describe("Wallet funding", () => {
         execute={execute}
       />,
     );
-    expect(
-      screen.getByRole("button", { name: "Tạo yêu cầu nạp tiền" }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Tạo mã QR" })).toBeDisabled();
     expect(
       screen.getByText(/Kênh nạp tiền chưa được cấu hình/),
     ).toBeInTheDocument();
@@ -67,9 +66,7 @@ describe("Wallet funding", () => {
         execute={execute}
       />,
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Tạo yêu cầu nạp tiền" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Tạo mã QR" }));
     await screen.findByText("EF1");
     expect(
       screen.getByText(/Admin xác minh giao dịch thực tế/),
