@@ -1,5 +1,6 @@
 "use client";
 
+import { SessionBillingPanel } from "@/features/payment/components/SessionBillingPanel";
 import React, { useState, useEffect } from "react";
 import {
   X,
@@ -575,6 +576,8 @@ export function SessionDetailModal({
                   </div>
                 </div>
               </div>
+
+              {(["STUDENT", "PARENT", "TUTOR"] as string[]).includes(role) && ["SCHEDULED", "COMPLETED", "ABSENT", "CANCELLED"].includes(session.status) && <SessionBillingPanel sessionId={session.sessionId} role={role as "STUDENT" | "PARENT" | "TUTOR"} />}
 
               {/* Banner đề xuất dời lịch học (UC4.4) */}
               {rescheduleProposal && rescheduleProposal.status === "PENDING" && (

@@ -156,6 +156,7 @@
           <artifactId>notification</artifactId>
           <version>${project.version}</version>
         </dependency>
+        <dependency><groupId>vn.edufit</groupId><artifactId>payment</artifactId><version>${project.version}</version></dependency>
         <!-- Quản lý thêm WebMvc Test Starter cho các module cần kiểm thử web slice -->
         <dependency>
           <groupId>org.springframework.boot</groupId>

@@ -1,5 +1,5 @@
 -- =========================================================================
--- EduFit Database Migration V1.16: Cho phép kết nối và mở lớp nhiều môn học giữa cùng 1 cặp học viên - gia sư
+-- EduFit Database Migration V1.22: Cho phép kết nối và mở lớp nhiều môn học giữa cùng 1 cặp học viên - gia sư
 -- =========================================================================
 -- Thay thế ràng buộc duy nhất (student_id, tutor_id) bằng (student_id, tutor_id, goal_id)
 -- để học viên có thể gửi yêu cầu kết nối và mở lớp học cho các môn học/mục tiêu khác nhau với cùng một gia sư.

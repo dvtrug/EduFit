@@ -7,6 +7,7 @@ import com.google.api.client.json.gson.GsonFactory;
 import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import vn.edufit.iam.application.OAuthUserInfo;
@@ -34,6 +35,11 @@ public class GoogleIdTokenVerifierAdapter implements GoogleTokenVerifier {
   private final GoogleIdTokenVerifier verifier;
   private final String configuredClientId;
 
+  public GoogleIdTokenVerifierAdapter() {
+    this("");
+  }
+
+  @Autowired
   public GoogleIdTokenVerifierAdapter(
       @Value("${edufit.oauth.google.client-id:}") String configuredClientId
   ) {

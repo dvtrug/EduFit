@@ -55,4 +55,7 @@ public interface IamFacade {
    * @return số lượng tài khoản có vai trò tương ứng
    */
   long countUsersByRole(AccountRole role);
+
+  /** Active administrative recipients for internal case notifications; no credentials exposed. */
+  List<UUID> findActiveAdminIds();
 }

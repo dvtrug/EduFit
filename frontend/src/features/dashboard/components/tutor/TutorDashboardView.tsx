@@ -149,8 +149,6 @@ export function TutorDashboardView({ user }: TutorDashboardViewProps) {
     (acc, c) => acc + (c.totalCount ?? c.sessionCount),
     0
   );
-  const pricePerSession = profile?.pricePerSession || 200000;
-  const estimatedIncome = completedSessions * pricePerSession;
   const ratingAverage = profile?.ratingAvg || 0;
   const reviewCount = profile?.reviewCount || 0;
 
@@ -240,7 +238,6 @@ export function TutorDashboardView({ user }: TutorDashboardViewProps) {
         completedSessions={completedSessions}
         plannedSessions={plannedSessions}
         activeStudents={activeStudents}
-        estimatedIncome={estimatedIncome}
         ratingAverage={ratingAverage}
         reviewCount={reviewCount}
       />

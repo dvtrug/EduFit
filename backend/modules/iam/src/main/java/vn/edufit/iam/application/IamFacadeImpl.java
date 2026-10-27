@@ -74,4 +74,7 @@ public class IamFacadeImpl implements IamFacade {
     }
     return accountRepository.countByRole(role);
   }
+
+  @Override
+  public List<UUID> findActiveAdminIds() { return accountRepository.findActiveAdminIds(); }
 }

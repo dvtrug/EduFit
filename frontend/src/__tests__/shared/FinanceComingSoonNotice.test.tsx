@@ -67,19 +67,19 @@ describe("FinanceComingSoonNotice & Role Finance Pages", () => {
 
   it("renders StudentPaymentsPage cleanly without errors", () => {
     render(<StudentPaymentsPage />);
-    expect(screen.getByText("Học phí & Quản lý đóng học")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Quay lại Dashboard/i })).toHaveAttribute("href", "/student/dashboard");
+    expect(screen.getByText("Ví học phí")).toBeInTheDocument();
+    expect(screen.getByText("EduFit / Thanh toán")).toBeInTheDocument();
   });
 
   it("renders ParentBillingPage cleanly without errors", () => {
     render(<ParentBillingPage />);
-    expect(screen.getByText("Gói học & Quản lý học phí con em")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Quay lại Dashboard/i })).toHaveAttribute("href", "/parent/dashboard");
+    expect(screen.getByText("Ví học phí gia đình")).toBeInTheDocument();
+    expect(screen.getByText("EduFit / Thanh toán")).toBeInTheDocument();
   });
 
   it("renders TutorEarningsPage cleanly without errors", () => {
     render(<TutorEarningsPage />);
-    expect(screen.getByText("Báo cáo thu nhập & Đối soát giảng dạy")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Quay lại Dashboard/i })).toHaveAttribute("href", "/tutor/dashboard");
+    expect(screen.getByText("Thu nhập của bạn")).toBeInTheDocument();
+    expect(screen.getByText("EduFit / Thanh toán")).toBeInTheDocument();
   });
 });

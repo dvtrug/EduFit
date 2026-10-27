@@ -12,7 +12,6 @@ export interface ChildInfo {
   tutorsCount: number;
   completedLessons: string;
   avgScore: string;
-  tuition: string;
   nextSession: string;
 }
 

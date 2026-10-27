@@ -29,6 +29,8 @@ Cấu hình mặc định cho môi trường local hoạt động mà không c�
 
 PostgreSQL mặc định được mở tại cổng `5433` trên máy host để tránh trùng với cổng phổ biến của PostgreSQL đã cài sẵn. Bên trong mạng Compose, các container vẫn kết nối qua cổng `5432`.
 
+Nếu cổng `5433` đang được dự án khác sử dụng, đặt `POSTGRES_PORT=5434` (hoặc cổng trống khác) trong `.env`, rồi chạy `docker compose up -d db`. Backend chạy từ IDE cần nạp cùng `.env`: các biến `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT` được dùng làm cấu hình mặc định. Các biến `DB_URL`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`/`DB_USER`, `DB_PASSWORD` vẫn được ưu tiên nếu có. Không xóa volume khi đổi cổng; `POSTGRES_PASSWORD` phải khớp mật khẩu đã khởi tạo trong volume cũ.
+
 ## Khởi tạo hoặc kiểm tra schema rỗng
 
 PostgreSQL entrypoint tự chạy `database/init/001-create-schema.sql` trong lần khởi động đầu tiên. Script có tính lặp an toàn và có thể chạy lại thủ công.
@@ -73,3 +75,9 @@ Tài liệu backend hiện thực: [mục lục](docs/README.md), [Discovery API
 2. Áp dụng các quy tắc bảo vệ branch trong `docs/github-branch-protection.md`.
 3. Mở một PR thử nghiệm có lỗi lint hoặc lỗi biên dịch cố ý, sau đó xác nhận `Backend CI` thất bại và PR bị chặn merge.
 4. Sửa lỗi và xác nhận cùng một kiểm tra chuyển sang trạng thái thành công trong vòng năm phút.
+
+## Cấu hình Payment
+
+Đọc [bộ tài liệu Payment](docs/payment/README.md) để xem giải trình kiến trúc, luồng tiền và task chi tiết từng phase theo mẫu Discovery.
+
+Xem [hướng dẫn payOS](docs/payment/payos-setup.md) để bật nạp QR tự động, đăng ký webhook HTTPS và chi hộ sau Admin duyệt. Các biến mẫu trong `.env.example` để trống; kênh chi tắt mặc định. Trạng thái cấu hình hiển thị tại `/admin/payments`.

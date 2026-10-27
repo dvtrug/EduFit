@@ -37,7 +37,7 @@ public class SessionFacadeImpl implements SessionFacade {
             s.getMode().name(),
             s.getStatus().name(),
             s.isLateCancel(),
-            s.getCreatedAt()
+            s.getCreatedAt(), s.getOutcomeRecordedAt()
         ));
   }
 
@@ -82,7 +82,7 @@ public class SessionFacadeImpl implements SessionFacade {
             s.getClassId(),
             s.getStartAt(),
             s.getEndAt(),
-            s.getStatus().name()
+            s.getStatus().name(), s.getOutcomeRecordedAt()
         ))
         .toList();
   }

@@ -39,7 +39,6 @@ export function ParentDashboardView({ user }: ParentDashboardViewProps) {
               tutorsCount: 0,
               completedLessons: "0/0",
               avgScore: "Chưa có",
-              tuition: "0 đ",
               nextSession: "Chưa xếp lịch",
             }));
           }
@@ -154,7 +153,6 @@ export function ParentDashboardView({ user }: ParentDashboardViewProps) {
               tutorsCount: childClasses.length,
               completedLessons: s.completedLessons,
               avgScore: s.avgScore,
-              tuition: "0 đ",
               nextSession: childClasses.length > 0 ? "Theo lịch tuần" : "Chưa xếp lịch",
             };
           });
@@ -240,7 +238,7 @@ export function ParentDashboardView({ user }: ParentDashboardViewProps) {
             <CreditCard className="size-3.5 text-neutral-500" />
             <span>Thông tin học phí</span>
             <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-100 text-amber-800">
-              Sắp ra mắt
+              Ví & học phí
             </span>
           </Link>
         </div>

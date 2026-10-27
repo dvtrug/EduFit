@@ -1,13 +1,7 @@
 name: edufit
 
 services:
-  db:
-    # Tối ưu hóa I/O cho local development trên ổ ảo WSL2 (.vhdx)
-    # Tắt fsync và synchronous_commit giúp tăng tốc ghi giao dịch gấp 100 lần
-    command: postgres -c fsync=off -c synchronous_commit=off -c full_page_writes=off
-    healthcheck:
-      interval: 15s
-
+  # Giữ độ bền ghi mặc định của PostgreSQL để bảo toàn ví và sổ giao dịch Payment.
   backend:
     environment:
       # Cấp phát 512MB RAM heap ngay từ đầu, tránh G1GC pauses do co giãn heap trên máy local

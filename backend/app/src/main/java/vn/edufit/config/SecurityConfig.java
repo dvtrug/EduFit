@@ -58,10 +58,12 @@ public class SecurityConfig {
         .requestCache(cache -> cache.disable())
         // 1. Cấu hình bảo vệ chống tấn công CSRF:
         // Bảo vệ phiên làm việc dựa trên Cookie EDUFIT_SESSION với SameSite=Lax (ADR-001 / RFC 6265bis)
-        .csrf(csrf -> csrf.spa().csrfTokenRepository(csrfTokenRepository()))
+        .csrf(csrf -> csrf.spa().csrfTokenRepository(csrfTokenRepository())
+            .ignoringRequestMatchers("/api/v1/payment/webhooks/payos"))
 
         // 2. Cấu hình phân quyền truy cập URL theo từng vai trò (NFR-07: Role-Based Access Control)
         .authorizeHttpRequests(auth -> auth
+             .requestMatchers(HttpMethod.POST, "/api/v1/payment/webhooks/payos").permitAll()
             // 2.1. Các đường dẫn công khai (không cần đăng nhập: Xác thực, Danh mục chung, Swagger, Actuator)
             .requestMatchers(
                 "/api/v1/auth/csrf",

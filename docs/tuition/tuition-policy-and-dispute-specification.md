@@ -1,5 +1,7 @@
 # Đặc tả Nghiệp vụ Quản lý Học phí & Giải quyết Tranh chấp
 ## (Tuition Policy & Dispute Specification)
+> Lưu trữ nghiên cứu ngày 18/10/2026. Phạm vi Payment mới ngày 21/10/2026 đã thay thế phương án D5/thanh toán trực tiếp tại đây. Xem [plan Payment hiện hành](../payment/implementation-plan.md) và [API contract](../payment/api-contract.md). Không dùng các quy tắc 24h tự xác nhận hoặc tỷ lệ phạt trong tài liệu cũ để triển khai.
+
 
 - **Mã tài liệu:** SPEC-M3-TUITION-01
 - **Phiên bản:** 1.0.0 (Research Specification)
