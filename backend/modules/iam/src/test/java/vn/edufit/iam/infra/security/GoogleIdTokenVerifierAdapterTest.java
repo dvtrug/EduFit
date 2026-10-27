@@ -28,6 +28,16 @@ class GoogleIdTokenVerifierAdapterTest {
   }
 
   @Test
+  @DisplayName("Constructor thật và no-arg của Adapter phải khởi tạo thành công không bị thiếu class")
+  void constructors_shouldInstantiateWithoutError() {
+    GoogleIdTokenVerifierAdapter realAdapter = new GoogleIdTokenVerifierAdapter("test-client-id");
+    assertThat(realAdapter).isNotNull();
+
+    GoogleIdTokenVerifierAdapter defaultAdapter = new GoogleIdTokenVerifierAdapter();
+    assertThat(defaultAdapter).isNotNull();
+  }
+
+  @Test
   @DisplayName("idToken rỗng hoặc null phải ném ngoại lệ VALIDATION_FAILED")
   void verify_withBlankToken_shouldThrowValidationFailed() {
     assertThatThrownBy(() -> adapter.verify(null))
