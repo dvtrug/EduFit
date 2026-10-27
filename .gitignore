@@ -5,6 +5,10 @@
 *.pem
 *.key
 
+# Dependencies
+node_modules/
+**/node_modules/
+
 # Java and Maven outputs
 **/target/
 **/.flattened-pom.xml

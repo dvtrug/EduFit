@@ -72,6 +72,9 @@ spring:
 
 # 5. Cấu hình AI Gateway (platform/ai)
 edufit:
+  oauth:
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:}
   discovery:
     matching:
       candidate-limit: ${DISCOVERY_MATCHING_CANDIDATE_LIMIT:200}

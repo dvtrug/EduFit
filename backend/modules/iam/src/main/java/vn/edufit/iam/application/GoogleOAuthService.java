@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edufit.iam.api.AccountStatus;
+import vn.edufit.iam.application.port.GoogleTokenVerifier;
 import vn.edufit.iam.infra.persistence.Account;
 import vn.edufit.iam.infra.persistence.AccountRepository;
 import vn.edufit.iam.infra.persistence.UserSocialAccount;
@@ -34,6 +35,7 @@ public class GoogleOAuthService {
   private final AccountRepository accountRepository;
   private final UserSocialAccountRepository userSocialAccountRepository;
   private final OAuthOnboardingTokenService tokenService;
+  private final GoogleTokenVerifier tokenVerifier;
   private final ObjectMapper objectMapper;
   private final Clock clock;
 
@@ -41,12 +43,14 @@ public class GoogleOAuthService {
       AccountRepository accountRepository,
       UserSocialAccountRepository userSocialAccountRepository,
       OAuthOnboardingTokenService tokenService,
+      GoogleTokenVerifier tokenVerifier,
       ObjectMapper objectMapper,
       Clock clock
   ) {
     this.accountRepository = accountRepository;
     this.userSocialAccountRepository = userSocialAccountRepository;
     this.tokenService = tokenService;
+    this.tokenVerifier = tokenVerifier;
     this.objectMapper = objectMapper;
     this.clock = clock;
   }
@@ -140,30 +144,12 @@ public class GoogleOAuthService {
   private OAuthUserInfo extractUserInfo(OAuthLoginRequest request) {
     String provider = request.getEffectiveProvider();
 
-    // Trường hợp 1: Có Google ID Token JWT (dạng x.y.z)
+    // Trường hợp 1: Có Google ID Token -> Xác thực chữ ký số mật mã học qua GoogleTokenVerifier
     if (request.idToken() != null && !request.idToken().isBlank()) {
-      try {
-        String[] parts = request.idToken().split("\\.");
-        if (parts.length >= 2) {
-          byte[] decodedBytes = Base64.getUrlDecoder().decode(parts[1]);
-          String payloadJson = new String(decodedBytes, StandardCharsets.UTF_8);
-          JsonNode payloadNode = objectMapper.readTree(payloadJson);
-
-          String sub = payloadNode.path("sub").asText(null);
-          String email = payloadNode.path("email").asText(null);
-          String name = payloadNode.path("name").asText("Người dùng Google");
-          String picture = payloadNode.path("picture").asText(null);
-
-          if (sub != null && email != null) {
-            return new OAuthUserInfo(provider, sub, email, name, picture);
-          }
-        }
-      } catch (Exception e) {
-        log.warn("Không thể giải mã ID Token JWT từ Google: {}", e.getMessage());
-      }
+      return tokenVerifier.verify(request.idToken().trim());
     }
 
-    // Trường hợp 2: Thông tin cung cấp trực tiếp (chế độ dev / fallback / modal)
+    // Trường hợp 2: Thông tin cung cấp trực tiếp (chế độ dev / fallback / mock)
     if (request.email() != null && !request.email().isBlank()) {
       String sub = request.providerUserId() != null && !request.providerUserId().isBlank()
           ? request.providerUserId()
