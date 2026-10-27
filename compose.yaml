@@ -40,6 +40,7 @@ services:
       AI_PROVIDER: ${AI_PROVIDER:-stub}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       STORAGE_CREDENTIALS_ROOT: ${STORAGE_CREDENTIALS_ROOT:-/app/var/credentials}
       JAVA_OPTS: ${JAVA_OPTS:-}
     volumes:

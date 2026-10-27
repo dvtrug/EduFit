@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import vn.edufit.iam.api.AccountRole;
 import vn.edufit.iam.api.AccountStatus;
 import vn.edufit.iam.application.OAuthProcessOutcome;
+import vn.edufit.iam.application.port.GoogleTokenVerifier;
 import vn.edufit.iam.infra.persistence.Account;
 import vn.edufit.iam.infra.persistence.AccountRepository;
 import vn.edufit.iam.infra.persistence.UserSocialAccount;
@@ -31,6 +32,7 @@ class GoogleOAuthServiceTest {
   private AccountRepository accountRepository;
   private UserSocialAccountRepository userSocialAccountRepository;
   private OAuthOnboardingTokenService tokenService;
+  private GoogleTokenVerifier tokenVerifier;
   private GoogleOAuthService googleOAuthService;
   private CompleteOAuthRegistrationService completeOAuthRegistrationService;
   private Clock fixedClock;
@@ -40,12 +42,14 @@ class GoogleOAuthServiceTest {
     accountRepository = mock(AccountRepository.class);
     userSocialAccountRepository = mock(UserSocialAccountRepository.class);
     tokenService = new OAuthOnboardingTokenService();
+    tokenVerifier = mock(GoogleTokenVerifier.class);
     fixedClock = Clock.fixed(Instant.parse("2026-10-18T10:00:00Z"), ZoneId.of("UTC"));
 
     googleOAuthService = new GoogleOAuthService(
         accountRepository,
         userSocialAccountRepository,
         tokenService,
+        tokenVerifier,
         new ObjectMapper(),
         fixedClock
     );
@@ -159,5 +163,64 @@ class GoogleOAuthServiceTest {
     assertThat(outcome.result().needsRoleSelection()).isFalse();
     assertThat(outcome.result().user().email()).isEqualTo("existing@gmail.com");
     assertThat(outcome.result().user().role()).isEqualTo(AccountRole.TUTOR);
+  }
+
+  @Test
+  @DisplayName("Khi gửi idToken hợp lệ, hệ thống phải ủy quyền xác thực cho GoogleTokenVerifier")
+  void authenticateWithValidIdToken_shouldVerifyViaVerifier() {
+    String rawIdToken = "valid.google.id.token";
+    OAuthUserInfo verifiedUser = new OAuthUserInfo(
+        "GOOGLE",
+        "sub-verified-999",
+        "verified.user@gmail.com",
+        "Người Dùng Đã Xác Thực",
+        "https://avatar.com/verified.png"
+    );
+
+    when(tokenVerifier.verify(rawIdToken)).thenReturn(verifiedUser);
+    when(userSocialAccountRepository.findByProviderAndProviderUserId("GOOGLE", "sub-verified-999"))
+        .thenReturn(Optional.empty());
+    when(accountRepository.findByEmail("verified.user@gmail.com"))
+        .thenReturn(Optional.empty());
+
+    OAuthLoginRequest request = new OAuthLoginRequest(
+        rawIdToken,
+        "GOOGLE",
+        null,
+        null,
+        null,
+        null
+    );
+
+    OAuthProcessOutcome outcome = googleOAuthService.authenticate(request);
+
+    verify(tokenVerifier).verify(rawIdToken);
+    assertThat(outcome.isAuthenticated()).isFalse();
+    assertThat(outcome.result().needsRoleSelection()).isTrue();
+    assertThat(outcome.result().email()).isEqualTo("verified.user@gmail.com");
+  }
+
+  @Test
+  @DisplayName("Khi idToken không hợp lệ hoặc hết hạn, hệ thống ném ngoại lệ và từ chối đăng nhập")
+  void authenticateWithInvalidIdToken_shouldThrowUnauthorized() {
+    String invalidIdToken = "invalid.token";
+    when(tokenVerifier.verify(invalidIdToken)).thenThrow(
+        new InvalidOperationException(vn.edufit.shared.exception.ErrorCode.UNAUTHORIZED, "Google ID Token không hợp lệ hoặc đã hết hạn")
+    );
+
+    OAuthLoginRequest request = new OAuthLoginRequest(
+        invalidIdToken,
+        "GOOGLE",
+        null,
+        null,
+        null,
+        null
+    );
+
+    assertThatThrownBy(() -> googleOAuthService.authenticate(request))
+        .isInstanceOf(InvalidOperationException.class)
+        .hasMessageContaining("Google ID Token không hợp lệ hoặc đã hết hạn");
+
+    verify(tokenVerifier).verify(invalidIdToken);
   }
 }
