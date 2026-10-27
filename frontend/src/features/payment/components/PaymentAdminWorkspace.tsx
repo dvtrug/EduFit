@@ -171,19 +171,27 @@ export function PaymentAdminWorkspace({ initialTab }: { initialTab?: Queue }) {
             }}
             className={`flex items-center gap-4 rounded-2xl border p-5 text-left ${
               active === key
-                ? "border-stone-900 bg-stone-900 text-white"
-                : "border-stone-200 bg-white text-neutral-700 hover:border-amber-400"
+                ? "border-orange-300 bg-orange-50 text-stone-900 dark:border-orange-800 dark:bg-orange-950/40 dark:text-stone-100"
+                : "border-stone-200 bg-white text-neutral-700 hover:border-orange-300 dark:hover:border-orange-800"
             }`}
           >
             <span
               className={`rounded-xl p-3 ${
-                active === key ? "bg-white/10" : "bg-stone-100"
+                active === key
+                  ? "bg-orange-100 text-orange-800 dark:bg-orange-900/60 dark:text-orange-200"
+                  : "bg-stone-100"
               }`}
             >
               <Icon className="size-5" />
             </span>
             <span className="flex-1 text-sm font-semibold">{label}</span>
-            <strong className="text-2xl">{count}</strong>
+            <strong
+              className={`text-2xl ${
+                active === key ? "text-orange-800 dark:text-orange-200" : ""
+              }`}
+            >
+              {count}
+            </strong>
           </button>
         ))}
       </div>

@@ -39,7 +39,10 @@ function TopupPanel({ data, busy, execute }: Props) {
   const [checkout, setCheckout] = useState<Checkout | null>(null);
   const request = useRef(false);
   const [now, setNow] = useState(() => Date.now());
-  useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 15000); return () => clearInterval(timer); }, []);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 15000);
+    return () => clearInterval(timer);
+  }, []);
   const pending = data.topups.find(
     (t) =>
       t.status === "PENDING" &&
@@ -69,22 +72,28 @@ function TopupPanel({ data, busy, execute }: Props) {
       className="overflow-hidden rounded-2xl border border-stone-200 bg-white"
     >
       <div className="grid lg:grid-cols-2">
-        <div className="space-y-6 bg-amber-50 p-6 text-amber-950 dark:bg-amber-950/40 dark:text-amber-100 sm:p-8">
-          <div className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-200">
-            <Wallet className="size-4" />
+        <div className="space-y-6 bg-stone-50 p-6 text-stone-900 dark:text-stone-100 sm:p-8">
+          <div className="flex items-center gap-2 text-sm font-semibold text-orange-800 dark:text-orange-300">
+            <span className="rounded-lg bg-orange-100 p-2 dark:bg-orange-950/60">
+              <Wallet className="size-4" />
+            </span>
             Ví học phí EduFit
           </div>
           <div>
-            <p className="text-sm text-amber-800 dark:text-amber-200">Số dư khả dụng</p>
+            <p className="text-sm text-stone-600 dark:text-stone-300">
+              Số dư khả dụng
+            </p>
             <p className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">
               {money(data.wallet.available)}
             </p>
           </div>
-          <div className="flex items-center justify-between gap-4 border-t border-amber-200 dark:border-amber-800/60 pt-5 text-sm">
-            <span className="text-amber-800 dark:text-amber-200">Đang giữ cho buổi học</span>
+          <div className="flex items-center justify-between gap-4 border-t border-stone-200 pt-5 text-sm">
+            <span className="text-stone-600 dark:text-stone-300">
+              Đang giữ cho buổi học
+            </span>
             <strong>{money(data.wallet.held)}</strong>
           </div>
-          <p className="flex items-start gap-2 text-xs leading-relaxed text-amber-800 dark:text-amber-200">
+          <p className="flex items-start gap-2 text-xs leading-relaxed text-stone-600 dark:text-stone-300">
             <ShieldCheck className="mt-0.5 size-4 shrink-0" />
             Tiền học được giữ riêng đến hết thời hạn phản hồi hoặc khi có quyết
             định giải quyết.
@@ -145,7 +154,7 @@ function TopupPanel({ data, busy, execute }: Props) {
             </div>
             <button
               disabled={busy || !data.topupEnabled}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-stone-950 hover:bg-amber-400 disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-700 px-4 py-3 text-sm font-bold text-white hover:bg-orange-800 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-500 dark:disabled:bg-stone-700 dark:disabled:text-stone-300"
             >
               {busy ? "Đang tạo mã…" : "Tạo mã QR"}
               <ArrowUpRight className="size-4" />

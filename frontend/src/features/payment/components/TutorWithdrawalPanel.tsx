@@ -214,13 +214,17 @@ export function TutorWithdrawalPanel({
       className="overflow-hidden rounded-2xl border border-stone-200 bg-white"
     >
       <div className="grid lg:grid-cols-2">
-        <div className="space-y-5 bg-amber-50 p-6 text-amber-950 dark:bg-amber-950/40 dark:text-amber-100 sm:p-8">
-          <div className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-200">
-            <Wallet className="size-4" />
+        <div className="space-y-5 bg-stone-50 p-6 text-stone-900 dark:text-stone-100 sm:p-8">
+          <div className="flex items-center gap-2 text-sm font-semibold text-orange-800 dark:text-orange-300">
+            <span className="rounded-lg bg-orange-100 p-2 dark:bg-orange-950/60">
+              <Wallet className="size-4" />
+            </span>
             Ví thu nhập gia sư
           </div>
           <div>
-            <p className="text-sm text-amber-800 dark:text-amber-200">Có thể yêu cầu rút</p>
+            <p className="text-sm text-stone-600 dark:text-stone-300">
+              Có thể yêu cầu rút
+            </p>
             <p className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">
               {money(data.wallet.available)}
             </p>
@@ -233,12 +237,17 @@ export function TutorWithdrawalPanel({
               setConfirmation(null);
               setAmount("");
             }}
-            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-bold text-stone-950 hover:bg-amber-400 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-orange-700 px-5 py-3 text-sm font-bold text-white hover:bg-orange-800 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-500 dark:disabled:bg-stone-700 dark:disabled:text-stone-300"
           >
             Rút tiền
             <ArrowUpRight className="size-4" />
           </button>
-          <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-200">
+          {!pending && maximum < 10000 && (
+            <p className="text-xs font-medium text-stone-600 dark:text-stone-300">
+              Số dư khả dụng tối thiểu để rút là 10.000đ.
+            </p>
+          )}
+          <p className="text-xs leading-relaxed text-stone-600 dark:text-stone-300">
             Thu nhập đã trừ phí nền tảng. Không thu thêm phí EduFit khi rút.
           </p>
         </div>
@@ -308,15 +317,6 @@ export function TutorWithdrawalPanel({
           Bạn có yêu cầu rút đang chờ duyệt hoặc chuyển tiền:{" "}
           {money(pending.amount)} đến {pending.bank_name} ·{" "}
           {mask(pending.bank_account)}.
-        </p>
-      )}
-      {!pending && data.wallet.available < 10000 && (
-        <p
-          role="status"
-          className="border-t border-stone-100 px-6 py-3 text-xs text-neutral-500"
-        >
-          Số dư khả dụng tối thiểu để rút là 10.000đ. Chờ học phí được tất toán
-          để tiếp tục.
         </p>
       )}
       {editing && (
