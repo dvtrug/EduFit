@@ -69,7 +69,7 @@ function TopupPanel({ data, busy, execute }: Props) {
   return (
     <section
       aria-label="Ví học phí"
-      className="overflow-hidden rounded-2xl border border-stone-200 bg-white"
+      className="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-lg shadow-stone-300/50 dark:border-stone-700 dark:shadow-black/30"
     >
       <div className="grid lg:grid-cols-2">
         <div className="space-y-6 bg-stone-50 p-6 text-stone-900 dark:text-stone-100 sm:p-8">
