@@ -59,7 +59,7 @@ class PaymentFlowIT {
             .schemas(schema)
             .locations("classpath:db/migration")
             .load();
-    assertEquals(21, flyway.migrate().migrationsExecuted);
+    assertEquals(22, flyway.migrate().migrationsExecuted);
     flyway.validate();
     assertEquals(0, flyway.migrate().migrationsExecuted);
   }
@@ -620,7 +620,7 @@ class PaymentFlowIT {
             .schemas(schema)
             .locations("classpath:db/migration")
             .load();
-    assertEquals(5, upgraded.migrate().migrationsExecuted);
+    assertEquals(6, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted);
     assertEquals(
@@ -685,7 +685,7 @@ class PaymentFlowIT {
         + " values (?,?,100000,'PAYOS','PENDING',now())", id, owner);
     Flyway upgraded = Flyway.configure().dataSource(ds).schemas(schema)
         .locations("classpath:db/migration").load();
-    assertEquals(4, upgraded.migrate().migrationsExecuted);
+    assertEquals(5, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted);
     var saved = jdbc.queryForMap("select amount,status,provider_account_number from payment_topup where id=?", id);

@@ -117,3 +117,9 @@ Chạy thêm sidebar/dashboard tests khi đổi navigation. Windows/Turbopack t�
 ## 10. Nâng cấp V1.21
 
 Restart backend để Flyway thêm thời điểm cửa sổ, metadata hồ sơ, bảng phản hồi và ADMIN_REVIEW. Không sửa migration cũ/repair/clean/reset. Terminal cũ được giữ nguyên; charge pending chưa có review_started_at được job mở hạn và thông báo khi COMPLETED. Theo dõi hàng đợi Admin sau 48h vì tiền còn giữ, không tự hoàn. FE detail/notification polling 15s khi tab hiển thị và khi focus; không dùng polling để suy ra kết quả chuyển tiền.
+
+## 11. Ghép develop: Connection V1.22 sau Payment V1.21
+
+Payment V1.16–V1.21 giữ nguyên tên và nội dung vì database Payment đã ghi nhận các version này. Migration mở kết nối nhiều môn của develop dùng V1.22; các câu lệnh tạo lại unique index không đổi. Database sạch chạy 22 migration; database Payment ở V1.21 chỉ chạy thêm V1.22 và giữ nguyên số dư ví.
+
+Trước khi triển khai, đọc `flyway_schema_history` của **từng** database. Nếu bản ghi V1.16 có description `create payment wallet and settlement`, có thể nâng cấp bình thường rồi kiểm tra hai index `uq_connection_request_pending`, `uq_class_student_tutor_active` đều chứa `goal_id`. Nếu V1.16 lại là migration Connection của develop, **dừng triển khai**: đó là lịch sử khác, cần sao lưu và lập phương án chuyển lịch sử riêng trên bản sao database. Không dùng `repair`, `clean` hay sửa tay lịch sử Flyway để lách lỗi rồi chạy Payment.

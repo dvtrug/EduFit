@@ -3,16 +3,33 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, CheckCircle2, TrendingUp, Calendar } from "lucide-react";
-import { StudentGoalProgressCard } from "./StudentGoalProgressCard";
+import { StudentGoalProgressCard, type StudentGoalItem } from "./StudentGoalProgressCard";
 import { StudentNextSessionCard } from "./StudentNextSessionCard";
 import { StudentActiveClasses } from "./StudentActiveClasses";
 import { StudentQuickActions } from "./StudentQuickActions";
 import { OnboardingGuideBanner } from "@/shared/ui/OnboardingGuideBanner";
-import { profileService, StudentProfileData } from "@/services/profile";
+import { profileService, StudentProfileData, type LearningGoalData } from "@/services/profile";
 import { connectionApi } from "@/features/connection/api/connectionApi";
 import { schedulingApi } from "@/features/scheduling";
 import type { TutoringClass } from "@/features/connection/types";
 import type { CalendarItem } from "@/features/scheduling/types";
+
+function formatGoalTypeDescription(type?: string): string {
+  switch (type) {
+    case "CONSOLIDATE":
+      return "Củng cố kiến thức nền tảng";
+    case "IMPROVE_GRADES":
+      return "Cải thiện điểm số";
+    case "ADVANCED_STUDY":
+      return "Bồi dưỡng nâng cao & ôn chuyên";
+    case "EXAM_PREPARATION":
+      return "Ôn thi chuyển cấp";
+    case "OTHER":
+      return "Mục tiêu trọng tâm";
+    default:
+      return type || "Mục tiêu học tập";
+  }
+}
 
 interface StudentDashboardViewProps {
   user: {
@@ -29,35 +46,98 @@ export function StudentDashboardView({ user }: StudentDashboardViewProps) {
   const [rawClasses, setRawClasses] = useState<TutoringClass[]>([]);
   const [activeClasses, setActiveClasses] = useState<any[]>([]);
   const [nextSession, setNextSession] = useState<any | null>(null);
-  const [activeGoal, setActiveGoal] = useState<any | null>(null);
+  const [activeGoal, setActiveGoal] = useState<StudentGoalItem | null>(null);
 
   useEffect(() => {
     let ignore = false;
 
     async function loadData() {
       try {
-        const studentProf = await profileService.getMyStudentProfile();
-        if (!ignore) setProfile(studentProf);
-
-        // Mục tiêu học tập: Để trống khi học sinh chưa thiết lập mục tiêu thật
-        if (!ignore) {
-          setActiveGoal(null);
-        }
-
-        // Fetch real classes and calendar
         const now = new Date();
         const from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
         const to = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7, 23, 59, 59).toISOString();
 
-        const [classesRes, calendarRes] = await Promise.allSettled([
+        const [studentProfRes, goalsRes, classesRes, calendarRes] = await Promise.allSettled([
+          profileService.getMyStudentProfile(),
+          profileService.getMyLearningGoals(),
           connectionApi.getStudentClasses(),
           schedulingApi.getCalendar({ from, to }),
         ]);
 
         if (ignore) return;
 
-        const classList = classesRes.status === "fulfilled" ? classesRes.value || [] : [];
+        const studentProf = studentProfRes.status === "fulfilled" ? studentProfRes.value : null;
+        setProfile(studentProf);
+
+        const goalsList: LearningGoalData[] = goalsRes.status === "fulfilled" ? goalsRes.value || [] : [];
+        const classList: TutoringClass[] = classesRes.status === "fulfilled" ? classesRes.value || [] : [];
         setRawClasses(classList);
+
+        const totalCompletedSessions = classList.reduce(
+          (acc, c) => acc + (c.completedCount ?? 0),
+          0
+        );
+        const totalPlannedSessions = classList.reduce(
+          (acc, c) => acc + (c.totalCount ?? c.sessionCount ?? 0),
+          0
+        );
+
+        // Nạp mục tiêu thật từ cơ sở dữ liệu backend
+        const activeGoals = goalsList.filter((g) => g.status === "ACTIVE");
+        const primaryGoal = activeGoals[0] || goalsList[0];
+
+        if (primaryGoal) {
+          const goalGrade = primaryGoal.educationLevelName || studentProf?.educationLevelName || "THCS";
+          const goalTitle = `${primaryGoal.subjectName}: ${formatGoalTypeDescription(primaryGoal.goalType)}`;
+          const modeText = primaryGoal.mode === "ONLINE" ? "Trực tuyến" : primaryGoal.mode === "OFFLINE" ? "Tại nhà" : "Linh hoạt";
+          const roadmapDesc = `Lộ trình nâng cao năng lực môn ${primaryGoal.subjectName} · Hình thức ${modeText}`;
+
+          const hasClasses = classList.length > 0;
+          let milestones: Array<{ label: string; completed: boolean }>;
+          let completedMilestonesCount: number;
+          let totalMilestonesCount: number;
+          let progressPercent: number;
+
+          if (hasClasses && totalPlannedSessions > 0) {
+            completedMilestonesCount = totalCompletedSessions;
+            totalMilestonesCount = totalPlannedSessions;
+            progressPercent = Math.min(100, Math.round((totalCompletedSessions / totalPlannedSessions) * 100));
+            milestones = [
+              { label: "Bắt đầu khóa học kèm 1-1", completed: true },
+              {
+                label: `Đã học ${totalCompletedSessions}/${totalPlannedSessions} buổi`,
+                completed: totalCompletedSessions > 0,
+              },
+              {
+                label: "Hoàn tất toàn bộ chu kỳ học",
+                completed: totalCompletedSessions >= totalPlannedSessions,
+              },
+            ];
+          } else {
+            const hasCompleted = totalCompletedSessions > 0;
+            milestones = [
+              { label: "Thiết lập mục tiêu", completed: true },
+              { label: "Ghép nối gia sư", completed: hasClasses },
+              { label: "Hoàn thành buổi học", completed: hasCompleted },
+            ];
+            completedMilestonesCount = 1 + (hasClasses ? 1 : 0) + (hasCompleted ? 1 : 0);
+            totalMilestonesCount = 3;
+            progressPercent = Math.round((completedMilestonesCount / 3) * 100);
+          }
+
+          setActiveGoal({
+            id: primaryGoal.goalId,
+            grade: goalGrade,
+            title: goalTitle,
+            roadmapDesc,
+            progressPercent,
+            completedMilestones: completedMilestonesCount,
+            totalMilestones: totalMilestonesCount,
+            milestones,
+          });
+        } else {
+          setActiveGoal(null);
+        }
 
         const activeList = classList.filter((c) => c.status === "ACTIVE");
         const badgeColors = [
@@ -110,7 +190,7 @@ export function StudentDashboardView({ user }: StudentDashboardViewProps) {
             d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false });
           const timeSlot = `${formatHour(start)} - ${formatHour(end)}`;
 
-          setNextSession({
+          const sessionObj = {
             id: earliest.sessionId,
             dayShort,
             dateNum,
@@ -120,7 +200,12 @@ export function StudentDashboardView({ user }: StudentDashboardViewProps) {
             timeSlot,
             tutorName: classItem?.tutorDisplayName || "Gia sư",
             status: earliest.status === "SCHEDULED" ? "Đã xác nhận" : "Đề xuất",
-          });
+          };
+
+          setNextSession(sessionObj);
+          setActiveGoal((prev) =>
+            prev ? { ...prev, nextSessionText: `Buổi tiếp theo: ${sessionObj.lessonTitle}` } : null
+          );
         } else {
           setNextSession(null);
         }
@@ -231,7 +316,7 @@ export function StudentDashboardView({ user }: StudentDashboardViewProps) {
               <div>
                 <div className="text-[11px] text-neutral-500 dark:text-stone-300 font-semibold">Điểm bài tập trung bình</div>
                 <div className="text-xl font-extrabold font-heading text-neutral-900 dark:text-stone-100">
-                  {activeClasses.length > 0 ? "8.4" : "--"} <span className="text-xs font-normal text-neutral-400 dark:text-stone-400">/ 10</span>
+                  -- <span className="text-xs font-normal text-neutral-400 dark:text-stone-400">/ 10</span>
                 </div>
               </div>
             </div>

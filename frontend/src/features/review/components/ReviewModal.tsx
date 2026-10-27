@@ -21,6 +21,17 @@ export const QUICK_REVIEW_TAGS = [
   "Bài tập thực tế",
 ];
 
+export const TAG_PHRASES: Record<string, string> = {
+  "Nhiệt tình": "Gia sư giảng dạy rất nhiệt tình và tận tâm.",
+  "Đúng giờ": "Gia sư luôn vào lớp đúng giờ và chuẩn bị bài giảng chu đáo.",
+  "Dễ hiểu": "Gia sư giảng bài rất dễ hiểu và chi tiết.",
+  "Kiên nhẫn": "Gia sư luôn kiên nhẫn hướng dẫn và giải đáp từng thắc mắc.",
+  "Phương pháp hay": "Phương pháp giảng dạy rất hay, trực quan và dễ tiếp thu.",
+  "Tận tâm": "Gia sư rất tận tâm, theo sát từng bước tiến bộ của học sinh.",
+  "Truyền cảm hứng": "Buổi học rất sinh động và truyền nhiều cảm hứng học tập.",
+  "Bài tập thực tế": "Bài tập thực tế đa dạng, bám sát kiến thức thực tế.",
+};
+
 interface ReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -106,14 +117,33 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   if (!isOpen) return null;
 
   const toggleTag = (tag: string) => {
-    setSelectedTags((prev) => {
-      const exists = prev.includes(tag);
-      if (exists) {
-        return prev.filter((t) => t !== tag);
-      } else {
-        return [...prev, tag];
-      }
-    });
+    const isCurrentlySelected = selectedTags.includes(tag);
+    const phrase = TAG_PHRASES[tag] || `Gia sư rất ${tag.toLowerCase()} và giảng dạy tốt.`;
+
+    if (!isCurrentlySelected) {
+      // Khi chọn nhãn nhanh: tự động điền hoặc ghép thêm câu nhận xét hoàn chỉnh (>= 10 ký tự)
+      setSelectedTags((prev) => [...prev, tag]);
+      setComment((prev) => {
+        const trimmed = prev.trim();
+        if (!trimmed) {
+          return phrase;
+        }
+        if (trimmed.includes(phrase)) {
+          return prev;
+        }
+        return `${trimmed} ${phrase}`;
+      });
+    } else {
+      // Khi bỏ chọn nhãn nhanh: loại bỏ câu tương ứng nếu chưa bị người dùng chỉnh sửa
+      setSelectedTags((prev) => prev.filter((t) => t !== tag));
+      setComment((prev) => {
+        const cleaned = prev
+          .replace(phrase, "")
+          .replace(/\s{2,}/g, " ")
+          .trim();
+        return cleaned;
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,9 +165,16 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     let finalComment = trimmedComment;
     if (selectedTags.length > 0) {
       const tagPrefix = `[${selectedTags.join(", ")}]`;
-      if (!trimmedComment.includes(selectedTags[0])) {
+      if (!trimmedComment.includes(tagPrefix)) {
         finalComment = trimmedComment ? `${tagPrefix} ${trimmedComment}` : tagPrefix;
       }
+    }
+
+    // Bảo đảm nội dung nhận xét đạt tối thiểu 10 ký tự khi chọn nhãn nhanh, tránh lỗi validation ngầm
+    if (selectedTags.length > 0 && finalComment.length < 10) {
+      const fallbackPhrase =
+        TAG_PHRASES[selectedTags[0]] || `Gia sư rất ${selectedTags[0].toLowerCase()} và giảng dạy tốt.`;
+      finalComment = `${finalComment} ${fallbackPhrase}`.trim();
     }
 
     // Zod Schema Validation

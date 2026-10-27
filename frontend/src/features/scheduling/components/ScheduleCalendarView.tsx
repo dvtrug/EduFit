@@ -30,9 +30,102 @@ import {
 
 const HOURS = Array.from({ length: 15 }, (_, index) => index + 7);
 const DAY_LABELS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
+const VN_TIMEZONE = "Asia/Ho_Chi_Minh";
+
+interface VnTimeInfo {
+  dateStr: string;
+  hour: number;
+  minute: number;
+  totalMinutes: number;
+}
+
+/**
+ * Chuẩn hóa thời gian theo múi giờ Việt Nam (Asia/Ho_Chi_Minh, UTC+7)
+ * Đảm bảo phân tích chính xác cả chuỗi UTC (có Z hoặc offset) và chuỗi ISO cục bộ
+ */
+function getVietnamSessionTime(isoStringOrDate?: Date | string | null): VnTimeInfo | null {
+  if (!isoStringOrDate) return null;
+
+  // Nếu là chuỗi ISO không có múi giờ (ví dụ "2026-10-19T18:00:00")
+  if (typeof isoStringOrDate === "string") {
+    const localIsoMatch = isoStringOrDate.match(
+      /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/
+    );
+    if (localIsoMatch) {
+      const dateStr = localIsoMatch[1];
+      const hour = parseInt(localIsoMatch[2], 10);
+      const minute = parseInt(localIsoMatch[3], 10);
+      return {
+        dateStr,
+        hour,
+        minute,
+        totalMinutes: hour * 60 + minute,
+      };
+    }
+  }
+
+  const d = isoStringOrDate instanceof Date ? isoStringOrDate : new Date(isoStringOrDate);
+  if (Number.isNaN(d.getTime())) return null;
+
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: VN_TIMEZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: false,
+    });
+
+    const parts = formatter.formatToParts(d);
+    const partMap: Record<string, string> = {};
+    for (const p of parts) {
+      if (p.type !== "literal") {
+        partMap[p.type] = p.value;
+      }
+    }
+
+    const year = partMap.year;
+    const month = partMap.month;
+    const day = partMap.day;
+    let hour = parseInt(partMap.hour, 10);
+    if (hour === 24) hour = 0;
+    const minute = parseInt(partMap.minute, 10);
+    const dateStr = `${year}-${month}-${day}`;
+
+    return {
+      dateStr,
+      hour,
+      minute,
+      totalMinutes: hour * 60 + minute,
+    };
+  } catch {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const hour = d.getHours();
+    const minute = d.getMinutes();
+    return {
+      dateStr: `${year}-${month}-${day}`,
+      hour,
+      minute,
+      totalMinutes: hour * 60 + minute,
+    };
+  }
+}
 
 function startOfWeek(date: Date) {
   const result = new Date(date);
+  const timeInfo = getVietnamSessionTime(result);
+  if (timeInfo) {
+    const [y, m, d] = timeInfo.dateStr.split("-").map(Number);
+    const vnDate = new Date(y, m - 1, d);
+    const currentDay = vnDate.getDay() || 7;
+    vnDate.setDate(vnDate.getDate() - currentDay + 1);
+    vnDate.setHours(0, 0, 0, 0);
+    return vnDate;
+  }
   const currentDay = result.getDay() || 7;
   result.setDate(result.getDate() - currentDay + 1);
   result.setHours(0, 0, 0, 0);
@@ -51,7 +144,11 @@ function toMinutes(value: string) {
 }
 
 function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit" }).format(date);
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: VN_TIMEZONE,
+  }).format(date);
 }
 
 function formatFullDate(date: Date) {
@@ -59,7 +156,30 @@ function formatFullDate(date: Date) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: VN_TIMEZONE,
   }).format(date);
+}
+
+function formatVnTime(value: Date | string | null | undefined): string {
+  if (!value) return "";
+  const timeInfo = getVietnamSessionTime(value);
+  if (timeInfo) {
+    return `${String(timeInfo.hour).padStart(2, "0")}:${String(timeInfo.minute).padStart(2, "0")}`;
+  }
+  return formatLocalTime(value);
+}
+
+function formatVnSessionTime(
+  startAt: Date | string | null | undefined,
+  endAt?: Date | string | null | undefined
+): string {
+  const startStr = formatVnTime(startAt);
+  if (!endAt) return startStr;
+  const endStr = formatVnTime(endAt);
+  if (!startStr && !endStr) return "";
+  if (!endStr) return startStr;
+  if (!startStr) return endStr;
+  return `${startStr} - ${endStr}`;
 }
 
 export function ScheduleCalendarView({
@@ -191,31 +311,36 @@ export function ScheduleCalendarView({
     return !isValidCalendarGridStatus(status);
   };
 
-  // Get sessions that start in this specific hour on this day (origin)
+  // Helper to format date of calendar grid column
+  const getCellDateStr = (date: Date): string => {
+    const timeInfo = getVietnamSessionTime(date);
+    return timeInfo ? timeInfo.dateStr : formatLocalDateToIso(date);
+  };
+
+  // Get sessions that start in this specific hour on this day (origin) theo múi giờ Việt Nam
   const getOriginSessionsForCell = (date: Date, hour: number): CalendarItem[] => {
-    const targetDateStr = formatLocalDateToIso(date);
+    const targetDateStr = getCellDateStr(date);
     return sessions.filter((s) => {
       if (!s.startAt) return false;
       if (!isValidCalendarGridStatus(s.status)) return false;
-      if (formatLocalDateToIso(s.startAt) !== targetDateStr) return false;
-      const sessionDate = new Date(s.startAt);
-      return sessionDate.getHours() === hour;
+      const timeInfo = getVietnamSessionTime(s.startAt);
+      if (!timeInfo) return false;
+      return timeInfo.dateStr === targetDateStr && timeInfo.hour === hour;
     });
   };
 
-  // Get continuation sessions for non-hour durations (90m/150m)
+  // Get continuation sessions for non-hour durations (90m/150m) theo múi giờ Việt Nam
   const getContinuationSessionsForCell = (date: Date, hour: number): CalendarItem[] => {
-    const targetDateStr = formatLocalDateToIso(date);
+    const targetDateStr = getCellDateStr(date);
     return sessions.filter((s) => {
       if (!s.startAt || !s.endAt) return false;
       if (!isValidCalendarGridStatus(s.status)) return false;
-      if (formatLocalDateToIso(s.startAt) !== targetDateStr) return false;
-      const startDate = new Date(s.startAt);
-      const endDate = new Date(s.endAt);
-      const sessionStartMin = startDate.getHours() * 60 + startDate.getMinutes();
-      const sessionEndMin = endDate.getHours() * 60 + endDate.getMinutes();
+      const startTimeInfo = getVietnamSessionTime(s.startAt);
+      const endTimeInfo = getVietnamSessionTime(s.endAt);
+      if (!startTimeInfo || !endTimeInfo) return false;
+      if (startTimeInfo.dateStr !== targetDateStr) return false;
       const slotStartMin = hour * 60;
-      return sessionStartMin < slotStartMin && sessionEndMin > slotStartMin;
+      return startTimeInfo.totalMinutes < slotStartMin && endTimeInfo.totalMinutes > slotStartMin;
     });
   };
 
@@ -364,7 +489,7 @@ export function ScheduleCalendarView({
                 </div>
                 {weekDays.map(({ label, date }) => {
                   const isToday =
-                    formatLocalDateToIso(date) === formatLocalDateToIso(new Date());
+                    getCellDateStr(date) === getCellDateStr(new Date());
                   return (
                     <div
                       key={label}
@@ -424,7 +549,7 @@ export function ScheduleCalendarView({
                             !isCellBusy
                               ? `Bấm để đề xuất lịch lúc ${String(hour).padStart(2, "0")}:00 ${day.label}`
                               : continuationSessions.length > 0
-                              ? `Khung giờ đang có ca học tiếp nối (${formatSessionTime(continuationSessions[0].startAt, continuationSessions[0].endAt)})`
+                              ? `Khung giờ đang có ca học tiếp nối (${formatVnSessionTime(continuationSessions[0].startAt, continuationSessions[0].endAt)})`
                               : undefined
                           }
                         >
@@ -463,7 +588,7 @@ export function ScheduleCalendarView({
                               >
                                 <div className="flex items-center justify-between">
                                   <span className="truncate">
-                                    {formatSessionTime(s.startAt, s.endAt)}
+                                    {formatVnSessionTime(s.startAt, s.endAt)}
                                   </span>
                                   {s.mode === "ONLINE" ? (
                                     <Video className="size-3 shrink-0" />
@@ -490,12 +615,12 @@ export function ScheduleCalendarView({
                               key={`cont-${s.sessionId}`}
                               onClick={(e) => handleSessionClick(e, s.sessionId)}
                               className="w-full rounded-xl border border-dashed border-sky-300 bg-sky-50/70 p-1.5 text-left text-[10px] font-bold text-sky-900 shadow-2xs transition-all cursor-pointer hover:bg-sky-100/80"
-                              title={`Ca học tiếp nối (${formatSessionTime(s.startAt, s.endAt)})`}
+                              title={`Ca học tiếp nối (${formatVnSessionTime(s.startAt, s.endAt)})`}
                             >
                               <div className="flex items-center justify-between">
                                 <span className="truncate flex items-center gap-1 text-[9px] font-bold text-sky-800">
                                   <Clock3 className="size-2.5 shrink-0 text-sky-600" />
-                                  ↳ Tiếp nối ({formatSessionTime(s.startAt, s.endAt)})
+                                  ↳ Tiếp nối ({formatVnSessionTime(s.startAt, s.endAt)})
                                 </span>
                                 {s.mode === "ONLINE" ? (
                                   <Video className="size-3 shrink-0 text-sky-600" />
@@ -507,7 +632,7 @@ export function ScheduleCalendarView({
                                 {getClassName(s.classId)}
                               </div>
                               <div className="truncate text-[9px] font-semibold text-sky-600 mt-0.5">
-                                Khóa giờ: Đến {formatLocalTime(s.endAt)}
+                                Khóa giờ: Đến {formatVnTime(s.endAt)}
                               </div>
                             </div>
                           ))}

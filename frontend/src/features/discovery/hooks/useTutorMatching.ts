@@ -89,14 +89,29 @@ export function useTutorMatching({ parent = false, enabled = false } = {}) {
       area: newNeed.teachingMode === "ONLINE" ? undefined : newNeed.area,
       budgetMin: newNeed.budgetMin, budgetMax: newNeed.budgetMax, availabilitySlots: newNeed.availabilitySlots,
     };
-    const saved = goalId
-      ? await profileService.updateLearningGoal(goalId, payload)
+    const existingGoalForSubject = goals.find(item => item.subjectId === newNeed.subjectId);
+    const saved = existingGoalForSubject
+      ? await profileService.updateLearningGoal(existingGoalForSubject.goalId, payload)
       : await profileService.createLearningGoal(payload);
     const refreshed = await profileService.getMyLearningGoals();
     setGoals(refreshed.filter(item => item.status === "ACTIVE"));
     setGoalId(saved.goalId);
-  }, [parent, goalId]);
+  }, [parent, goals]);
+
+  const refreshGoals = useCallback(async () => {
+    if (parent && !studentId) return [];
+    const load = parent ? profileService.getLinkedStudentGoals(studentId) : profileService.getMyLearningGoals();
+    try {
+      const result = await load;
+      const active = result.filter(item => item.status === "ACTIVE");
+      setGoals(active);
+      return active;
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
+      return [];
+    }
+  }, [parent, studentId]);
 
   return { need, goal, goals, goalId, setGoalId, links, studentId, setStudentId,
-    matches, isMatching: isMatching || isLoadingGoals, error, updateNeed };
+    matches, isMatching: isMatching || isLoadingGoals, error, updateNeed, refreshGoals };
 }

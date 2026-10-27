@@ -123,45 +123,41 @@ export function StudentOnboardingWizard() {
         area: area.trim(),
       });
 
-      // 2. Khởi tạo mục tiêu học tập ban đầu trên Backend để sẵn sàng cho AI Matching & Kết nối
-      try {
-        const primarySubjectId = selectedSubjectIds[0] || 1;
-        await profileService.createLearningGoal({
-          subjectId: primarySubjectId,
-          currentLevel: 1,
-          desiredLevel: 4,
-          goalType: "EXAM_PREPARATION",
-          deadline: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-          mode: learningMode,
-          area: learningMode === "ONLINE" ? undefined : (area.trim() || undefined),
-          budgetMin: 150000,
-          budgetMax: 300000,
-          availabilitySlots: [
-            { dayOfWeek: 2, startTime: "19:00:00", endTime: "21:00:00" },
-            { dayOfWeek: 5, startTime: "19:00:00", endTime: "21:00:00" },
-          ],
-        });
-      } catch (goalErr) {
-        console.warn("Không thể tạo mục tiêu học tập tự động từ onboarding:", goalErr);
+      // 2. Khởi tạo mục tiêu học tập ban đầu trên Backend cho TOÀN BỘ các môn học sinh đã lựa chọn
+      let resolvedGoalType: "CONSOLIDATE" | "IMPROVE_GRADES" | "ADVANCED_STUDY" | "EXAM_PREPARATION" = "EXAM_PREPARATION";
+      const normalizedTitle = goalTitle.trim().toLowerCase();
+      if (normalizedTitle.includes("củng cố") || normalizedTitle.includes("căn bản") || normalizedTitle.includes("mất gốc")) {
+        resolvedGoalType = "CONSOLIDATE";
+      } else if (normalizedTitle.includes("cải thiện") || normalizedTitle.includes("nâng điểm") || normalizedTitle.includes("điểm số")) {
+        resolvedGoalType = "IMPROVE_GRADES";
+      } else if (normalizedTitle.includes("bồi dưỡng") || normalizedTitle.includes("chuyên") || normalizedTitle.includes("hsg") || normalizedTitle.includes("nâng cao")) {
+        resolvedGoalType = "ADVANCED_STUDY";
+      } else if (normalizedTitle.includes("thi") || normalizedTitle.includes("vào 10") || normalizedTitle.includes("đại học") || normalizedTitle.includes("chuyển cấp")) {
+        resolvedGoalType = "EXAM_PREPARATION";
       }
 
-      // 3. Lưu thông tin mục tiêu học tập bổ sung vào Local Storage để đồng bộ Dashboard
-      const selectedSubjects = subjectsCatalog
-        .filter((s) => selectedSubjectIds.includes(s.subjectId))
-        .map((s) => s.name);
-      const selectedLevelName =
-        educationLevels.find((lvl) => lvl.levelId === selectedLevelId)?.name || "Lớp 9";
+      const goalDeadline = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      const goalArea = learningMode === "ONLINE" ? undefined : (area.trim() || undefined);
+      const subjectsToCreate = selectedSubjectIds.length > 0 ? selectedSubjectIds : [1];
 
-      localStorage.setItem(
-        "edufit_student_onboarding_goal",
-        JSON.stringify({
-          grade: selectedLevelName,
-          title: goalTitle.trim() || `Ôn luyện ${selectedSubjects.join(", ")}`,
-          subjects: selectedSubjects,
-          learningMode,
-          area: area.trim(),
-          completedAt: new Date().toISOString(),
-        })
+      await Promise.allSettled(
+        subjectsToCreate.map((subjectId) =>
+          profileService.createLearningGoal({
+            subjectId,
+            currentLevel: 1,
+            desiredLevel: 4,
+            goalType: resolvedGoalType,
+            deadline: goalDeadline,
+            mode: learningMode,
+            area: goalArea,
+            budgetMin: 150000,
+            budgetMax: 300000,
+            availabilitySlots: [
+              { dayOfWeek: 2, startTime: "19:00:00", endTime: "21:00:00" },
+              { dayOfWeek: 5, startTime: "19:00:00", endTime: "21:00:00" },
+            ],
+          })
+        )
       );
 
       showToast("Thiết lập hồ sơ học tập thành công! Chào mừng bạn đến với EduFit.", "success");

@@ -198,7 +198,6 @@ const ROLE_NAV_CONFIG: Record<UserRole, { roleTitle: string; sections: NavSectio
           { label: "Gia sư", href: "/admin/tutors-management", icon: GraduationCap },
           { label: "Liên kết Phụ huynh - Con", href: "/admin/family-links", icon: HeartHandshake },
           { label: "Danh mục môn học", href: "/admin/catalogs", icon: BookOpen },
-          { label: "Liên kết hệ thống", href: "/admin/links", icon: HeartHandshake },
           { label: "Khiếu nại & Tranh chấp", href: "/admin/disputes", icon: AlertTriangle },
         ],
       },

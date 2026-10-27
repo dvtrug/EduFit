@@ -46,10 +46,12 @@ describe("AdminDashboardView Component Tests", () => {
       ).toBeInTheDocument();
     });
 
-    expect(screen.getByText("1,248")).toBeInTheDocument();
-    expect(screen.getByText("142")).toBeInTheDocument();
-    expect(screen.getByText("580")).toBeInTheDocument();
-    expect(screen.getAllByText("8").length).toBeGreaterThanOrEqual(1);
+    await waitFor(() => {
+      expect(screen.getByText("1,248")).toBeInTheDocument();
+      expect(screen.getByText("142")).toBeInTheDocument();
+      expect(screen.getByText("580")).toBeInTheDocument();
+      expect(screen.getAllByText("8").length).toBeGreaterThanOrEqual(1);
+    });
 
     // Xác nhận không còn thẻ Tranh chấp giả lập & GMV
     expect(screen.queryByText(/Tranh chấp & Khiếu nại cần can thiệp/i)).not.toBeInTheDocument();

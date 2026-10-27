@@ -16,7 +16,7 @@ export function PublicNavbar() {
     if (role === "STUDENT") return "/student/dashboard";
     if (role === "PARENT") return "/parent/dashboard";
     if (role === "TUTOR") return "/tutor/dashboard";
-    if (role === "ADMIN") return "/admin/verification-queue";
+    if (role === "ADMIN") return "/admin/dashboard";
     return "/student/dashboard";
   };
 

@@ -88,7 +88,7 @@ class FlywayMigrationIT {
             .validateOnMigrate(true)
             .baselineOnMigrate(false)
             .load();
-    assertEquals(12, upgraded.migrate().migrationsExecuted);
+    assertEquals(13, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted, "Rerun không thực thi lại migration");
     try (Connection connection =
@@ -150,7 +150,7 @@ class FlywayMigrationIT {
     // 3. Kiểm chứng kết quả thực thi của Flyway
     assertTrue(result.success, "Quá trình migrate của Flyway phải thành công 100%");
     assertEquals(
-        21, result.migrationsExecuted, "Phải thực thi đúng 21 file migration V1.01 -> V1.21");
+        22, result.migrationsExecuted, "Phải thực thi đúng 22 file migration V1.01 -> V1.22");
 
     // 4. Kiểm tra trực tiếp các bảng và ràng buộc đã được tạo trong PostgreSQL
     try (Connection connection =
@@ -180,13 +180,82 @@ class FlywayMigrationIT {
         assertTrue(rs.next(), "Bảng tutoring_session phải tồn tại và cho phép truy vấn");
       }
 
-      // Kiểm tra bảng flyway_schema_history ghi nhận cả 14 version ở trạng thái thành công
+      // Kiểm tra bảng flyway_schema_history ghi nhận toàn bộ version ở trạng thái thành công
       try (ResultSet rs =
           statement.executeQuery(
               "SELECT COUNT(*) FROM flyway_schema_history WHERE success = true")) {
         assertTrue(rs.next());
         assertEquals(
-            21, rs.getInt(1), "Lịch sử migration phải ghi nhận đúng 21 bản ghi thành công");
+            22, rs.getInt(1), "Lịch sử migration phải ghi nhận đúng 22 bản ghi thành công");
+      }
+    }
+  }
+
+  @Test
+  void paymentV121UpgradeKeepsWalletAndAppliesConnectionV122() throws Exception {
+    String schema = "payment_connection_upgrade";
+    Flyway existing =
+        Flyway.configure()
+            .dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
+            .locations("classpath:db/migration")
+            .schemas(schema)
+            .target("1.21")
+            .load();
+    assertEquals(21, existing.migrate().migrationsExecuted);
+
+    try (Connection connection =
+            DriverManager.getConnection(
+                postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+        Statement statement = connection.createStatement()) {
+      statement.execute("SET search_path TO " + schema);
+      statement.executeUpdate(
+          "INSERT INTO payment_wallet(user_id, available, held)"
+              + " SELECT user_id, 45000, 5000 FROM account WHERE role='TUTOR' LIMIT 1");
+    }
+
+    Flyway upgraded =
+        Flyway.configure()
+            .dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
+            .locations("classpath:db/migration")
+            .schemas(schema)
+            .outOfOrder(false)
+            .validateOnMigrate(true)
+            .load();
+    assertEquals(1, upgraded.migrate().migrationsExecuted);
+    upgraded.validate();
+    assertEquals(0, upgraded.migrate().migrationsExecuted);
+
+    try (Connection connection =
+            DriverManager.getConnection(
+                postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+        Statement statement = connection.createStatement()) {
+      statement.execute("SET search_path TO " + schema);
+      try (ResultSet rows =
+          statement.executeQuery("SELECT available, held FROM payment_wallet")) {
+        assertTrue(rows.next());
+        assertEquals(45000L, rows.getLong(1));
+        assertEquals(5000L, rows.getLong(2));
+      }
+      try (ResultSet rows =
+          statement.executeQuery(
+              "SELECT version, description FROM flyway_schema_history"
+                  + " WHERE version IN ('1.16', '1.22') ORDER BY version")) {
+        assertTrue(rows.next());
+        assertEquals("1.16", rows.getString(1));
+        assertEquals("create payment wallet and settlement", rows.getString(2));
+        assertTrue(rows.next());
+        assertEquals("1.22", rows.getString(1));
+        assertEquals("allow multi subject connections", rows.getString(2));
+      }
+      try (ResultSet rows =
+          statement.executeQuery(
+              "SELECT indexdef FROM pg_indexes WHERE schemaname = current_schema()"
+                  + " AND indexname IN ('uq_connection_request_pending',"
+                  + " 'uq_class_student_tutor_active')")) {
+        assertTrue(rows.next());
+        assertTrue(rows.getString(1).contains("goal_id"));
+        assertTrue(rows.next());
+        assertTrue(rows.getString(1).contains("goal_id"));
       }
     }
   }
@@ -204,7 +273,7 @@ class FlywayMigrationIT {
     }
     var upgraded = Flyway.configure().dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
         .locations("classpath:db/migration").schemas(schema).load();
-    assertEquals(8, upgraded.migrate().migrationsExecuted);
+    assertEquals(9, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted);
     try (var connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
@@ -249,7 +318,7 @@ class FlywayMigrationIT {
             .locations("classpath:db/migration")
             .schemas(schema)
             .load();
-    assertEquals(10, upgraded.migrate().migrationsExecuted);
+    assertEquals(11, upgraded.migrate().migrationsExecuted);
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted);
     try (var connection =
@@ -359,7 +428,7 @@ class FlywayMigrationIT {
             .validateOnMigrate(true)
             .baselineOnMigrate(false)
             .load();
-    assertEquals(11, upgraded.migrate().migrationsExecuted, "Phải thực thi đúng 11 migrations: V1.11 -> V1.21");
+    assertEquals(12, upgraded.migrate().migrationsExecuted, "Phải thực thi đúng 12 migrations: V1.11 -> V1.22");
     upgraded.validate();
     assertEquals(0, upgraded.migrate().migrationsExecuted, "Rerun phải là no-op");
 

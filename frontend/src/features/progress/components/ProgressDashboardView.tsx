@@ -119,6 +119,10 @@ export function ProgressDashboardView({
   const plan = studentData?.plan;
   const milestones = useMemo(() => plan?.milestones || [], [plan]);
   const stats = studentData?.sessionStats;
+  const completedSessions = stats?.completedCount ?? stats?.completedSessions ?? 0;
+  const absentSessions = stats?.absentCount ?? stats?.absentSessions ?? 0;
+  const upcomingSessions = stats?.upcomingCount ?? stats?.upcomingSessions ?? 0;
+  const totalSessions = stats?.totalSessions ?? (completedSessions + absentSessions + upcomingSessions);
 
   // Weighted Progress calculation
   const weightedProgress = useMemo(() => {
@@ -314,14 +318,14 @@ export function ProgressDashboardView({
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black text-neutral-900">
-              {stats?.completedSessions ?? 0}
+              {completedSessions}
             </span>
             <span className="text-xs text-neutral-400 font-medium">
-              / {stats?.totalSessions ?? 0} buổi
+              / {totalSessions} buổi
             </span>
           </div>
           <p className="text-[11px] text-neutral-500">
-            Vắng: {stats?.absentSessions ?? 0} • Sắp tới: {stats?.upcomingSessions ?? 0} buổi
+            Vắng: {absentSessions} • Sắp tới: {upcomingSessions} buổi
           </p>
         </div>
 

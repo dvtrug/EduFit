@@ -33,3 +33,18 @@ it("routes session notifications to the shared case instead of a generic wallet"
   );
   expect(getNotificationRoute(item, "ADMIN")).toBe("/admin/disputes/session-1");
 });
+
+it("keeps develop verification routes alongside payment notifications", () => {
+  const notice = {
+    notificationId: "verification-1",
+    type: "QUALIFICATION_SUBMITTED",
+    title: "Bằng cấp mới",
+    shortText: "Cần thẩm định",
+    isRead: false,
+    createdAt: "2026-10-27",
+  };
+  expect(getNotificationRoute(notice, "ADMIN")).toBe(
+    "/admin/verification-queue",
+  );
+  expect(getNotificationRoute(notice, "TUTOR")).toBe("/tutor/verification");
+});

@@ -9,8 +9,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TutoringClassRepository extends JpaRepository<TutoringClass, UUID> {
   boolean existsByStudentIdAndTutorIdAndStatus(UUID studentId, UUID tutorId, String status);
+  boolean existsByStudentIdAndTutorIdAndGoalIdAndStatus(UUID studentId, UUID tutorId, UUID goalId, String status);
   Optional<TutoringClass> findByConnectionRequestId(UUID requestId);
   Optional<TutoringClass> findByStudentIdAndTutorIdAndStatus(UUID studentId, UUID tutorId, String status);
+  Optional<TutoringClass> findByStudentIdAndTutorIdAndGoalIdAndStatus(UUID studentId, UUID tutorId, UUID goalId, String status);
+  List<TutoringClass> findAllByStudentIdAndTutorIdAndStatus(UUID studentId, UUID tutorId, String status);
   List<TutoringClass> findByTutorIdAndStatus(UUID tutorId, String status);
   boolean existsByIdAndStatus(UUID classId, String status);
   boolean existsByIdAndTutorIdAndStudentIdAndStatus(UUID classId, UUID tutorId, UUID studentId, String status);

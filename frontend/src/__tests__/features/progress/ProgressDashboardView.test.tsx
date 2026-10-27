@@ -34,9 +34,13 @@ describe("ProgressDashboardView Component", () => {
     sessionStats: {
       totalSessions: 10,
       completedSessions: 6,
+      completedCount: 6,
       absentSessions: 1,
+      absentCount: 1,
       upcomingSessions: 3,
+      upcomingCount: 3,
       cancelledSessions: 0,
+      cancelledCount: 0,
     },
     plan: {
       planId: "plan-1",

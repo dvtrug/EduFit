@@ -19,9 +19,15 @@ export function GoalSelector({ matching, parent = false }: {
       <select className="rounded-lg border p-2" value={matching.goalId}
         onChange={event => matching.setGoalId(event.target.value)} disabled={!matching.goals.length}>
         {!matching.goals.length && <option value="">Chưa có mục tiêu học tập</option>}
-        {matching.goals.map(goal => <option key={goal.goalId} value={goal.goalId}>
-          {goal.subjectName} · {goal.educationLevelName} · {goal.deadline}{goal.readyForMatching === false ? " (chưa sẵn sàng)" : ""}
-        </option>)}
+        {matching.goals.map(goal => {
+          const budget = goal.budgetMax ? ` · ${Math.round(goal.budgetMax / 1000)}k/h` : "";
+          const notReady = goal.readyForMatching === false ? " (chưa sẵn sàng)" : "";
+          return (
+            <option key={goal.goalId} value={goal.goalId}>
+              {goal.subjectName} · {goal.educationLevelName} · Hạn: {goal.deadline}{budget}{notReady}
+            </option>
+          );
+        })}
       </select>
     </label>
     {matching.error && <p role="alert" className="w-full text-rose-700">{matching.error}</p>}

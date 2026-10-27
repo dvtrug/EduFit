@@ -6,9 +6,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionOperations;
+import org.springframework.transaction.support.TransactionTemplate;
 import vn.edufit.connection.api.ConnectionFacade;
 import vn.edufit.discovery.api.event.MatchingExecutedEvent;
 import vn.edufit.discovery.application.dto.TutorMatchResult;
@@ -39,6 +43,27 @@ public class TutorMatchingService {
   private final DiscoveryQueryService queryService;
   private final ConnectionFacade connectionFacade;
   private final ApplicationEventPublisher eventPublisher;
+  private final TransactionOperations transactionOperations;
+
+  @Autowired
+  public TutorMatchingService(
+      ProfileFacade profileFacade,
+      MatchingRunLogRepository matchingRunLogRepository,
+      MatchExplanationService explanationService,
+      DiscoveryQueryService queryService,
+      ConnectionFacade connectionFacade,
+      ApplicationEventPublisher eventPublisher,
+      ObjectProvider<PlatformTransactionManager> transactionManagerProvider
+  ) {
+    this.profileFacade = profileFacade;
+    this.matchingRunLogRepository = matchingRunLogRepository;
+    this.explanationService = explanationService;
+    this.queryService = queryService;
+    this.connectionFacade = connectionFacade;
+    this.eventPublisher = eventPublisher;
+    PlatformTransactionManager tm = transactionManagerProvider != null ? transactionManagerProvider.getIfAvailable() : null;
+    this.transactionOperations = tm != null ? new TransactionTemplate(tm) : TransactionOperations.withoutTransaction();
+  }
 
   public TutorMatchingService(
       ProfileFacade profileFacade,
@@ -48,15 +73,9 @@ public class TutorMatchingService {
       ConnectionFacade connectionFacade,
       ApplicationEventPublisher eventPublisher
   ) {
-    this.profileFacade = profileFacade;
-    this.matchingRunLogRepository = matchingRunLogRepository;
-    this.explanationService = explanationService;
-    this.queryService = queryService;
-    this.connectionFacade = connectionFacade;
-    this.eventPublisher = eventPublisher;
+    this(profileFacade, matchingRunLogRepository, explanationService, queryService, connectionFacade, eventPublisher, null);
   }
 
-  @Transactional
   public List<TutorMatchResult> match(CurrentUser currentUser, UUID goalId, int topN) {
     if (currentUser == null || currentUser.getUserId() == null
         || (!currentUser.hasRole("STUDENT") && !currentUser.hasRole("PARENT"))) {
@@ -93,9 +112,11 @@ public class TutorMatchingService {
     var log = new MatchingRunLogEntity(
         currentUser.getUserId(), goal.studentId(), goal.goalId(), results.size()
     );
-    matchingRunLogRepository.save(log);
-    eventPublisher.publishEvent(new MatchingExecutedEvent(
-        log.getUserId(), log.getStudentId(), log.getGoalId(), log.getResultCount(), log.getCreatedAt()));
+    transactionOperations.executeWithoutResult(status -> {
+      matchingRunLogRepository.save(log);
+      eventPublisher.publishEvent(new MatchingExecutedEvent(
+          log.getUserId(), log.getStudentId(), log.getGoalId(), log.getResultCount(), log.getCreatedAt()));
+    });
     return results;
   }
 

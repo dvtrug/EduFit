@@ -20,6 +20,7 @@ import {
   RefreshCw,
   Award,
   FileCheck,
+  Users,
 } from "lucide-react";
 import {
   discoveryApi,
@@ -36,6 +37,8 @@ import {
 } from "@/features/review";
 import { ConnectionRequestDialog } from "@/features/connection";
 import { profileService, type LearningGoalData } from "@/services/profile";
+import { connectionService } from "@/services/connections";
+import { progressApi } from "@/features/progress";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/shared/ui/Toast";
 import { PublicNavbar } from "@/shared/ui/PublicNavbar";
@@ -76,6 +79,8 @@ function TutorDetailContent() {
   // Student goals for authenticated users
   const [studentGoals, setStudentGoals] = useState<LearningGoalData[]>([]);
   const [selectedGoal, setSelectedGoal] = useState<LearningGoalData | null>(null);
+  const [linkedChildren, setLinkedChildren] = useState<Array<{ studentId: string; name: string }>>([]);
+  const [selectedChildId, setSelectedChildId] = useState<string>("");
 
   const loadTutor = useCallback(async () => {
     if (!tutorId) return;
@@ -121,17 +126,94 @@ function TutorDetailContent() {
     loadReviews();
   }, [loadTutor, loadReviews]);
 
+  // Load linked children for parent
   useEffect(() => {
-    if (user && (user.role === "STUDENT" || user.role === "PARENT")) {
+    if (user && user.role === "PARENT") {
+      let cancelled = false;
+      Promise.all([
+        connectionService.links().catch(() => []),
+        progressApi.getParentDashboard().catch(() => null),
+      ]).then(([links, dashboard]) => {
+        if (cancelled) return;
+        const studentNames = Object.fromEntries(
+          (dashboard?.data?.students || [])
+            .filter((s) => s.studentId && s.studentName)
+            .map((s) => [s.studentId, s.studentName])
+        );
+        const children = links.map((link, idx) => ({
+          studentId: link.studentId,
+          name: studentNames[link.studentId] || `Học sinh ${idx + 1} (${link.studentId.slice(-8)})`,
+        }));
+        setLinkedChildren(children);
+        if (children.length > 0) {
+          setSelectedChildId((prev) =>
+            children.some((c) => c.studentId === prev) ? prev : children[0].studentId
+          );
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [user]);
+
+  // Load goals for STUDENT or for PARENT's selected child
+  useEffect(() => {
+    if (!user) {
+      setStudentGoals([]);
+      setSelectedGoal(null);
+      return;
+    }
+
+    let cancelled = false;
+    if (user.role === "STUDENT") {
       profileService
         .getMyLearningGoals()
         .then((goals) => {
-          setStudentGoals(goals);
-          if (goals.length > 0) setSelectedGoal(goals[0]);
+          if (cancelled) return;
+          const active = goals.filter((g) => g.status === "ACTIVE");
+          const targetGoals = active.length > 0 ? active : goals;
+          setStudentGoals(targetGoals);
+          if (targetGoals.length > 0) {
+            setSelectedGoal((prev) =>
+              prev && targetGoals.some((g) => g.goalId === prev.goalId) ? prev : targetGoals[0]
+            );
+          } else {
+            setSelectedGoal(null);
+          }
         })
-        .catch(() => {});
+        .catch(() => {
+          if (cancelled) return;
+          setStudentGoals([]);
+          setSelectedGoal(null);
+        });
+    } else if (user.role === "PARENT" && selectedChildId) {
+      profileService
+        .getLinkedStudentGoals(selectedChildId)
+        .then((goals) => {
+          if (cancelled) return;
+          const active = goals.filter((g) => g.status === "ACTIVE");
+          const targetGoals = active.length > 0 ? active : goals;
+          setStudentGoals(targetGoals);
+          if (targetGoals.length > 0) {
+            setSelectedGoal((prev) =>
+              prev && targetGoals.some((g) => g.goalId === prev.goalId) ? prev : targetGoals[0]
+            );
+          } else {
+            setSelectedGoal(null);
+          }
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setStudentGoals([]);
+          setSelectedGoal(null);
+        });
     }
-  }, [user]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, selectedChildId]);
 
   // Handle request connect click
   const handleRequestClick = () => {
@@ -145,10 +227,11 @@ function TutorDetailContent() {
       return;
     }
 
-    if (studentGoals.length === 0) {
-      showToast("Bạn cần tạo ít nhất 1 mục tiêu học tập để chuẩn bị kế hoạch 1-1.", "info");
-      router.push("/student/dashboard");
-      return;
+    if (user.role === "PARENT") {
+      if (linkedChildren.length === 0) {
+        showToast("Bạn chưa có học sinh liên kết. Vui lòng liên kết tài khoản con trước khi gửi yêu cầu.", "info");
+        return;
+      }
     }
 
     setIsConnectOpen(true);
@@ -292,6 +375,27 @@ function TutorDetailContent() {
                   </span>
                   <span className="text-xs text-neutral-400"> /buổi</span>
                 </div>
+
+                {user?.role === "PARENT" && linkedChildren.length > 0 && (
+                  <div className="text-left sm:text-right w-full sm:w-auto">
+                    <label htmlFor="detail-child-select" className="text-[11px] font-semibold text-neutral-600 dark:text-stone-300 block mb-1">
+                      Chọn con em kết nối:
+                    </label>
+                    <select
+                      id="detail-child-select"
+                      aria-label="Chọn con em liên kết"
+                      value={selectedChildId}
+                      onChange={(e) => setSelectedChildId(e.target.value)}
+                      className="rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-3 py-1.5 text-xs font-semibold text-neutral-800 dark:text-stone-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                    >
+                      {linkedChildren.map((c) => (
+                        <option key={c.studentId} value={c.studentId}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <button
                   type="button"
@@ -496,10 +600,19 @@ function TutorDetailContent() {
       )}
 
       {/* Authenticated Connection Request Dialog */}
-      {isConnectOpen && tutor && selectedGoal && (
+      {isConnectOpen && tutor && (
         <ConnectionRequestDialog
           tutorId={tutor.tutorId}
-          goal={selectedGoal}
+          tutor={tutor}
+          goal={selectedGoal ?? undefined}
+          goals={studentGoals}
+          userRole={user?.role}
+          selectedChildName={linkedChildren.find((c) => c.studentId === selectedChildId)?.name}
+          onSelectGoal={setSelectedGoal}
+          onGoalCreated={(newGoal) => {
+            setStudentGoals((prev) => [newGoal, ...prev]);
+            setSelectedGoal(newGoal);
+          }}
           onClose={() => setIsConnectOpen(false)}
           onSent={() => {
             setIsConnectOpen(false);

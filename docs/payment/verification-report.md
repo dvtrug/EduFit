@@ -126,3 +126,10 @@ P10 mobile fix `a3dfd37` và FE provider `31ccac8` đã push. P11: hướng dẫ
 - Không đổi BE/nghiệp vụ tiền/SQL/env. Không chạy lại Maven cho thay đổi FE này; không tạo/chuyển tiền ngân hàng. Callback SDK không cộng ví; retry SDK không tạo order khác, tiếp tục order pending không gọi create, ID tài khoản cũ vẫn bị chặn khi rút.
 
 - Kiểm docs cuối: 15 Markdown, 135 local links hợp lệ, 7 cặp PNG/SVG đọc được; render diagram nạp popup và xem ảnh PASS, git diff --check PASS. .env/logs/preview vẫn ignored.
+
+## Ghép develop vào feat/payment — 27/10/2026
+
+- Giải bốn conflict theo route/menu KYC và cấu hình proxy của develop, giữ route Payment, webhook public/CSRF exception và cấu hình DB/merchant của Payment. Payment V1.16–V1.21 không đổi; migration Connection đổi sang V1.22, thân SQL giữ nguyên. Compose local giữ độ bền ghi PostgreSQL thay vì tắt fsync/full_page_writes.
+- PostgreSQL 17 Testcontainers: **34/34** test trọng tâm PASS (FlywayMigrationIT 6, convention 2, PaymentFlowIT 24, PaymentApplicationIT 2). Gồm database sạch lên V1.22, nâng cấp từ Payment V1.21 lên V1.22 giữ số dư và lịch sử, kiểm index mới, validate/rerun no-op; không gọi payOS thật.
+- Frontend: Payment **37/37** PASS, kiểm thử Sidebar Admin **2/2** PASS, TypeScript/lint các file conflict PASS; production `next build --webpack` PASS và sinh đủ trang Payment cho Student/Parent/Tutor/Admin.
+- `docker compose config --quiet` PASS. Container PostgreSQL cục bộ đang dùng lệnh mặc định `postgres`; chỉ đọc lịch sử DB cục bộ thấy Payment V1.16–V1.21 đã áp dụng. Không chạy migration V1.22 trên DB này, không đổi tiền/dữ liệu vận hành. Database team đã áp dụng Connection V1.16 cần kế hoạch chuyển lịch sử riêng trước khi dùng bản ghép; xem [runbook](runbook.md).

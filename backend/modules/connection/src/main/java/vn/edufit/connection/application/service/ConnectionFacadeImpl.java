@@ -32,6 +32,16 @@ public class ConnectionFacadeImpl implements ConnectionFacade {
   }
 
   @Override
+  public List<ActiveClassView> findActiveClasses(UUID studentId, UUID tutorId) {
+    if (studentId == null || tutorId == null) {
+      return List.of();
+    }
+    return classes.findAllByStudentIdAndTutorIdAndStatus(studentId, tutorId, "ACTIVE").stream()
+        .map(c -> new ActiveClassView(c.getId(), c.getStudentId(), c.getTutorId(), c.getGoalId()))
+        .toList();
+  }
+
+  @Override
   public boolean isClassActive(UUID classId) {
     if (classId == null) {
       return false;

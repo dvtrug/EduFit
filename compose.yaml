@@ -15,7 +15,7 @@ services:
       - ./database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
-      interval: 3s
+      interval: 10s
       timeout: 3s
       retries: 20
       start_period: 5s
@@ -52,6 +52,7 @@ services:
       PAYOS_PAYOUT_API_KEY: ${PAYOS_PAYOUT_API_KEY:-}
       PAYOS_PAYOUT_CHECKSUM_KEY: ${PAYOS_PAYOUT_CHECKSUM_KEY:-}
       STORAGE_CREDENTIALS_ROOT: ${STORAGE_CREDENTIALS_ROOT:-/app/var/credentials}
+      JAVA_OPTS: ${JAVA_OPTS:-}
     volumes:
       - credential_data:/app/var/credentials
     ports:

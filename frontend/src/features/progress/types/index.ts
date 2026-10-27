@@ -34,11 +34,17 @@ export interface PlanItem extends PlanResponse {
 }
 
 export interface ClassSessionStatsView {
-  totalSessions: number;
-  completedSessions: number;
+  totalSessions?: number;
+  completedSessions?: number;
+  completedCount?: number;
+  absentCount?: number;
   absentSessions?: number;
+  upcomingCount?: number;
   upcomingSessions?: number;
-  cancelledSessions: number;
+  cancelledCount?: number;
+  cancelledSessions?: number;
+  nextSessionStart?: string | null;
+  lastSessionStart?: string | null;
 }
 
 // Backwards-compatible alias

@@ -29,7 +29,7 @@ import {
   formatConnectedClassName,
 } from "../types";
 import type { UserRole } from "@/shared/ui/Sidebar";
-import { formatLocalDateToIso, formatLocalTime, formatSessionTime } from "@/shared/utils/dateTime";
+import { formatLocalDateToIso, formatLocalTime } from "@/shared/utils/dateTime";
 import { SessionOutcomeModal, progressApi, type PlanResponse } from "@/features/progress";
 
 export interface SessionDetailModalProps {
@@ -90,13 +90,25 @@ export function SessionDetailModal({
   const [showOutcomeModal, setShowOutcomeModal] = useState(false);
   const [classPlan, setClassPlan] = useState<PlanResponse | null>(null);
 
+  // Track session ID during render to avoid cascading renders in useEffect (React 19 pattern)
+  const [prevSessionId, setPrevSessionId] = useState<string | null>(null);
+  if (isOpen && sessionId !== prevSessionId) {
+    setPrevSessionId(sessionId);
+    setRescheduleProposal(null);
+    setShowRescheduleRejectInput(false);
+    setRescheduleRejectReason("");
+  } else if (!isOpen && prevSessionId !== null) {
+    setPrevSessionId(null);
+    setSession(null);
+    setRescheduleProposal(null);
+    setShowRescheduleRejectInput(false);
+    setRescheduleRejectReason("");
+  }
+
   // Fetch session details on mount / id change
   useEffect(() => {
     let ignore = false;
     if (isOpen && sessionId) {
-      setRescheduleProposal(null);
-      setShowRescheduleRejectInput(false);
-      setRescheduleRejectReason("");
       schedulingApi
         .getSessionDetail(sessionId)
         .then((res) => {
@@ -148,9 +160,6 @@ export function SessionDetailModal({
             setLoading(false);
           }
         });
-    } else {
-      setSession(null);
-      setRescheduleProposal(null);
     }
     return () => {
       ignore = true;

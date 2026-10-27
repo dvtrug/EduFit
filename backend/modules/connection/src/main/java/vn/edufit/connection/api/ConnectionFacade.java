@@ -8,6 +8,7 @@ import java.util.UUID;
 public interface ConnectionFacade {
   boolean hasConfirmedParentLink(UUID parentUserId, UUID studentId);
   Optional<ActiveClassView> findActiveClass(UUID studentId, UUID tutorId);
+  List<ActiveClassView> findActiveClasses(UUID studentId, UUID tutorId);
   boolean isClassActive(UUID classId);
   boolean isClassActive(UUID classId, UUID tutorId, UUID studentId);
   Optional<ActiveClassView> findActiveClassById(UUID classId);

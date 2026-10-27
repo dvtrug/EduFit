@@ -108,13 +108,16 @@ export function getNotificationRoute(
     return "/student/progress";
   }
 
-  // 7. Xác thực hồ sơ KYC (Verification)
+  // 7. Xác thực hồ sơ KYC hoặc thẩm định bằng cấp (Verification)
   if (
     type.startsWith("KYC_") ||
+    type.startsWith("VERIFICATION_") ||
+    type.startsWith("QUALIFICATION_") ||
     targetType === "VERIFICATION" ||
-    targetType === "KYC"
+    targetType === "KYC" ||
+    targetType === "QUALIFICATION"
   ) {
-    if (normalizedRole === "ADMIN") return "/admin/kyc";
+    if (normalizedRole === "ADMIN") return "/admin/verification-queue";
     return "/tutor/verification";
   }
 
